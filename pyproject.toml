@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secure-query"
+version = "0.1.0"
+description = "Secure deterministic SQL: LogicalPlan -> validate(catalog) -> AST compile"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "sqlglot>=23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "duckdb>=0.10",
+]
+
+[tool.setuptools.packages.find]
+include = ["secure_query*"]
+
+[tool.pytest.ini_options]
+testpaths = ["secure_query/tests"]
+pythonpath = ["."]
