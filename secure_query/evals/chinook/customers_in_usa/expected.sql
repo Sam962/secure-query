@@ -1,0 +1,1 @@
+SELECT "Customer"."CustomerId", "Customer"."FirstName", "Customer"."LastName", "Customer"."Company", "Customer"."City", "Customer"."State", "Customer"."Country", "Customer"."SupportRepId" FROM "Customer" WHERE "Customer"."Country" = 'USA' ORDER BY "Customer"."LastName" ASC LIMIT 20

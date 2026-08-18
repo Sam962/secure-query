@@ -1,0 +1,40 @@
+{
+  "plan_id": "12345678-1234-1234-1234-123456789abc",
+  "schema_version": "lqp/1",
+  "source": "Invoice",
+  "joins": [],
+  "filters": [],
+  "group_by": {
+    "columns": [
+      {
+        "table_id": "Invoice",
+        "column_id": "BillingCountry"
+      }
+    ],
+    "time_buckets": []
+  },
+  "aggregations": [
+    {
+      "fn": "count",
+      "column": null,
+      "alias": "invoice_count"
+    }
+  ],
+  "having": [],
+  "order_by": [
+    {
+      "column": null,
+      "alias": "invoice_count",
+      "direction": "desc"
+    },
+    {
+      "column": {
+        "table_id": "Invoice",
+        "column_id": "BillingCountry"
+      },
+      "alias": null,
+      "direction": "asc"
+    }
+  ],
+  "limit": 10
+}

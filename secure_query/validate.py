@@ -6,6 +6,8 @@ and missing limits are rejected here — never at SQL string time.
 
 from __future__ import annotations
 
+import re
+
 from secure_query.catalog import Catalog, ColumnSpec
 from secure_query.compile import CompiledQuery, CompilationError, compile
 from secure_query.errors import ValidationError
@@ -15,6 +17,7 @@ from secure_query.logical_plan import (
     ColumnRef,
     Eq,
     Filter,
+    GroupBy,
     Gt,
     Gte,
     In,
@@ -48,6 +51,9 @@ _LITERAL_TO_DTYPE = {
 
 _NUMERIC_AGGS = {"sum", "avg"}
 
+# Aggregates that echo a stored cell value back to the caller.
+_PII_VALUE_RETURNING_AGGS = {"min", "max"}
+
 
 def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     """Return all validation errors (empty list = ok to compile)."""
@@ -65,6 +71,19 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
 
     for i, join in enumerate(plan.joins):
         path = f"$.joins[{i}]"
+        if join.kind == "cross" or not join.conditions:
+            errors.append(
+                ValidationError(
+                    code="policy.cross_join_not_allowed",
+                    path=path,
+                    message=(
+                        "Cross joins are not allowed; every join must use an "
+                        "approved equi-join from catalog.join_keys"
+                    ),
+                    stage="policy",
+                )
+            )
+            continue
         if not catalog.has_table(join.right_table):
             errors.append(
                 ValidationError(
@@ -137,34 +156,369 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
             )
         )
 
-    # Raw list intents: block high-PII columns appearing in filters only as soft signal;
-    # SELECT * is still a product risk — prefer explicit projections in a fork.
-    if not plan.aggregations and not plan.group_by:
-        for i, filt in enumerate(plan.filters):
-            col = catalog.get_column(filt.column.table_id, filt.column.column_id)
-            if col is not None and col.pii_risk == "high":
-                errors.append(
-                    ValidationError(
-                        code="policy.pii_filter_blocked",
-                        path=f"$.filters[{i}]",
-                        message=(
-                            f"High-PII column {filt.column.table_id}.{filt.column.column_id} "
-                            "cannot be used in list/filter queries"
-                        ),
-                        stage="policy",
-                    )
-                )
+    errors.extend(_check_pii_policy(plan, catalog))
+    errors.extend(_check_label_aggregates(plan, catalog))
+    errors.extend(_check_plan_scope(plan))
 
     return errors
 
 
+def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:
+    """Reject column refs to tables that are not source or joined."""
+    reachable = set(plan_tables(plan))
+
+    def check(ref: ColumnRef, path: str) -> list[ValidationError]:
+        if ref.table_id in reachable:
+            return []
+        return [
+            ValidationError(
+                code="plan.table_not_in_scope",
+                path=path,
+                message=(
+                    f"Column {ref.table_id}.{ref.column_id} references a table not in "
+                    f"the plan; join {ref.table_id!r} before reading its columns"
+                ),
+                stage="typecheck",
+            )
+        ]
+
+    errors: list[ValidationError] = []
+    for i, filt in enumerate(plan.filters):
+        errors.extend(check(filt.column, f"$.filters[{i}].column"))
+    for i, filt in enumerate(plan.having):
+        errors.extend(check(filt.column, f"$.having[{i}].column"))
+    if plan.group_by is not None:
+        for i, col in enumerate(plan.group_by.columns):
+            errors.extend(check(col, f"$.group_by.columns[{i}]"))
+        for i, tb in enumerate(plan.group_by.time_buckets):
+            errors.extend(check(tb.column, f"$.group_by.time_buckets[{i}].column"))
+    for i, agg in enumerate(plan.aggregations):
+        if agg.column is not None:
+            errors.extend(check(agg.column, f"$.aggregations[{i}].column"))
+    for i, ob in enumerate(plan.order_by):
+        if ob.column is not None:
+            errors.extend(check(ob.column, f"$.order_by[{i}].column"))
+    return errors
+
+
+def _check_label_aggregates(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
+    """Reject MIN/MAX over a text column in a plan that does not group.
+
+    `MAX(Genre.Name)` alongside `SUM(Quantity)` reads like a per-genre answer but
+    returns the alphabetically last genre beside a grand total. Requiring a
+    grouping key turns that silent nonsense into a validation error.
+    """
+    if plan.group_by is not None and (
+        plan.group_by.columns or plan.group_by.time_buckets
+    ):
+        return []
+
+    errors: list[ValidationError] = []
+    for i, agg in enumerate(plan.aggregations):
+        if agg.fn not in _PII_VALUE_RETURNING_AGGS or agg.column is None:
+            continue
+        col = catalog.get_column(agg.column.table_id, agg.column.column_id)
+        if col is None or col.dtype != "str":
+            continue
+        errors.append(
+            ValidationError(
+                code="policy.ungrouped_label_aggregate",
+                path=f"$.aggregations[{i}]",
+                message=(
+                    f"{agg.fn}({agg.column.table_id}.{agg.column.column_id}) picks a value "
+                    "alphabetically, not the one matching the other aggregates; "
+                    "group by that column instead"
+                ),
+                stage="policy",
+            )
+        )
+    return errors
+
+
+def is_list_intent(plan: LogicalPlan) -> bool:
+    """True when the plan projects rows rather than aggregates them."""
+    return not plan.aggregations and plan.group_by is None
+
+
+def plan_tables(plan: LogicalPlan) -> list[str]:
+    """Source table plus every joined table, in plan order, de-duplicated."""
+    tables = [plan.source]
+    for join in plan.joins:
+        if join.right_table not in tables:
+            tables.append(join.right_table)
+    return tables
+
+
+def safe_projection(plan: LogicalPlan, catalog: Catalog) -> list[ColumnRef]:
+    """Catalog columns a list intent may emit: everything except high-PII."""
+    projection: list[ColumnRef] = []
+    table_map = catalog.table_map()
+    for table_id in plan_tables(plan):
+        table = table_map.get(table_id)
+        if table is None:
+            continue
+        projection.extend(
+            ColumnRef(table_id=table_id, column_id=col.name)
+            for col in table.columns
+            if col.pii_risk != "high"
+        )
+    return projection
+
+
+def _alias_impersonates(alias: str, restricted: set[str]) -> bool:
+    """True if any word in `alias` names a restricted column.
+
+    Matches on word parts rather than the whole string, because the useful
+    disguises are compounds — "email_count", "customer_email", "emails".
+    """
+    words = {w for w in re.split(r"[^a-z0-9]+", alias.lower()) if w}
+    words |= {w[:-1] for w in words if w.endswith("s")}
+    return bool(words & restricted)
+
+
+def _high_pii_names(catalog: Catalog) -> set[str]:
+    return {
+        col.name.lower()
+        for table in catalog.tables
+        for col in table.columns
+        if col.pii_risk == "high"
+    }
+
+
+def _is_high_pii(catalog: Catalog, ref: ColumnRef) -> bool:
+    col = catalog.get_column(ref.table_id, ref.column_id)
+    return col is not None and col.pii_risk == "high"
+
+
+def _pii_error(code: str, path: str, ref: ColumnRef, reason: str) -> ValidationError:
+    return ValidationError(
+        code=code,
+        path=path,
+        message=f"High-PII column {ref.table_id}.{ref.column_id} {reason}",
+        stage="policy",
+    )
+
+
+def _check_pii_policy(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
+    """Keep high-PII columns out of predicates and out of the result set.
+
+    Filtering on a high-PII column is an existence oracle even when the query
+    only returns aggregates, so it is blocked for every plan shape — not just
+    list intents.
+    """
+    errors: list[ValidationError] = []
+
+    for label, filters in (("filters", plan.filters), ("having", plan.having)):
+        for i, filt in enumerate(filters):
+            path = f"$.{label}[{i}]"
+            if _is_high_pii(catalog, filt.column):
+                errors.append(
+                    _pii_error(
+                        "policy.pii_filter_blocked",
+                        path,
+                        filt.column,
+                        "cannot be used in filters",
+                    )
+                )
+            value = getattr(filt, "value", None)
+            if isinstance(value, ColumnRef) and _is_high_pii(catalog, value):
+                errors.append(
+                    _pii_error(
+                        "policy.pii_filter_blocked",
+                        f"{path}.value",
+                        value,
+                        "cannot be used in filters",
+                    )
+                )
+
+    if plan.group_by is not None:
+        for i, col in enumerate(plan.group_by.columns):
+            if _is_high_pii(catalog, col):
+                errors.append(
+                    _pii_error(
+                        "policy.pii_exposed",
+                        f"$.group_by.columns[{i}]",
+                        col,
+                        "cannot be a grouping key (its values are returned)",
+                    )
+                )
+        for i, tb in enumerate(plan.group_by.time_buckets):
+            if _is_high_pii(catalog, tb.column):
+                errors.append(
+                    _pii_error(
+                        "policy.pii_exposed",
+                        f"$.group_by.time_buckets[{i}].column",
+                        tb.column,
+                        "cannot be a grouping key (its values are returned)",
+                    )
+                )
+
+    for i, ob in enumerate(plan.order_by):
+        if ob.column is not None and _is_high_pii(catalog, ob.column):
+            errors.append(
+                _pii_error(
+                    "policy.pii_exposed",
+                    f"$.order_by[{i}].column",
+                    ob.column,
+                    "cannot be used for ordering",
+                )
+            )
+
+    for i, agg in enumerate(plan.aggregations):
+        if (
+            agg.column is not None
+            and agg.fn in _PII_VALUE_RETURNING_AGGS
+            and _is_high_pii(catalog, agg.column)
+        ):
+            errors.append(
+                _pii_error(
+                    "policy.pii_exposed",
+                    f"$.aggregations[{i}]",
+                    agg.column,
+                    f"cannot be used with {agg.fn} (it returns a stored value)",
+                )
+            )
+
+    # An alias is free text chosen by the model, so it can dress a substitute
+    # answer up as the restricted one it could not compute — e.g. returning
+    # COUNT(*) under the name "email". The value is safe; the label is not.
+    restricted = _high_pii_names(catalog)
+    for i, agg in enumerate(plan.aggregations):
+        if _alias_impersonates(agg.alias, restricted):
+            errors.append(
+                ValidationError(
+                    code="policy.misleading_alias",
+                    path=f"$.aggregations[{i}].alias",
+                    message=(
+                        f"Alias {agg.alias!r} names a restricted column; "
+                        "results must not be labelled as PII they do not contain"
+                    ),
+                    stage="policy",
+                )
+            )
+
+    if (
+        is_list_intent(plan)
+        and catalog.has_table(plan.source)
+        and not safe_projection(plan, catalog)
+    ):
+        errors.append(
+            ValidationError(
+                code="policy.no_selectable_columns",
+                path="$.source",
+                message=(
+                    f"Every column of {plan.source!r} is high-PII; "
+                    "this plan has nothing it may return"
+                ),
+                stage="policy",
+            )
+        )
+
+    return errors
+
+
+def normalize_plan(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
+    """Rewrite common planner mistakes using catalog label/display metadata.
+
+    Idempotent: safe to call more than once on the same plan.
+    """
+    plan = _rewrite_fk_group_keys(plan, catalog)
+    return _infer_lookup_grouping(plan, catalog)
+
+
+def _tables_read(plan: LogicalPlan) -> set[str]:
+    """Tables whose columns appear outside join ON clauses."""
+    tables = {plan.source}
+    if plan.group_by is not None:
+        for col in plan.group_by.columns:
+            tables.add(col.table_id)
+        for bucket in plan.group_by.time_buckets:
+            tables.add(bucket.column.table_id)
+    for filt in list(plan.filters) + list(plan.having):
+        tables.add(filt.column.table_id)
+        value = getattr(filt, "value", None)
+        if isinstance(value, ColumnRef):
+            tables.add(value.table_id)
+    for agg in plan.aggregations:
+        if agg.column is not None:
+            tables.add(agg.column.table_id)
+    for order in plan.order_by:
+        if order.column is not None:
+            tables.add(order.column.table_id)
+    return tables
+
+
+def _rewrite_fk_group_keys(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
+    """Replace FK grouping keys with catalog label_for targets when joined."""
+    if plan.group_by is None or not plan.group_by.columns:
+        return plan
+    reachable = {plan.source, *(j.right_table for j in plan.joins)}
+    new_cols: list[ColumnRef] = []
+    changed = False
+    for col in plan.group_by.columns:
+        spec = catalog.get_column(col.table_id, col.column_id)
+        if spec is not None and spec.label_for:
+            label_table, label_col = spec.label_for.split(".", 1)
+            label = ColumnRef(table_id=label_table, column_id=label_col)
+            if label_table in reachable and label != col:
+                new_cols.append(label)
+                changed = True
+                continue
+        new_cols.append(col)
+    if not changed:
+        return plan
+    return plan.model_copy(
+        update={
+            "group_by": GroupBy(
+                columns=new_cols,
+                time_buckets=list(plan.group_by.time_buckets),
+            )
+        }
+    )
+
+
+def _infer_lookup_grouping(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
+    """When a lookup table is joined but never read, group by its display column."""
+    if not plan.joins or not plan.aggregations:
+        return plan
+    read = _tables_read(plan)
+    new_cols = list(plan.group_by.columns) if plan.group_by is not None else []
+    time_buckets = list(plan.group_by.time_buckets) if plan.group_by is not None else []
+    changed = False
+    for join in plan.joins:
+        table = catalog.table_map().get(join.right_table)
+        if table is None or not table.display_column:
+            continue
+        if join.right_table in read:
+            continue
+        label_table, label_col = table.display_column.split(".", 1)
+        label = ColumnRef(table_id=label_table, column_id=label_col)
+        if label in new_cols:
+            continue
+        new_cols.append(label)
+        read.add(join.right_table)
+        read.add(label_table)
+        changed = True
+    if not changed:
+        return plan
+    return plan.model_copy(
+        update={"group_by": GroupBy(columns=new_cols, time_buckets=time_buckets)}
+    )
+
+
 def validate_and_compile(plan: LogicalPlan, catalog: Catalog) -> CompiledQuery:
-    """Validate against catalog, then compile. Raises PlanValidationFailed or CompilationError."""
+    """Validate against catalog, then compile. Raises PlanValidationFailed or CompilationError.
+
+    List intents are compiled with an explicit column list drawn from the
+    catalog, so high-PII columns never reach the result set via `SELECT *`.
+    """
+    plan = normalize_plan(plan, catalog)
     errors = validate(plan, catalog)
     if errors:
         raise PlanValidationFailed(errors)
+    projection = safe_projection(plan, catalog) if is_list_intent(plan) else None
     try:
-        return compile(plan)
+        return compile(plan, dialect=catalog.sql_dialect, projection=projection)
     except CompilationError:
         raise
 

@@ -1,0 +1,11 @@
+{
+  "id": "block_email_filter",
+  "question": "Find the customer with email a@b.com",
+  "expect_validate_ok": false,
+  "checks": {
+    "expect_error_code": "policy.pii_filter_blocked"
+  },
+  "expected_error_codes": [
+    "policy.pii_filter_blocked"
+  ]
+}

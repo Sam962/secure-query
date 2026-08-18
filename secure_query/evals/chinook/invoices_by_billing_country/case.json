@@ -1,0 +1,25 @@
+{
+  "id": "invoices_by_billing_country",
+  "question": "How many invoices are there per billing country?",
+  "expect_validate_ok": true,
+  "checks": {
+    "source": "Invoice",
+    "agg_fn": "count",
+    "group_column": "BillingCountry"
+  },
+  "expected_sql": "SELECT \"Invoice\".\"BillingCountry\", COUNT(*) AS \"invoice_count\" FROM \"Invoice\" GROUP BY \"Invoice\".\"BillingCountry\" ORDER BY \"invoice_count\" DESC, \"Invoice\".\"BillingCountry\" ASC LIMIT 10",
+  "expected_rows_prefix": [
+    [
+      "USA",
+      91
+    ],
+    [
+      "Canada",
+      56
+    ],
+    [
+      "Brazil",
+      35
+    ]
+  ]
+}

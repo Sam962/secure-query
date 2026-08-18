@@ -1,0 +1,23 @@
+Holdout accuracy baseline — 2026-08-11
+Provider: ollama (qwen2.5:7b)
+Command: python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong
+
+Before session (initial run):
+  accuracy      83%  (10/12)
+  wrong         0%   (0/12)
+  abstained     17%  (2/12)
+  Failures:
+    - top_genre_by_tracks_sold (abstain: useless Employee join)
+    - top_artist_by_albums (abstain: Artist joined but no group_by)
+
+After session (re-run):
+  accuracy      100% (12/12)
+  wrong         0%   (0/12)
+  abstained     0%   (0/12)
+
+Fix mechanism (already in working tree):
+  - normalize_plan() before post-plan guards in planner.py
+  - _infer_lookup_grouping() adds Artist.Name / Genre.Name when lookup joined but unread
+  - _rewrite_fk_group_keys() rewrites FK ids to label columns
+
+pytest: 302 passed

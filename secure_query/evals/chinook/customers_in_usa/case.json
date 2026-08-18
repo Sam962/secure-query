@@ -1,0 +1,43 @@
+{
+  "id": "customers_in_usa",
+  "question": "List customers in the USA",
+  "expect_validate_ok": true,
+  "checks": {
+    "source": "Customer",
+    "filter_column": "Country",
+    "filter_value": "USA"
+  },
+  "expected_sql": "SELECT \"Customer\".\"CustomerId\", \"Customer\".\"FirstName\", \"Customer\".\"LastName\", \"Customer\".\"Company\", \"Customer\".\"City\", \"Customer\".\"State\", \"Customer\".\"Country\", \"Customer\".\"SupportRepId\" FROM \"Customer\" WHERE \"Customer\".\"Country\" = 'USA' ORDER BY \"Customer\".\"LastName\" ASC LIMIT 20",
+  "expected_rows_prefix": [
+    [
+      28,
+      "Julia",
+      "Barnett",
+      null,
+      "Salt Lake City",
+      "UT",
+      "USA",
+      5
+    ],
+    [
+      18,
+      "Michelle",
+      "Brooks",
+      null,
+      "New York",
+      "NY",
+      "USA",
+      3
+    ],
+    [
+      21,
+      "Kathy",
+      "Chase",
+      null,
+      "Reno",
+      "NV",
+      "USA",
+      5
+    ]
+  ]
+}

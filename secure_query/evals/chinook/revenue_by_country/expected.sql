@@ -1,0 +1,1 @@
+SELECT "Customer"."Country", SUM("Invoice"."Total") AS "revenue" FROM "Invoice" INNER JOIN "Customer" ON "Invoice"."CustomerId" = "Customer"."CustomerId" GROUP BY "Customer"."Country" ORDER BY "revenue" DESC LIMIT 10

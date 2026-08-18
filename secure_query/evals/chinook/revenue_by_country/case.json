@@ -1,0 +1,26 @@
+{
+  "id": "revenue_by_country",
+  "question": "What is total invoice revenue by customer country?",
+  "expect_validate_ok": true,
+  "checks": {
+    "source": "Invoice",
+    "agg_fn": "sum",
+    "group_column": "Country",
+    "must_join": "Customer"
+  },
+  "expected_sql": "SELECT \"Customer\".\"Country\", SUM(\"Invoice\".\"Total\") AS \"revenue\" FROM \"Invoice\" INNER JOIN \"Customer\" ON \"Invoice\".\"CustomerId\" = \"Customer\".\"CustomerId\" GROUP BY \"Customer\".\"Country\" ORDER BY \"revenue\" DESC LIMIT 10",
+  "expected_rows_prefix": [
+    [
+      "USA",
+      523.0600000000003
+    ],
+    [
+      "Canada",
+      303.9599999999999
+    ],
+    [
+      "France",
+      195.09999999999994
+    ]
+  ]
+}

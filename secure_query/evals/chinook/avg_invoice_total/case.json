@@ -1,0 +1,15 @@
+{
+  "id": "avg_invoice_total",
+  "question": "What is the average invoice total?",
+  "expect_validate_ok": true,
+  "checks": {
+    "source": "Invoice",
+    "agg_fn": "avg"
+  },
+  "expected_sql": "SELECT AVG(\"Invoice\".\"Total\") AS \"avg_total\" FROM \"Invoice\" LIMIT 1",
+  "expected_rows_prefix": [
+    [
+      5.651941747572825
+    ]
+  ]
+}

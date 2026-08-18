@@ -26,37 +26,46 @@ user question
 | `validate.py` | Catalog typecheck + policy gate |
 | `compile.py` | LogicalPlan → DuckDB SQL (AST only) |
 | `errors.py` | Typed ValidationError |
-| `examples/demo_catalog.py` | Runnable demo |
-| `tests/` | Compiler + validator + IR tests |
+| `planner.py` | Phase 2: question → LogicalPlan JSON only |
+| `examples/sample_catalog.py` | **Active** Chinook allowlist |
+| `explain.py` | LogicalPlan → plain English, for human confirmation |
+| `guard.py` | Deterministic question guards (no model involved) |
+| `examples/load_sample_db.py` | Chinook → DuckDB |
+| `examples/run_sample_query.py` | E2E local execute |
+| `examples/ask_sample.py` | E2E NL → plan → SQL → results |
+| `examples/demo_catalog.py` | Re-exports sample catalog |
+| `tests/` | Compiler + validator + IR + planner tests |
 
 ## Quick start
 
 ```bash
 # from repo root (or after copying package next to your app)
-PYTHONPATH=. python -m secure_query.examples.demo_catalog
-
-PYTHONPATH=. pytest secure_query/tests -q
+pip install -e ".[dev]"
+python -m secure_query.examples.load_sample_db
+python -m secure_query.examples.demo_catalog
+python -m secure_query.examples.run_sample_query
+python -m secure_query.examples.ask_sample "revenue by country"
+pytest -q
 ```
 
 ```python
-from secure_query import validate_and_compile
-from secure_query.builder import LQP
-from secure_query.examples.demo_catalog import demo_catalog
+from secure_query import plan_question, default_client
+from secure_query.examples.sample_catalog import sample_catalog
 
-catalog = demo_catalog()
-plan = (
-    LQP.aggregate(table="orders")
-    .join("customers", on=[("orders.customer_id", "customers.customer_id")])
-    .group_by_columns(["customers.region"])
-    .agg("sum", "orders.amount", alias="total_amount")
-    .limit(10)
-    .build()
+result = plan_question(
+    "revenue by country",
+    sample_catalog(),
+    default_client(),  # MockLLMClient if no OPENAI_API_KEY
 )
-compiled = validate_and_compile(plan, catalog)
-print(compiled.sql)
+assert result.status == "ok"
+print(result.compiled.sql)  # compiled locally — not from the LLM
 ```
 
 ## Practical plan (do in order)
+
+Full feature plan: see repo root **`docs/PLAN.md`**.
+
+Phase 2 entrypoint: `secure_query.planner.plan_question` + `examples/ask_sample.py`.
 
 ### Phase 0 — Land the kernel (done here)
 
@@ -65,12 +74,11 @@ print(compiled.sql)
 - [x] `validate_and_compile`
 - [ ] Copy `secure_query/` into your other repo; run tests there
 
-### Phase 1 — Your catalog (accuracy + security)
+### Phase 1 — Catalog
 
-1. Replace `examples/demo_catalog.py` with **your** tables/columns.
-2. Populate `join_keys` (empty list = any join between known cols — fine for dev only).
-3. Mark PII columns (`pii_risk="high"`).
-4. Treat catalog as eng/business-approved, not LLM-authored.
+1. Chinook `sample_catalog.py` + DuckDB (`load_sample_db` / `run_sample_query`).
+2. Mark PII columns (`pii_risk="high"`).
+3. Treat the catalog as eng/business-approved, not LLM-authored.
 
 ### Phase 2 — LLM planner only emits plans
 
@@ -83,14 +91,19 @@ print(compiled.sql)
 
 1. Run SQL with a read-only DB role + statement timeout.
 2. Enforce tenant / RLS in **your** execute layer (not in the LLM).
-3. Cap rows; prefer forbidding `SELECT *` in a product fork (compiler still emits `*` for list intents).
+3. Cap rows. `validate_and_compile` passes an explicit catalog projection, so list
+   intents emit named columns and drop `pii_risk="high"` ones. Calling bare
+   `compile(plan)` without a projection still emits `*` — don't do that in product code.
 4. Decide: may a summarizer LLM see result cells? If no → templates/charts only.
 
 ### Phase 4 — Extreme accuracy
 
 1. Golden tests: fixture `plan.json` → exact `expected.sql`.
-2. Eval set: real questions → expected plans (not just SQL).
-3. Clarify when schema linking is ambiguous.
+2. Execution accuracy: 32 questions with reference SQL (`evals/chinook_live.json`),
+   run with `python -m secure_query.evals.run_chinook --accuracy --provider ollama`.
+   Latest on the full 11-table catalog: 94% correct, 0% wrong, 6% declined.
+3. Refuse rather than answer a near-miss — see `guard.py` and the `policy.*`
+   validation codes. A declined question is a bug to fix; a wrong answer is a breach.
 4. Add approved metrics later (“revenue” = `sum(orders.amount)`).
 
 ## Security checklist

@@ -1,0 +1,22 @@
+{
+  "tenant_id": "chinook",
+  "tokens": {
+    "REPLACE_WITH_RANDOM_API_TOKEN": "finance-analyst"
+  },
+  "principals": {
+    "finance-analyst": {
+      "allowed_tables": ["Invoice", "Customer", "InvoiceLine"],
+      "row_filters": []
+    },
+    "usa-manager": {
+      "allowed_tables": ["Customer", "Invoice"],
+      "row_filters": [
+        {
+          "op": "eq",
+          "column": {"table_id": "Customer", "column_id": "Country"},
+          "value": {"type": "string", "value": "USA"}
+        }
+      ]
+    }
+  }
+}

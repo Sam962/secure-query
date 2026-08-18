@@ -555,3 +555,15 @@ class TestComplexPlans:
         result = compile(plan)
         assert "LIMIT" in result.sql.upper()
         assert "5" in result.sql
+
+
+def test_compile_rejects_cross_join() -> None:
+    plan = LogicalPlan(
+        plan_id=PLAN_ID,
+        source="airports",
+        joins=[Join(right_table="enplanements", kind="cross", conditions=[])],
+        limit=5,
+    )
+    with pytest.raises(CompilationError, match="Cross joins"):
+        compile(plan)
+

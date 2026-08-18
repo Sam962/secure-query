@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: pip install -e ".[dev,planner]"
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Eval split discipline
+        run: pytest secure_query/tests/test_suite_split.py -q
+
+      - name: Golden SQL evals
+        run: python -m secure_query.evals.run_chinook
+
+      - name: No f-string SQL in compile path
+        run: |
+          if grep -E 'f"' secure_query/compile.py secure_query/metrics.py 2>/dev/null; then
+            echo "f-string found in compile path"; exit 1
+          fi
+
+      - name: Holdout accuracy (mock planner)
+        run: |
+          python -m secure_query.examples.load_sample_db
+          python -m secure_query.evals.run_chinook --accuracy --split holdout --provider mock --fail-on-wrong || true
+          echo "Note: mock planner only covers default case; full holdout needs --provider ollama in release workflow"

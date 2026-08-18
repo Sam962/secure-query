@@ -22,6 +22,10 @@ class ColumnSpec(BaseModel):
     description: str = ""
     pii_risk: PiiRisk = "none"
     is_numeric: bool | None = None  # derived from dtype if omitted
+    label_for: str | None = Field(
+        default=None,
+        description="If this FK column, preferred display column as 'Table.Column' for grouping",
+    )
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -37,6 +41,10 @@ class TableSpec(BaseModel):
     name: str
     description: str = ""
     columns: list[ColumnSpec]
+    display_column: str | None = Field(
+        default=None,
+        description="Preferred human-readable column for this table (e.g. Genre.Name)",
+    )
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -70,14 +78,34 @@ class JoinKey(BaseModel):
         return forward or reverse
 
 
+class Synonym(BaseModel):
+    """Maps a natural-language term to a catalog table or column."""
+
+    term: str
+    table_id: str
+    column_id: str | None = None
+    description: str = ""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 class Catalog(BaseModel):
     """Tenant-scoped allowlist used by validate()."""
 
     tenant_id: str
     tables: list[TableSpec]
     join_keys: list[JoinKey] = Field(default_factory=list)
+    synonyms: list[Synonym] = Field(default_factory=list)
+    metric_ids: list[str] = Field(
+        default_factory=list,
+        description="Ids of approved metrics (see metrics.py); listed in planner_summary",
+    )
     max_limit: int = 10000
     require_limit: bool = True
+    sql_dialect: str = Field(
+        default="duckdb",
+        description="sqlglot dialect for compile (duckdb locally, databricks in warehouse)",
+    )
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -100,6 +128,13 @@ class Catalog(BaseModel):
             return True
         return any(jk.matches(lt, lc, rt, rc) for jk in self.join_keys)
 
+    def synonym_map(self) -> dict[str, list[Synonym]]:
+        out: dict[str, list[Synonym]] = {}
+        for syn in self.synonyms:
+            key = syn.term.lower().strip()
+            out.setdefault(key, []).append(syn)
+        return out
+
     def planner_summary(self) -> str:
         """Compact text to send the LLM planner (not raw rows)."""
         lines: list[str] = [f"tenant={self.tenant_id}", "tables:"]
@@ -107,11 +142,24 @@ class Catalog(BaseModel):
             label = f"  - {table.name}"
             if table.description:
                 label = f"{label}: {table.description}"
+            if table.display_column:
+                label = f"{label} (prefer group-by label: {table.display_column})"
             lines.append(label)
             for col in table.columns:
                 pii = f" [pii={col.pii_risk}]" if col.pii_risk != "none" else ""
                 desc = f" — {col.description}" if col.description else ""
-                lines.append(f"      {col.name}: {col.dtype}{pii}{desc}")
+                hint = f" → label via {col.label_for}" if col.label_for else ""
+                lines.append(f"      {col.name}: {col.dtype}{pii}{desc}{hint}")
+        if self.synonyms:
+            lines.append("synonyms (use these mappings):")
+            for syn in self.synonyms:
+                target = syn.table_id if syn.column_id is None else f"{syn.table_id}.{syn.column_id}"
+                note = f" — {syn.description}" if syn.description else ""
+                lines.append(f"  - {syn.term!r} → {target}{note}")
+        if self.metric_ids:
+            lines.append("approved_metrics (prefer metric_id when the question matches):")
+            for mid in self.metric_ids:
+                lines.append(f"  - {mid}")
         if self.join_keys:
             lines.append("approved_joins:")
             for jk in self.join_keys:

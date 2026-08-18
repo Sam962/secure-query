@@ -1,0 +1,52 @@
+{
+  "plan_id": "12345678-1234-1234-1234-123456789abc",
+  "schema_version": "lqp/1",
+  "source": "Invoice",
+  "joins": [
+    {
+      "right_table": "Customer",
+      "kind": "inner",
+      "conditions": [
+        {
+          "left": {
+            "table_id": "Invoice",
+            "column_id": "CustomerId"
+          },
+          "right": {
+            "table_id": "Customer",
+            "column_id": "CustomerId"
+          }
+        }
+      ]
+    }
+  ],
+  "filters": [],
+  "group_by": {
+    "columns": [
+      {
+        "table_id": "Customer",
+        "column_id": "Country"
+      }
+    ],
+    "time_buckets": []
+  },
+  "aggregations": [
+    {
+      "fn": "sum",
+      "column": {
+        "table_id": "Invoice",
+        "column_id": "Total"
+      },
+      "alias": "revenue"
+    }
+  ],
+  "having": [],
+  "order_by": [
+    {
+      "column": null,
+      "alias": "revenue",
+      "direction": "desc"
+    }
+  ],
+  "limit": 10
+}

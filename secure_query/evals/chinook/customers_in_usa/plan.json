@@ -1,0 +1,33 @@
+{
+  "plan_id": "12345678-1234-1234-1234-123456789abc",
+  "schema_version": "lqp/1",
+  "source": "Customer",
+  "joins": [],
+  "filters": [
+    {
+      "op": "eq",
+      "column": {
+        "table_id": "Customer",
+        "column_id": "Country"
+      },
+      "value": {
+        "type": "string",
+        "value": "USA"
+      }
+    }
+  ],
+  "group_by": null,
+  "aggregations": [],
+  "having": [],
+  "order_by": [
+    {
+      "column": {
+        "table_id": "Customer",
+        "column_id": "LastName"
+      },
+      "alias": null,
+      "direction": "asc"
+    }
+  ],
+  "limit": 20
+}

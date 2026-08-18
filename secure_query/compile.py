@@ -59,15 +59,22 @@ class CompiledQuery:
     parameters: list[object]
 
 
-def compile(plan: LogicalPlan, *, dialect: str = DEFAULT_DIALECT) -> CompiledQuery:
+def compile(
+    plan: LogicalPlan,
+    *,
+    dialect: str = DEFAULT_DIALECT,
+    projection: list[ColumnRef] | None = None,
+) -> CompiledQuery:
     """Compile a LogicalPlan to dialect SQL via sqlglot AST.
 
     Returns a CompiledQuery with the SQL text and integrity hashes.
     Raises CompilationError on unhandled nodes or invalid structure.
 
-    Call validate(plan, catalog) first in production — or use validate_and_compile.
+    `projection` names the columns a list intent may return. Without it the
+    compiler falls back to `SELECT *`, which cannot honour column-level policy —
+    so production callers should use validate_and_compile, which supplies it.
     """
-    select = _build_select(plan)
+    select = _build_select(plan, projection)
     sql = select.sql(dialect=dialect, pretty=False)
 
     plan_hash = _hash_plan(plan)
@@ -81,7 +88,9 @@ def compile(plan: LogicalPlan, *, dialect: str = DEFAULT_DIALECT) -> CompiledQue
     )
 
 
-def _build_select(plan: LogicalPlan) -> exp.Select:
+def _build_select(
+    plan: LogicalPlan, projection: list[ColumnRef] | None = None
+) -> exp.Select:
     """Build the full SELECT expression from a LogicalPlan."""
     select = exp.Select()
 
@@ -98,8 +107,10 @@ def _build_select(plan: LogicalPlan) -> exp.Select:
     elif plan.aggregations:
         for agg in plan.aggregations:
             select = select.select(_compile_aggregation(agg))
+    elif projection:
+        for col in projection:
+            select = select.select(_compile_column_ref(col))
     else:
-        # filter_and_list: SELECT * — prefer requiring projections in your product fork
         select = select.select("*")
 
     for having_filt in plan.having:
@@ -116,10 +127,12 @@ def _build_select(plan: LogicalPlan) -> exp.Select:
 
 def _apply_join(select: exp.Select, join: Join) -> exp.Select:
     """Add a JOIN clause to the SELECT."""
+    if join.kind == "cross" or not join.conditions:
+        raise CompilationError(
+            "Cross joins are not allowed; join conditions are required",
+            "$.joins",
+        )
     right_table = exp.Table(this=exp.to_identifier(join.right_table, quoted=True))
-
-    if not join.conditions:
-        return select.join(right_table, join_type="CROSS")
 
     on_clause: exp.Expression | None = None
     for cond in join.conditions:
