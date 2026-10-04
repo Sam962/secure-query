@@ -344,4 +344,181 @@ def extra_dev_cases() -> list[dict]:
         ]
     )
 
+    cases.extend(complex_dev_cases())
     return cases
+
+
+_GENRE_JOIN = (
+    "FROM InvoiceLine JOIN Track ON InvoiceLine.TrackId = Track.TrackId "
+    "JOIN Genre ON Track.GenreId = Genre.GenreId"
+)
+
+
+def complex_dev_cases() -> list[dict]:
+    """Multi-hop joins, HAVING, date-filtered buckets, distinct counts across joins.
+
+    Each reference was checked against the pinned data: non-trivial, and no
+    top-N LIMIT cuts through a tie. Revenue uses UnitPrice * Quantity; every
+    Quantity in this Chinook build is 1, so SUM(UnitPrice) gives the same number.
+    """
+    def case(cid: str, question: str, sql: str, *tags: str) -> dict:
+        return {
+            "id": f"dev_complex_{cid}",
+            "question": question,
+            "expect": "answer",
+            "reference_sql": sql,
+            "tags": ["complex", "dev-generated", *tags],
+        }
+
+    def decline(cid: str, question: str, reason: str) -> dict:
+        return {
+            "id": f"dev_complex_{cid}",
+            "question": question,
+            "expect": "abstain",
+            "reason": reason,
+            "tags": ["complex", "dev-generated", "known-gap"],
+        }
+
+    return [
+        case(
+            "genre_revenue_top5",
+            "Which 5 genres generated the most sales revenue?",
+            f"SELECT Genre.Name, SUM(InvoiceLine.UnitPrice * InvoiceLine.Quantity) {_GENRE_JOIN} "
+            "GROUP BY Genre.Name ORDER BY 2 DESC LIMIT 5",
+            "multihop", "topn",
+        ),
+        case(
+            "artist_revenue_top5",
+            "Who are the top 5 artists by sales revenue?",
+            "SELECT Artist.Name, SUM(InvoiceLine.UnitPrice * InvoiceLine.Quantity) FROM InvoiceLine "
+            "JOIN Track ON InvoiceLine.TrackId = Track.TrackId JOIN Album ON Track.AlbumId = Album.AlbumId "
+            "JOIN Artist ON Album.ArtistId = Artist.ArtistId GROUP BY Artist.Name ORDER BY 2 DESC LIMIT 5",
+            "multihop", "topn",
+        ),
+        case(
+            "tracks_sold_per_media_type",
+            "How many tracks were sold for each media type?",
+            "SELECT MediaType.Name, SUM(InvoiceLine.Quantity) FROM InvoiceLine "
+            "JOIN Track ON InvoiceLine.TrackId = Track.TrackId "
+            "JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId GROUP BY MediaType.Name",
+            "multihop", "group",
+        ),
+        case(
+            "revenue_per_year",
+            "What was total invoice revenue in each year?",
+            "SELECT DATE_TRUNC('year', InvoiceDate), SUM(Total) FROM Invoice GROUP BY 1",
+            "trend", "timebucket",
+        ),
+        case(
+            "monthly_invoices_2022",
+            "How many invoices were there each month in 2022?",
+            "SELECT DATE_TRUNC('month', InvoiceDate), COUNT(*) FROM Invoice "
+            "WHERE InvoiceDate >= '2022-01-01' AND InvoiceDate < '2023-01-01' GROUP BY 1",
+            "trend", "timebucket", "date-filter",
+        ),
+        case(
+            "countries_over_20_invoices",
+            "Which billing countries have more than 20 invoices, and how many does each have?",
+            "SELECT BillingCountry, COUNT(*) FROM Invoice GROUP BY BillingCountry HAVING COUNT(*) > 20",
+            "having", "group",
+        ),
+        case(
+            "genre_revenue_2023_top3",
+            "What were the top 3 genres by sales revenue in 2023?",
+            f"SELECT Genre.Name, SUM(InvoiceLine.UnitPrice * InvoiceLine.Quantity) {_GENRE_JOIN} "
+            "JOIN Invoice ON InvoiceLine.InvoiceId = Invoice.InvoiceId "
+            "WHERE Invoice.InvoiceDate >= '2023-01-01' AND Invoice.InvoiceDate < '2024-01-01' "
+            "GROUP BY Genre.Name ORDER BY 2 DESC LIMIT 3",
+            "multihop", "topn", "date-filter",
+        ),
+        case(
+            "distinct_jazz_buyers",
+            "How many different customers have bought at least one Jazz track?",
+            f"SELECT COUNT(DISTINCT Invoice.CustomerId) {_GENRE_JOIN} "
+            "JOIN Invoice ON InvoiceLine.InvoiceId = Invoice.InvoiceId WHERE Genre.Name = 'Jazz'",
+            "multihop", "distinct",
+        ),
+        case(
+            "long_tracks_per_genre",
+            "How many tracks longer than 5 minutes does each genre have?",
+            "SELECT Genre.Name, COUNT(*) FROM Track JOIN Genre ON Track.GenreId = Genre.GenreId "
+            "WHERE Track.Milliseconds > 300000 GROUP BY Genre.Name",
+            "join", "group", "comparison",
+        ),
+        case(
+            "customers_per_rep",
+            "How many customers does each support rep look after? Show the rep's last name.",
+            "SELECT Employee.LastName, COUNT(*) FROM Customer "
+            "JOIN Employee ON Customer.SupportRepId = Employee.EmployeeId GROUP BY Employee.LastName",
+            "join", "group",
+        ),
+        case(
+            "top_rep_by_revenue",
+            "Which support rep's customers generated the most invoice revenue? Just the top one, by last name.",
+            "SELECT Employee.LastName, SUM(Invoice.Total) FROM Invoice "
+            "JOIN Customer ON Invoice.CustomerId = Customer.CustomerId "
+            "JOIN Employee ON Customer.SupportRepId = Employee.EmployeeId "
+            "GROUP BY Employee.LastName ORDER BY 2 DESC LIMIT 1",
+            "multihop", "topn",
+        ),
+        case(
+            "avg_length_per_media_type",
+            "What is the average track length in milliseconds for each media type?",
+            "SELECT MediaType.Name, AVG(Track.Milliseconds) FROM Track "
+            "JOIN MediaType ON Track.MediaTypeId = MediaType.MediaTypeId GROUP BY MediaType.Name",
+            "join", "group",
+        ),
+        case(
+            "countries_over_40_rev_2024",
+            "Which customer countries had more than $40 of invoice revenue in 2024?",
+            "SELECT Customer.Country, SUM(Invoice.Total) FROM Invoice "
+            "JOIN Customer ON Invoice.CustomerId = Customer.CustomerId "
+            "WHERE Invoice.InvoiceDate >= '2024-01-01' AND Invoice.InvoiceDate < '2025-01-01' "
+            "GROUP BY Customer.Country HAVING SUM(Invoice.Total) > 40",
+            "having", "join", "date-filter",
+        ),
+        case(
+            "quarterly_revenue_2025",
+            "What was total invoice revenue per quarter in 2025?",
+            "SELECT DATE_TRUNC('quarter', InvoiceDate), SUM(Total) FROM Invoice "
+            "WHERE InvoiceDate >= '2025-01-01' AND InvoiceDate < '2026-01-01' GROUP BY 1",
+            "trend", "timebucket", "date-filter",
+        ),
+        case(
+            "invoices_canada_france_2023",
+            "How many invoices were billed to Canada or France in 2023?",
+            "SELECT COUNT(*) FROM Invoice WHERE BillingCountry IN ('Canada', 'France') "
+            "AND InvoiceDate >= '2023-01-01' AND InvoiceDate < '2024-01-01'",
+            "in", "date-filter", "scalar",
+        ),
+        case(
+            "acdc_album_most_tracks",
+            "Which AC/DC album has the most tracks?",
+            "SELECT Album.Title, COUNT(*) FROM Track JOIN Album ON Track.AlbumId = Album.AlbumId "
+            "JOIN Artist ON Album.ArtistId = Artist.ArtistId WHERE Artist.Name = 'AC/DC' "
+            "GROUP BY Album.Title ORDER BY 2 DESC LIMIT 1",
+            "multihop", "topn",
+        ),
+        case(
+            "avg_invoice_three_countries",
+            "What is the average invoice total for each of USA, Canada and Brazil?",
+            "SELECT BillingCountry, AVG(Total) FROM Invoice "
+            "WHERE BillingCountry IN ('USA', 'Canada', 'Brazil') GROUP BY BillingCountry",
+            "in", "group",
+        ),
+        decline(
+            "rock_revenue_share",
+            "What percentage of total sales revenue comes from Rock tracks?",
+            "share of total needs division between aggregates",
+        ),
+        decline(
+            "mom_revenue_change_2024",
+            "How did invoice revenue change month over month in 2024?",
+            "period-over-period change needs a window or self-join",
+        ),
+        decline(
+            "above_average_customers",
+            "Which customers spent more than the average customer?",
+            "comparison against an aggregate needs a subquery",
+        ),
+    ]

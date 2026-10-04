@@ -76,25 +76,34 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
    - Caveat: the first two rules were designed after seeing holdout failures.
      Dev results are the evidence they generalise.
 
+8. [ ] Complex questions (20 dev cases, `--only complex`): 0 wrong but answer-rate
+   35% (6/17), over-refusal 65% — see [baselines/complex-2026-10-04.json](baselines/complex-2026-10-04.json).
+   - [ ] Keyword out-of-scope guard: 6 false vs 3 correct refusals on this set.
+     Ordinary verbs/adjectives ("generated", "bought", "length") read as unknown concepts.
+   - [ ] HAVING cannot reference an aggregate: `having` filters take a ColumnRef,
+     so "more than 20 invoices" is inexpressible. Needs an alias target.
+   - [ ] Multi-hop joins: the model misplaces filters, guesses column names, and
+     forgets joins (3 cases) — the target of item 4.
+
 ### Phase B — real domain (needs a design partner)
 
-8. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
-9. [ ] Collect ≥ 200 questions from real sources (Slack, tickets, dashboards).
+9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
+10. [ ] Collect ≥ 200 questions from real sources (Slack, tickets, dashboards).
    Reference SQL written by someone other than the builder. Freeze the holdout.
-10. [ ] Draft catalog → owner approves PII, join keys, metrics.
-11. [ ] Token or SSO auth; SELECT-only execute identity.
+11. [ ] Draft catalog → owner approves PII, join keys, metrics.
+12. [ ] Token or SSO auth; SELECT-only execute identity.
 
 ### Phase C — head-to-head
 
-12. [ ] Genie adapter in the eval harness (Conversation API), same questions.
-13. [ ] Equal curation: Genie space gets the same instructions, metric
+13. [ ] Genie adapter in the eval harness (Conversation API), same questions.
+14. [ ] Equal curation: Genie space gets the same instructions, metric
     definitions (as trusted assets), and descriptions. Pin dates and versions.
-14. [ ] Publish: correct / wrong / abstain with confidence bounds, both systems.
+15. [ ] Publish: correct / wrong / abstain with confidence bounds, both systems.
 
 ### Phase D — only after C
 
-15. [ ] Follow-up questions as plan edits (the model edits the prior plan).
-16. [ ] Charts chosen deterministically from plan shape.
+16. [ ] Follow-up questions as plan edits (the model edits the prior plan).
+17. [ ] Charts chosen deterministically from plan shape.
 
 **Frozen until Phase C:** new execute backends, new LLM providers.
 
