@@ -202,6 +202,9 @@ class PlannerResult:
     refused_by_model: bool = False
     """The model declined. clarify_code is inferred from its wording (for the UI),
     so it must not be credited to a deterministic guard in eval scorecards."""
+    blocked: CompiledQuery | None = None
+    """A valid plan a post-plan guard refused. Never executed by the product; the
+    eval harness runs it to score whether the guard blocked a right or wrong answer."""
 
 
 class PlannerError(Exception):
@@ -762,6 +765,7 @@ def plan_question(
                         raw_responses=raw_responses,
                         refused=True,
                         clarify_code=code_from_guard_message(gap, refused=True),
+                        blocked=compiled,
                     )
             return PlannerResult(
                 status="ok",

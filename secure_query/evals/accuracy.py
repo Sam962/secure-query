@@ -66,6 +66,9 @@ class Attempt:
     sql: str | None = None
     refusal_code: str | None = None
     """Which control declined (clarify_code), when the system refused."""
+    blocked: str | None = None
+    """On an answerable case a guard refused: would its blocked plan have been right?
+    "right" or "wrong"; None when there was no plan to score (e.g. model refusal)."""
 
 
 @dataclass
@@ -167,7 +170,13 @@ def _run_once(
             )
         if case.expect == "abstain":
             return Attempt(CORRECT, "declined, as expected", refusal_code=code)
-        return Attempt(ABSTAINED, planned.clarify_message or "planner declined", refusal_code=code)
+        blocked = _score_blocked(case, planned.blocked, db_path) if planned.blocked else None
+        return Attempt(
+            ABSTAINED,
+            planned.clarify_message or "planner declined",
+            refusal_code=code,
+            blocked=blocked,
+        )
 
     shape = plan_shape(planned.plan)
 
@@ -213,6 +222,22 @@ def _run_once(
         shape,
         compiled.sql,
     )
+
+
+def _score_blocked(case: LiveCase, compiled: Any, db_path: Path) -> str | None:
+    """Run the plan a guard refused and compare it with the reference."""
+    try:
+        executed = execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=1000))
+    except ExecutionError:
+        return None
+    actual = list(executed.rows)
+    expected = _reference_rows(case, db_path)
+    if _results_match(actual, expected, ordered=case.ordered):
+        return "right"
+    unlimited = _unlimited_reference_rows(case, db_path)
+    if unlimited is not None and _valid_tie_resolution(actual, expected, unlimited):
+        return "right"
+    return "wrong"
 
 
 def _pii_names(catalog: Catalog) -> set[str]:
@@ -392,7 +417,9 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
     answer_rate / over_refusal_rate are over *answerable* cases only (expect=answer);
     mixing in expected refusals would let a system that refuses everything look fine.
     by_refusal_code scores each control: `correct` refusals were on questions that
-    should be declined, `false` ones blocked a question with a real answer.
+    should be declined. On answerable questions, a guard's blocked plan is run:
+    `blocked_wrong` means the guard stopped a wrong answer, `blocked_right` means it
+    cost a right one; `false` is an answerable refusal with no plan to score.
     """
     verdicts = Counter(r.verdict for r in results)
     total = len(results) or 1
@@ -415,7 +442,11 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
         if code is None:
             continue
         bucket = by_code.setdefault(code, Counter())
-        bucket["correct" if r.case.expect == "abstain" else "false"] += 1
+        if r.case.expect == "abstain":
+            bucket["correct"] += 1
+            continue
+        blocked = next((a.blocked for a in reversed(r.attempts) if a.refusal_code), None)
+        bucket[{"right": "blocked_right", "wrong": "blocked_wrong"}.get(blocked, "false")] += 1
 
     return {
         "total": len(results),

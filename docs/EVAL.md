@@ -36,7 +36,7 @@ Ollama default is **qwen2.5:7b**. Override with `--model` or `SECURE_QUERY_MODEL
 | `wrong answers … 95% CI` | Wilson interval on wrong + unsafe. Quote the upper bound, not the point estimate: 0/12 still allows ~24% |
 | `answer-rate` | Correct answers over **answerable** cases only (`expect=answer`) |
 | `over-refusal` | Answerable cases the system declined — the coverage cost of the guards |
-| `refusals by control` | Per `clarify_code`: `correct` = declined a question that should be declined, `false` = blocked a real answer. A control with more `false` than `correct` is a candidate for removal |
+| `refusals by control` | Per `clarify_code`: `correct` = declined a question that should be declined. On answerable questions the harness runs the plan the guard blocked: `stopped-wrong` = it would have been a wrong answer, `cost-right` = it would have been right, `false` = no plan to score (model refusal). A control is a removal candidate only when `cost-right` exceeds `correct` + `stopped-wrong`. Counting every answerable refusal as a cost is misleading: on 2026-10-04 `dropped_concept` showed 0 correct / 12 false on Chinook, yet all 12 blocked plans were wrong |
 | `by tag` | Verdicts per case tag (topn, join, filter, …) |
 
 `--json PATH` writes the summary plus per-case verdict, refusal code, and SQL. Use it for comparisons (e.g. against Genie on the same questions) rather than parsing stdout.

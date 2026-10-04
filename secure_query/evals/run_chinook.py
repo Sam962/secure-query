@@ -294,9 +294,17 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     if args.repeat > 1:
         print(f"consistency   {stats['consistency']:.0%}  (same plan shape across repeats)")
     if stats["by_refusal_code"]:
-        print("refusals by control   (correct = should decline, false = blocked a real answer)")
+        print(
+            "refusals by control   (correct = should decline; on answerable cases the "
+            "blocked plan stopped a wrong / cost a right answer; false = no plan to score)"
+        )
         for code, counts in stats["by_refusal_code"].items():
-            print(f"  {code:20} correct={counts.get('correct', 0):3}  false={counts.get('false', 0):3}")
+            print(
+                f"  {code:20} correct={counts.get('correct', 0):3}"
+                f"  stopped-wrong={counts.get('blocked_wrong', 0):3}"
+                f"  cost-right={counts.get('blocked_right', 0):3}"
+                f"  false={counts.get('false', 0):3}"
+            )
     print("by tag")
     for tag, counts in stats["by_tag"].items():
         n = sum(counts.values())
@@ -346,6 +354,7 @@ def _write_json_report(path, stats, results, *, provider, model, digest) -> None
                     (a.refusal_code for a in reversed(r.attempts) if a.refusal_code), None
                 ),
                 "detail": r.attempts[-1].detail if r.attempts else None,
+                "blocked": r.attempts[-1].blocked if r.attempts else None,
                 "sql": r.attempts[-1].sql if r.attempts else None,
             }
             for r in results

@@ -98,8 +98,17 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
      pre-existing); Northwind unchanged at 22/36, 4 wrong (none were avg-per).
      Known cost: "average track length per genre" is refused.
      See [baselines/chinook-avg-per-guard-2026-10-04.json](baselines/chinook-avg-per-guard-2026-10-04.json).
-   - [ ] With labels fixed, `dropped_concept` is 0 correct / 12 false on Chinook
-     and 1 / 6 on Northwind: by the EVAL rule it is a removal candidate.
+   - [x] `dropped_concept` looked like a removal candidate (0 correct / 12 false
+     on Chinook). Ablation (guard off): Chinook wrong 1 → 13, since all 12 blocked
+     plans were wrong; Northwind wrong 4 → 7 (3 wrong + 1 PII leak stopped, 3 right
+     answers cost). Kept. The scorecard now runs each guard-blocked plan and
+     reports `stopped-wrong` / `cost-right`, so this needs no ablation next time.
+     Scored run (no product change): Chinook `dropped_concept` stopped-wrong 12 /
+     cost-right 0; Northwind 3 / 3. See [baselines/chinook-guard-scorecard-2026-10-04.json](baselines/chinook-guard-scorecard-2026-10-04.json).
+   - [ ] `dropped_filter` costs more than it saves on Chinook dev (stopped-wrong 1,
+     cost-right 2; Northwind 1 / 2). It still prevents wrong answers, so fix its
+     misfires (unit conversions, values the plan expresses via another column)
+     rather than remove it.
 5. [x] Eval report: Wilson 95% bounds, answer-rate and over-refusal on answerable
    cases, per-control refusal scorecard, per-tag breakdown, `--json` output.
 6. [ ] Nightly live-model eval job (CI keeps the mock gate).

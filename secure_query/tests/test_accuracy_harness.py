@@ -229,3 +229,37 @@ def test_model_refusal_is_not_credited_to_a_guard() -> None:
     case = LiveCase("c", "How many tracks are there?", "answer", reference_sql="SELECT 1")
     result = run_live_case(case, sample_catalog(), client, Path("unused.duckdb"))
     assert result.attempts[0].refusal_code == "planner_refusal"
+
+
+@pytest.mark.skipif(not DUCKDB_PATH.exists(), reason="sample DB not built")
+def test_guard_refusal_is_scored_by_running_the_blocked_plan() -> None:
+    """A refusal on an answerable case is only a cost if the blocked plan was right."""
+    import json
+
+    from secure_query.evals.accuracy import run_live_case
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.planner import MockLLMClient
+
+    # "How many invoices from Brazil?" answered without the Brazil filter:
+    # dropped_literals refuses, and the plan it blocked counts every invoice.
+    unfiltered = json.dumps(
+        {
+            "source": "Invoice",
+            "filters": [],
+            "group_by": None,
+            "aggregations": [{"fn": "count", "column": None, "alias": "n"}],
+            "having": [],
+            "order_by": [],
+            "limit": 1,
+        }
+    )
+    question = "How many invoices were billed to Brazil?"
+    stopped = LiveCase(
+        "s", question, "answer",
+        reference_sql="SELECT COUNT(*) FROM Invoice WHERE BillingCountry = 'Brazil'",
+    )
+    cost = LiveCase("c", question, "answer", reference_sql="SELECT COUNT(*) FROM Invoice")
+    for case, expected in ((stopped, "blocked_wrong"), (cost, "blocked_right")):
+        result = run_live_case(case, sample_catalog(), MockLLMClient([unfiltered]), DUCKDB_PATH)
+        assert result.verdict == ABSTAINED
+        assert summarise([result])["by_refusal_code"] == {"dropped_filter": {expected: 1}}
