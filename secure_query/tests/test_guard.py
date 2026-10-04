@@ -248,3 +248,29 @@ def test_dropped_concepts_refusal_is_scored_as_that_guard() -> None:
     msg = dropped_concepts("How many invoices per genre?", plan, CATALOG)
     assert msg is not None
     assert code_from_guard_message(msg, refused=True) == "dropped_concept"
+
+
+def test_average_per_other_entity_is_refused() -> None:
+    from secure_query.kernel.builder import LQP
+    from secure_query.planner.clarify import code_from_guard_message
+    from secure_query.planner.guard import averaged_per_other_entity
+
+    per_invoice = LQP.aggregate(table="Invoice").agg("avg", "Invoice.Total", alias="a").limit(1).build()
+    grouped = (
+        LQP.aggregate(table="Invoice")
+        .group_by_columns(["Customer.CustomerId"])
+        .agg("avg", "Invoice.Total", alias="a")
+        .limit(100)
+        .build()
+    )
+    for plan in (per_invoice, grouped):
+        msg = averaged_per_other_entity("What is the average spend per customer?", plan, CATALOG)
+        assert msg is not None
+        assert code_from_guard_message(msg, refused=True) == "analyst_handoff"
+
+    # AVG over the named entity's own rows answers "per <entity>".
+    assert averaged_per_other_entity("Average total per invoice?", per_invoice, CATALOG) is None
+    # No "per": "for each" is the grouped reading.
+    assert averaged_per_other_entity("Average total for each customer", grouped, CATALOG) is None
+    # "per" followed by a word that names no table: nothing to check.
+    assert averaged_per_other_entity("Average total per cent", per_invoice, CATALOG) is None

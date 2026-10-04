@@ -23,6 +23,7 @@ from uuid import uuid4
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.planner.guard import (
+    averaged_per_other_entity,
     dropped_average,
     dropped_count,
     dropped_concepts,
@@ -747,6 +748,7 @@ def plan_question(
                     or opaque_grouping_keys(question, plan, catalog)
                     or dropped_concepts(question, plan, catalog)
                     or dropped_average(question, plan)
+                    or averaged_per_other_entity(question, plan, catalog)
                     or dropped_count(question, plan)
                     or dropped_literals(question, plan, catalog)
                 )

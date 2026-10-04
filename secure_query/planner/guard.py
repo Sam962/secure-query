@@ -355,6 +355,47 @@ def dropped_average(question: str, plan: LogicalPlan) -> str | None:
     )
 
 
+_AVG_PER_RE = re.compile(
+    r"\b(?:average|averages|avg|mean)\b.*?\bper\s+([a-z]+)(?:\s+([a-z]+))?", re.IGNORECASE
+)
+
+
+def averaged_per_other_entity(
+    question: str, plan: LogicalPlan, catalog: Catalog
+) -> str | None:
+    """Reason to refuse when "average X per Y" averages rows of a table other than Y.
+
+    AVG(Total) over invoices is the average per *invoice*. "Average spend per
+    customer" is a total divided by a count of customers, and grouping by
+    customer does not fix it: that is each customer's average invoice. Only an
+    AVG over Y's own rows ("average total per invoice") answers the question.
+    "Per" is ambiguous ("average length per genre" usually means for each
+    genre), so the refusal says how to ask for the grouped reading.
+    """
+    match = _AVG_PER_RE.search(question)
+    averaged = {a.column.table_id for a in plan.aggregations if a.fn == "avg" and a.column}
+    if match is None or not averaged:
+        return None
+    word, next_word = match.group(1).lower(), (match.group(2) or "").lower()
+    terms = _expand_term(word) | ({word + next_word} if next_word else set())
+    vocabulary = catalog_vocabulary(catalog)
+    display = {t.name: t.display_column for t in catalog.tables}
+    entity_tables = {
+        c.table
+        for term in terms
+        for c in vocabulary.get(term, set())
+        if c.column is None or display.get(c.table) == f"{c.table}.{c.column}"
+    }
+    if not entity_tables or averaged <= entity_tables:
+        return None
+    return (
+        f'The question asks for an average per {word}, but this plan averages '
+        f"{', '.join(sorted(averaged))} rows. A per-{word} figure is a ratio (a total "
+        f"divided by a count of {word}s), which no plan here can compute. "
+        f'To get one average for each {word}, ask "average … for each {word}".'
+    )
+
+
 _VALUE_WORD_RE = re.compile(r"\b(?:[A-Z][\w'&]*|(?:19|20)\d\d)\b")
 
 

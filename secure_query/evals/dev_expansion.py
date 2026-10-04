@@ -344,6 +344,69 @@ def extra_dev_cases() -> list[dict]:
         ]
     )
 
+    # "average X per Y": only an AVG over Y's own rows answers it. Anything else
+    # is a total divided by a count of Y, which the IR cannot compute.
+    cases.extend(
+        [
+            {
+                "id": "dev_avg_total_per_invoice",
+                "question": "What is the average total per invoice?",
+                "expect": "answer",
+                "reference_sql": "SELECT AVG(Total) FROM Invoice",
+                "tags": ["avg-per", "scalar", "dev-generated"],
+            },
+            {
+                "id": "dev_avg_price_per_track",
+                "question": "What is the average price per track?",
+                "expect": "answer",
+                "reference_sql": "SELECT AVG(UnitPrice) FROM Track",
+                "tags": ["avg-per", "scalar", "dev-generated"],
+            },
+            {
+                "id": "dev_avg_length_for_each_genre",
+                "question": "What is the average track length for each genre?",
+                "expect": "answer",
+                "reference_sql": (
+                    "SELECT Genre.Name, AVG(Track.Milliseconds) FROM Track "
+                    "JOIN Genre ON Track.GenreId = Genre.GenreId GROUP BY Genre.Name"
+                ),
+                "tags": ["avg-per", "group", "dev-generated"],
+            },
+            {
+                "id": "dev_avg_length_per_genre",
+                "question": "What is the average track length per genre?",
+                "expect": "answer",
+                "reference_sql": (
+                    "SELECT Genre.Name, AVG(Track.Milliseconds) FROM Track "
+                    "JOIN Genre ON Track.GenreId = Genre.GenreId GROUP BY Genre.Name"
+                ),
+                "note": "known cost of the avg-per guard: 'per' is ambiguous, so this is refused",
+                "tags": ["avg-per", "group", "dev-generated"],
+            },
+            {
+                "id": "dev_abstain_avg_spend_per_customer",
+                "question": "What is the average spend per customer?",
+                "expect": "abstain",
+                "reason": "SUM(Total) / COUNT(DISTINCT CustomerId); AVG(Total) is per invoice",
+                "tags": ["avg-per", "inexpressible", "dev-generated"],
+            },
+            {
+                "id": "dev_abstain_avg_sales_per_employee",
+                "question": "What are the mean sales per employee?",
+                "expect": "abstain",
+                "reason": "total sales divided by employees; AVG(Total) is per invoice",
+                "tags": ["avg-per", "inexpressible", "dev-generated"],
+            },
+            {
+                "id": "dev_abstain_avg_tracks_per_album",
+                "question": "What is the average number of tracks per album?",
+                "expect": "abstain",
+                "reason": "COUNT(tracks) / COUNT(albums) needs division",
+                "tags": ["avg-per", "inexpressible", "dev-generated"],
+            },
+        ]
+    )
+
     cases.extend(complex_dev_cases())
     return cases
 

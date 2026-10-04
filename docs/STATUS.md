@@ -16,7 +16,8 @@
 - CI: pytest, f-string SQL grep, mock holdout
 
 **Holdout (qwen2.5:7b @ 845dbda0ea48, 2026-10-04):** 12/12, 0 wrong (3 repeats) with
-the old Chinook-worded prompt; **11/12, 1 wrong** with the generic prompt (see item 4).
+the old Chinook-worded prompt; 11/12 with the generic prompt alone; **12/12, 0 wrong**
+with the generic prompt + `averaged_per_other_entity` guard (1 repeat; see item 4).
 **Northwind (second schema):** 22/36, 4 wrong.
 **Dev:** 100/101, 0 wrong. The 2026-10-03 failure was model drift (tag re-pulled
 2026-09-07); see [baselines/holdout-2026-10-04.txt](baselines/holdout-2026-10-04.txt).
@@ -88,6 +89,17 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
      - Over-refusal: `dropped_concepts` on common words ("units", "shipped") 5×;
        `dropped_filter` on category/shipper names 3×.
    - [x] Scorecard fix: `dropped_concepts` refusals were labelled `planner_refusal`.
+   - [x] `averaged_per_other_entity` guard: "average X per Y" where Y names a
+     table and the AVG runs over another table's rows is refused (a ratio the IR
+     cannot compute), grouped or not; the message suggests "for each Y". Built
+     on 7 new dev cases (`--only avg-per`: 4 wrong → 0 wrong). Results:
+     holdout **12/12, 0 wrong** again (the guard, not the prompt, now declines
+     `avg_revenue_per_customer`); dev 110/128, 1 wrong (`dev_complex_acdc_album_most_tracks`,
+     pre-existing); Northwind unchanged at 22/36, 4 wrong (none were avg-per).
+     Known cost: "average track length per genre" is refused.
+     See [baselines/chinook-avg-per-guard-2026-10-04.json](baselines/chinook-avg-per-guard-2026-10-04.json).
+   - [ ] With labels fixed, `dropped_concept` is 0 correct / 12 false on Chinook
+     and 1 / 6 on Northwind: by the EVAL rule it is a removal candidate.
 5. [x] Eval report: Wilson 95% bounds, answer-rate and over-refusal on answerable
    cases, per-control refusal scorecard, per-tag breakdown, `--json` output.
 6. [ ] Nightly live-model eval job (CI keeps the mock gate).
