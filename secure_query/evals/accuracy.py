@@ -29,7 +29,7 @@ from typing import Any
 from secure_query.kernel.catalog import Catalog
 from secure_query.engine.execute import ExecuteOptions, ExecutionError, execute_duckdb
 from secure_query.kernel.logical_plan import LogicalPlan
-from secure_query.planner import plan_question
+from secure_query.planner import PlannerError, plan_question
 from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
 
 LIVE_SUITE_PATH = Path(__file__).resolve().parent / "chinook_live.json"
@@ -148,7 +148,12 @@ def run_live_case(
 def _run_once(
     case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int
 ) -> Attempt:
-    planned = plan_question(case.question, catalog, client, max_repairs=max_repairs)
+    try:
+        planned = plan_question(case.question, catalog, client, max_repairs=max_repairs)
+    except PlannerError as exc:
+        # Transport failure (e.g. Ollama gone after the laptop slept): score this
+        # case as an error and keep going instead of losing the whole run.
+        return Attempt(ERROR, f"planner error: {exc}")
 
     if planned.status != "ok" or planned.plan is None:
         if case.expect == "abstain":
@@ -185,8 +190,12 @@ def _run_once(
         )
 
     expected = _reference_rows(case, db_path)
-    if _results_match(list(executed.rows), expected, ordered=case.ordered):
+    actual = list(executed.rows)
+    if _results_match(actual, expected, ordered=case.ordered):
         return Attempt(CORRECT, "matches reference", shape, compiled.sql)
+    unlimited = _unlimited_reference_rows(case, db_path)
+    if unlimited is not None and _valid_tie_resolution(actual, expected, unlimited):
+        return Attempt(CORRECT, "matches reference (ties at the LIMIT broken differently)", shape, compiled.sql)
     return Attempt(
         WRONG,
         f"expected {_preview(expected)}, got {_preview(list(executed.rows))}",
@@ -233,6 +242,62 @@ def _reference_rows(case: LiveCase, db_path: Path) -> list[tuple[Any, ...]]:
         return con.execute(case.reference_sql).fetchall()
     finally:
         con.close()
+
+
+def _unlimited_reference_rows(case: LiveCase, db_path: Path) -> list[tuple[Any, ...]] | None:
+    """Reference rows with LIMIT removed, or None when the reference has no LIMIT."""
+    import duckdb
+    import sqlglot
+
+    tree = sqlglot.parse_one(case.reference_sql or "", read="duckdb")
+    if not tree.args.get("limit"):
+        return None
+    tree.set("limit", None)
+    con = duckdb.connect(str(db_path), read_only=True)
+    try:
+        return con.execute(tree.sql(dialect="duckdb")).fetchall()
+    finally:
+        con.close()
+
+
+def _valid_tie_resolution(
+    actual: list[tuple[Any, ...]],
+    expected: list[tuple[Any, ...]],
+    unlimited: list[tuple[Any, ...]],
+) -> bool:
+    """A LIMIT that cuts through a tie may legally return any of the tied rows.
+
+    "Top 3 billing countries" when France and Brazil tie for third has two right
+    answers, and DuckDB picks one arbitrarily per execution. Accept `actual` when
+    every row is a real row of the un-LIMITed reference and its numeric values
+    (the measures being ranked) match the reference top-N exactly. Swapping a
+    tied row keeps that profile; returning a lower-ranked row does not.
+    """
+    if len(actual) != len(expected) or not expected or len(unlimited) <= len(expected):
+        return False
+    width = len(expected[0])
+    if any(len(row) != width for row in actual):
+        return False
+    target = _numeric_profile(expected)
+    orders = permutations(range(width)) if width <= 4 else [tuple(range(width))]
+    for perm in orders:
+        rows = [tuple(row[i] for i in perm) for row in actual]
+        if _numeric_profile(rows) != target:
+            continue
+        if all(any(_row_close(r, u) for u in unlimited) for r in rows):
+            return True
+    return False
+
+
+def _numeric_profile(rows: list[tuple[Any, ...]]) -> list[tuple[float, ...]]:
+    return sorted(
+        tuple(
+            round(float(c), 4)
+            for c in row
+            if isinstance(c, (int, float)) and not isinstance(c, bool)
+        )
+        for row in rows
+    )
 
 
 def _results_match(

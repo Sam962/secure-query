@@ -24,6 +24,7 @@ from secure_query.planner import (
     OpenAIClient,
     PlannerError,
     default_client,
+    ollama_model_digest,
     plan_question,
     resolve_llm_settings,
 )
@@ -82,6 +83,15 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "Override SECURE_QUERY_MODEL. Ollama default is qwen2.5:7b "
             "(llama3.2 is too weak for LogicalPlan JSON)."
+        ),
+    )
+    parser.add_argument(
+        "--expect-digest",
+        default=os.environ.get("SECURE_QUERY_MODEL_DIGEST") or None,
+        metavar="PREFIX",
+        help=(
+            "Refuse to run unless the Ollama model digest starts with PREFIX "
+            "(default: SECURE_QUERY_MODEL_DIGEST). Tags can be re-pulled to a new build."
         ),
     )
     parser.add_argument(
@@ -197,7 +207,21 @@ def _run_accuracy(args: argparse.Namespace) -> int:
 
     provider = getattr(client, "provider", type(client).__name__)
     model = getattr(client, "_model", None)
-    print(f"provider={provider}" + (f" model={model}" if model else "") + f"  repeats={args.repeat}")
+    digest = ollama_model_digest(model) if provider == "ollama" and model else None
+    print(
+        f"provider={provider}"
+        + (f" model={model}" if model else "")
+        + (f" digest={digest[:12]}" if digest else "")
+        + f"  repeats={args.repeat}"
+    )
+    if args.expect_digest and provider != "mock":
+        if digest is None or not digest.startswith(args.expect_digest):
+            print(
+                f"ERROR: model digest {digest[:12] if digest else 'unknown'} does not match "
+                f"pinned {args.expect_digest}; results would not be comparable to the baseline",
+                file=sys.stderr,
+            )
+            return -1
 
     catalog = sample_catalog()
     suite = load_live_suite(split=args.split)

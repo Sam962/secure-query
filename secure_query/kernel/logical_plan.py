@@ -53,6 +53,26 @@ class LiteralValue(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    @model_validator(mode="before")
+    @classmethod
+    def parse_iso_dates(cls, data: object) -> object:
+        """JSON has no date type: accept ISO strings for type=date/datetime.
+
+        Without this, {"type": "date", "value": "2011-01-01"} from the planner can
+        never validate, so every date-range question is unanswerable.
+        """
+        if not isinstance(data, dict) or not isinstance(data.get("value"), str):
+            return data
+        kind = data.get("type")
+        if kind not in ("date", "datetime"):
+            return data
+        raw = data["value"].strip()
+        try:
+            value = date.fromisoformat(raw) if kind == "date" else datetime.fromisoformat(raw)
+        except ValueError as exc:
+            raise ValueError(f"LiteralValue {raw!r} is not an ISO {kind}") from exc
+        return {**data, "value": value}
+
     @model_validator(mode="after")
     def validate_type_matches_value(self) -> LiteralValue:
         """Enforce that `type` matches the concrete Python type of `value`."""

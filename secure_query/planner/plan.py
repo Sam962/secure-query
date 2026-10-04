@@ -23,6 +23,7 @@ from uuid import uuid4
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.planner.guard import (
+    dropped_average,
     dropped_concepts,
     opaque_grouping_keys,
     out_of_scope_request,
@@ -97,6 +98,15 @@ Rules:
      {"type": "string", "value": "Brazil"},
      {"type": "string", "value": "France"}
    ]}
+  BETWEEN filter shape (note: "low" and "high" — not "values"):
+  {"op": "between", "column": {"table_id": "Invoice", "column_id": "Total"},
+   "low": {"type": "float", "value": 5.0}, "high": {"type": "float", "value": 10.0}}
+  Date ranges on a date/datetime column: use two filters, gte the start and lt the
+  day after the end, with ISO date literals. "in 2023" is:
+  {"op": "gte", "column": {"table_id": "Invoice", "column_id": "InvoiceDate"},
+   "value": {"type": "date", "value": "2023-01-01"}},
+  {"op": "lt", "column": {"table_id": "Invoice", "column_id": "InvoiceDate"},
+   "value": {"type": "date", "value": "2024-01-01"}}
   Do NOT use "left"/"right" for filters — those are only for join conditions.
   Do NOT use {"type": "list", "value": [...]} — that is invalid.
 - group_by is either null or {"columns": [...], "time_buckets": []} — never a bare list.
@@ -251,6 +261,14 @@ class OpenAIClient:
         self._client = OpenAI(**kwargs)
 
     def complete(self, messages: list[dict[str, str]]) -> str:
+        from openai import APIConnectionError, APITimeoutError, RateLimitError
+
+        try:
+            return self._complete(messages)
+        except (APIConnectionError, APITimeoutError) as exc:
+            raise PlannerError(f"LLM unreachable ({self.provider} {self._model}): {exc}") from exc
+
+    def _complete(self, messages: list[dict[str, str]]) -> str:
         from openai import RateLimitError
 
         create_kwargs: dict[str, Any] = {
@@ -438,6 +456,26 @@ def _ollama_reachable(host: str = "http://localhost:11434") -> bool:
             return 200 <= getattr(resp, "status", 200) < 300
     except (urllib.error.URLError, TimeoutError, OSError):
         return False
+
+
+def ollama_model_digest(model: str, host: str | None = None) -> str | None:
+    """Content digest of a local Ollama model. Tags like qwen2.5:7b can be re-pulled
+    to a different build; the digest is the version an eval baseline should record."""
+    import urllib.error
+    import urllib.request
+
+    base = (host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")).rstrip("/")
+    try:
+        with urllib.request.urlopen(base + "/api/tags", timeout=2) as resp:
+            models = json.loads(resp.read().decode("utf-8")).get("models", [])
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return None
+    names = {model, model if ":" in model else f"{model}:latest"}
+    for entry in models:
+        if entry.get("name") in names or entry.get("model") in names:
+            digest = entry.get("digest")
+            return str(digest) if digest else None
+    return None
 
 
 def resolve_llm_settings() -> dict[str, Any] | None:
@@ -703,6 +741,7 @@ def plan_question(
                     useless_joins(plan)
                     or opaque_grouping_keys(question, plan, catalog)
                     or dropped_concepts(question, plan, catalog)
+                    or dropped_average(question, plan)
                 )
                 if gap is not None:
                     return PlannerResult(

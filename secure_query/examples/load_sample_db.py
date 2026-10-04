@@ -16,12 +16,17 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 import urllib.request
 from pathlib import Path
 
+# Pinned to an upstream commit: eval reference answers depend on the exact rows
+# (upstream once moved every invoice date to 2021-2025). Bump both together.
+CHINOOK_COMMIT = "ac32dbc3d5b383633c3fd687934f9c719773f00d"
+CHINOOK_SHA256 = "7651ba378ac2fcd0dfc3c66fb101f7a7eed3ba39a612ec642b96e20702061f15"
 CHINOOK_URL = (
-    "https://github.com/lerocha/chinook-database/raw/master/"
+    f"https://github.com/lerocha/chinook-database/raw/{CHINOOK_COMMIT}/"
     "ChinookDatabase/DataSources/Chinook_Sqlite.sqlite"
 )
 
@@ -96,10 +101,15 @@ def create_schema(duck) -> None:
 
 def download_chinook_sqlite(dest: Path = SQLITE_PATH) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists() and dest.stat().st_size > 0:
-        return dest
-    print(f"Downloading Chinook SQLite → {dest}")
-    urllib.request.urlretrieve(CHINOOK_URL, dest)
+    if not (dest.exists() and dest.stat().st_size > 0):
+        print(f"Downloading Chinook SQLite → {dest}")
+        urllib.request.urlretrieve(CHINOOK_URL, dest)
+    digest = hashlib.sha256(dest.read_bytes()).hexdigest()
+    if digest != CHINOOK_SHA256:
+        raise ValueError(
+            f"{dest} has sha256 {digest[:12]}, expected {CHINOOK_SHA256[:12]} "
+            f"(Chinook commit {CHINOOK_COMMIT[:7]}); delete it and re-run"
+        )
     return dest
 
 
@@ -171,15 +181,21 @@ def load_synthetic(duckdb_path: Path = DUCKDB_PATH) -> Path:
     return duckdb_path
 
 
-def load_sample_db(*, prefer_download: bool = True) -> Path:
-    """Return path to data/chinook.duckdb, downloading Chinook when possible."""
+def load_sample_db(*, prefer_download: bool = True, strict: bool = False) -> Path:
+    """Return path to data/chinook.duckdb, downloading Chinook when possible.
+
+    `strict` disables the synthetic fallback: evals scored against synthetic
+    rows are meaningless, so CI must fail rather than fall back.
+    """
     if prefer_download:
         try:
             sqlite_path = download_chinook_sqlite()
             path = load_from_chinook_sqlite(sqlite_path)
             print(f"Wrote {path}")
             return path
-        except Exception as exc:  # network / parse issues
+        except Exception as exc:  # network / parse / checksum issues
+            if strict:
+                raise
             print(f"Download failed ({exc}); using synthetic data")
     path = load_synthetic()
     print(f"Wrote {path}")
@@ -187,4 +203,6 @@ def load_sample_db(*, prefer_download: bool = True) -> Path:
 
 
 if __name__ == "__main__":
-    load_sample_db(prefer_download=True)
+    import sys
+
+    load_sample_db(prefer_download=True, strict="--strict" in sys.argv[1:])

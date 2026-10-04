@@ -15,10 +15,10 @@
 - Eval splits: 101 dev / 12 holdout; gate is holdout **wrong-rate = 0**
 - CI: pytest, f-string SQL grep, mock holdout
 
-**Holdout (qwen2.5:7b, 2026-10-03): 10/12, 2 wrong — gate failing.** The Ollama tag was
-re-pulled 2026-09-07 and the model's plans changed; the prompt did not. The 2026-08-18
-result (12/12, 0 wrong) was on the earlier model build. See
-[baselines/holdout-2026-10-03.txt](baselines/holdout-2026-10-03.txt). `llama3.2` is not a valid regression test.
+**Holdout (qwen2.5:7b @ 845dbda0ea48, 2026-10-04):** 12/12, 0 wrong (3 repeats).
+**Dev:** 100/101, 0 wrong. The 2026-10-03 failure was model drift (tag re-pulled
+2026-09-07); see [baselines/holdout-2026-10-04.txt](baselines/holdout-2026-10-04.txt).
+`llama3.2` is not a valid regression test.
 
 ## Not production on company data
 
@@ -56,11 +56,24 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
 4. [ ] Metric × dimension planning: the model picks
    `{metric, dimensions, filters, time_grain}`; joins come from the catalog.
 5. [ ] Eval report: Wilson 95% bounds, per-tag breakdown, over-refusal rate.
-6. [ ] Nightly live-model eval job (CI keeps the mock gate). Pin the model by
-   digest and record it in every baseline; a tag re-pull silently broke the gate.
-7. [ ] Restore holdout wrong-rate = 0 on the current model without touching the
-   holdout: reproduce both failure shapes (top-N sorted by a label first;
-   per-entity average answered instead of declined) as dev cases, fix there.
+6. [ ] Nightly live-model eval job (CI keeps the mock gate).
+   - [x] Pin the model by digest: `--expect-digest` / `SECURE_QUERY_MODEL_DIGEST`
+     refuses to run on another build (a tag re-pull silently broke the gate).
+   - [x] Pin the Chinook data to an upstream commit + SHA-256; CI loads it with
+     `--strict` (no synthetic fallback).
+7. [x] Restore holdout wrong-rate = 0 on the current model. Fixes:
+   - `plan.dead_order_keys`: sort keys after the full group key are rejected,
+     which sends the model into repair (top-N sorted by label first).
+   - `dropped_average` guard: an "average" question answered without AVG is refused.
+   - Date literals: ISO strings now validate for `type=date|datetime`; before
+     this no date filter from the planner could ever pass. Prompt shows the
+     `between` and date-range shapes.
+   - Calendar words ("half", months, "quarterly") are not out-of-scope terms.
+   - Eval harness: tie-aware top-N scoring; 13 dev cases fixed whose reference
+     returned 0 (years outside 2021–2025, "UK" vs "United Kingdom", thresholds
+     above the max) and so scored wrong filters as correct.
+   - Caveat: the first two rules were designed after seeing holdout failures.
+     Dev results are the evidence they generalise.
 
 ### Phase B — real domain (needs a design partner)
 

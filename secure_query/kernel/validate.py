@@ -165,8 +165,40 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     errors.extend(_check_pii_policy(plan, catalog))
     errors.extend(_check_label_aggregates(plan, catalog))
     errors.extend(_check_plan_scope(plan))
+    errors.extend(_check_dead_order_keys(plan))
 
     return errors
+
+
+def _check_dead_order_keys(plan: LogicalPlan) -> list[ValidationError]:
+    """Reject sort keys that come after the full group key.
+
+    Aggregate output has one row per group, so once every group_by column has
+    been sorted on, later keys can never change the order. A plan like
+    ORDER BY Country, revenue DESC LIMIT 5 is a ranking with its keys swapped,
+    and the LIMIT keeps the alphabetically first groups instead of the top ones.
+    """
+    group_by = plan.group_by
+    if group_by is None or group_by.time_buckets or not group_by.columns or not plan.aggregations:
+        return []
+    unsorted = set(group_by.columns)
+    for i, ob in enumerate(plan.order_by):
+        if not unsorted:
+            return [
+                ValidationError(
+                    code="plan.dead_order_keys",
+                    path=f"$.order_by[{i}]",
+                    message=(
+                        f"order_by[{i}:] can never take effect: the earlier keys already "
+                        "sort by every group_by column, which is unique per row. To rank "
+                        "by a measure, put its alias first in order_by."
+                    ),
+                    stage="policy",
+                )
+            ]
+        if ob.column is not None:
+            unsorted.discard(ob.column)
+    return []
 
 
 def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:

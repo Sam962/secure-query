@@ -20,11 +20,14 @@ python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wr
 
 Ollama default is **qwen2.5:7b**. Override with `--model` or `SECURE_QUERY_MODEL`. `llama3.2` is too weak for LogicalPlan JSON and is not a kernel regression.
 
+**Pin the model build, not just the tag.** An Ollama tag can be re-pulled to a different build: `qwen2.5:7b` changed on 2026-09-07 and the holdout went from 0 to 2 wrong with an identical prompt. The runner prints `digest=` for Ollama models; pass `--expect-digest <prefix>` (or set `SECURE_QUERY_MODEL_DIGEST`) and it refuses to run against any other build (exit 2). Record the digest in every baseline.
+
 ## How scores work
 
 - **accuracy** includes expected refusals: if the case is `expect=abstain` and the kernel declines, that is `[OK]`.
 - The **abstained** headline is *unexpected* refusals on questions that should have been answered.
 - **wrong** (plus unsafe PII leak) is the release gate. `--fail-on-wrong` uses that, not raw accuracy.
+- **Ties at a LIMIT:** when a reference query's LIMIT cuts through a tie ("top 3" with France and Brazil tied for third), any tie-breaking is correct. The harness accepts a result whose rows all exist in the un-LIMITed reference and whose numeric values match the reference top-N exactly. Returning a lower-ranked row is still wrong.
 
 Four Chinook holdout cases are frozen as abstain: `list_all_emails`, `supplier_spend`, `revenue_growth_rate`, `avg_revenue_per_customer`. Do not flip those expects as a tuning trick even if a ratio metric exists.
 
@@ -39,10 +42,10 @@ CI runs mock holdout. A live-model holdout is a laptop or nightly job, not GitHu
 ## Adding cases
 
 1. Add to `dev_expansion.py` or `chinook_live.json` (non-holdout id only)
-2. `reference_sql` for answer cases; `reason` for abstain cases
+2. `reference_sql` for answer cases; `reason` for abstain cases. Run the reference against the data first: a reference that returns 0 rows or 0 (e.g. a year outside the data's 2021–2025 range) makes the case pass trivially
 3. Tag with `intent`, `pii`, `table-selection`, etc.
 4. Never add holdout ids in the same commit as prompt/guard tuning
 
 ## Baselines
 
-Save runs under `docs/baselines/holdout-YYYY-MM-DD.txt`. Latest: 2026-08-18, qwen2.5:7b, 12/12, 0 wrong.
+Save runs under `docs/baselines/holdout-YYYY-MM-DD.txt`, including the model digest. See the newest file for the current result.

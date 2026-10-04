@@ -407,3 +407,50 @@ def test_cross_join_rejected_by_policy() -> None:
     errors = validate(plan, _catalog())
     assert any(e.code == "policy.cross_join_not_allowed" for e in errors)
 
+
+
+def test_order_keys_after_full_group_key_are_rejected() -> None:
+    """ORDER BY Country, revenue DESC LIMIT 5 returns the alphabetically first countries."""
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.kernel.builder import LQP
+    from secure_query.kernel.validate import validate
+
+    def plan(order: list[tuple[str, str]]):
+        b = (
+            LQP.aggregate(table="Invoice")
+            .join("Customer", on=[("Invoice.CustomerId", "Customer.CustomerId")])
+            .group_by_columns(["Customer.Country"])
+            .agg("sum", "Invoice.Total", alias="revenue")
+        )
+        for key, direction in order:
+            b = b.order_by(key, direction)
+        return b.limit(5).build()
+
+    catalog = sample_catalog()
+    swapped = plan([("Customer.Country", "asc"), ("revenue", "desc")])
+    assert "plan.dead_order_keys" in {e.code for e in validate(swapped, catalog)}
+
+    for ok in (
+        [("revenue", "desc")],
+        [("revenue", "desc"), ("Customer.Country", "asc")],  # tie-break is fine
+        [("Customer.Country", "asc")],  # alphabetical listing is fine
+    ):
+        assert "plan.dead_order_keys" not in {e.code for e in validate(plan(ok), catalog)}
+
+
+def test_date_literals_accept_iso_strings_from_json() -> None:
+    from datetime import date, datetime
+
+    import pytest
+    from pydantic import ValidationError as PydanticValidationError
+
+    from secure_query.kernel.logical_plan import LiteralValue
+
+    assert LiteralValue.model_validate({"type": "date", "value": "2023-01-01"}).value == date(2023, 1, 1)
+    assert LiteralValue.model_validate(
+        {"type": "datetime", "value": "2023-01-01T12:30:00"}
+    ).value == datetime(2023, 1, 1, 12, 30)
+    with pytest.raises(PydanticValidationError, match="ISO date"):
+        LiteralValue.model_validate({"type": "date", "value": "2023-13-45"})
+    # Strings stay strings for type=string.
+    assert LiteralValue.model_validate({"type": "string", "value": "2023-01-01"}).value == "2023-01-01"

@@ -138,3 +138,46 @@ def test_summary_separates_wrong_from_abstained() -> None:
     assert stats["accuracy"] == pytest.approx(0.5)
     assert stats["wrong_rate"] == pytest.approx(0.25)
     assert stats["abstain_rate"] == pytest.approx(0.25)
+
+
+def test_tie_at_limit_accepts_either_tied_row_but_not_a_lower_one() -> None:
+    from secure_query.evals.accuracy import _valid_tie_resolution
+
+    unlimited = [("USA", 91), ("Canada", 56), ("France", 35), ("Brazil", 35), ("Germany", 28)]
+    expected = [("USA", 91), ("Canada", 56), ("France", 35)]
+    assert _valid_tie_resolution([("USA", 91), ("Canada", 56), ("Brazil", 35)], expected, unlimited)
+    assert _valid_tie_resolution([(35, "Brazil"), (91, "USA"), (56, "Canada")], expected, unlimited)
+    assert not _valid_tie_resolution([("USA", 91), ("Canada", 56), ("Germany", 28)], expected, unlimited)
+    assert not _valid_tie_resolution([("USA", 91), ("Canada", 56), ("Brazil", 99)], expected, unlimited)
+    assert not _valid_tie_resolution([("USA", 91), ("Canada", 56)], expected, unlimited)
+
+
+def test_unlimited_reference_strips_limit_only_when_present(tmp_path) -> None:
+    import duckdb
+
+    from secure_query.evals.accuracy import LiveCase, _unlimited_reference_rows
+
+    db = tmp_path / "t.duckdb"
+    con = duckdb.connect(str(db))
+    con.execute("CREATE TABLE t AS SELECT * FROM (VALUES ('a', 2), ('b', 1), ('c', 1)) v(k, n)")
+    con.close()
+    limited = LiveCase("x", "q", "answer", reference_sql="SELECT k, n FROM t ORDER BY n DESC LIMIT 2")
+    assert len(_unlimited_reference_rows(limited, db) or []) == 3
+    plain = LiveCase("y", "q", "answer", reference_sql="SELECT k, n FROM t")
+    assert _unlimited_reference_rows(plain, db) is None
+
+
+def test_transport_failure_scores_error_and_does_not_abort_run() -> None:
+    from pathlib import Path
+
+    from secure_query.evals.accuracy import ERROR, LiveCase, run_live_case
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.planner import PlannerError
+
+    class DownClient:
+        def complete(self, messages):
+            raise PlannerError("LLM unreachable")
+
+    case = LiveCase("c", "How many invoices are there in total?", "answer", reference_sql="SELECT 1")
+    result = run_live_case(case, sample_catalog(), DownClient(), Path("unused.duckdb"))
+    assert result.verdict == ERROR

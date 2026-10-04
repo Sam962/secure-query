@@ -171,3 +171,38 @@ class TestPlanConcepts:
         assert Concept("Customer", "Country") in concepts
         assert Concept("Invoice", "Total") in concepts
         assert Concept("Invoice", "CustomerId") in concepts
+
+
+def test_average_question_answered_without_avg_is_refused() -> None:
+    from secure_query.kernel.builder import LQP
+    from secure_query.planner.clarify import code_from_guard_message
+    from secure_query.planner.guard import dropped_average
+
+    sum_and_count = (
+        LQP.aggregate(table="Invoice")
+        .agg("sum", "Invoice.Total", alias="total_revenue")
+        .agg("count_distinct", "Invoice.CustomerId", alias="customers")
+        .limit(1)
+        .build()
+    )
+    msg = dropped_average("What is the mean spend per buyer?", sum_and_count)
+    assert msg is not None
+    assert code_from_guard_message(msg, refused=True) == "dropped_concept"
+
+    with_avg = LQP.aggregate(table="Invoice").agg("avg", "Invoice.Total", alias="a").limit(1).build()
+    assert dropped_average("What is the average invoice total?", with_avg) is None
+    assert dropped_average("Total revenue by country", sum_and_count) is None
+
+
+def test_calendar_words_are_not_out_of_scope() -> None:
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.planner.guard import out_of_scope_request
+
+    catalog = sample_catalog()
+    for q in (
+        "How many invoices were issued in the first half of 2023?",
+        "Total revenue per quarter since January 2022",
+        "Monthly invoice count before October 2024",
+    ):
+        assert out_of_scope_request(q, catalog) is None, q
+    assert out_of_scope_request("What is our total payroll spend this quarter?", catalog) is not None

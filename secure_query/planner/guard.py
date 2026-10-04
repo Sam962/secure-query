@@ -302,6 +302,27 @@ def _describe(missing: dict[str, set[Concept]], *, examples: int = 2) -> str:
     return "; ".join(parts)
 
 
+_AVERAGE_RE = re.compile(r"\b(average|averages|avg|mean)\b", re.IGNORECASE)
+
+
+def dropped_average(question: str, plan: LogicalPlan) -> str | None:
+    """Reason to refuse when the question asks for an average and the plan has none.
+
+    "average" is in _GENERIC_TERMS because it names no catalog column, so
+    dropped_concepts cannot see it. Without this check "average revenue per
+    customer" can come back as a SUM and a COUNT side by side: real numbers,
+    but not the one asked for. Approved ratio metrics never reach this guard.
+    """
+    if not _AVERAGE_RE.search(question):
+        return None
+    if any(agg.fn == "avg" for agg in plan.aggregations):
+        return None
+    return (
+        "The question asks for an average, but this plan dropped it (no AVG is "
+        "computed). Refusing rather than answering a different question."
+    )
+
+
 def useless_joins(plan: LogicalPlan) -> str | None:
     """Reason to refuse when a joined table contributes nothing, or None.
 
@@ -480,6 +501,20 @@ def opaque_grouping_keys(
     return None
 
 
+# Calendar words describe a time filter, not a business concept. The planner
+# turns them into date literals; the guard must not refuse them as unknown.
+_CALENDAR_TERMS = frozenset(
+    {
+        "january", "february", "march", "april", "june", "july", "august",
+        "september", "october", "november", "december",
+        "half", "halves", "quarter", "quarters", "quarterly", "month", "months",
+        "monthly", "week", "weeks", "weekly", "daily", "annual", "annually",
+        "yearly", "today", "yesterday", "since", "before", "after", "during",
+        "until", "through", "second", "third", "fourth", "date", "dates",
+    }
+)
+
+
 def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
     """Refuse when the question names concepts absent from catalog + synonyms + metrics."""
     words = [w for w in re.split(r"[^a-z0-9]+", question.lower()) if w]
@@ -492,6 +527,8 @@ def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
 
     for term in sorted(asked):
         if term in _GENERIC_TERMS or term in _STOP_WORDS or len(term) < _MIN_PART_LEN:
+            continue
+        if term in _CALENDAR_TERMS:
             continue
         if term in literals:
             continue

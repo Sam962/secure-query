@@ -29,7 +29,9 @@ def extra_dev_cases() -> list[dict]:
     """Return ~80 additional dev eval cases."""
     cases: list[dict] = []
 
-    countries = ["USA", "Canada", "Brazil", "France", "Germany", "UK", "Australia"]
+    # Values must exist in the data: Chinook stores "United Kingdom", not "UK", and a
+    # reference that returns 0 lets a wrong filter score as correct.
+    countries = ["USA", "Canada", "Brazil", "France", "Germany", "United Kingdom", "Australia"]
     for country in countries:
         cases.append(
             {
@@ -59,7 +61,7 @@ def extra_dev_cases() -> list[dict]:
             }
         )
 
-    for n in (1, 5, 10, 50, 100):
+    for n in (1, 5, 10, 15, 20):  # max invoice total is 25.86
         cases.append(
             {
                 "id": f"dev_invoices_over_{n}",
@@ -199,12 +201,12 @@ def extra_dev_cases() -> list[dict]:
                 "tags": ["filter", "dev-generated"],
             },
             {
-                "id": "dev_invoices_in_2010",
-                "question": "How many invoices were issued in 2010?",
+                "id": "dev_invoices_first_half_2023",
+                "question": "How many invoices were issued in the first half of 2023?",
                 "expect": "answer",
                 "reference_sql": (
                     "SELECT COUNT(*) FROM Invoice "
-                    "WHERE InvoiceDate >= '2010-01-01' AND InvoiceDate < '2011-01-01'"
+                    "WHERE InvoiceDate >= '2023-01-01' AND InvoiceDate < '2023-07-01'"
                 ),
                 "tags": ["filter", "dev-generated"],
             },
@@ -252,7 +254,8 @@ def extra_dev_cases() -> list[dict]:
             }
         )
 
-    for year in range(2009, 2014):
+    # The DuckDB Chinook build has invoices dated 2021-2025; earlier years return 0.
+    for year in range(2021, 2026):
         cases.append(
             {
                 "id": f"dev_invoices_year_{year}",
@@ -281,7 +284,7 @@ def extra_dev_cases() -> list[dict]:
             }
         )
 
-    states = ["CA", "NY", "TX", "FL", "WA", "OR", "NV", "AZ", "CO", "MA"]
+    states = ["CA", "NY", "TX", "FL", "WA", "WI", "NV", "AZ", "UT", "MA"]
     for st in states:
         cases.append(
             {

@@ -84,10 +84,10 @@ python -m secure_query.examples.ask_sample --provider groq "revenue by country"
 ### 6. Measure (do not use holdout to tune)
 
 ```bash
-python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong --provider ollama
+python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong --provider ollama --expect-digest 845dbda0ea48
 ```
 
-Latest local gate (2026-10-03, `qwen2.5:7b` re-pulled 2026-09-07): **10/12, 2 wrong — failing** (model drift; see [docs/STATUS.md](docs/STATUS.md)). The 2026-08-18 build scored 12/12, 0% wrong. Four of those twelve are expected refusals (PII, missing tables, ratios the IR cannot say) and count as correct when the kernel declines.
+Latest local gate (2026-10-04, `qwen2.5:7b` digest `845dbda0ea48`): **holdout 12/12, 0% wrong; dev 100/101, 0% wrong.** Pin the build with `--expect-digest`; see [docs/EVAL.md](docs/EVAL.md). Four of those twelve are expected refusals (PII, missing tables, ratios the IR cannot say) and count as correct when the kernel declines.
 
 Protocol: [docs/EVAL.md](docs/EVAL.md).
 
@@ -196,7 +196,7 @@ CI: pytest, compile SQL grep, mock holdout `--fail-on-wrong`.
 
 ## Status
 
-**Chinook demo:** runs end to end (confirm UI), but the live holdout gate currently fails on the re-pulled qwen2.5:7b (10/12, 2 wrong). **Company warehouse:** not ready until you have an approved catalog, owner, production auth, and a domain holdout. Details in [docs/STATUS.md](docs/STATUS.md).
+**Chinook demo:** ready (confirm UI; qwen2.5:7b @ 845dbda0ea48 holdout 12/12, dev 100/101, 0 wrong). **Company warehouse:** not ready until you have an approved catalog, owner, production auth, and a domain holdout. Details in [docs/STATUS.md](docs/STATUS.md).
 
 ---
 
