@@ -22,8 +22,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from secure_query.catalog import Catalog
-from secure_query.logical_plan import ColumnRef, LogicalPlan
+from secure_query.kernel.catalog import Catalog
+from secure_query.kernel.logical_plan import ColumnRef, LogicalPlan
 
 _MIN_PART_LEN = 4
 
@@ -103,6 +103,10 @@ _STOP_WORDS = frozenset(
         "either",
         "only",
         "also",
+        "group",
+        "grouped",
+        "grouping",
+        "breakdown",
         "anything",
         "something",
         "music",
@@ -511,7 +515,7 @@ def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
 
 def plan_concepts(plan: LogicalPlan, catalog: Catalog) -> set[Concept]:
     """Every table and column the plan reads, including its output projection."""
-    from secure_query.validate import is_list_intent, safe_projection
+    from secure_query.kernel.validate import is_list_intent, safe_projection
 
     concepts: set[Concept] = {Concept(table=plan.source)}
 

@@ -5,14 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 from secure_query.auth import Principal
-from secure_query.compile import CompiledQuery
-from secure_query.databricks import (
+from secure_query.kernel.compile import CompiledQuery
+from secure_query.engine.databricks import (
     draft_catalog,
     execute_databricks,
     map_uc_dtype,
     pii_risk_from_tags,
 )
-from secure_query.execute import ExecuteOptions, ExecutionError
+from secure_query.engine.execute import ExecuteOptions, ExecutionError
 import pytest
 
 
@@ -132,7 +132,7 @@ def test_execute_databricks_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
         time.sleep(2)
         return ["n"], [], False
 
-    monkeypatch.setattr("secure_query.databricks._execute_once", hang)
+    monkeypatch.setattr("secure_query.engine.databricks._execute_once", hang)
     with pytest.raises(ExecutionError, match="timeout"):
         execute_databricks(
             compiled,

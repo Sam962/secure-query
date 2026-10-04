@@ -10,17 +10,17 @@ import pytest
 from secure_query.auth import (
     AuthError,
     Principal,
-    assert_ratio_allowed,
+    assert_builtin_metric_allowed,
     catalog_for_principal,
     inject_row_filters,
     load_principal_registry,
     resolve_principal,
 )
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.logical_plan import ColumnRef, Eq, Join, LiteralValue, LogicalPlan
-from secure_query.metrics import metric_tables, metrics_for_catalog
+from secure_query.kernel.logical_plan import ColumnRef, Eq, Join, LiteralValue, LogicalPlan
+from secure_query.kernel.metrics import metric_tables, metrics_for_catalog
 from secure_query.planner import try_compile_metric
-from secure_query.validate import validate, validate_and_compile
+from secure_query.kernel.validate import validate, validate_and_compile
 
 
 def test_catalog_for_principal_filters_tables() -> None:
@@ -86,12 +86,13 @@ def test_restricted_principal_does_not_see_invoice_metrics() -> None:
     )
     sliced = catalog_for_principal(base, p)
     assert sliced.metric_ids == []
-    plan, compiled = try_compile_metric(
+    plan, compiled, metric = try_compile_metric(
         json.dumps({"metric_id": "avg_revenue_per_customer"}),
         sliced,
     )
     assert plan is None
     assert compiled is None
+    assert metric is None
 
 
 def test_invoice_principal_keeps_invoice_metrics_only() -> None:
@@ -111,14 +112,14 @@ def test_invoice_principal_keeps_invoice_metrics_only() -> None:
         assert metric_tables(metric) <= {"Invoice", "Customer"}
 
 
-def test_ratio_metric_blocked_when_row_filters_present() -> None:
+def test_builtin_metric_blocked_when_row_filters_present() -> None:
     tenant_filter = Eq(
         column=ColumnRef(table_id="Customer", column_id="Country"),
         value=LiteralValue(type="string", value="USA"),
     )
     p = Principal(principal_id="u1", tenant_id="chinook", row_filters=(tenant_filter,))
     with pytest.raises(PermissionError, match="row filters"):
-        assert_ratio_allowed(p)
+        assert_builtin_metric_allowed(p)
 
 
 def test_cross_join_rejected_even_when_tables_are_allowed() -> None:
@@ -224,3 +225,27 @@ def test_load_principal_registry_tokens_env(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
     registry = load_principal_registry()
     assert registry["tokens"]["t1"] == "bob"
+
+
+def test_restricted_principal_cannot_make_unapproved_joins() -> None:
+    """Slicing away every join key must deny joins, not fall back to allow-any."""
+    from secure_query.kernel.builder import LQP
+
+    base = sample_catalog()
+    p = Principal(
+        principal_id="restricted",
+        tenant_id="chinook",
+        allowed_tables=frozenset({"Invoice", "Employee"}),
+    )
+    sliced = catalog_for_principal(base, p)
+    assert sliced.join_keys == []
+    plan = (
+        LQP.aggregate(table="Invoice")
+        .join("Employee", on=[("Invoice.InvoiceId", "Employee.EmployeeId")])
+        .group_by_columns(["Employee.Title"])
+        .agg("sum", "Invoice.Total", alias="revenue")
+        .limit(10)
+        .build()
+    )
+    codes = {e.code for e in validate(plan, sliced)}
+    assert "policy.join_not_allowed" in codes

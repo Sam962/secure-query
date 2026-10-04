@@ -1,0 +1,10 @@
+{
+  "instructions": [
+    "When the question says country and does not say billing, use Customer.Country.",
+    "Prefer approved metric_id values when the question matches a named metric exactly."
+  ],
+  "synonyms": [
+    { "term": "client", "table_id": "Customer" },
+    { "term": "clients", "table_id": "Customer" }
+  ]
+}

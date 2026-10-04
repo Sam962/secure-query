@@ -1,0 +1,9 @@
+Holdout accuracy baseline — 2026-08-18
+Provider: ollama (qwen2.5:7b)
+Command: python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong --provider ollama
+
+accuracy      100% (12/12)
+wrong         0%   (0/12)
+abstained     0%   (0/12)   # no unexpected refusals; 4 cases expect=abstain and declined as designed
+
+Same headline as 2026-08-11. llama3.2 on the same command is not comparable (too weak for LogicalPlan JSON).

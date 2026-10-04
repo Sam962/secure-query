@@ -2,7 +2,7 @@
 
 Uses the same auth + execute routing as the HTTP API:
   - Identity from SECURE_QUERY_AUTH_MODE (dev / token / header)
-  - DuckDB locally, Databricks when DATABRICKS_* env vars are set
+  - DuckDB locally; Databricks or Postgres when those backends are configured
 
 Providers:
   --provider ollama   (local; also auto-detected if Ollama is running)
@@ -24,24 +24,19 @@ import sys
 
 from secure_query.auth import (
     AuthError,
-    assert_ratio_allowed,
-    catalog_for_principal,
-    inject_row_filters,
     resolve_principal,
 )
 from secure_query.examples.load_sample_db import DUCKDB_PATH, load_sample_db
-from secure_query.execute import ExecuteOptions, ExecutionError
-from secure_query.explain import explain_plan
+from secure_query.engine.execute import ExecuteOptions, ExecutionError
 from secure_query.planner import (
     MockLLMClient,
     OpenAIClient,
     PlannerError,
     default_client,
-    plan_question,
     resolve_llm_settings,
 )
-from secure_query.runtime import execute_compiled_query, runtime_config
-from secure_query.validate import PlanValidationFailed, validate_and_compile
+from secure_query.engine.runtime import runtime_config
+from secure_query.api.service import ask, production_auth_blocked
 
 
 def _client_from_args(provider: str | None):
@@ -106,16 +101,15 @@ def main(argv: list[str] | None = None) -> int:
     if config.backend == "duckdb" and not DUCKDB_PATH.exists():
         load_sample_db(prefer_download=True)
 
+    blocked = production_auth_blocked()
+    if blocked:
+        print(f"ERROR: {blocked}", file=sys.stderr)
+        return 2
+
     try:
         principal = resolve_principal()
     except AuthError as exc:
         print(f"ERROR: auth failed ({exc.status_code}): {exc}", file=sys.stderr)
-        return 2
-
-    try:
-        catalog = catalog_for_principal(config.catalog, principal)
-    except PermissionError as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
     try:
@@ -124,14 +118,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
-    planned = plan_question(question, catalog, client, max_repairs=1)
-
     provider = getattr(client, "provider", type(client).__name__)
     model = getattr(client, "_model", None)
 
     print("--- question ---")
-    print(planned.question)
-    print(f"attempts: {planned.attempts}  status: {planned.status}")
+    print(question)
     print(f"principal: {principal.principal_id}  tenant: {principal.tenant_id}")
     print(f"execute backend: {config.backend}")
     detail = f"client: {type(client).__name__}  provider: {provider}"
@@ -140,67 +131,18 @@ def main(argv: list[str] | None = None) -> int:
     print(detail)
     print()
 
-    if planned.status != "ok" or (planned.compiled is None and planned.plan is None):
-        print("--- clarify ---")
-        print(planned.clarify_message)
-        print("errors:")
-        for e in planned.errors:
-            print(f"  - {e}")
-        if planned.raw_responses:
-            print("--- raw model output (last) ---")
-            print(planned.raw_responses[-1][:2000])
-        return 1
-
-    plan = planned.plan
-    compiled = planned.compiled
-
-    if plan is not None:
-        plan = inject_row_filters(plan, principal)
-        try:
-            compiled = validate_and_compile(plan, catalog)
-        except PlanValidationFailed as exc:
-            print("--- clarify ---")
-            print(str(exc))
-            return 1
-    elif compiled is None:
-        print("--- clarify ---")
-        print("No plan or compiled SQL produced")
-        return 1
-    else:
-        try:
-            assert_ratio_allowed(principal)
-        except PermissionError as exc:
-            print("--- clarify ---")
-            print(str(exc))
-            return 1
-
-    assert compiled is not None
-
-    if plan is not None:
-        print("--- what this will compute (confirm this matches your question) ---")
-        print(explain_plan(plan, catalog))
-        print()
-        print("--- logical plan (JSON) ---")
-        print(plan.to_json())
-        print()
-    print("--- SQL (compiled, not from LLM) ---")
-    print(compiled.sql)
-    print()
-
-    if args.confirm_only:
-        print("(confirm-only: not executed)")
-        return 0
-
     try:
-        exec_result = execute_compiled_query(
-            compiled,
-            config,
-            plan=plan,
-            question=question,
+        outcome = ask(
+            question,
             principal=principal,
+            config=config,
+            catalog=config.catalog,
+            client=client,
+            confirm_only=args.confirm_only,
+            execute=not args.confirm_only,
             options=ExecuteOptions(
                 timeout_seconds=args.timeout,
-                max_rows=min(args.max_rows, catalog.max_limit),
+                max_rows=args.max_rows,
                 audit_path=config.audit_path,
             ),
         )
@@ -208,18 +150,47 @@ def main(argv: list[str] | None = None) -> int:
         print(f"--- execute error ---\n{exc}")
         return 1
 
+    if outcome.status == "clarify":
+        print("--- clarify ---")
+        if outcome.clarify_code:
+            print(f"code: {outcome.clarify_code}")
+        print(outcome.clarify_message)
+        if outcome.suggestions:
+            print()
+            print("--- try one of these (review still required; nothing is rewritten for you) ---")
+            for item in outcome.suggestions:
+                print(f"  • {item.question}")
+                print(f"    {item.reason}")
+        return 1
+
+    if outcome.explanation:
+        print("--- what this will compute (confirm this matches your question) ---")
+        print(outcome.explanation)
+        print()
+    if outcome.sql:
+        print("--- SQL (compiled, not from LLM) ---")
+        print(outcome.sql)
+        print()
+    if outcome.retrieved_tables:
+        print(f"retrieved_tables: {', '.join(outcome.retrieved_tables)}")
+        print()
+
+    if outcome.status == "confirm":
+        print("(confirm-only: not executed)")
+        return 0
+
     print("--- results ---")
-    print(exec_result.columns)
-    for row in exec_result.rows:
-        print(row)
-    if exec_result.truncated:
-        print(f"(truncated at max_rows={args.max_rows})")
+    if outcome.scale_note:
+        print(outcome.scale_note)
+    print(outcome.columns)
+    for row in outcome.rows:
+        print(tuple(row) if not isinstance(row, tuple) else row)
+        print(tuple(row) if not isinstance(row, tuple) else row)
     print()
     print(
-        f"plan_hash: {exec_result.audit.plan_hash[:16]} ...  "
-        f"duration_ms: {exec_result.duration_ms:.1f}  "
-        f"backend: {exec_result.audit.backend}  "
-        f"principal: {exec_result.audit.principal_id}  "
+        f"plan_hash: {str(outcome.audit.get('plan_hash', ''))[:16]} ...  "
+        f"backend: {outcome.audit.get('backend')}  "
+        f"principal: {outcome.audit.get('principal_id')}  "
         f"audit: {config.audit_path}"
     )
     return 0

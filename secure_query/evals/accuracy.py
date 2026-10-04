@@ -26,11 +26,11 @@ from itertools import permutations
 from pathlib import Path
 from typing import Any
 
-from secure_query.catalog import Catalog
-from secure_query.execute import ExecuteOptions, ExecutionError, execute_duckdb
-from secure_query.logical_plan import LogicalPlan
+from secure_query.kernel.catalog import Catalog
+from secure_query.engine.execute import ExecuteOptions, ExecutionError, execute_duckdb
+from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.planner import plan_question
-from secure_query.validate import PlanValidationFailed, validate_and_compile
+from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
 
 LIVE_SUITE_PATH = Path(__file__).resolve().parent / "chinook_live.json"
 

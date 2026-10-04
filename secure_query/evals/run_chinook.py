@@ -77,6 +77,14 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
     )
     parser.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "Override SECURE_QUERY_MODEL. Ollama default is qwen2.5:7b "
+            "(llama3.2 is too weak for LogicalPlan JSON)."
+        ),
+    )
+    parser.add_argument(
         "--fail-on-wrong",
         action="store_true",
         help="Exit non-zero if any wrong/unsafe answers (use with --split holdout in CI)",
@@ -89,6 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Pause between accuracy cases (default: 1.5 for groq, else 0)",
     )
     args = parser.parse_args(argv)
+    if args.model:
+        os.environ["SECURE_QUERY_MODEL"] = args.model
 
     cases = iter_cases()
     if not cases:

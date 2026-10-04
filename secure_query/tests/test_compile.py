@@ -11,7 +11,7 @@ import duckdb
 import pytest
 import sqlglot
 
-from secure_query.logical_plan import (
+from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
     ColumnRef,
@@ -34,7 +34,7 @@ from secure_query.logical_plan import (
     OrderBy,
     TimeBucket,
 )
-from secure_query.compile import CompilationError, CompiledQuery, compile
+from secure_query.kernel.compile import CompilationError, CompiledQuery, compile
 
 
 PLAN_ID = UUID("12345678-1234-1234-1234-123456789abc")

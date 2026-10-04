@@ -8,8 +8,10 @@ Join keys mirror the source foreign keys, minus `Employee.ReportsTo`, which is
 self-referential and cannot be expressed by the IR's single-source join list.
 """
 
-from secure_query.catalog import Catalog, ColumnSpec, JoinKey, Synonym, TableSpec
-from secure_query.metrics import chinook_metrics
+from sqlglot import exp
+
+from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, Synonym, TableSpec
+from secure_query.kernel.metrics import MetricSpec, register_builtin
 
 
 def sample_catalog() -> Catalog:
@@ -30,7 +32,7 @@ def sample_catalog() -> Catalog:
                     ColumnSpec(name="BillingState", dtype="str", pii_risk="low"),
                     ColumnSpec(name="BillingCountry", dtype="str"),
                     ColumnSpec(name="BillingPostalCode", dtype="str", pii_risk="high"),
-                    ColumnSpec(name="Total", dtype="float", description="Invoice total"),
+                    ColumnSpec(name="Total", dtype="float", description="Invoice total", unit="USD"),
                 ],
             ),
             TableSpec(
@@ -40,7 +42,7 @@ def sample_catalog() -> Catalog:
                     ColumnSpec(name="InvoiceLineId", dtype="int", description="Primary key"),
                     ColumnSpec(name="InvoiceId", dtype="int"),
                     ColumnSpec(name="TrackId", dtype="int"),
-                    ColumnSpec(name="UnitPrice", dtype="float"),
+                    ColumnSpec(name="UnitPrice", dtype="float", unit="USD"),
                     ColumnSpec(name="Quantity", dtype="int"),
                 ],
             ),
@@ -100,7 +102,7 @@ def sample_catalog() -> Catalog:
                     ColumnSpec(name="Composer", dtype="str", pii_risk="low"),
                     ColumnSpec(name="Milliseconds", dtype="int", description="Track length"),
                     ColumnSpec(name="Bytes", dtype="int"),
-                    ColumnSpec(name="UnitPrice", dtype="float"),
+                    ColumnSpec(name="UnitPrice", dtype="float", unit="USD"),
                 ],
             ),
             TableSpec(
@@ -180,8 +182,12 @@ def sample_catalog() -> Catalog:
             Synonym(term="employee", table_id="Employee"),
             Synonym(term="employees", table_id="Employee"),
             Synonym(term="headcount", table_id="Employee"),
+            Synonym(term="customer", table_id="Customer"),
+            Synonym(term="customers", table_id="Customer"),
+            Synonym(term="client", table_id="Customer"),
+            Synonym(term="clients", table_id="Customer"),
         ],
-        metric_ids=[m.id for m in chinook_metrics()],
+        metrics=chinook_metrics(),
         join_keys=[
             JoinKey(
                 left_table="Invoice",
@@ -250,3 +256,111 @@ def sample_catalog() -> Catalog:
 # Alias used by README / quick start
 def demo_catalog() -> Catalog:
     return sample_catalog()
+
+
+def _col(table: str, column: str) -> exp.Column:
+    return exp.Column(
+        this=exp.to_identifier(column, quoted=True),
+        table=exp.to_identifier(table, quoted=True),
+    )
+
+
+def _line_item_revenue() -> exp.Select:
+    """SUM(UnitPrice * Quantity): the IR has no column arithmetic, so this is a builtin."""
+    product = exp.Mul(
+        this=_col("InvoiceLine", "UnitPrice"),
+        expression=_col("InvoiceLine", "Quantity"),
+    )
+    total = exp.Anonymous(this="SUM", expressions=[product])
+    return (
+        exp.Select()
+        .select(
+            exp.Alias(
+                this=total,
+                alias=exp.to_identifier("line_item_revenue", quoted=True),
+            )
+        )
+        .from_(exp.Table(this=exp.to_identifier("InvoiceLine", quoted=True)))
+    )
+
+
+register_builtin("line_item_revenue", _line_item_revenue)
+
+
+def chinook_metrics() -> list[MetricSpec]:
+    """Approved Chinook metrics. A real domain ships these in its catalog JSON."""
+    return [
+        MetricSpec(
+            id="total_revenue",
+            description="Sum of all invoice totals",
+            source="Invoice",
+            aggregations=["sum:Invoice.Total:total_revenue"],
+            default_limit=1,
+            unit="USD",
+        ),
+        MetricSpec(
+            id="invoice_count",
+            description="Count of invoices",
+            source="Invoice",
+            aggregations=["count:*:invoice_count"],
+            default_limit=1,
+        ),
+        MetricSpec(
+            id="employee_count",
+            description="Count of employees (staff headcount)",
+            source="Employee",
+            aggregations=["count:*:employee_count"],
+            default_limit=1,
+        ),
+        MetricSpec(
+            id="revenue_by_country",
+            description="Total invoice revenue grouped by customer country",
+            source="Invoice",
+            joins=["Invoice:Customer:Invoice.CustomerId=Customer.CustomerId"],
+            group_by=["Customer.Country"],
+            aggregations=["sum:Invoice.Total:revenue"],
+            default_limit=24,
+            unit="USD",
+        ),
+        MetricSpec(
+            id="revenue_by_billing_country",
+            description="Total invoice revenue grouped by billing country on invoice",
+            source="Invoice",
+            group_by=["Invoice.BillingCountry"],
+            aggregations=["sum:Invoice.Total:revenue"],
+            default_limit=24,
+            unit="USD",
+        ),
+        MetricSpec(
+            id="revenue_by_genre",
+            description="Track sales revenue grouped by genre name",
+            source="InvoiceLine",
+            joins=[
+                "InvoiceLine:Track:InvoiceLine.TrackId=Track.TrackId",
+                "Track:Genre:Track.GenreId=Genre.GenreId",
+            ],
+            group_by=["Genre.Name"],
+            aggregations=["sum:InvoiceLine.UnitPrice:revenue"],
+            default_limit=24,
+            unit="USD",
+        ),
+        MetricSpec(
+            id="avg_revenue_per_customer",
+            description="Total revenue divided by distinct customers (ratio metric)",
+            kind="ratio",
+            source="Invoice",
+            numerator="sum:Invoice.Total",
+            denominator="count_distinct:Invoice.CustomerId",
+            default_limit=1,
+            unit="USD",
+        ),
+        MetricSpec(
+            id="line_item_revenue",
+            description="Sum of unit price times quantity on invoice lines",
+            kind="builtin",
+            builder_id="line_item_revenue",
+            tables=["InvoiceLine"],
+            default_limit=1,
+            unit="USD",
+        ),
+    ]

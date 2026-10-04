@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from secure_query.builder import LQP
+from secure_query.kernel.builder import LQP
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.guard import (
+from secure_query.planner.guard import (
     Concept,
     dropped_concepts,
     plan_concepts,

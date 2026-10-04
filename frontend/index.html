@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Secure Query</title>
+  <style>
+    :root {
+      --bg: #f4f2ec;
+      --bg-raised: #fffdf8;
+      --fg: #1c1b18;
+      --muted: #6a6760;
+      --line: #ddd8cc;
+      --accent: #1f4d3a;
+      --accent-fg: #f7f4ee;
+      --refuse: #7a2438;
+      --refuse-bg: #f8ecee;
+      --ok: #1f4d3a;
+      --ok-bg: #eaf3ee;
+      --warn-bg: #f4efe3;
+      --mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+      --sans: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --ui: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+      --radius: 10px;
+      --shadow: 0 1px 0 rgba(28, 27, 24, 0.04);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141413;
+        --bg-raised: #1c1c1a;
+        --fg: #efece4;
+        --muted: #9a968c;
+        --line: #2e2d29;
+        --accent: #8fbfa6;
+        --accent-fg: #141413;
+        --refuse: #e08a98;
+        --refuse-bg: #2a1c1f;
+        --ok: #8fbfa6;
+        --ok-bg: #1c2621;
+        --warn-bg: #26241c;
+        --shadow: none;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: var(--ui);
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.45;
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-family: var(--sans);
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+    .brand small {
+      font-family: var(--ui);
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 10px;
+      background: var(--bg-raised);
+    }
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .dot.warn { background: #b5812a; }
+    .dot.bad { background: var(--refuse); }
+    button.linkish {
+      background: none;
+      border: 0;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      padding: 4px 0;
+    }
+    button.linkish:hover { color: var(--fg); }
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+    .ask {
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    textarea {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      border: 0;
+      outline: none;
+      font: 18px/1.4 var(--sans);
+      background: transparent;
+      color: inherit;
+      padding: 4px 4px 12px;
+    }
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 4px 12px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--fg);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .chip:hover { border-color: var(--fg); }
+    .suggestions { margin-top: 14px; }
+    .suggestions p { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+    .suggestions .chip { font-size: 13px; padding: 7px 12px; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .actions-left { display: flex; gap: 8px; }
+    .btn {
+      font: 600 13px/1 var(--ui);
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.primary {
+      background: var(--accent);
+      color: var(--accent-fg);
+    }
+    .btn.ghost {
+      background: transparent;
+      border-color: var(--line);
+      color: var(--fg);
+    }
+    .hint { font-size: 12px; color: var(--muted); }
+    #settings {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+    #settings.open { display: block; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      max-width: 420px;
+      font: 13px var(--mono);
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--bg);
+      color: inherit;
+    }
+    .stage { margin-top: 20px; }
+    .card {
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+    .card h2 {
+      font: 600 11px/1 var(--ui);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+    .empty {
+      padding: 36px 8px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .empty p { margin: 0 auto 8px; max-width: 46ch; }
+    .kicker {
+      font-family: var(--sans);
+      font-size: 22px;
+      color: var(--fg);
+      margin: 0 0 8px;
+    }
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: 4px 9px;
+    }
+    .badge.ok { background: var(--ok-bg); color: var(--ok); }
+    .badge.refuse { background: var(--refuse-bg); color: var(--refuse); }
+    .badge.plan { background: var(--warn-bg); color: var(--fg); }
+    .explain {
+      font-family: var(--sans);
+      font-size: 18px;
+      margin: 0;
+    }
+    .sql {
+      margin: 0;
+      overflow-x: auto;
+      font: 12.5px/1.5 var(--mono);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      white-space: pre-wrap;
+    }
+    .sql-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    table.results {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.results th, table.results td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    table.results th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    table.results td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 12px; }
+    table.results th.num { text-align: right; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px 18px;
+      font-size: 12px;
+    }
+    .meta-grid dt { color: var(--muted); }
+    .meta-grid dd { margin: 2px 0 0; font-family: var(--mono); font-size: 11px; word-break: break-all; }
+    .error {
+      color: var(--refuse);
+      font-size: 14px;
+    }
+    .loading { color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      Secure Query
+      <small>the model never writes SQL</small>
+    </div>
+    <div class="header-meta">
+      <span class="pill"><span class="dot" id="health-dot"></span><span id="backend">checking…</span></span>
+      <button class="linkish" type="button" id="toggle-settings">Settings</button>
+    </div>
+  </header>
+
+  <main>
+    <form class="ask" id="ask-form">
+      <textarea id="q" placeholder="What is total invoice revenue by country?" autofocus></textarea>
+      <div class="examples" id="examples"></div>
+      <div class="actions">
+        <div class="actions-left">
+          <button class="btn primary" type="submit" id="review">Review plan</button>
+          <button class="btn ghost" type="button" id="run" disabled>Run query</button>
+        </div>
+        <span class="hint">Review compiles SQL in code you own. Run is a separate step.</span>
+      </div>
+      <div id="settings">
+        <label for="token">Bearer token (token auth only; unused in local dev)</label>
+        <input id="token" type="password" autocomplete="off" />
+      </div>
+    </form>
+
+    <div class="stage" id="stage">
+      <div class="empty">
+        <p class="kicker">Ask, confirm, then run.</p>
+        <p>Every answer starts as an English question. You see a plain-language plan and the compiled SQL before anything hits the database. Refusals are first-class — a declined question is better than a confident wrong number.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const EXAMPLES = [
+      "revenue by country",
+      "how many invoices are there in total",
+      "list all customer emails",
+      "average revenue per customer",
+    ];
+    const q = document.getElementById("q");
+    const runBtn = document.getElementById("run");
+    const stage = document.getElementById("stage");
+    const examples = document.getElementById("examples");
+    let pendingQuestion = "";
+
+    EXAMPLES.forEach((text) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.textContent = text;
+      b.onclick = () => { q.value = text; q.focus(); };
+      examples.appendChild(b);
+    });
+
+    document.getElementById("toggle-settings").onclick = () => {
+      document.getElementById("settings").classList.toggle("open");
+    };
+
+    async function loadHealth() {
+      const dot = document.getElementById("health-dot");
+      const label = document.getElementById("backend");
+      try {
+        const h = await fetch("/health").then((r) => r.json());
+        const r = await fetch("/ready");
+        const ready = r.ok;
+        label.textContent = (h.backend || "unknown") + (ready ? " · ready" : " · not ready");
+        dot.className = "dot" + (ready ? "" : " warn");
+      } catch {
+        label.textContent = "offline";
+        dot.className = "dot bad";
+      }
+    }
+    loadHealth();
+
+    function headers() {
+      const h = { "Content-Type": "application/json" };
+      const token = document.getElementById("token").value.trim();
+      if (token) h["Authorization"] = "Bearer " + token;
+      return h;
+    }
+
+    async function call(path, body) {
+      const res = await fetch(path, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data.detail;
+        const msg = typeof detail === "string" ? detail : (Array.isArray(detail) ? detail.map((d) => d.msg).join("; ") : res.statusText);
+        throw new Error(msg || res.statusText);
+      }
+      return data;
+    }
+
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function isNum(v) {
+      return typeof v === "number" || (typeof v === "string" && v !== "" && !isNaN(Number(v)));
+    }
+
+    function formatNum(v, unit) {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return esc(v);
+      if (unit === "USD") {
+        return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(n);
+      }
+      if (Number.isInteger(n)) return String(n);
+      const cents = Math.round(n * 100) / 100;
+      if (Math.abs(n - cents) < 1e-8 * Math.max(1, Math.abs(n))) {
+        return cents.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      return String(n);
+    }
+
+    function render(data) {
+      if (data.status === "clarify") {
+        runBtn.disabled = true;
+        const suggestions = data.suggestions || [];
+        let suggestHtml = "";
+        if (suggestions.length) {
+          suggestHtml = `
+            <div class="suggestions">
+              <p>Catalog questions you can ask instead. Clicking one still requires Review, then Run — nothing is rewritten behind the scenes.</p>
+              <div class="examples" style="padding:0">
+                ${suggestions.map((s) =>
+                  `<button type="button" class="chip" data-suggest="${esc(s.question)}" title="${esc(s.reason)}">${esc(s.question)}</button>`
+                ).join("")}
+              </div>
+            </div>`;
+        }
+        stage.innerHTML = `
+          <article class="card">
+            <div class="status-row">
+              <span class="badge refuse">${data.refused ? "Refused" : "Needs clarification"}</span>
+              ${data.clarify_code ? `<span class="pill">${esc(data.clarify_code)}</span>` : ""}
+            </div>
+            <p class="explain">${esc(data.clarify_message || "Could not answer this question.")}</p>
+            ${suggestHtml}
+          </article>`;
+        stage.querySelectorAll("[data-suggest]").forEach((el) => {
+          el.addEventListener("click", () => {
+            q.value = el.getAttribute("data-suggest") || "";
+            document.getElementById("ask-form").requestSubmit();
+          });
+        });
+        return;
+      }
+
+      const canRun = data.status === "confirm" || data.status === "ok";
+      runBtn.disabled = !canRun || !pendingQuestion;
+      const badge = data.status === "ok"
+        ? `<span class="badge ok">Executed</span>`
+        : `<span class="badge plan">Plan ready — not executed</span>`;
+
+      let html = `
+        <article class="card">
+          <div class="status-row">${badge}</div>
+          <h2>What this will compute</h2>
+          <p class="explain">${esc(data.explanation || "Approved metric")}</p>
+        </article>`;
+
+      if (data.sql) {
+        html += `
+        <article class="card">
+          <div class="sql-head">
+            <h2 style="margin:0">Compiled SQL — not from the model</h2>
+            <button class="linkish" type="button" id="copy-sql">Copy</button>
+          </div>
+          <pre class="sql">${esc(data.sql)}</pre>
+        </article>`;
+      }
+
+        if (data.status === "ok") {
+        const cols = data.columns || [];
+        const rows = data.rows || [];
+        const units = data.column_units || [];
+        html += `<article class="card"><h2>Results · ${rows.length} row${rows.length === 1 ? "" : "s"}</h2>`;
+        if (data.scale_note) {
+          html += `<p class="hint" style="margin-top:0">${esc(data.scale_note)}</p>`;
+        }
+        if (data.answer) {
+          html += `<p class="hint" style="margin-top:0">${esc(data.answer).replace(/\n/g, "<br>")}</p>`;
+        }
+        if (!cols.length) {
+          html += `<p class="hint">No columns returned.</p>`;
+        } else {
+          const numIdx = cols.map((_, i) => rows.length && rows.every((r) => isNum(r[i])));
+          html += `<div style="overflow-x:auto"><table class="results"><thead><tr>${
+            cols.map((c, i) => {
+              const label = units[i] ? `${c} (${units[i]})` : c;
+              return `<th class="${numIdx[i] ? "num" : ""}">${esc(label)}</th>`;
+            }).join("")
+          }</tr></thead><tbody>${
+            rows.map((row) => `<tr>${
+              cols.map((_, i) => `<td class="${numIdx[i] ? "num" : ""}">${numIdx[i] ? formatNum(row[i], units[i]) : esc(row[i])}</td>`).join("")
+            }</tr>`).join("")
+          }</tbody></table></div>`;
+        }
+        html += `</article>`;
+      }
+
+      const audit = data.audit || {};
+      html += `
+        <article class="card">
+          <h2>Audit</h2>
+          <dl class="meta-grid">
+            <div><dt>Principal</dt><dd>${esc(audit.principal_id || "—")}</dd></div>
+            <div><dt>Tenant</dt><dd>${esc(audit.tenant_id || "—")}</dd></div>
+            <div><dt>Backend</dt><dd>${esc(audit.backend || "—")}</dd></div>
+            <div><dt>Plan hash</dt><dd>${esc(audit.plan_hash || "—")}</dd></div>
+            <div><dt>SQL hash</dt><dd>${esc(audit.sql_hash || "—")}</dd></div>
+          </dl>
+        </article>`;
+
+      stage.innerHTML = html;
+      const copy = document.getElementById("copy-sql");
+      if (copy && data.sql) {
+        copy.onclick = async () => {
+          await navigator.clipboard.writeText(data.sql);
+          copy.textContent = "Copied";
+          setTimeout(() => { copy.textContent = "Copy"; }, 1200);
+        };
+      }
+    }
+
+    function showError(err) {
+      runBtn.disabled = true;
+      stage.innerHTML = `<article class="card"><p class="error">${esc(err.message || err)}</p></article>`;
+    }
+
+    function showLoading(label) {
+      stage.innerHTML = `<article class="card"><p class="loading">${esc(label)}</p></article>`;
+    }
+
+    document.getElementById("ask-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = q.value.trim();
+      if (!question) return;
+      pendingQuestion = question;
+      runBtn.disabled = true;
+      showLoading("Planning — validating against the catalog, then compiling SQL…");
+      try {
+        render(await call("/ask/confirm", { question }));
+      } catch (err) {
+        showError(err);
+      }
+    });
+
+    runBtn.addEventListener("click", async () => {
+      if (!pendingQuestion) return;
+      runBtn.disabled = true;
+      showLoading("Executing read-only query…");
+      try {
+        render(await call("/ask", { question: pendingQuestion, execute: true }));
+      } catch (err) {
+        showError(err);
+      }
+    });
+
+    q.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        document.getElementById("ask-form").requestSubmit();
+      }
+    });
+  </script>
+</body>
+</html>

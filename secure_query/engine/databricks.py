@@ -16,16 +16,16 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from secure_query.auth import Principal
-from secure_query.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
-from secure_query.compile import CompiledQuery
-from secure_query.execute import (
+from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
+from secure_query.kernel.compile import CompiledQuery
+from secure_query.engine.execute import (
     ExecuteOptions,
     ExecutionError,
     ExecutionResult,
     _make_audit,
     _maybe_write_audit,
 )
-from secure_query.logical_plan import LogicalPlan
+from secure_query.kernel.logical_plan import LogicalPlan
 
 _DTYPE_MAP: dict[str, str] = {
     "bigint": "int",
@@ -80,7 +80,6 @@ def draft_catalog(
     columns: list[dict[str, Any]],
     foreign_keys: list[dict[str, Any]] | None = None,
     display_columns: dict[str, str] | None = None,
-    metric_ids: list[str] | None = None,
     max_limit: int = 1000,
     require_limit: bool = True,
 ) -> Catalog:
@@ -122,7 +121,6 @@ def draft_catalog(
         tenant_id=tenant_id,
         tables=tables,
         join_keys=join_keys,
-        metric_ids=list(metric_ids or []),
         max_limit=max_limit,
         require_limit=require_limit,
         sql_dialect="databricks",

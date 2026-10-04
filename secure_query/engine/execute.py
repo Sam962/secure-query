@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import Any
 
 from secure_query.auth import Principal, audit_principal_fields
-from secure_query.compile import CompiledQuery
-from secure_query.explain import explain_plan
-from secure_query.logical_plan import LogicalPlan
+from secure_query.kernel.compile import CompiledQuery
+from secure_query.kernel.explain import explain_plan
+from secure_query.kernel.logical_plan import LogicalPlan
 
 
 class ExecutionError(Exception):

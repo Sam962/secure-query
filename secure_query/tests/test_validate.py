@@ -6,9 +6,9 @@ from uuid import UUID
 
 import pytest
 
-from secure_query.builder import LQP
-from secure_query.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
-from secure_query.logical_plan import (
+from secure_query.kernel.builder import LQP
+from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
+from secure_query.kernel.logical_plan import (
     Aggregation,
     ColumnRef,
     Eq,
@@ -16,8 +16,8 @@ from secure_query.logical_plan import (
     LogicalPlan,
 )
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.guard import useless_joins
-from secure_query.validate import PlanValidationFailed, normalize_plan, validate, validate_and_compile
+from secure_query.planner.guard import useless_joins
+from secure_query.kernel.validate import PlanValidationFailed, normalize_plan, validate, validate_and_compile
 
 PLAN_ID = UUID("12345678-1234-1234-1234-123456789abc")
 
@@ -89,6 +89,36 @@ def test_column_from_unjoined_table_rejected() -> None:
     )
     errors = validate(plan, catalog)
     assert any(e.code == "plan.table_not_in_scope" for e in errors)
+
+
+def test_join_on_cannot_name_a_table_not_yet_in_from() -> None:
+    """JOIN Track ON InvoiceLine.TrackId without InvoiceLine in FROM must refuse."""
+    catalog = sample_catalog()
+    plan = (
+        LQP.aggregate(table="Invoice")
+        .join("Customer", on=[("Invoice.CustomerId", "Customer.CustomerId")])
+        .join("Track", on=[("InvoiceLine.TrackId", "Track.TrackId")])
+        .group_by_columns(["Invoice.InvoiceDate"])
+        .agg("count", None, alias="invoice_count")
+        .limit(100)
+        .build()
+    )
+    errors = validate(plan, catalog)
+    assert any(e.code == "plan.table_not_in_scope" for e in errors)
+
+
+def test_order_by_alias_must_match_an_aggregation() -> None:
+    """List intent ORDER BY \"count\" compiled to DuckDB binder errors before this check."""
+    catalog = sample_catalog()
+    plan = (
+        LQP.filter_and_list(table="Customer")
+        .filter("Customer.Country", "eq", "USA")
+        .order_by("count", direction="asc")
+        .limit(100)
+        .build()
+    )
+    errors = validate(plan, catalog)
+    assert any(e.code == "plan.unknown_order_alias" for e in errors)
 
 
 def test_literal_type_mismatch_rejected() -> None:
@@ -366,7 +396,7 @@ class TestNormalizePlan:
 
 
 def test_cross_join_rejected_by_policy() -> None:
-    from secure_query.logical_plan import Join
+    from secure_query.kernel.logical_plan import Join
 
     plan = LogicalPlan(
         plan_id=PLAN_ID,

@@ -1,7 +1,7 @@
 """Logical Query Plan (LQP) Pydantic v2 contracts.
 
-Producer: LLM planner (structured output only) or secure_query.builder.LQP.
-Consumer: secure_query.validate then secure_query.compile.
+Producer: LLM planner (structured output only) or secure_query.kernel.builder.LQP.
+Consumer: secure_query.kernel.validate then secure_query.kernel.compile.
 
 Typed IR between the LLM and the deterministic SQL compiler. The LLM never
 produces raw SQL; it produces a LogicalPlan that is validated and compiled by

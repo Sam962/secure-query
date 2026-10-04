@@ -20,17 +20,23 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 from uuid import uuid4
 
-from secure_query.catalog import Catalog
-from secure_query.compile import CompiledQuery
-from secure_query.guard import (
+from secure_query.kernel.catalog import Catalog
+from secure_query.kernel.compile import CompiledQuery
+from secure_query.planner.guard import (
     dropped_concepts,
     opaque_grouping_keys,
     out_of_scope_request,
     restricted_request,
     useless_joins,
 )
-from secure_query.logical_plan import LogicalPlan
-from secure_query.validate import PlanValidationFailed, normalize_plan, validate_and_compile
+from secure_query.kernel.logical_plan import LogicalPlan
+from secure_query.kernel.metrics import MetricSpec
+from secure_query.kernel.validate import (
+    PlanValidationFailed,
+    normalize_plan,
+    validate_and_compile,
+    validate_and_compile_metric,
+)
 
 _SQL_LEAK_RE = re.compile(
     r"\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|WITH)\b",
@@ -191,6 +197,9 @@ class PlannerResult:
     raw_responses: list[str] = field(default_factory=list)
     refused: bool = False
     """True when the model deliberately declined, vs. failing to produce a valid plan."""
+    clarify_code: str | None = None
+    metric: MetricSpec | None = None
+    """Set for ratio/builtin metrics, which compile outside validate_and_compile."""
 
 
 class PlannerError(Exception):
@@ -375,7 +384,7 @@ class MockLLMClient:
 
 
 _GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"
-_OLLAMA_DEFAULT_MODEL = "llama3.2"
+_OLLAMA_DEFAULT_MODEL = "qwen2.5:7b"
 _OLLAMA_MODEL_PREFIXES = (
     "qwen2.5",
     "llama3.2",
@@ -546,7 +555,7 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
     if data.get("metric_id"):
         if catalog is None:
             raise ValueError("metric_id requires catalog to expand")
-        from secure_query.metrics import (
+        from secure_query.kernel.metrics import (
             assert_metric_authorized,
             expand_metric_plan,
             metrics_for_catalog,
@@ -561,8 +570,8 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
             assert_metric_authorized(metric, catalog)
         except PermissionError as exc:
             raise ValueError(str(exc)) from exc
-        if metric.kind == "ratio":
-            raise ValueError("ratio metrics must use compile_metric_path, not LogicalPlan")
+        if metric.kind != "plan":
+            raise ValueError(f"{metric.kind} metrics compile via try_compile_metric, not LogicalPlan")
         limit = data.get("limit")
         return expand_metric_plan(metric, limit=int(limit) if limit is not None else None)
     data["plan_id"] = str(uuid4())
@@ -572,35 +581,47 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
 
 def try_compile_metric(
     raw: str, catalog: Catalog
-) -> tuple[LogicalPlan | None, CompiledQuery | None]:
-    """If JSON is a ratio metric_id, return (None, compiled). Else (plan, None)."""
+) -> tuple[LogicalPlan | None, CompiledQuery | None, MetricSpec | None]:
+    """Compile a ratio or builtin metric_id. Returns (plan, compiled, metric).
+
+    Ratio metrics return their expanded plan so callers can inject row filters
+    and recompile with validate_and_compile_metric. Builtin metrics have no plan.
+    Anything else returns (None, None, None) and goes through parse_plan_json.
+    """
     text = raw.strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text)
         text = re.sub(r"\s*```$", "", text)
     data = json.loads(text)
     if not isinstance(data, dict) or not data.get("metric_id"):
-        return None, None
-    from secure_query.metrics import (
+        return None, None, None
+    from secure_query.kernel.metrics import (
         assert_metric_authorized,
-        compile_ratio_metric,
-        metrics_for_catalog,
+        compile_builtin_metric,
+        expand_metric_plan,
+        get_metric,
     )
 
-    mid = str(data["metric_id"])
-    metrics = {m.id: m for m in metrics_for_catalog(catalog)}
-    if mid not in metrics or metrics[mid].kind != "ratio":
-        return None, None
-    metric = metrics[mid]
+    metric = get_metric(str(data["metric_id"]), catalog)
+    if metric is None or metric.kind == "plan":
+        return None, None, None
     try:
         assert_metric_authorized(metric, catalog)
     except PermissionError as exc:
         raise ValueError(str(exc)) from exc
+
+    if metric.kind == "ratio":
+        limit = data.get("limit")
+        plan = expand_metric_plan(metric, limit=int(limit) if limit is not None else None)
+        return plan, validate_and_compile_metric(metric, plan, catalog), metric
+
     import hashlib
 
-    sql = compile_ratio_metric(metric.ratio_id or mid, dialect=catalog.sql_dialect)
+    assert metric.builder_id is not None
+    sql = compile_builtin_metric(metric.builder_id, dialect=catalog.sql_dialect)
     sql_hash = hashlib.sha256(sql.encode()).hexdigest()
-    return None, CompiledQuery(sql=sql, plan_hash=f"metric:{mid}", sql_hash=sql_hash, parameters=[])
+    compiled = CompiledQuery(sql=sql, plan_hash=f"metric:{metric.id}", sql_hash=sql_hash, parameters=[])
+    return None, compiled, metric
 
 
 def plan_question(
@@ -610,15 +631,23 @@ def plan_question(
     *,
     max_repairs: int = 1,
     guard: bool = True,
+    prompt_catalog: Catalog | None = None,
 ) -> PlannerResult:
     """Ask the LLM for a LogicalPlan, validate/compile, optionally one repair.
 
     `guard` enables the deterministic question checks. Leave it on outside of
     ablation experiments: they are the only refusals that do not depend on the
     model choosing to cooperate.
+
+    `prompt_catalog` may be a retrieval slice for the LLM prompt. Validation
+    always uses `catalog` (the full authorized allowlist).
     """
+    from secure_query.planner.clarify import code_from_guard_message
+
     if max_repairs < 0:
         raise ValueError("max_repairs must be >= 0")
+
+    summary_catalog = prompt_catalog or catalog
 
     if guard:
         blocked = restricted_request(question, catalog)
@@ -629,6 +658,7 @@ def plan_question(
                 attempts=0,
                 clarify_message=blocked,
                 refused=True,
+                clarify_code="restricted_pii",
             )
         oos = out_of_scope_request(question, catalog)
         if oos is not None:
@@ -638,11 +668,12 @@ def plan_question(
                 attempts=0,
                 clarify_message=oos,
                 refused=True,
+                clarify_code="out_of_scope",
             )
 
     messages: list[dict[str, str]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_user_prompt(question, catalog)},
+        {"role": "user", "content": build_user_prompt(question, summary_catalog)},
     ]
     errors: list[str] = []
     raw_responses: list[str] = []
@@ -653,12 +684,14 @@ def plan_question(
         raw = client.complete(messages)
         raw_responses.append(raw)
         try:
-            _, ratio_compiled = try_compile_metric(raw, catalog)
-            if ratio_compiled is not None:
+            metric_plan, metric_compiled, metric = try_compile_metric(raw, catalog)
+            if metric_compiled is not None:
                 return PlannerResult(
                     status="ok",
                     question=question,
-                    compiled=ratio_compiled,
+                    plan=metric_plan,
+                    compiled=metric_compiled,
+                    metric=metric,
                     attempts=attempts,
                     errors=[],
                     raw_responses=raw_responses,
@@ -680,6 +713,7 @@ def plan_question(
                         clarify_message=gap,
                         raw_responses=raw_responses,
                         refused=True,
+                        clarify_code=code_from_guard_message(gap, refused=True),
                     )
             return PlannerResult(
                 status="ok",
@@ -699,6 +733,8 @@ def plan_question(
                 clarify_message=refusal.reason,
                 raw_responses=raw_responses,
                 refused=True,
+                clarify_code=code_from_guard_message(refusal.reason, refused=True)
+                or "planner_refusal",
             )
         except (json.JSONDecodeError, ValueError, PlanValidationFailed) as exc:
             if isinstance(exc, PlanValidationFailed):
@@ -717,6 +753,7 @@ def plan_question(
                         f"{attempts} attempt(s). Please rephrase or narrow the question."
                     ),
                     raw_responses=raw_responses,
+                    clarify_code="validation_failed",
                 )
             messages.append({"role": "assistant", "content": raw})
             messages.append({"role": "user", "content": build_repair_prompt(err_msgs)})

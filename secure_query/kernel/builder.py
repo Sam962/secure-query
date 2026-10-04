@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import UUID, uuid4
 
-from secure_query.logical_plan import (
+from secure_query.kernel.logical_plan import (
     Aggregation,
     ColumnRef,
     Eq,

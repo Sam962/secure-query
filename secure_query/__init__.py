@@ -10,18 +10,18 @@ Public API:
 The LLM must only emit LogicalPlan JSON. It must never emit SQL.
 """
 
-from secure_query.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
-from secure_query.compile import CompilationError, CompiledQuery, compile
-from secure_query.errors import ValidationError
-from secure_query.execute import (
+from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
+from secure_query.kernel.compile import CompilationError, CompiledQuery, compile
+from secure_query.kernel.errors import ValidationError
+from secure_query.engine.execute import (
     AuditRecord,
     ExecuteOptions,
     ExecutionError,
     ExecutionResult,
     execute_duckdb,
 )
-from secure_query.databricks import draft_catalog, execute_databricks
-from secure_query.logical_plan import LogicalPlan
+from secure_query.engine.databricks import draft_catalog, execute_databricks
+from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.planner import (
     LLMClient,
     MockLLMClient,
@@ -31,9 +31,12 @@ from secure_query.planner import (
     plan_question,
     resolve_llm_settings,
 )
-from secure_query.validate import validate, validate_and_compile
+from secure_query.engine.postgres import execute_postgres
+from secure_query.api.service import AskOutcome, ask
+from secure_query.kernel.validate import validate, validate_and_compile
 
 __all__ = [
+    "AskOutcome",
     "AuditRecord",
     "Catalog",
     "ColumnSpec",
@@ -50,11 +53,13 @@ __all__ = [
     "PlannerResult",
     "TableSpec",
     "ValidationError",
+    "ask",
     "compile",
     "default_client",
     "draft_catalog",
     "execute_databricks",
     "execute_duckdb",
+    "execute_postgres",
     "plan_question",
     "resolve_llm_settings",
     "validate",

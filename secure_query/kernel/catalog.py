@@ -6,9 +6,11 @@ Do not treat LLM-generated "schema understanding" as the sole authority for this
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from secure_query.kernel.metrics import MetricSpec, metric_tables
 
 ColumnDtype = Literal["int", "float", "str", "datetime", "bool", "json"]
 PiiRisk = Literal["none", "low", "high"]
@@ -25,6 +27,10 @@ class ColumnSpec(BaseModel):
     label_for: str | None = Field(
         default=None,
         description="If this FK column, preferred display column as 'Table.Column' for grouping",
+    )
+    unit: str | None = Field(
+        default=None,
+        description="Catalog-owned display unit (e.g. USD). Never inferred by the LLM.",
     )
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -95,19 +101,70 @@ class Catalog(BaseModel):
     tenant_id: str
     tables: list[TableSpec]
     join_keys: list[JoinKey] = Field(default_factory=list)
+    allow_any_join: bool = Field(
+        default=False,
+        description=(
+            "Dev only: accept any equi-join between catalog columns. When False, "
+            "join_keys is a strict allowlist, and an empty list allows no joins."
+        ),
+    )
     synonyms: list[Synonym] = Field(default_factory=list)
-    metric_ids: list[str] = Field(
+    metrics: list[MetricSpec] = Field(
         default_factory=list,
-        description="Ids of approved metrics (see metrics.py); listed in planner_summary",
+        description="Analyst-owned metric definitions; ids are listed in planner_summary",
+    )
+    instructions: list[str] = Field(
+        default_factory=list,
+        description="Analyst-owned house rules injected into the planner prompt (never SQL)",
     )
     max_limit: int = 10000
     require_limit: bool = True
     sql_dialect: str = Field(
         default="duckdb",
-        description="sqlglot dialect for compile (duckdb locally, databricks in warehouse)",
+        description="sqlglot dialect for compile (duckdb locally, postgres, or databricks)",
     )
 
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_bare_metric_ids(cls, data: Any) -> Any:
+        """`metric_ids` named entries in a Python registry; definitions now live here."""
+        if isinstance(data, dict) and "metric_ids" in data:
+            data = dict(data)
+            if data.pop("metric_ids"):
+                raise ValueError(
+                    "metric_ids is no longer supported: put full metric definitions "
+                    "under `metrics` in the catalog"
+                )
+        return data
+
+    @model_validator(mode="after")
+    def validate_metrics(self) -> Catalog:
+        """Every metric must be unique and expressible over this catalog."""
+        from secure_query.kernel.metrics import expand_metric_plan
+        from secure_query.kernel.validate import validate
+
+        seen: set[str] = set()
+        known = set(self.table_map())
+        for metric in self.metrics:
+            if metric.id in seen:
+                raise ValueError(f"duplicate metric id {metric.id!r}")
+            seen.add(metric.id)
+            missing = sorted(metric_tables(metric) - known)
+            if missing:
+                raise ValueError(f"metric {metric.id!r} reads tables not in catalog: {missing}")
+            if metric.kind == "builtin":
+                continue
+            errors = validate(expand_metric_plan(metric), self)
+            if errors:
+                detail = "; ".join(f"{e.code}: {e.message}" for e in errors)
+                raise ValueError(f"metric {metric.id!r} does not validate: {detail}")
+        return self
+
+    @property
+    def metric_ids(self) -> list[str]:
+        return [m.id for m in self.metrics]
 
     def table_map(self) -> dict[str, TableSpec]:
         return {t.name: t for t in self.tables}
@@ -122,9 +179,7 @@ class Catalog(BaseModel):
         return table_id in self.table_map()
 
     def join_allowed(self, lt: str, lc: str, rt: str, rc: str) -> bool:
-        if not self.join_keys:
-            # Empty join_keys = allow any equi-join between known columns (dev mode).
-            # For production, populate join_keys and this becomes an allowlist.
+        if self.allow_any_join:
             return True
         return any(jk.matches(lt, lc, rt, rc) for jk in self.join_keys)
 
@@ -149,7 +204,8 @@ class Catalog(BaseModel):
                 pii = f" [pii={col.pii_risk}]" if col.pii_risk != "none" else ""
                 desc = f" — {col.description}" if col.description else ""
                 hint = f" → label via {col.label_for}" if col.label_for else ""
-                lines.append(f"      {col.name}: {col.dtype}{pii}{desc}{hint}")
+                unit = f" [{col.unit}]" if col.unit else ""
+                lines.append(f"      {col.name}: {col.dtype}{pii}{unit}{desc}{hint}")
         if self.synonyms:
             lines.append("synonyms (use these mappings):")
             for syn in self.synonyms:
@@ -160,6 +216,10 @@ class Catalog(BaseModel):
             lines.append("approved_metrics (prefer metric_id when the question matches):")
             for mid in self.metric_ids:
                 lines.append(f"  - {mid}")
+        if self.instructions:
+            lines.append("instructions (follow these; they are not SQL):")
+            for rule in self.instructions:
+                lines.append(f"  - {rule}")
         if self.join_keys:
             lines.append("approved_joins:")
             for jk in self.join_keys:

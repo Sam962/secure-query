@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from secure_query.catalog import Catalog
-from secure_query.logical_plan import Filter, LogicalPlan
-from secure_query.metrics import metric_tables, metrics_for_catalog
+from secure_query.kernel.catalog import Catalog
+from secure_query.kernel.logical_plan import Filter, LogicalPlan
+from secure_query.kernel.metrics import metric_tables
 
 
 class AuthError(Exception):
@@ -57,18 +57,14 @@ def catalog_for_principal(base: Catalog, principal: Principal) -> Catalog:
         for jk in base.join_keys
         if jk.left_table in allowed and jk.right_table in allowed
     ]
-    registry = {m.id: m for m in metrics_for_catalog(base)}
-    metric_ids = [
-        mid
-        for mid in base.metric_ids
-        if mid in registry and metric_tables(registry[mid]) <= visible
-    ]
     return Catalog(
         tenant_id=base.tenant_id,
         tables=tables,
         join_keys=join_keys,
+        allow_any_join=base.allow_any_join,
         synonyms=[s for s in base.synonyms if s.table_id in allowed],
-        metric_ids=metric_ids,
+        metrics=[m for m in base.metrics if metric_tables(m) <= visible],
+        instructions=list(base.instructions),
         max_limit=base.max_limit,
         require_limit=base.require_limit,
         sql_dialect=base.sql_dialect,
@@ -83,11 +79,11 @@ def inject_row_filters(plan: LogicalPlan, principal: Principal) -> LogicalPlan:
     return plan.model_copy(update={"filters": merged})
 
 
-def assert_ratio_allowed(principal: Principal) -> None:
-    """Ratio metrics compile SQL without a plan, so row filters cannot be injected."""
+def assert_builtin_metric_allowed(principal: Principal) -> None:
+    """Builtin metrics compile SQL without a plan, so row filters cannot be injected."""
     if principal.row_filters:
         raise PermissionError(
-            "ratio metrics cannot run when the principal has mandatory row filters"
+            "builtin metrics cannot run when the principal has mandatory row filters"
         )
 
 
@@ -174,7 +170,7 @@ def _principal_from_registry(
     if raw_filters:
         from pydantic import TypeAdapter
 
-        from secure_query.logical_plan import Filter as FilterUnion
+        from secure_query.kernel.logical_plan import Filter as FilterUnion
 
         adapter = TypeAdapter(FilterUnion)
         filters = tuple(adapter.validate_python(f) for f in raw_filters)

@@ -1,4 +1,4 @@
-# Chinook eval fixtures (Phase 4)
+# Chinook compiler goldens
 
 Each subdirectory is one case:
 
@@ -6,10 +6,15 @@ Each subdirectory is one case:
 - `plan.json` — approved LogicalPlan fixture
 - `expected.sql` — exact compiler output (positive cases only)
 
-Run:
+These protect the **compiler**, not the live planner. Execution accuracy (NL → rows vs reference SQL) is:
 
 ```bash
-pytest secure_query/tests/test_chinook_evals.py -q
+python -m secure_query.evals.run_chinook --accuracy --split holdout --provider ollama
+```
+
+Goldens only:
+
+```bash
 python -m secure_query.evals.run_chinook
-python -m secure_query.evals.run_chinook --live --provider ollama
+pytest secure_query/tests/test_chinook_evals.py -q
 ```

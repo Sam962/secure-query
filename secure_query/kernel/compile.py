@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import date, datetime
 
 from sqlglot import exp
 
-from secure_query.logical_plan import (
+from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
     ColumnRef,
@@ -39,6 +40,13 @@ from secure_query.logical_plan import (
 
 # Default compile target. Override in compile() call sites if you fork for Postgres/etc.
 DEFAULT_DIALECT = "duckdb"
+_COMPILE_CACHE: OrderedDict[tuple[str, str, str], CompiledQuery] = OrderedDict()
+_COMPILE_CACHE_MAX = 256
+
+
+def clear_compile_cache() -> None:
+    """Drop cached compiles (tests / catalog reloads)."""
+    _COMPILE_CACHE.clear()
 
 
 class CompilationError(Exception):
@@ -74,16 +82,72 @@ def compile(
     compiler falls back to `SELECT *`, which cannot honour column-level policy —
     so production callers should use validate_and_compile, which supplies it.
     """
+    plan_hash = _hash_plan(plan)
+    proj_key = ",".join(f"{c.table_id}.{c.column_id}" for c in (projection or []))
+    cache_key = (plan_hash, dialect, proj_key)
+    cached = _COMPILE_CACHE.get(cache_key)
+    if cached is not None:
+        _COMPILE_CACHE.move_to_end(cache_key)
+        return cached
+
     select = _build_select(plan, projection)
     sql = select.sql(dialect=dialect, pretty=False)
-
-    plan_hash = _hash_plan(plan)
     sql_hash = hashlib.sha256(sql.encode()).hexdigest()
-
-    return CompiledQuery(
+    compiled = CompiledQuery(
         sql=sql,
         plan_hash=plan_hash,
         sql_hash=sql_hash,
+        parameters=[],
+    )
+    _COMPILE_CACHE[cache_key] = compiled
+    if len(_COMPILE_CACHE) > _COMPILE_CACHE_MAX:
+        _COMPILE_CACHE.popitem(last=False)
+    return compiled
+
+
+def compile_ratio(
+    plan: LogicalPlan,
+    *,
+    numerator_alias: str,
+    denominator_alias: str,
+    alias: str,
+    dialect: str = DEFAULT_DIALECT,
+) -> CompiledQuery:
+    """Compile an already-validated plan, replacing two aggregates with their ratio.
+
+    FROM / JOIN / WHERE / GROUP BY come from the plan unchanged, so injected row
+    filters apply. The numerator is cast to DOUBLE (no integer division) and a
+    zero denominator yields NULL rather than an error.
+    """
+    select = _build_select(plan)
+    measures: dict[str, exp.Expression] = {}
+    keep: list[exp.Expression] = []
+    for proj in select.expressions:
+        if isinstance(proj, exp.Alias) and proj.alias in (numerator_alias, denominator_alias):
+            measures[proj.alias] = proj.this
+        else:
+            keep.append(proj)
+    if set(measures) != {numerator_alias, denominator_alias}:
+        raise CompilationError("ratio plan must select numerator and denominator", "$.aggregations")
+
+    ratio = exp.Div(
+        this=exp.Cast(this=measures[numerator_alias], to=exp.DataType.build("double")),
+        expression=exp.Nullif(
+            this=measures[denominator_alias], expression=exp.Literal.number(0)
+        ),
+    )
+    ratio_alias = exp.to_identifier(alias, quoted=True)
+    select.set("expressions", [*keep, exp.Alias(this=ratio, alias=ratio_alias)])
+    if plan.group_by and not plan.order_by:
+        select = select.order_by(
+            exp.Ordered(this=exp.Column(this=ratio_alias.copy()), desc=True)
+        )
+
+    sql = select.sql(dialect=dialect, pretty=False)
+    return CompiledQuery(
+        sql=sql,
+        plan_hash=_hash_plan(plan),
+        sql_hash=hashlib.sha256(sql.encode()).hexdigest(),
         parameters=[],
     )
 

@@ -1,8 +1,15 @@
 """Tests for catalog synonyms and out-of-scope guards."""
 
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.guard import catalog_vocabulary, opaque_grouping_keys, out_of_scope_request
-from secure_query.builder import LQP
+from secure_query.planner.guard import catalog_vocabulary, opaque_grouping_keys, out_of_scope_request
+from secure_query.kernel.builder import LQP
+
+
+def test_client_synonym_maps_to_customer() -> None:
+    catalog = sample_catalog()
+    vocab = catalog_vocabulary(catalog)
+    assert "client" in vocab
+    assert any(str(c).startswith("Customer") for c in vocab["client"])
 
 
 def test_revenue_synonym_maps_to_invoice_total() -> None:
@@ -76,6 +83,11 @@ def test_employee_headcount_question_not_out_of_scope() -> None:
     assert (
         out_of_scope_request("How many employees work for us?", catalog) is None
     )
+
+
+def test_grouped_by_is_ordinary_english() -> None:
+    catalog = sample_catalog()
+    assert out_of_scope_request("revenue grouped by country", catalog) is None
 
 
 def test_employee_synonyms_in_vocabulary() -> None:

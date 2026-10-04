@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from secure_query.builder import LQP
+from secure_query.kernel.builder import LQP
 from secure_query.examples.load_sample_db import DATA_DIR, DUCKDB_PATH, load_sample_db
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.execute import ExecuteOptions, execute_duckdb
-from secure_query.validate import validate_and_compile
+from secure_query.engine.execute import ExecuteOptions, execute_duckdb
+from secure_query.kernel.validate import validate_and_compile
 
 
 def main() -> None:

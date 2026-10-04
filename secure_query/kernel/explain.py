@@ -16,8 +16,8 @@ per-customer is the most common silent error.
 
 from __future__ import annotations
 
-from secure_query.catalog import Catalog
-from secure_query.logical_plan import (
+from secure_query.kernel.catalog import Catalog
+from secure_query.kernel.logical_plan import (
     Aggregation,
     ColumnRef,
     Filter,
@@ -110,7 +110,7 @@ def _describe_grain(plan: LogicalPlan, catalog: Catalog | None) -> str:
         return "Returns a single row summarising everything above."
 
     if catalog is not None:
-        from secure_query.validate import safe_projection
+        from secure_query.kernel.validate import safe_projection
 
         columns = [col.column_id for col in safe_projection(plan, catalog)]
         if columns:

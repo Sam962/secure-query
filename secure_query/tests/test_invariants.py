@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from secure_query.logical_plan import (
+from secure_query.kernel.logical_plan import (
     Between,
     ColumnRef,
     Eq,

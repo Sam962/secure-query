@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.logical_plan import LogicalPlan
-from secure_query.validate import validate, validate_and_compile
+from secure_query.kernel.logical_plan import LogicalPlan
+from secure_query.kernel.validate import validate, validate_and_compile
 
 CHINOOK_EVAL_DIR = Path(__file__).resolve().parent / "chinook"
 

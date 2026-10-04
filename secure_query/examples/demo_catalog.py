@@ -6,8 +6,8 @@ __all__ = ["demo_catalog", "sample_catalog"]
 
 
 if __name__ == "__main__":
-    from secure_query.builder import LQP
-    from secure_query.validate import validate_and_compile
+    from secure_query.kernel.builder import LQP
+    from secure_query.kernel.validate import validate_and_compile
 
     catalog = demo_catalog()
     print("--- catalog sent to LLM planner ---")

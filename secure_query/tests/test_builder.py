@@ -10,8 +10,8 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
-from secure_query.builder import LQP, _parse_col
-from secure_query.logical_plan import (
+from secure_query.kernel.builder import LQP, _parse_col
+from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
     ColumnRef,

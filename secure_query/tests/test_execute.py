@@ -9,16 +9,16 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from secure_query.builder import LQP
-from secure_query.compile import CompiledQuery
+from secure_query.kernel.builder import LQP
+from secure_query.kernel.compile import CompiledQuery
 from secure_query.examples.load_sample_db import create_schema
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.execute import (
+from secure_query.engine.execute import (
     ExecuteOptions,
     ExecutionError,
     execute_duckdb,
 )
-from secure_query.validate import validate_and_compile
+from secure_query.kernel.validate import validate_and_compile
 
 
 @pytest.fixture()
@@ -101,7 +101,7 @@ def test_timeout_raises_without_waiting_for_the_query(
     tiny_db: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The caller must be released at the timeout, not when the query finishes."""
-    import secure_query.execute as ex
+    import secure_query.engine.execute as ex
 
     def slow(*_a, **_k):
         time.sleep(3)
@@ -143,7 +143,7 @@ def test_timeout_interrupts_a_real_query(tiny_db: Path) -> None:
 
 
 def test_timeout_is_audited(tiny_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    import secure_query.execute as ex
+    import secure_query.engine.execute as ex
 
     monkeypatch.setattr(ex, "_execute_once", lambda *a, **k: (time.sleep(2), None)[1])
     audit_path = tmp_path / "audit.jsonl"

@@ -21,7 +21,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.delenv("SECURE_QUERY_ALLOWED_TABLES", raising=False)
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
     monkeypatch.delenv("SECURE_QUERY_API_TOKENS", raising=False)
-    monkeypatch.setattr("secure_query.api.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
     return TestClient(app)
 
 
@@ -31,7 +31,25 @@ def test_health(client: TestClient) -> None:
     assert body["backend"] == "duckdb"
 
 
-def test_ask_does_not_honor_forged_principal_fields(client: TestClient) -> None:
+def test_ready_and_ui(client: TestClient) -> None:
+    ready = client.get("/ready")
+    assert ready.status_code in {200, 503}
+    page = client.get("/")
+    assert page.status_code == 200
+    assert b"Secure Query" in page.content
+    assert b"Review plan" in page.content
+    assert b"the model never writes SQL" in page.content
+
+
+def test_ask_confirm_endpoint(client: TestClient) -> None:
+    response = client.post("/ask/confirm", json={"question": "revenue by country"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] in {"confirm", "clarify"}
+    assert body["audit"]["principal_id"] == "demo-user"
+
+
+def test_ask_rejects_forged_principal_fields(client: TestClient) -> None:
     response = client.post(
         "/ask",
         json={
@@ -42,10 +60,21 @@ def test_ask_does_not_honor_forged_principal_fields(client: TestClient) -> None:
             "confirm_only": True,
         },
     )
+    assert response.status_code == 422
+
+
+def test_ask_confirm_uses_server_identity(client: TestClient) -> None:
+    response = client.post(
+        "/ask",
+        json={"question": "revenue by country", "confirm_only": True},
+    )
     assert response.status_code == 200
     body = response.json()
     assert body["audit"]["principal_id"] == "demo-user"
     assert body["audit"]["tenant_id"] == "chinook"
+    assert body["status"] in {"confirm", "ok", "clarify"}
+    assert "clarify_code" in body
+    assert "suggestions" in body
 
 
 def test_token_mode_rejects_missing_bearer(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -55,7 +84,7 @@ def test_token_mode_rejects_missing_bearer(monkeypatch: pytest.MonkeyPatch) -> N
         json.dumps({"secret": {"principal_id": "alice", "allowed_tables": ["Invoice"]}}),
     )
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
-    monkeypatch.setattr("secure_query.api.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
     response = TestClient(app).post("/ask", json={"question": "hi", "confirm_only": True})
     assert response.status_code == 401
 
@@ -83,7 +112,7 @@ def test_token_mode_ok(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
-    monkeypatch.setattr("secure_query.api.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
     response = TestClient(app).post(
         "/ask",
         headers={"Authorization": "Bearer secret"},

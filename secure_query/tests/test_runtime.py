@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 
 from secure_query.auth import Principal
-from secure_query.compile import CompiledQuery
-from secure_query.execute import ExecuteOptions
-from secure_query.runtime import (
+from secure_query.kernel.compile import CompiledQuery
+from secure_query.engine.execute import ExecuteOptions
+from secure_query.engine.runtime import (
     databricks_configured,
     execute_compiled_query,
     load_active_catalog,
@@ -57,7 +57,7 @@ def test_execute_compiled_query_uses_databricks_when_configured(
     def fake_execute_databricks(*args, **kwargs):
         called["args"] = args
         called["kwargs"] = kwargs
-        from secure_query.execute import ExecutionResult, _make_audit
+        from secure_query.engine.execute import ExecutionResult, _make_audit
 
         compiled = args[0] if args else kwargs["compiled"]
         principal = kwargs.get("principal")
@@ -81,7 +81,7 @@ def test_execute_compiled_query_uses_databricks_when_configured(
             compiled=compiled,
         )
 
-    monkeypatch.setattr("secure_query.runtime.execute_databricks", fake_execute_databricks)
+    monkeypatch.setattr("secure_query.engine.runtime.execute_databricks", fake_execute_databricks)
     config = runtime_config()
     compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
     principal = Principal(principal_id="alice", tenant_id="chinook")

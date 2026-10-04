@@ -1,7 +1,8 @@
 """Runtime wiring: catalog source, execute backend, audit path.
 
-DuckDB is the local default. When DATABRICKS_HOST, DATABRICKS_HTTP_PATH, and
-DATABRICKS_TOKEN are all set, execute routes to the SQL warehouse instead.
+DuckDB is the local default. Databricks SQL warehouse when DATABRICKS_* are
+set. Postgres when SECURE_QUERY_POSTGRES_DSN / DATABASE_URL is set.
+SECURE_QUERY_BACKEND can force one of: duckdb | databricks | postgres.
 """
 
 from __future__ import annotations
@@ -12,15 +13,17 @@ from pathlib import Path
 from typing import Literal
 
 from secure_query.auth import Principal
-from secure_query.catalog import Catalog
-from secure_query.compile import CompiledQuery
-from secure_query.databricks import catalog_json_path, databricks_settings_from_env, execute_databricks
+from secure_query.kernel.catalog import Catalog
+from secure_query.kernel.compile import CompiledQuery
+from secure_query.engine.databricks import catalog_json_path, databricks_settings_from_env, execute_databricks
 from secure_query.examples.load_sample_db import DUCKDB_PATH
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.execute import ExecuteOptions, ExecutionError, ExecutionResult, execute_duckdb
-from secure_query.logical_plan import LogicalPlan
+from secure_query.engine.execute import ExecuteOptions, ExecutionError, ExecutionResult, execute_duckdb
+from secure_query.planner.knowledge import overlay_from_env
+from secure_query.kernel.logical_plan import LogicalPlan
+from secure_query.engine.postgres import execute_postgres, postgres_configured, postgres_dsn
 
-ExecuteBackend = Literal["duckdb", "databricks"]
+ExecuteBackend = Literal["duckdb", "databricks", "postgres"]
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,7 @@ class RuntimeConfig:
     catalog: Catalog
     audit_path: Path
     duckdb_path: Path
+    postgres_dsn: str | None = None
 
 
 def default_audit_path() -> Path:
@@ -43,21 +47,40 @@ def databricks_configured() -> bool:
     return bool(host and http_path and token)
 
 
+def resolve_backend() -> ExecuteBackend:
+    explicit = (os.environ.get("SECURE_QUERY_BACKEND") or "").strip().lower()
+    if explicit in ("duckdb", "databricks", "postgres"):
+        return explicit  # type: ignore[return-value]
+    if databricks_configured():
+        return "databricks"
+    if postgres_configured():
+        return "postgres"
+    return "duckdb"
+
+
 def load_active_catalog() -> Catalog:
-    """Approved catalog: JSON file if set, else Chinook sample."""
+    """Approved catalog: JSON file if set, else Chinook sample, plus knowledge overlay."""
     path = (os.environ.get("SECURE_QUERY_CATALOG_FILE") or "").strip()
     if path:
-        return catalog_json_path(path)
-    return sample_catalog()
+        catalog = catalog_json_path(path)
+    else:
+        catalog = sample_catalog()
+    catalog = overlay_from_env(catalog)
+    backend = resolve_backend()
+    dialect = {"postgres": "postgres", "databricks": "databricks"}.get(backend)
+    if dialect and catalog.sql_dialect != dialect:
+        catalog = catalog.model_copy(update={"sql_dialect": dialect})
+    return catalog
 
 
 def runtime_config() -> RuntimeConfig:
-    backend: ExecuteBackend = "databricks" if databricks_configured() else "duckdb"
+    backend = resolve_backend()
     return RuntimeConfig(
         backend=backend,
         catalog=load_active_catalog(),
         audit_path=default_audit_path(),
         duckdb_path=Path(DUCKDB_PATH),
+        postgres_dsn=postgres_dsn() if backend == "postgres" else None,
     )
 
 
@@ -70,6 +93,8 @@ def ensure_execute_ready(config: RuntimeConfig) -> None:
         )
     if config.backend == "databricks":
         databricks_settings_from_env()
+    if config.backend == "postgres" and not (config.postgres_dsn or postgres_dsn()):
+        raise ExecutionError("Postgres backend selected but no DSN is configured")
 
 
 def execute_compiled_query(
@@ -98,6 +123,15 @@ def execute_compiled_query(
             host=settings["host"],
             http_path=settings["http_path"],
             access_token=settings["access_token"],
+            plan=plan,
+            question=question,
+            principal=principal,
+            options=opts,
+        )
+    if config.backend == "postgres":
+        return execute_postgres(
+            compiled,
+            config.postgres_dsn,
             plan=plan,
             question=question,
             principal=principal,

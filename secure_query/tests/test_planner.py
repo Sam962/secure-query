@@ -200,7 +200,7 @@ def test_resolve_llm_settings_ollama_ignores_groq_model(
     settings = resolve_llm_settings()
     assert settings is not None
     assert settings["provider"] == "ollama"
-    assert settings["model"] == "llama3.2"
+    assert settings["model"] == "qwen2.5:7b"
 
 
 def test_resolve_llm_settings_ollama_keeps_ollama_tag(
@@ -226,7 +226,7 @@ def test_resolve_llm_settings_none_is_mock(
     ):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setattr(
-        "secure_query.planner._ollama_reachable", lambda host=None: False
+        "secure_query.planner.plan._ollama_reachable", lambda host=None: False
     )
     assert resolve_llm_settings() is None
 
@@ -242,7 +242,7 @@ def test_resolve_auto_detects_ollama(monkeypatch: pytest.MonkeyPatch) -> None:
     ):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setattr(
-        "secure_query.planner._ollama_reachable", lambda host=None: True
+        "secure_query.planner.plan._ollama_reachable", lambda host=None: True
     )
     settings = resolve_llm_settings()
     assert settings is not None
@@ -311,7 +311,7 @@ def test_openai_client_retries_rate_limit(monkeypatch: pytest.MonkeyPatch) -> No
     from secure_query.planner import OpenAIClient
 
     sleeps: list[float] = []
-    monkeypatch.setattr("secure_query.planner.time.sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr("secure_query.planner.plan.time.sleep", lambda s: sleeps.append(s))
 
     class FakeMessage:
         content = '{"cannot_answer": true, "reason": "test"}'

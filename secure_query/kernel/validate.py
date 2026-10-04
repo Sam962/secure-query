@@ -7,11 +7,12 @@ and missing limits are rejected here — never at SQL string time.
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 
-from secure_query.catalog import Catalog, ColumnSpec
-from secure_query.compile import CompiledQuery, CompilationError, compile
-from secure_query.errors import ValidationError
-from secure_query.logical_plan import (
+from secure_query.kernel.catalog import Catalog, ColumnSpec
+from secure_query.kernel.compile import CompiledQuery, CompilationError, compile, compile_ratio
+from secure_query.kernel.errors import ValidationError
+from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
     ColumnRef,
@@ -28,6 +29,11 @@ from secure_query.logical_plan import (
     Lte,
     NotEq,
     NotIn,
+)
+from secure_query.kernel.metrics import (
+    RATIO_DENOMINATOR_ALIAS,
+    RATIO_NUMERATOR_ALIAS,
+    MetricSpec,
 )
 
 
@@ -164,11 +170,19 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
 
 
 def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:
-    """Reject column refs to tables that are not source or joined."""
+    """Reject column refs to tables that are not source or joined.
+
+    Join ON clauses are checked against tables already in FROM at that hop, so
+    ``JOIN Track ON InvoiceLine.TrackId = Track.TrackId`` fails unless
+    InvoiceLine was joined earlier — otherwise DuckDB raises a binder error.
+    """
     reachable = set(plan_tables(plan))
 
-    def check(ref: ColumnRef, path: str) -> list[ValidationError]:
-        if ref.table_id in reachable:
+    def check(
+        ref: ColumnRef, path: str, tables: set[str] | None = None
+    ) -> list[ValidationError]:
+        allowed = reachable if tables is None else tables
+        if ref.table_id in allowed:
             return []
         return [
             ValidationError(
@@ -183,6 +197,16 @@ def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:
         ]
 
     errors: list[ValidationError] = []
+    in_from = {plan.source}
+    for i, join in enumerate(plan.joins):
+        in_from.add(join.right_table)
+        for j, cond in enumerate(join.conditions):
+            errors.extend(
+                check(cond.left, f"$.joins[{i}].conditions[{j}].left", in_from)
+            )
+            errors.extend(
+                check(cond.right, f"$.joins[{i}].conditions[{j}].right", in_from)
+            )
     for i, filt in enumerate(plan.filters):
         errors.extend(check(filt.column, f"$.filters[{i}].column"))
     for i, filt in enumerate(plan.having):
@@ -198,6 +222,20 @@ def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:
     for i, ob in enumerate(plan.order_by):
         if ob.column is not None:
             errors.extend(check(ob.column, f"$.order_by[{i}].column"))
+
+    known_aliases = {agg.alias for agg in plan.aggregations}
+    for i, ob in enumerate(plan.order_by):
+        if ob.alias is not None and ob.alias not in known_aliases:
+            errors.append(
+                ValidationError(
+                    code="plan.unknown_order_alias",
+                    path=f"$.order_by[{i}].alias",
+                    message=(
+                        f"ORDER BY alias {ob.alias!r} is not an aggregation in this plan"
+                    ),
+                    stage="typecheck",
+                )
+            )
     return errors
 
 
@@ -521,6 +559,30 @@ def validate_and_compile(plan: LogicalPlan, catalog: Catalog) -> CompiledQuery:
         return compile(plan, dialect=catalog.sql_dialect, projection=projection)
     except CompilationError:
         raise
+
+
+def validate_and_compile_metric(
+    metric: MetricSpec, plan: LogicalPlan, catalog: Catalog
+) -> CompiledQuery:
+    """Validate and compile a ratio metric's expanded plan (row filters may be injected).
+
+    plan_hash is `metric:<id>:<plan hash>` so answers can look up the metric's unit
+    and audit still pins the exact plan, filters included.
+    """
+    if metric.kind != "ratio":
+        raise ValueError(f"metric {metric.id!r} is not a ratio metric")
+    plan = normalize_plan(plan, catalog)
+    errors = validate(plan, catalog)
+    if errors:
+        raise PlanValidationFailed(errors)
+    compiled = compile_ratio(
+        plan,
+        numerator_alias=RATIO_NUMERATOR_ALIAS,
+        denominator_alias=RATIO_DENOMINATOR_ALIAS,
+        alias=metric.id,
+        dialect=catalog.sql_dialect,
+    )
+    return replace(compiled, plan_hash=f"metric:{metric.id}:{compiled.plan_hash}")
 
 
 def _check_column_ref(

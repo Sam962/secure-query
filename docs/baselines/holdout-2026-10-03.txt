@@ -1,0 +1,20 @@
+Holdout accuracy — 2026-10-03
+Provider: ollama (qwen2.5:7b, digest 845dbda0ea48, manifest dated 2026-09-07)
+Command: python -m secure_query.evals.run_chinook --accuracy --split holdout --provider ollama --repeat 3
+
+accuracy      83%  (10/12)
+wrong         17%  (2/12)   # GATE FAILS
+abstained     0%   (0/12)
+consistency   100% (same plan shape across 3 repeats; failures are deterministic)
+
+Wrong:
+- top5_customer_countries_by_revenue: ORDER BY Country ASC before revenue DESC, so LIMIT 5
+  returns the alphabetically first countries.
+- avg_revenue_per_customer: answered (revenue + customer count by country) instead of declining.
+
+Cause: model drift, not code. The qwen2.5:7b tag was re-pulled 2026-09-07, after the
+2026-08-18 baseline. The planner prompt is byte-identical to the 2026-08-18 code path
+(build_user_prompt depends only on Catalog.planner_summary, which did not change).
+
+Lesson: record the model digest with every baseline; an Ollama tag is not a version.
+Do not fix these by tuning on holdout. Reproduce the failure shapes in the dev split.

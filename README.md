@@ -1,188 +1,202 @@
 # Secure Query
 
-**Governed talk-to-data for sensitive databases — the LLM never writes SQL.**
+Governed talk-to-data: **the LLM never writes SQL.**
 
-Natural language goes in; a typed **Logical Query Plan (LQP)** comes out. Your code validates that plan against a human-approved **catalog**, compiles SQL through an AST (no string interpolation), executes read-only with timeouts and row caps, and writes a full **audit trail** (question, plan, explanation, SQL, hashes, principal).
+You ask in English. The model fills in a typed **Logical Query Plan (LQP)** — a small JSON form of tables, joins, filters, and aggregates. Code you own then:
 
-Built for teams that need more than Text2SQL demos: PII blocks, refusal over wrong answers, and replayable audit logs — the transparency Genie and similar tools typically lack.
+1. **Validates** the plan against a human-approved **catalog** (not a live schema dump)
+2. **Compiles** SQL with sqlglot (AST only — no string interpolation)
+3. **Executes** read-only, with timeout and row cap
+4. **Audits** the question, plan, SQL, hashes, and principal
 
-**New here?** Read [docs/DEMO.md](docs/DEMO.md) for the problem, architecture, and honest limits.
+Wrong-answer rate is the product metric. A refusal is better than a confident wrong number.
+
+The demo uses the public [Chinook](https://github.com/lerocha/chinook-database) music store (11 tables) on DuckDB. The kernel is schema-agnostic; Chinook is not your production catalog.
+
+New here? Read [docs/DEMO.md](docs/DEMO.md) (why this exists) then come back here to run it.
 
 ---
 
-## Why not let the LLM write SQL?
+## How to use the model
 
-| Risk | Text2SQL / Genie-style | Secure Query |
-|------|------------------------|--------------|
-| SQL injection / prompt tricks | Model outputs executable strings | Model outputs a fixed JSON form only |
-| Wrong confident answers | Common | Refusal-first; guards + eval gate |
-| PII leakage | Depends on prompts | Column policy + explicit projections |
-| Audit / replay | Often opaque | JSONL: plan + SQL + `plan_hash` + `sql_hash` |
-| Schema authority | Often auto-discovered dump | Human-approved catalog allowlist |
+The planner needs an LLM that can emit **LogicalPlan JSON**, not SQL. This repo is measured on **qwen2.5:7b** via [Ollama](https://ollama.com). Smaller tags such as `llama3.2` will look like a kernel regression (they are not).
+
+### 1. Local demo data
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev,planner,api]"
+python -m secure_query.examples.load_sample_db
+```
+
+### 2. Pull the recommended model
+
+```bash
+ollama pull qwen2.5:7b
+```
+
+Ollama is the default provider when it is running. The default model is `qwen2.5:7b` (`SECURE_QUERY_MODEL` / `--model` override it).
+
+### 3. Ask from the CLI
+
+```bash
+python -m secure_query.examples.ask_sample --provider ollama "revenue by country"
+```
+
+`--confirm-only` shows explain-back and compiled SQL without hitting the database.
+
+Pasted SQL and high-PII questions are refused **before** the model is called:
+
+```bash
+python -m secure_query.examples.ask_sample --provider ollama "list all customer emails"
+```
+
+If the question cannot be planned, the CLI may print **catalog suggestions**. Those are approved phrasings you can type next — the original question is never silently rewritten. Review still required.
+
+### 4. UI (confirm, then run)
+
+```bash
+export SECURE_QUERY_PROVIDER=ollama
+uvicorn secure_query.api:app --reload
+```
+
+Open http://localhost:8000/ — **Review plan**, then **Run query**. The Bearer token field is only for `AUTH_MODE=token` (unused in local `dev`).
+
+```bash
+docker compose up --build   # API + Chinook demo
+```
+
+### 5. Other providers
+
+| Provider | When | Notes |
+|----------|------|--------|
+| `ollama` | Local (recommended) | Default model `qwen2.5:7b` |
+| `groq` | Hosted, needs `GROQ_API_KEY` | Cloud model ids; do not send an Ollama tag |
+| `openai` | Hosted, needs `OPENAI_API_KEY` | |
+| `mock` | Tests / no GPU | Fixed Chinook plan; not a quality measure |
+
+```bash
+export SECURE_QUERY_PROVIDER=groq
+export GROQ_API_KEY=gsk_...
+python -m secure_query.examples.ask_sample --provider groq "revenue by country"
+```
+
+### 6. Measure (do not use holdout to tune)
+
+```bash
+python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong --provider ollama
+```
+
+Latest local gate (2026-10-03, `qwen2.5:7b` re-pulled 2026-09-07): **10/12, 2 wrong — failing** (model drift; see [docs/STATUS.md](docs/STATUS.md)). The 2026-08-18 build scored 12/12, 0% wrong. Four of those twelve are expected refusals (PII, missing tables, ratios the IR cannot say) and count as correct when the kernel declines.
+
+Protocol: [docs/EVAL.md](docs/EVAL.md).
 
 ---
 
 ## How it works
 
 ```
-user question
-  → resolve identity (token / SSO header — never from JSON body)
-  → slice catalog for this principal (tables, joins, metrics)
-  → deterministic guards (PII, out-of-scope terms)
-  → LLM emits LogicalPlan JSON or approved metric_id (never SQL)
-  → validate(plan, catalog)  — joins, PII, types, no cross joins
-  → compile via sqlglot AST
-  → inject mandatory row filters
-  → execute (DuckDB local | Databricks warehouse)
-  → audit JSONL + template answer (no LLM on result rows)
+question
+  → identity (env / Bearer / SSO header — never from JSON)
+  → catalog slice for this principal
+  → guards (PII, out-of-scope terms)
+  → LLM emits LogicalPlan JSON or approved metric_id
+  → validate(plan, catalog)
+  → compile (sqlglot AST)
+  → row filters
+  → execute (DuckDB | Databricks | Postgres)
+  → template answer + audit JSONL  (no LLM on result cells)
 ```
 
-The **catalog** (`secure_query/examples/sample_catalog.py` or your own JSON) is the security boundary. The database may contain more; anything not in the catalog is unqueryable.
+The **catalog** is the security boundary. The database may contain more; anything not listed is unqueryable.
 
----
-
-## Quick start (local demo)
-
-Uses public [Chinook](https://github.com/lerocha/chinook-database) data downloaded into `data/` (gitignored).
-
-```bash
-git clone <your-repo-url>
-cd secure-query
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,planner]"
-
-python -m secure_query.examples.load_sample_db
-python -m secure_query.examples.ask_sample --provider mock --confirm-only "revenue by country"
-pytest -q
-```
-
-**With a local LLM (recommended model for this repo: `qwen2.5:7b`):**
-
-```bash
-ollama pull qwen2.5:7b
-export SECURE_QUERY_PROVIDER=ollama
-export SECURE_QUERY_MODEL=qwen2.5:7b
-python -m secure_query.examples.ask_sample --provider ollama "revenue by country"
-```
-
-**PII refusal (no model call):**
-
-```bash
-python -m secure_query.examples.ask_sample --provider ollama "list all customer emails"
-# → clarify: restricted data, attempts: 0
-```
-
----
-
-## HTTP API
-
-```bash
-pip install -e ".[dev,planner,api]"
-export SECURE_QUERY_AUTH_MODE=dev
-export SECURE_QUERY_PRINCIPAL_ID=demo-user
-uvicorn secure_query.api:app --reload
-```
-
-```bash
-curl -s localhost:8000/health
-curl -s localhost:8000/ask \
-  -H 'Content-Type: application/json' \
-  -d '{"question":"revenue by country","confirm_only":true}' | python -m json.tool
-```
-
-Identity is **never** taken from the request body. See [docs/SECURITY.md](docs/SECURITY.md) and [config/principals.example.json](config/principals.example.json).
+Unity Catalog on Databricks is **not** this catalog. UC is warehouse grants/RLS. Secure Query drafts from UC `information_schema`, then a human approves PII and join keys. See [docs/SECURITY.md](docs/SECURITY.md).
 
 ---
 
 ## Configuration
 
-Copy [`.env.example`](.env.example) to `.env` (never commit `.env`).
+Copy [`.env.example`](.env.example) to `.env`. Never commit `.env`.
 
 | Variable | Purpose |
 |----------|---------|
+| `SECURE_QUERY_PROVIDER` / `SECURE_QUERY_MODEL` | Planner LLM |
 | `SECURE_QUERY_AUTH_MODE` | `dev` \| `token` \| `header` |
+| `SECURE_QUERY_ENV` | `production` forbids `AUTH_MODE=dev` |
 | `SECURE_QUERY_CATALOG_FILE` | Approved catalog JSON (default: Chinook sample) |
-| `SECURE_QUERY_PRINCIPALS_FILE` | Token → principal mapping |
-| `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_TOKEN` | Switch execute to SQL warehouse |
-| `SECURE_QUERY_PROVIDER` / `SECURE_QUERY_MODEL` | LLM for planner (Ollama, Groq, OpenAI) |
+| `SECURE_QUERY_KNOWLEDGE_FILE` | Extra synonyms + instructions (never SQL examples) |
+| `SECURE_QUERY_PRINCIPALS_FILE` | Token → principal map |
+| `SECURE_QUERY_BACKEND` | `duckdb` \| `databricks` \| `postgres` |
+| `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_TOKEN` | SQL warehouse |
+| `SECURE_QUERY_POSTGRES_DSN` / `DATABASE_URL` | Postgres |
+| `SECURE_QUERY_RETRIEVE_K` | Prompt table retrieval; `0` = off |
 
-When all three `DATABRICKS_*` vars are set, `GET /health` returns `"backend": "databricks"`.
+`GET /health` and `GET /ready` report the execute backend.
 
 ---
 
-## Using your own data
+## Your own data (not self-serve)
 
-The **kernel is schema-agnostic**; the **demo defaults to Chinook**. To point at your warehouse:
+Do **not** auto-go-live from a warehouse URL. Order:
 
-1. **Catalog** — draft from Unity Catalog (`secure_query/databricks.py`) or hand-write; data owner approves; set `SECURE_QUERY_CATALOG_FILE`
-2. **Metrics** — named measures in `secure_query/metrics.py` (or your registry module)
-3. **Evals** — real questions + reference SQL under `secure_query/evals/`
-4. **Auth** — production principals in `config/principals.json` (gitignored); use the `.example.json` as template
-
-See [docs/PLAN.md](docs/PLAN.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+1. Draft a catalog (`python -m secure_query.engine.catalog_draft --duckdb …` or `fetch_unity_catalog_draft`)
+2. Owner reviews PII flags and `join_keys` (a strict allowlist; `allow_any_join` is dev-only)
+3. Add synonyms / knowledge JSON, and metric definitions under `metrics` in the catalog JSON
+4. Fill [docs/OWNERSHIP.md](docs/OWNERSHIP.md)
+5. Production auth (`token` or `header`) + SELECT-only warehouse identity
+6. Domain holdout with wrong-rate = 0
 
 ---
 
 ## Project layout
 
-| Path | Role |
-|------|------|
-| `secure_query/logical_plan.py` | Frozen Pydantic IR (LQP) |
-| `secure_query/catalog.py` | Approved tables, columns, joins, PII flags |
-| `secure_query/validate.py` | Trust gate before compile |
-| `secure_query/compile.py` | Plan → SQL via sqlglot AST |
-| `secure_query/planner.py` | LLM → plan JSON only |
-| `secure_query/guard.py` | Deterministic pre/post-plan refusals |
-| `secure_query/auth.py` | Principal, catalog slice, row filters |
-| `secure_query/execute.py` | DuckDB execute + audit |
-| `secure_query/databricks.py` | Warehouse execute + UC catalog draft |
-| `secure_query/runtime.py` | Catalog load + backend routing |
-| `secure_query/api.py` | FastAPI `/ask` |
-| `secure_query/examples/` | Chinook demo + `ask_sample` CLI |
-| `secure_query/evals/` | Golden + accuracy harness |
-| `docs/` | Plan, security model, demo guide |
-
----
-
-## Security
-
-- [x] LLM never outputs SQL (`planner.py` + tests)
-- [x] Validate before compile; AST-only compile (CI grep gate)
-- [x] PII policy, cross-join block, metric allowlist per principal
-- [x] Server-side identity; audit includes `principal_id`, `tenant_id`
-- [x] Read-only execute, timeout, row cap
-
-Details: [docs/SECURITY.md](docs/SECURITY.md)
-
-**Do not commit:** `.env`, `data/`, `*.duckdb`, `config/principals.json`, real API tokens.
-
----
-
-## Accuracy (Chinook benchmark)
-
-Measured with **qwen2.5:7b** on 32 questions: **~94% correct, 0% wrong** (wrong → refusal). Small sample; tune on dev set, hold out release eval. Run:
-
-```bash
-python -m secure_query.evals.run_chinook --accuracy --provider ollama
 ```
+frontend/                 Confirm-first UI
+secure_query/
+  kernel/                 IR, catalog, validate, AST compile, explain
+  planner/                NL → LogicalPlan (never SQL)
+  engine/                 DuckDB / Postgres / Databricks + catalog draft
+  auth/                   Server-side identity
+  api/                    FastAPI + ask pipeline
+  examples/               Chinook demo + CLI
+  evals/                  Goldens + accuracy
+config/                   Knowledge + principals templates
+docs/                     Demo, eval, security, ADRs, status
+```
+
+---
+
+## Docs
+
+| Doc | What it is |
+|-----|------------|
+| [docs/DEMO.md](docs/DEMO.md) | Why LQP, one question end-to-end |
+| [docs/EVAL.md](docs/EVAL.md) | Dev vs holdout; never tune on holdout |
+| [docs/SECURITY.md](docs/SECURITY.md) | Threat model, identity, Databricks/Postgres |
+| [docs/OWNERSHIP.md](docs/OWNERSHIP.md) | Named owner before a real domain |
+| [docs/STATUS.md](docs/STATUS.md) | What is done; what to do next |
+| [docs/adr/001-result-policy.md](docs/adr/001-result-policy.md) | No LLM on result cells |
+| [docs/adr/002-ir-boundary.md](docs/adr/002-ir-boundary.md) | LQP will not become a SQL AST |
 
 ---
 
 ## Development
 
 ```bash
-pip install -e ".[dev,planner,api,databricks]"
+pip install -e ".[dev,planner,api,databricks,postgres]"
 pytest -q
 python -m secure_query.evals.run_chinook
 ```
 
-CI runs on push (`.github/workflows/ci.yml`).
+CI: pytest, compile SQL grep, mock holdout `--fail-on-wrong`.
+
+**Do not commit:** `.env`, `data/`, `*.duckdb`, `config/principals.json`, API tokens.
 
 ---
 
 ## Status
 
-**Trust kernel:** mature (330+ tests). **Production on company data:** requires your catalog, auth config, Databricks wiring, and domain eval gate — see [docs/ROADMAP.md](docs/ROADMAP.md).
+**Chinook demo:** runs end to end (confirm UI), but the live holdout gate currently fails on the re-pulled qwen2.5:7b (10/12, 2 wrong). **Company warehouse:** not ready until you have an approved catalog, owner, production auth, and a domain holdout. Details in [docs/STATUS.md](docs/STATUS.md).
 
 ---
 
