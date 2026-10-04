@@ -19,6 +19,7 @@ so it is reported as its own headline number rather than folded into accuracy.
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -63,6 +64,8 @@ class Attempt:
     detail: str
     shape: str | None = None
     sql: str | None = None
+    refusal_code: str | None = None
+    """Which control declined (clarify_code), when the system refused."""
 
 
 @dataclass
@@ -156,9 +159,15 @@ def _run_once(
         return Attempt(ERROR, f"planner error: {exc}")
 
     if planned.status != "ok" or planned.plan is None:
+        if planned.refused_by_model:
+            code = "planner_refusal"
+        else:
+            code = planned.clarify_code or (
+                "planner_refusal" if planned.refused else "validation_failed"
+            )
         if case.expect == "abstain":
-            return Attempt(CORRECT, "declined, as expected")
-        return Attempt(ABSTAINED, planned.clarify_message or "planner declined")
+            return Attempt(CORRECT, "declined, as expected", refusal_code=code)
+        return Attempt(ABSTAINED, planned.clarify_message or "planner declined", refusal_code=code)
 
     shape = plan_shape(planned.plan)
 
@@ -166,8 +175,10 @@ def _run_once(
         compiled = validate_and_compile(planned.plan, catalog)
     except PlanValidationFailed as exc:
         if case.expect == "abstain":
-            return Attempt(CORRECT, "blocked by validation, as expected", shape)
-        return Attempt(ABSTAINED, f"validation blocked: {exc}", shape)
+            return Attempt(
+                CORRECT, "blocked by validation, as expected", shape, refusal_code="validation_failed"
+            )
+        return Attempt(ABSTAINED, f"validation blocked: {exc}", shape, refusal_code="validation_failed")
 
     try:
         executed = execute_duckdb(
@@ -356,10 +367,56 @@ def _preview(rows: list[tuple[Any, ...]], limit: int = 2) -> str:
     return f"[{head}]{suffix}" if rows else "[]"
 
 
+def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson score interval for a proportion.
+
+    Unlike the normal approximation it stays sensible at 0/n: 0 wrong out of 12
+    still allows a true wrong-rate up to ~24%, which is the point of reporting it.
+    """
+    if n <= 0:
+        return 0.0, 1.0
+    p = successes / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
+def _refusal_code(result: LiveCaseResult) -> str | None:
+    return next((a.refusal_code for a in reversed(result.attempts) if a.refusal_code), None)
+
+
 def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
+    """Headline rates plus the breakdowns needed to argue about them.
+
+    answer_rate / over_refusal_rate are over *answerable* cases only (expect=answer);
+    mixing in expected refusals would let a system that refuses everything look fine.
+    by_refusal_code scores each control: `correct` refusals were on questions that
+    should be declined, `false` ones blocked a question with a real answer.
+    """
     verdicts = Counter(r.verdict for r in results)
     total = len(results) or 1
     consistencies = [r.consistency for r in results if r.consistency]
+    wrong_total = verdicts[WRONG] + verdicts[UNSAFE]
+    wrong_low, wrong_high = wilson_interval(wrong_total, len(results))
+
+    answerable = [r for r in results if r.case.expect == "answer"]
+    answered_right = sum(1 for r in answerable if r.verdict == CORRECT)
+    refused_answerable = sum(1 for r in answerable if r.verdict == ABSTAINED)
+
+    by_tag: dict[str, Counter[str]] = {}
+    for r in results:
+        for tag in r.case.tags or ("untagged",):
+            by_tag.setdefault(tag, Counter())[r.verdict] += 1
+
+    by_code: dict[str, Counter[str]] = {}
+    for r in results:
+        code = _refusal_code(r)
+        if code is None:
+            continue
+        bucket = by_code.setdefault(code, Counter())
+        bucket["correct" if r.case.expect == "abstain" else "false"] += 1
+
     return {
         "total": len(results),
         "correct": verdicts[CORRECT],
@@ -368,7 +425,13 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
         "abstained": verdicts[ABSTAINED],
         "error": verdicts[ERROR],
         "accuracy": verdicts[CORRECT] / total,
-        "wrong_rate": (verdicts[WRONG] + verdicts[UNSAFE]) / total,
+        "wrong_rate": wrong_total / total,
+        "wrong_rate_ci95": (wrong_low, wrong_high),
         "abstain_rate": verdicts[ABSTAINED] / total,
+        "answerable": len(answerable),
+        "answer_rate": answered_right / len(answerable) if answerable else 0.0,
+        "over_refusal_rate": refused_answerable / len(answerable) if answerable else 0.0,
+        "by_tag": {tag: dict(counts) for tag, counts in sorted(by_tag.items())},
+        "by_refusal_code": {code: dict(c) for code, c in sorted(by_code.items())},
         "consistency": sum(consistencies) / len(consistencies) if consistencies else 0.0,
     }

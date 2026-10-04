@@ -37,7 +37,7 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
 
 | Metric | Target | Why |
 |--------|--------|-----|
-| Holdout size | ≥ 150 real questions, 5 repeats | 0/12 wrong only bounds wrong-rate below ~25% (rule of three); 0/150 bounds it near 2% |
+| Holdout size | ≥ 200 real questions, 5 repeats | 95% Wilson upper bound on 0 wrong: 0/12 → 24%, 0/113 → 3.3%, 0/150 → 2.5%, 0/200 → 1.9% |
 | Wrong-rate (95% upper bound) | ≤ 2%, and below Genie's | The product metric |
 | Answer-rate | ≥ 70% of answerable questions | Refusal-everything must not pass |
 | Over-refusal | Reported per guard | A guard that blocks more right answers than wrong ones goes |
@@ -55,7 +55,8 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
      `allow_any_join` is an explicit dev-only flag.
 4. [ ] Metric × dimension planning: the model picks
    `{metric, dimensions, filters, time_grain}`; joins come from the catalog.
-5. [ ] Eval report: Wilson 95% bounds, per-tag breakdown, over-refusal rate.
+5. [x] Eval report: Wilson 95% bounds, answer-rate and over-refusal on answerable
+   cases, per-control refusal scorecard, per-tag breakdown, `--json` output.
 6. [ ] Nightly live-model eval job (CI keeps the mock gate).
    - [x] Pin the model by digest: `--expect-digest` / `SECURE_QUERY_MODEL_DIGEST`
      refuses to run on another build (a tag re-pull silently broke the gate).
@@ -78,7 +79,7 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
 ### Phase B — real domain (needs a design partner)
 
 8. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
-9. [ ] Collect ≥ 150 questions from real sources (Slack, tickets, dashboards).
+9. [ ] Collect ≥ 200 questions from real sources (Slack, tickets, dashboards).
    Reference SQL written by someone other than the builder. Freeze the holdout.
 10. [ ] Draft catalog → owner approves PII, join keys, metrics.
 11. [ ] Token or SSO auth; SELECT-only execute identity.

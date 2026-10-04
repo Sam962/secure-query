@@ -95,6 +95,12 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--json",
+        default=None,
+        metavar="PATH",
+        help="Also write the accuracy report (summary + per-case verdicts) as JSON",
+    )
+    parser.add_argument(
         "--fail-on-wrong",
         action="store_true",
         help="Exit non-zero if any wrong/unsafe answers (use with --split holdout in CI)",
@@ -256,19 +262,69 @@ def _run_accuracy(args: argparse.Namespace) -> int:
                 print(f"            sql: {result.attempts[-1].sql}")
 
     stats = summarise(results)
+    low, high = stats["wrong_rate_ci95"]
     print()
     print(
         f"accuracy      {stats['accuracy']:.0%}  ({stats['correct']}/{stats['total']})\n"
         f"wrong answers {stats['wrong_rate']:.0%}  ({stats['wrong'] + stats['unsafe']}/{stats['total']})"
-        "   <- confident and incorrect\n"
+        f"   95% CI {low:.1%}–{high:.1%}   <- confident and incorrect\n"
         f"abstained     {stats['abstain_rate']:.0%}  ({stats['abstained']}/{stats['total']})"
         "   <- safe: declined to answer"
     )
+    if stats["answerable"]:
+        print(
+            f"answer-rate   {stats['answer_rate']:.0%}  of {stats['answerable']} answerable"
+            f"   (over-refusal {stats['over_refusal_rate']:.0%})"
+        )
     if stats["error"]:
         print(f"errors        {stats['error']}")
     if args.repeat > 1:
         print(f"consistency   {stats['consistency']:.0%}  (same plan shape across repeats)")
+    if stats["by_refusal_code"]:
+        print("refusals by control   (correct = should decline, false = blocked a real answer)")
+        for code, counts in stats["by_refusal_code"].items():
+            print(f"  {code:20} correct={counts.get('correct', 0):3}  false={counts.get('false', 0):3}")
+    print("by tag")
+    for tag, counts in stats["by_tag"].items():
+        n = sum(counts.values())
+        print(
+            f"  {tag:20} n={n:3}  correct={counts.get('correct', 0):3}"
+            f"  wrong={counts.get('wrong', 0) + counts.get('unsafe', 0):3}"
+            f"  abstained={counts.get('abstained', 0):3}"
+        )
+    if args.json:
+        _write_json_report(args.json, stats, results, provider=provider, model=model, digest=digest)
     return stats["wrong"] + stats["unsafe"]
+
+
+def _write_json_report(path, stats, results, *, provider, model, digest) -> None:
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    report = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "provider": provider,
+        "model": model,
+        "model_digest": digest,
+        "summary": stats,
+        "cases": [
+            {
+                "id": r.case.case_id,
+                "expect": r.case.expect,
+                "tags": list(r.case.tags),
+                "verdict": r.verdict,
+                "refusal_code": next(
+                    (a.refusal_code for a in reversed(r.attempts) if a.refusal_code), None
+                ),
+                "detail": r.attempts[-1].detail if r.attempts else None,
+                "sql": r.attempts[-1].sql if r.attempts else None,
+            }
+            for r in results
+        ],
+    }
+    Path(path).write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+    print(f"wrote {path}")
 
 
 if __name__ == "__main__":

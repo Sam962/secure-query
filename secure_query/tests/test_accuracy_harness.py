@@ -181,3 +181,51 @@ def test_transport_failure_scores_error_and_does_not_abort_run() -> None:
     case = LiveCase("c", "How many invoices are there in total?", "answer", reference_sql="SELECT 1")
     result = run_live_case(case, sample_catalog(), DownClient(), Path("unused.duckdb"))
     assert result.verdict == ERROR
+
+
+def test_wilson_bound_is_honest_about_small_samples() -> None:
+    from secure_query.evals.accuracy import wilson_interval
+
+    low, high = wilson_interval(0, 12)
+    assert low == 0.0 and high == pytest.approx(0.2425, abs=1e-3)
+    assert wilson_interval(0, 200)[1] < 0.02 < wilson_interval(0, 150)[1]
+    low, high = wilson_interval(2, 12)
+    assert low < 2 / 12 < high
+
+
+def test_summary_scores_refusals_per_control_on_answerable_cases_only() -> None:
+    from secure_query.evals.accuracy import LiveCase
+
+    answer = LiveCase("a", "q", "answer", reference_sql="SELECT 1", tags=("topn",))
+    decline = LiveCase("d", "q", "abstain", tags=("pii",))
+    results = [
+        LiveCaseResult(case=answer, attempts=[Attempt(CORRECT, "")]),
+        LiveCaseResult(case=answer, attempts=[Attempt(ABSTAINED, "", refusal_code="out_of_scope")]),
+        LiveCaseResult(case=decline, attempts=[Attempt(CORRECT, "", refusal_code="restricted_pii")]),
+        LiveCaseResult(case=decline, attempts=[Attempt(CORRECT, "", refusal_code="out_of_scope")]),
+    ]
+    stats = summarise(results)
+    assert stats["answerable"] == 2
+    assert stats["answer_rate"] == pytest.approx(0.5)
+    assert stats["over_refusal_rate"] == pytest.approx(0.5)
+    assert stats["by_refusal_code"] == {
+        "out_of_scope": {"correct": 1, "false": 1},
+        "restricted_pii": {"correct": 1},
+    }
+    assert stats["by_tag"]["topn"] == {"correct": 1, "abstained": 1}
+    assert stats["wrong_rate_ci95"][0] == 0.0
+
+
+def test_model_refusal_is_not_credited_to_a_guard() -> None:
+    import json
+    from pathlib import Path
+
+    from secure_query.evals.accuracy import LiveCase, run_live_case
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.planner import MockLLMClient
+
+    reason = "The question needs a table or column that is not in the catalog."
+    client = MockLLMClient(responses=[json.dumps({"cannot_answer": True, "reason": reason})])
+    case = LiveCase("c", "How many tracks are there?", "answer", reference_sql="SELECT 1")
+    result = run_live_case(case, sample_catalog(), client, Path("unused.duckdb"))
+    assert result.attempts[0].refusal_code == "planner_refusal"

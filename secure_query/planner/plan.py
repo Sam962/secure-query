@@ -210,6 +210,9 @@ class PlannerResult:
     clarify_code: str | None = None
     metric: MetricSpec | None = None
     """Set for ratio/builtin metrics, which compile outside validate_and_compile."""
+    refused_by_model: bool = False
+    """The model declined. clarify_code is inferred from its wording (for the UI),
+    so it must not be credited to a deterministic guard in eval scorecards."""
 
 
 class PlannerError(Exception):
@@ -774,6 +777,7 @@ def plan_question(
                 refused=True,
                 clarify_code=code_from_guard_message(refusal.reason, refused=True)
                 or "planner_refusal",
+                refused_by_model=True,
             )
         except (json.JSONDecodeError, ValueError, PlanValidationFailed) as exc:
             if isinstance(exc, PlanValidationFailed):
