@@ -42,7 +42,7 @@ This demo catalog is all 11 [Chinook](https://github.com/lerocha/chinook-databas
 
 ## One question, end to end
 
-`python -m secure_query.examples.ask_sample --provider ollama "What are the top 3 billing countries by total revenue?"`
+`python -m secure_query.demo.ask --provider ollama "What are the top 3 billing countries by total revenue?"`
 
 1. **Plan** — JSON only. One repair if validate fails, then clarify. No silent rewrite of your question.
 2. **Validate** — tables, columns, approved joins, types, PII, required limit.

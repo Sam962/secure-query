@@ -26,7 +26,7 @@ The planner needs an LLM that can emit **LogicalPlan JSON**, not SQL. This repo 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,planner,api]"
-python -m secure_query.examples.load_sample_db
+python -m secure_query.demo.load_chinook
 ```
 
 ### 2. Pull the recommended model
@@ -40,7 +40,7 @@ Ollama is the default provider when it is running. The default model is `qwen2.5
 ### 3. Ask from the CLI
 
 ```bash
-python -m secure_query.examples.ask_sample --provider ollama "revenue by country"
+python -m secure_query.demo.ask --provider ollama "revenue by country"
 ```
 
 `--confirm-only` shows explain-back and compiled SQL without hitting the database.
@@ -48,7 +48,7 @@ python -m secure_query.examples.ask_sample --provider ollama "revenue by country
 Pasted SQL and high-PII questions are refused **before** the model is called:
 
 ```bash
-python -m secure_query.examples.ask_sample --provider ollama "list all customer emails"
+python -m secure_query.demo.ask --provider ollama "list all customer emails"
 ```
 
 If the question cannot be planned, the CLI may print **catalog suggestions**. Those are approved phrasings you can type next — the original question is never silently rewritten. Review still required.
@@ -78,13 +78,13 @@ docker compose up --build   # API + Chinook demo
 ```bash
 export SECURE_QUERY_PROVIDER=groq
 export GROQ_API_KEY=gsk_...
-python -m secure_query.examples.ask_sample --provider groq "revenue by country"
+python -m secure_query.demo.ask --provider groq "revenue by country"
 ```
 
 ### 6. Measure (do not use holdout to tune)
 
 ```bash
-python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong --provider ollama --expect-digest 845dbda0ea48
+python -m secure_query.evals.run --split holdout --provider ollama --expect-digest 845dbda0ea48
 ```
 
 Latest local gate (2026-10-04, `qwen2.5:7b` digest `845dbda0ea48`): **holdout 12/12, 0% wrong; dev 100/101, 0% wrong.** Pin the build with `--expect-digest`; see [docs/EVAL.md](docs/EVAL.md). Four of those twelve are expected refusals (PII, missing tables, ratios the IR cannot say) and count as correct when the kernel declines.
@@ -151,18 +151,21 @@ Do **not** auto-go-live from a warehouse URL. Order:
 ## Project layout
 
 ```
-frontend/                 Confirm-first UI
-secure_query/
-  kernel/                 IR, catalog, validate, AST compile, explain
-  planner/                NL → LogicalPlan (never SQL)
-  engine/                 DuckDB / Postgres / Databricks + catalog draft
+src/secure_query/
+  kernel/                 IR, catalog, validate, AST compile, explain (no I/O, no LLM)
+  planner/                NL → LogicalPlan: prompt, LLM clients, guards (never SQL)
+  engine/                 Execute (DuckDB / Postgres / Databricks), domains, catalog draft
   auth/                   Server-side identity
-  api/                    FastAPI + ask pipeline
-  examples/               Chinook demo + CLI
-  evals/                  Goldens + accuracy
+  api/                    FastAPI + ask pipeline; static/ holds the confirm-first UI
+  evals/                  Accuracy harness, goldens; suites/{chinook,northwind}/
+  demo/                   Chinook + Northwind catalogs, pinned loaders, CLI
+tests/                    pytest
 config/                   Knowledge + principals templates
-docs/                     Demo, eval, security, ADRs, status
+docs/                     Architecture, demo, eval, security, ADRs, status, baselines
+data/                     Local only (gitignored): downloaded DBs, audit log
 ```
+
+Dependencies point one way: `api → engine/planner → kernel`. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -170,6 +173,7 @@ docs/                     Demo, eval, security, ADRs, status
 
 | Doc | What it is |
 |-----|------------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Flow, layers, embedding the kernel |
 | [docs/DEMO.md](docs/DEMO.md) | Why LQP, one question end-to-end |
 | [docs/EVAL.md](docs/EVAL.md) | Dev vs holdout; never tune on holdout |
 | [docs/SECURITY.md](docs/SECURITY.md) | Threat model, identity, Databricks/Postgres |
@@ -185,10 +189,10 @@ docs/                     Demo, eval, security, ADRs, status
 ```bash
 pip install -e ".[dev,planner,api,databricks,postgres]"
 pytest -q
-python -m secure_query.evals.run_chinook
+python -m secure_query.evals.run --split dev --provider mock
 ```
 
-CI: pytest, compile SQL grep, mock holdout `--fail-on-wrong`.
+CI: ruff, pytest, compile SQL grep, mock holdout (exits 1 on any wrong answer).
 
 **Do not commit:** `.env`, `data/`, `*.duckdb`, `config/principals.json`, API tokens.
 

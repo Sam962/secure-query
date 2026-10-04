@@ -5,7 +5,7 @@
 
 ## Decision
 
-Default answer path uses **template formatting** (`secure_query/api/respond.py`):
+Default answer path uses **template formatting** (`src/secure_query/api/respond.py`):
 
 - Deterministic explain-back from `explain_plan()`
 - Tabular preview of result rows (capped)

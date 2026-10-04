@@ -15,15 +15,17 @@ jobs:
       - name: Install
         run: pip install -e ".[dev,planner,api]"
       - name: Load pinned Chinook sample DB
-        run: python -m secure_query.examples.load_sample_db --strict
+        run: python -m secure_query.demo.load_chinook --strict
+      - name: Lint
+        run: ruff check .
       - name: Unit tests
         run: pytest -q
       - name: Compile must not interpolate SQL
         run: |
-          if grep -E 'f["'\''].*\b(SELECT|INSERT|UPDATE|DELETE)\b' secure_query/kernel/compile.py; then
+          if grep -E 'f["'\''].*\b(SELECT|INSERT|UPDATE|DELETE)\b' src/secure_query/kernel/compile.py; then
             echo "compile.py must not f-string SQL"; exit 1
           fi
       - name: Planner tests reject SQL in model output
-        run: pytest -q secure_query/tests/test_planner.py secure_query/tests/test_adversarial.py
+        run: pytest -q tests/test_planner.py tests/test_adversarial.py
       - name: Holdout gate (mock — abstain is allowed, wrong is not)
-        run: python -m secure_query.evals.run_chinook --accuracy --split holdout --provider mock --fail-on-wrong
+        run: python -m secure_query.evals.run --split holdout --provider mock

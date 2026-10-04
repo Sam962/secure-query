@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "ruff>=0.6",
     "duckdb>=0.10",
     "fastapi>=0.110",
     "httpx>=0.27",
@@ -37,11 +38,20 @@ postgres = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["secure_query*", "frontend"]
+where = ["src"]
 
 [tool.setuptools.package-data]
-frontend = ["*.html"]
+secure_query = ["api/static/*.html", "evals/suites/**/*.json", "evals/suites/**/*.sql", "evals/suites/**/*.md"]
 
 [tool.pytest.ini_options]
-testpaths = ["secure_query/tests"]
-pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["secure_query"]

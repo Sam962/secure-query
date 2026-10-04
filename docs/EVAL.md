@@ -8,14 +8,14 @@
 | **holdout** | Release gate | **Never tune on holdout** |
 | **all** | Full picture only | Do not use for tuning |
 
-Holdout ids are frozen in `secure_query/evals/dev_expansion.py` (`HOLDOUT_CASE_IDS`).
+Holdout ids are frozen in `src/secure_query/evals/dev_expansion.py` (`HOLDOUT_CASE_IDS`).
 
 ## Commands
 
 ```bash
-pytest secure_query/tests/test_suite_split.py -q
-python -m secure_query.evals.run_chinook --accuracy --split dev --provider mock
-python -m secure_query.evals.run_chinook --accuracy --split holdout --fail-on-wrong --provider ollama
+pytest tests/test_suite_split.py -q
+python -m secure_query.evals.run --split dev --provider mock
+python -m secure_query.evals.run --split holdout --provider ollama
 ```
 
 Ollama default is **qwen2.5:7b**. Override with `--model` or `SECURE_QUERY_MODEL`. `llama3.2` is too weak for LogicalPlan JSON and is not a kernel regression.
@@ -26,7 +26,7 @@ Ollama default is **qwen2.5:7b**. Override with `--model` or `SECURE_QUERY_MODEL
 
 - **accuracy** includes expected refusals: if the case is `expect=abstain` and the kernel declines, that is `[OK]`.
 - The **abstained** headline is *unexpected* refusals on questions that should have been answered.
-- **wrong** (plus unsafe PII leak) is the release gate. `--fail-on-wrong` uses that, not raw accuracy.
+- **wrong** (plus unsafe PII leak) is the release gate. `evals.run` exits 1 on any wrong or unsafe answer, not on raw accuracy.
 - **Ties at a LIMIT:** when a reference query's LIMIT cuts through a tie ("top 3" with France and Brazil tied for third), any tie-breaking is correct. The harness accepts a result whose rows all exist in the un-LIMITed reference and whose numeric values match the reference top-N exactly. Returning a lower-ranked row is still wrong.
 
 ### Report fields
@@ -49,12 +49,12 @@ Four Chinook holdout cases are frozen as abstain: `list_all_emails`, `supplier_s
 
 Checks that the planner, guards and prompt work on a schema they were not
 written against. Everything Northwind-specific is catalog data in
-`secure_query/evals/northwind/catalog.json`; no code knows about it.
+`src/secure_query/evals/suites/northwind/catalog.json`; no code knows about it.
 
 ```bash
-python -m secure_query.examples.load_northwind   # pinned commit + SHA-256
-python -m secure_query.evals.run_chinook --accuracy --provider ollama \
-  --suite secure_query/evals/northwind/cases.json --expect-digest 845dbda0ea48
+python -m secure_query.demo.load_northwind   # pinned commit + SHA-256
+python -m secure_query.evals.run --provider ollama \
+  --suite northwind --expect-digest 845dbda0ea48
 ```
 
 `cases.json` (36 cases: 28 answer, 8 abstain) was frozen before the first live
@@ -73,7 +73,7 @@ CI runs mock holdout. A live-model holdout is a laptop or nightly job, not GitHu
 
 ## Adding cases
 
-1. Add to `dev_expansion.py` or `chinook_live.json` (non-holdout id only)
+1. Add to `dev_expansion.py` or `suites/chinook/cases.json` (non-holdout id only)
 2. `reference_sql` for answer cases; `reason` for abstain cases. Run the reference against the data first: a reference that returns 0 rows or 0 (e.g. a year outside the data's 2021–2025 range) makes the case pass trivially
 3. Tag with `intent`, `pii`, `table-selection`, etc.
 4. Never add holdout ids in the same commit as prompt/guard tuning

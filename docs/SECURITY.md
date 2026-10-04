@@ -64,4 +64,4 @@ Ratio metrics (`numerator` / `denominator`) expand to a `LogicalPlan`, so mandat
 
 ## Adversarial coverage
 
-`secure_query/tests/test_adversarial.py` checks: SQL in planner JSON, SQL pasted as the question, and unknown API fields. Compile is AST-only; CI greps `kernel/compile.py` for f-string SQL.
+`tests/test_adversarial.py` checks: SQL in planner JSON, SQL pasted as the question, and unknown API fields. Compile is AST-only; CI greps `kernel/compile.py` for f-string SQL.
