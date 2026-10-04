@@ -15,7 +15,9 @@
 - Eval splits: 101 dev / 12 holdout; gate is holdout **wrong-rate = 0**
 - CI: pytest, f-string SQL grep, mock holdout
 
-**Holdout (qwen2.5:7b @ 845dbda0ea48, 2026-10-04):** 12/12, 0 wrong (3 repeats).
+**Holdout (qwen2.5:7b @ 845dbda0ea48, 2026-10-04):** 12/12, 0 wrong (3 repeats) with
+the old Chinook-worded prompt; **11/12, 1 wrong** with the generic prompt (see item 4).
+**Northwind (second schema):** 22/36, 4 wrong.
 **Dev:** 100/101, 0 wrong. The 2026-10-03 failure was model drift (tag re-pulled
 2026-09-07); see [baselines/holdout-2026-10-04.txt](baselines/holdout-2026-10-04.txt).
 `llama3.2` is not a valid regression test.
@@ -67,8 +69,25 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
      says (`dropped_filter`), "how many" without a count, an approved metric
      sharing no word with the question, inexpressible operations (percent,
      change, than average …). Chinook nouns removed from the guard stop-word list.
-   - [ ] Prompt examples still use Chinook table names; generalise and check
-     on a second schema.
+   - [x] Prompt examples use a made-up Booking/Hotel schema, not Chinook.
+     Found doing this: the old prompt's ratio example was the holdout question
+     `avg_revenue_per_customer`, worded almost verbatim. With it removed the
+     holdout goes 12/12 → **11/12, 1 wrong** (that case) and dev 113 → 105/121,
+     1 wrong. The 0-wrong gate partly measured prompt leakage.
+     See [baselines/chinook-generic-prompt-2026-10-04.json](baselines/chinook-generic-prompt-2026-10-04.json).
+   - [x] Second schema: Northwind (pinned commit + SHA-256), catalog as JSON
+     data only, 36 cases frozen before the run. First live run:
+     **22/36, 4 wrong (95% CI 4.4–25.3%)**, answer-rate 54% (15/28).
+     See [baselines/northwind-2026-10-04.json](baselines/northwind-2026-10-04.json).
+     Do not tune on these cases; reproduce each failure mode in new dev cases first:
+     - Wrong entity counted: "how many products do we sell" → COUNT(*) on order lines.
+     - Wrong metric picked: "highest freight on a single order" → `freight_by_shipper`,
+       and a grouped metric with LIMIT 1 and no ORDER BY returns an arbitrary group.
+     - Added filter the question never says (`ShippedDate IS NOT NULL` from "shipped to").
+     - Revenue as SUM(UnitPrice) even though the catalog says revenue needs arithmetic.
+     - Over-refusal: `dropped_concepts` on common words ("units", "shipped") 5×;
+       `dropped_filter` on category/shipper names 3×.
+   - [x] Scorecard fix: `dropped_concepts` refusals were labelled `planner_refusal`.
 5. [x] Eval report: Wilson 95% bounds, answer-rate and over-refusal on answerable
    cases, per-control refusal scorecard, per-tag breakdown, `--json` output.
 6. [ ] Nightly live-model eval job (CI keeps the mock gate).

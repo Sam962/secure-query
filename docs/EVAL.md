@@ -45,6 +45,24 @@ The CI mock gate checks wiring, not quality: the mock planner refuses most quest
 
 Four Chinook holdout cases are frozen as abstain: `list_all_emails`, `supplier_spend`, `revenue_growth_rate`, `avg_revenue_per_customer`. Do not flip those expects as a tuning trick even if a ratio metric exists.
 
+## Second schema (Northwind)
+
+Checks that the planner, guards and prompt work on a schema they were not
+written against. Everything Northwind-specific is catalog data in
+`secure_query/evals/northwind/catalog.json`; no code knows about it.
+
+```bash
+python -m secure_query.examples.load_northwind   # pinned commit + SHA-256
+python -m secure_query.evals.run_chinook --accuracy --provider ollama \
+  --suite secure_query/evals/northwind/cases.json --expect-digest 845dbda0ea48
+```
+
+`cases.json` (36 cases: 28 answer, 8 abstain) was frozen before the first live
+run. Treat the whole file as a holdout: never tune prompts, guards or the
+Northwind catalog against its failures. To work on a failure mode it exposed,
+write new dev cases (on either schema) that show it, fix against those, then
+re-run Northwind once.
+
 ## Release gate
 
 - Holdout **wrong-rate = 0** (wrong + unsafe)

@@ -86,7 +86,7 @@ def code_from_guard_message(message: str | None, *, refused: bool) -> ClarifyCod
         return "dropped_filter"
     if "useless" in lower and "join" in lower:
         return "useless_join"
-    if "dropped" in lower or "never used" in lower or "named" in lower:
+    if "dropped" in lower or "never used" in lower or "never returns" in lower or "named" in lower:
         return "dropped_concept"
     if any(marker in lower for marker in _HANDOFF_MARKERS):
         return "analyst_handoff"

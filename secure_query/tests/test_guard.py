@@ -236,3 +236,15 @@ def test_unrelated_metric() -> None:
     assert unrelated_metric("How many tracks are in the catalog?", "line_item_revenue")
     assert unrelated_metric("How many employees work for us?", "employee_count") is None
     assert unrelated_metric("What is the average revenue per customer?", "avg_revenue_per_customer") is None
+
+
+def test_dropped_concepts_refusal_is_scored_as_that_guard() -> None:
+    """Scorecards credit refusals by code; a mislabel hides a guard's over-refusal."""
+    from secure_query.kernel.builder import LQP
+    from secure_query.planner.clarify import code_from_guard_message
+    from secure_query.planner.guard import dropped_concepts
+
+    plan = LQP.aggregate(table="Invoice").agg("count", None, alias="n").limit(1).build()
+    msg = dropped_concepts("How many invoices per genre?", plan, CATALOG)
+    assert msg is not None
+    assert code_from_guard_message(msg, refused=True) == "dropped_concept"

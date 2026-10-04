@@ -73,6 +73,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Eval split: dev (tune here), holdout (release gate), all",
     )
     parser.add_argument(
+        "--suite",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Accuracy suite JSON for another domain (e.g. secure_query/evals/northwind/cases.json). "
+            "Its 'catalog' and 'database' keys replace Chinook; --split is ignored"
+        ),
+    )
+    parser.add_argument(
         "--provider",
         choices=("ollama", "groq", "openai", "mock"),
         default=None,
@@ -200,10 +209,16 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     )
     from secure_query.examples.load_sample_db import DUCKDB_PATH
 
-    print()
-    print(f"=== Execution accuracy (split={args.split}) ===")
-    if not DUCKDB_PATH.exists():
-        print(f"ERROR: sample DB missing at {DUCKDB_PATH}", file=sys.stderr)
+    if args.suite:
+        catalog, db_path, suite = _load_domain_suite(args.suite)
+        print()
+        print(f"=== Execution accuracy (suite={args.suite}, tenant={catalog.tenant_id}) ===")
+    else:
+        catalog, db_path, suite = sample_catalog(), DUCKDB_PATH, load_live_suite(split=args.split)
+        print()
+        print(f"=== Execution accuracy (split={args.split}) ===")
+    if not db_path.exists():
+        print(f"ERROR: database missing at {db_path}", file=sys.stderr)
         return -1
     try:
         client = _client(args.provider)
@@ -229,8 +244,6 @@ def _run_accuracy(args: argparse.Namespace) -> int:
             )
             return -1
 
-    catalog = sample_catalog()
-    suite = load_live_suite(split=args.split)
     if args.only:
         needles = [n.strip() for n in args.only.split(",") if n.strip()]
         suite = [
@@ -246,7 +259,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     for i, case in enumerate(suite):
         if i and case_delay > 0:
             time.sleep(case_delay)
-        result = run_live_case(case, catalog, client, DUCKDB_PATH, repeats=args.repeat)
+        result = run_live_case(case, catalog, client, db_path, repeats=args.repeat)
         results.append(result)
         mark = _MARKS.get(result.verdict, result.verdict)
         consistency = ""
@@ -295,6 +308,21 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     if args.json:
         _write_json_report(args.json, stats, results, provider=provider, model=model, digest=digest)
     return stats["wrong"] + stats["unsafe"]
+
+
+def _load_domain_suite(path: str):
+    """Catalog, database and cases named by a suite file (paths: catalog beside it, db from repo root)."""
+    import json
+    from pathlib import Path
+
+    from secure_query.engine.databricks import catalog_json_path
+    from secure_query.evals.accuracy import load_live_suite
+
+    suite_path = Path(path)
+    meta = json.loads(suite_path.read_text(encoding="utf-8"))
+    catalog = catalog_json_path(suite_path.parent / meta["catalog"])
+    db_path = Path(__file__).resolve().parents[2] / meta["database"]
+    return catalog, db_path, load_live_suite(suite_path)
 
 
 def _write_json_report(path, stats, results, *, provider, model, digest) -> None:
