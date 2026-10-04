@@ -1,0 +1,104 @@
+{
+  "tenant_id": "clinic",
+  "require_limit": true,
+  "max_limit": 1000,
+  "sql_dialect": "duckdb",
+  "tables": [
+    {
+      "name": "departments",
+      "description": "Clinical departments",
+      "display_column": "name",
+      "columns": [
+        {"name": "department_id", "dtype": "int", "description": "Primary key"},
+        {"name": "name", "dtype": "str", "description": "Department name"},
+        {"name": "floor", "dtype": "int", "description": "Building floor"}
+      ]
+    },
+    {
+      "name": "doctors",
+      "description": "Doctors (physicians) employed by the clinic",
+      "display_column": "last_name",
+      "columns": [
+        {"name": "doctor_id", "dtype": "int", "description": "Primary key"},
+        {"name": "first_name", "dtype": "str"},
+        {"name": "last_name", "dtype": "str"},
+        {"name": "department_id", "dtype": "int", "label_for": "departments.name"},
+        {"name": "hire_date", "dtype": "datetime"},
+        {"name": "email", "dtype": "str", "pii_risk": "high"}
+      ]
+    },
+    {
+      "name": "patients",
+      "description": "Registered patients",
+      "columns": [
+        {"name": "patient_id", "dtype": "int", "description": "Primary key"},
+        {"name": "first_name", "dtype": "str", "pii_risk": "high"},
+        {"name": "last_name", "dtype": "str", "pii_risk": "high"},
+        {"name": "birth_date", "dtype": "datetime", "pii_risk": "high"},
+        {"name": "phone", "dtype": "str", "pii_risk": "high"},
+        {"name": "email", "dtype": "str", "pii_risk": "high"},
+        {"name": "city", "dtype": "str", "pii_risk": "low"},
+        {"name": "insurance_plan", "dtype": "str", "description": "Basic, Plus or Premium"}
+      ]
+    },
+    {
+      "name": "appointments",
+      "description": "Patient appointments (visits) with a doctor",
+      "columns": [
+        {"name": "appointment_id", "dtype": "int", "description": "Primary key"},
+        {"name": "patient_id", "dtype": "int"},
+        {"name": "doctor_id", "dtype": "int", "label_for": "doctors.last_name"},
+        {"name": "appointment_date", "dtype": "datetime"},
+        {"name": "status", "dtype": "str", "description": "completed, cancelled or no_show"},
+        {"name": "fee", "dtype": "float", "unit": "USD", "description": "Fee charged for the appointment"},
+        {"name": "duration_minutes", "dtype": "int", "description": "Scheduled length in minutes"}
+      ]
+    },
+    {
+      "name": "medications",
+      "description": "Medications the clinic prescribes",
+      "display_column": "name",
+      "columns": [
+        {"name": "medication_id", "dtype": "int", "description": "Primary key"},
+        {"name": "name", "dtype": "str"},
+        {"name": "unit_price", "dtype": "float", "unit": "USD"}
+      ]
+    },
+    {
+      "name": "prescriptions",
+      "description": "Medications prescribed during an appointment (one row per medication)",
+      "columns": [
+        {"name": "prescription_id", "dtype": "int", "description": "Primary key"},
+        {"name": "appointment_id", "dtype": "int"},
+        {"name": "medication_id", "dtype": "int", "label_for": "medications.name"},
+        {"name": "quantity", "dtype": "int", "description": "Units prescribed"}
+      ]
+    }
+  ],
+  "join_keys": [
+    {"left_table": "doctors", "left_column": "department_id", "right_table": "departments", "right_column": "department_id"},
+    {"left_table": "appointments", "left_column": "doctor_id", "right_table": "doctors", "right_column": "doctor_id"},
+    {"left_table": "appointments", "left_column": "patient_id", "right_table": "patients", "right_column": "patient_id"},
+    {"left_table": "prescriptions", "left_column": "appointment_id", "right_table": "appointments", "right_column": "appointment_id"},
+    {"left_table": "prescriptions", "left_column": "medication_id", "right_table": "medications", "right_column": "medication_id"}
+  ],
+  "synonyms": [
+    {"term": "visit", "table_id": "appointments"},
+    {"term": "visits", "table_id": "appointments"},
+    {"term": "physician", "table_id": "doctors"},
+    {"term": "physicians", "table_id": "doctors"},
+    {"term": "drug", "table_id": "medications"},
+    {"term": "drugs", "table_id": "medications"},
+    {"term": "medicine", "table_id": "medications"},
+    {"term": "department", "table_id": "departments", "column_id": "name"},
+    {"term": "revenue", "table_id": "appointments", "column_id": "fee", "description": "completed appointments only"},
+    {"term": "fees", "table_id": "appointments", "column_id": "fee"},
+    {"term": "no-show", "table_id": "appointments", "column_id": "status"},
+    {"term": "insurance", "table_id": "patients", "column_id": "insurance_plan"}
+  ],
+  "instructions": [
+    "Revenue means the sum of appointments.fee for appointments whose status is 'completed'; cancelled and no_show appointments earn nothing.",
+    "appointments.status takes exactly the values 'completed', 'cancelled' and 'no_show'.",
+    "Patient names, phone numbers, emails and birth dates are restricted."
+  ]
+}

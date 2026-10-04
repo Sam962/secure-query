@@ -109,30 +109,10 @@ _STOP_WORDS = frozenset(
         "breakdown",
         "anything",
         "something",
-        "music",
         "based",
         "located",
         "appear",
         "appearances",
-        "issued",
-        "billed",
-        "customer",
-        "customers",
-        "invoice",
-        "invoices",
-        "track",
-        "tracks",
-        "album",
-        "albums",
-        "artist",
-        "artists",
-        "employee",
-        "employees",
-        "genre",
-        "genres",
-        "playlist",
-        "playlists",
-        "media",
         "year",
         "years",
         "quarter",
@@ -143,13 +123,6 @@ _STOP_WORDS = frozenset(
         "rows",
         "row",
         "every",
-        "billing",
-        "sales",
-        "sold",
-        "earn",
-        "earns",
-        "earned",
-        "earning",
         "work",
         "works",
         "defined",
@@ -176,7 +149,6 @@ _STOP_WORDS = frozenset(
         "links",
         "item",
         "items",
-        "headcount",
         "people",
         "roughly",
         "about",
@@ -188,8 +160,6 @@ _STOP_WORDS = frozenset(
         "quantities",
         "countrie",
         "countries",
-        "genres",
-        "playlists",
     }
 )
 
@@ -337,7 +307,7 @@ def useless_joins(plan: LogicalPlan) -> str | None:
         return None
 
     referenced: set[str] = {plan.source}
-    for filt in list(plan.filters) + list(plan.having):
+    for filt in plan.filters:
         referenced.add(filt.column.table_id)
     if plan.group_by is not None:
         referenced.update(col.table_id for col in plan.group_by.columns)
@@ -515,8 +485,13 @@ _CALENDAR_TERMS = frozenset(
 )
 
 
-def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
-    """Refuse when the question names concepts absent from catalog + synonyms + metrics."""
+def unknown_terms(question: str, catalog: Catalog) -> list[str]:
+    """Question words that match nothing in the catalog, synonyms, or metrics.
+
+    Most are ordinary wording ("bought", "longest"); some name data the catalog
+    lacks ("salary"). Only the reader of the sentence can tell which, so these
+    are a hint to the planner, not a refusal on their own.
+    """
     words = [w for w in re.split(r"[^a-z0-9]+", question.lower()) if w]
     asked: set[str] = set()
     for w in words:
@@ -537,7 +512,16 @@ def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
         if any(term in concept_terms(mid) for mid in catalog.metric_ids):
             continue
         unknown.append(term)
+    return unknown
 
+
+def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
+    """Strict form: refuse when any question word is unknown to the catalog.
+
+    No longer used by the planner (it refused ordinary words on unseen schemas);
+    kept for suggestions, which must only offer questions made of catalog terms.
+    """
+    unknown = unknown_terms(question, catalog)
     if not unknown:
         return None
     shown = ", ".join(f'"{t}"' for t in unknown[:5])
@@ -548,6 +532,44 @@ def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
         f"The question mentions terms not in the approved catalog or synonyms: {shown}. "
         "Refusing rather than guessing."
     )
+
+
+# Phrasing that asks for arithmetic between aggregates or a comparison against an
+# aggregate. Plain English, no domain words; the IR cannot express any of these.
+_INEXPRESSIBLE = [
+    (re.compile(r"\b(percent|percentage|proportion|ratio|fraction)s?\b"), "a ratio or percentage"),
+    (re.compile(r"\bshare\s+of\b|\bwhat\s+share\b"), "a share of a total"),
+    (re.compile(r"\brates?\b"), "a rate"),
+    (re.compile(r"\b(growth|grew|grow)\b"), "a growth rate"),
+    (re.compile(r"\b(month|year|week|quarter|day)[\s-]+over[\s-]+(month|year|week|quarter|day)\b"),
+     "a period-over-period change"),
+    (re.compile(r"\b(change|changed|changes)\b.*\b(from|since|over|between)\b"), "a change over time"),
+    (re.compile(r"\b(more|less|higher|lower|greater)\s+than\s+(the\s+)?average\b|\b(above|below)[\s-]+average\b"),
+     "a comparison against an average"),
+]
+
+
+def inexpressible_request(question: str, catalog: Catalog) -> str | None:
+    """Reason to refuse a *plain plan* for a question that needs math between aggregates.
+
+    Runs after planning and only on LogicalPlans: an approved ratio metric chosen
+    by the planner never reaches it. A marker that is itself catalog vocabulary
+    (a column named heart_rate, a table named growth_targets) is domain wording,
+    not a request for arithmetic, and is skipped.
+    """
+    text = question.lower()
+    vocabulary = catalog_vocabulary(catalog)
+    for pattern, what in _INEXPRESSIBLE:
+        match = pattern.search(text)
+        if match is None:
+            continue
+        if any(_term_in_vocabulary(w, vocabulary) for w in re.findall(r"[a-z]+", match.group(0))):
+            continue
+        return (
+            f"The question asks for {what}, which needs arithmetic between aggregates that "
+            "this system cannot express. Ask an analyst, or use an approved metric."
+        )
+    return None
 
 
 def plan_concepts(plan: LogicalPlan, catalog: Catalog) -> set[Concept]:
@@ -566,7 +588,7 @@ def plan_concepts(plan: LogicalPlan, catalog: Catalog) -> set[Concept]:
             add_column(condition.left)
             add_column(condition.right)
 
-    for filt in list(plan.filters) + list(plan.having):
+    for filt in plan.filters:
         add_column(filt.column)
         value = getattr(filt, "value", None)
         if isinstance(value, ColumnRef):

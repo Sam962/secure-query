@@ -95,6 +95,19 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--domain",
+        default="chinook",
+        help=(
+            "Eval domain: chinook (default) or a folder under evals/domains "
+            "(e.g. clinic). Non-Chinook domains are cross-domain holdouts: never tune on them."
+        ),
+    )
+    parser.add_argument(
+        "--no-guard",
+        action="store_true",
+        help="Ablation only: disable the deterministic question guards to measure what they cost and catch",
+    )
+    parser.add_argument(
         "--json",
         default=None,
         metavar="PATH",
@@ -115,6 +128,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.model:
         os.environ["SECURE_QUERY_MODEL"] = args.model
+
+    if args.domain != "chinook":
+        if args.live:
+            print("--live goldens exist only for chinook", file=sys.stderr)
+            return 2
+        accuracy_fail = _run_accuracy(args) if args.accuracy else 0
+        if accuracy_fail < 0:
+            return 2
+        return 1 if (args.fail_on_wrong and accuracy_fail > 0) else 0
 
     cases = iter_cases()
     if not cases:
@@ -201,10 +223,21 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     from secure_query.examples.load_sample_db import DUCKDB_PATH
 
     print()
-    print(f"=== Execution accuracy (split={args.split}) ===")
-    if not DUCKDB_PATH.exists():
-        print(f"ERROR: sample DB missing at {DUCKDB_PATH}", file=sys.stderr)
-        return -1
+    if args.domain == "chinook":
+        print(f"=== Execution accuracy (split={args.split}) ===")
+        if not DUCKDB_PATH.exists():
+            print(f"ERROR: sample DB missing at {DUCKDB_PATH}", file=sys.stderr)
+            return -1
+        catalog, db_path, suite = sample_catalog(), DUCKDB_PATH, load_live_suite(split=args.split)
+    else:
+        from secure_query.evals.domains import load_domain
+
+        print(f"=== Execution accuracy (domain={args.domain}, cross-domain holdout) ===")
+        try:
+            catalog, db_path, suite = load_domain(args.domain)
+        except KeyError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return -1
     try:
         client = _client(args.provider)
     except PlannerError as exc:
@@ -219,6 +252,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         + (f" model={model}" if model else "")
         + (f" digest={digest[:12]}" if digest else "")
         + f"  repeats={args.repeat}"
+        + ("  GUARDS OFF (ablation)" if args.no_guard else "")
     )
     if args.expect_digest and provider != "mock":
         if digest is None or not digest.startswith(args.expect_digest):
@@ -229,8 +263,6 @@ def _run_accuracy(args: argparse.Namespace) -> int:
             )
             return -1
 
-    catalog = sample_catalog()
-    suite = load_live_suite(split=args.split)
     if args.only:
         needles = [n.strip() for n in args.only.split(",") if n.strip()]
         suite = [
@@ -246,7 +278,9 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     for i, case in enumerate(suite):
         if i and case_delay > 0:
             time.sleep(case_delay)
-        result = run_live_case(case, catalog, client, DUCKDB_PATH, repeats=args.repeat)
+        result = run_live_case(
+            case, catalog, client, db_path, repeats=args.repeat, guard=not args.no_guard
+        )
         results.append(result)
         mark = _MARKS.get(result.verdict, result.verdict)
         consistency = ""

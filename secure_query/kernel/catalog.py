@@ -54,6 +54,16 @@ class TableSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+    @model_validator(mode="before")
+    @classmethod
+    def qualify_display_column(cls, data: Any) -> Any:
+        """Accept a bare display column ("name") as shorthand for "<table>.name"."""
+        if isinstance(data, dict):
+            display = data.get("display_column")
+            if isinstance(display, str) and display and "." not in display:
+                data = {**data, "display_column": f"{data.get('name')}.{display}"}
+        return data
+
     def column_map(self) -> dict[str, ColumnSpec]:
         return {c.name: c for c in self.columns}
 
@@ -145,6 +155,7 @@ class Catalog(BaseModel):
         from secure_query.kernel.metrics import expand_metric_plan
         from secure_query.kernel.validate import validate
 
+        self._check_label_refs()
         seen: set[str] = set()
         known = set(self.table_map())
         for metric in self.metrics:
@@ -161,6 +172,20 @@ class Catalog(BaseModel):
                 detail = "; ".join(f"{e.code}: {e.message}" for e in errors)
                 raise ValueError(f"metric {metric.id!r} does not validate: {detail}")
         return self
+
+    def _check_label_refs(self) -> None:
+        """display_column / label_for must name an existing "Table.Column"."""
+        def resolve(ref: str, where: str) -> None:
+            table_id, sep, column_id = ref.partition(".")
+            if not sep or self.get_column(table_id, column_id) is None:
+                raise ValueError(f"{where} = {ref!r} does not name an existing 'Table.Column'")
+
+        for table in self.tables:
+            if table.display_column:
+                resolve(table.display_column, f"{table.name}.display_column")
+            for col in table.columns:
+                if col.label_for:
+                    resolve(col.label_for, f"{table.name}.{col.name}.label_for")
 
     @property
     def metric_ids(self) -> list[str]:

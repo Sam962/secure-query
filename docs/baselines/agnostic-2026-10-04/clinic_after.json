@@ -1,0 +1,479 @@
+{
+  "generated_at": "2026-10-04T16:01:29+00:00",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "summary": {
+    "total": 30,
+    "correct": 17,
+    "wrong": 8,
+    "unsafe": 0,
+    "abstained": 5,
+    "error": 0,
+    "accuracy": 0.5666666666666667,
+    "wrong_rate": 0.26666666666666666,
+    "wrong_rate_ci95": [
+      0.14182495553910618,
+      0.4444830204431169
+    ],
+    "abstain_rate": 0.16666666666666666,
+    "answerable": 23,
+    "answer_rate": 0.43478260869565216,
+    "over_refusal_rate": 0.21739130434782608,
+    "by_tag": {
+      "complex": {
+        "wrong": 8,
+        "abstained": 4,
+        "correct": 2
+      },
+      "date-filter": {
+        "correct": 2,
+        "wrong": 2,
+        "abstained": 1
+      },
+      "distinct": {
+        "abstained": 1,
+        "wrong": 1
+      },
+      "filter": {
+        "correct": 3
+      },
+      "group": {
+        "correct": 3
+      },
+      "having": {
+        "wrong": 2
+      },
+      "in": {
+        "abstained": 1
+      },
+      "instruction": {
+        "correct": 2,
+        "wrong": 3
+      },
+      "join": {
+        "abstained": 1,
+        "wrong": 3,
+        "correct": 2
+      },
+      "known-gap": {
+        "correct": 3
+      },
+      "multihop": {
+        "wrong": 3,
+        "abstained": 3
+      },
+      "out-of-scope": {
+        "correct": 2
+      },
+      "pii": {
+        "correct": 2
+      },
+      "ratio": {
+        "correct": 2
+      },
+      "scalar": {
+        "correct": 5,
+        "abstained": 2
+      },
+      "timebucket": {
+        "wrong": 2,
+        "correct": 1
+      },
+      "topn": {
+        "abstained": 1,
+        "wrong": 2,
+        "correct": 1
+      }
+    },
+    "by_refusal_code": {
+      "analyst_handoff": {
+        "correct": 1
+      },
+      "planner_refusal": {
+        "false": 2,
+        "correct": 2
+      },
+      "restricted_pii": {
+        "correct": 1
+      },
+      "validation_failed": {
+        "false": 3,
+        "correct": 3
+      }
+    },
+    "consistency": 1.0
+  },
+  "cases": [
+    {
+      "id": "total_appointments",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT COUNT(*) AS \"appointment_count\" FROM \"appointments\" LIMIT 1"
+    },
+    {
+      "id": "premium_patients",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT COUNT(*) AS \"patient_count\" FROM \"patients\" WHERE \"patients\".\"insurance_plan\" = 'Premium' LIMIT 1000"
+    },
+    {
+      "id": "no_shows_2024",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "filter",
+        "date-filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT COUNT(*) AS \"no_show_count\" FROM \"appointments\" WHERE (\"appointments\".\"appointment_date\" >= CAST('2024-01-01' AS DATE) AND \"appointments\".\"appointment_date\" < CAST('2025-01-01' AS DATE)) AND \"appointments\".\"status\" = 'no_show' LIMIT 1"
+    },
+    {
+      "id": "total_revenue",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "instruction"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT SUM(\"appointments\".\"fee\") AS \"total_revenue\" FROM \"appointments\" WHERE \"appointments\".\"status\" = 'completed' LIMIT 1"
+    },
+    {
+      "id": "avg_duration",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT AVG(\"appointments\".\"duration_minutes\") AS \"average_duration\" FROM \"appointments\" LIMIT 1"
+    },
+    {
+      "id": "medication_count",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "planner_refusal",
+      "detail": "The term 'formulary' is not defined in the catalog.",
+      "sql": null
+    },
+    {
+      "id": "patients_per_city",
+      "expect": "answer",
+      "tags": [
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT \"patients\".\"city\", COUNT(*) AS \"patient_count\" FROM \"patients\" GROUP BY \"patients\".\"city\" LIMIT 100"
+    },
+    {
+      "id": "appointments_by_status",
+      "expect": "answer",
+      "tags": [
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT \"appointments\".\"status\", COUNT(*) AS \"appointment_count\" FROM \"appointments\" WHERE \"appointments\".\"status\" IN ('completed', 'cancelled', 'no_show') GROUP BY \"appointments\".\"status\" LIMIT 100"
+    },
+    {
+      "id": "revenue_by_department",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "multihop",
+        "instruction"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Orthopedics', 16659.0), ('Cardiology', 80377.0)] (+4 more), got [('Cardiology', 'Patel', 32780.0), ('Pediatrics', 'Garcia', 11176.0)] (+10 more)",
+      "sql": "SELECT \"departments\".\"name\", \"doctors\".\"last_name\", SUM(\"appointments\".\"fee\") AS \"revenue\" FROM \"appointments\" INNER JOIN \"doctors\" ON \"appointments\".\"doctor_id\" = \"doctors\".\"doctor_id\" INNER JOIN \"departments\" ON \"doctors\".\"department_id\" = \"departments\".\"department_id\" WHERE \"appointments\".\"status\" = 'completed' GROUP BY \"departments\".\"name\", \"doctors\".\"last_name\" LIMIT 1000"
+    },
+    {
+      "id": "top3_doctors_by_visits",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "join",
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "planner_refusal",
+      "detail": "The question asks about \"status\" (appointments.status), which this plan never returns. Refusing rather than answering a narrower question.",
+      "sql": null
+    },
+    {
+      "id": "top_medication_by_quantity",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "join",
+        "topn"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Ibuprofen', 464)], got [(1570,)]",
+      "sql": "SELECT SUM(\"prescriptions\".\"quantity\") AS \"total_quantity\" FROM \"medications\" INNER JOIN \"prescriptions\" ON \"medications\".\"medication_id\" = \"prescriptions\".\"medication_id\" ORDER BY \"total_quantity\" DESC LIMIT 1"
+    },
+    {
+      "id": "monthly_completed_2024",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "timebucket",
+        "date-filter"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(datetime.datetime(2024, 1, 1, 0, 0), 27), (datetime.datetime(2024, 3, 1, 0, 0), 44)] (+10 more), got [(datetime.datetime(2024, 2, 1, 0, 0), 49), (datetime.datetime(2024, 11, 1, 0, 0), 50)] (+10 more)",
+      "sql": "SELECT DATE_TRUNC('month', \"appointments\".\"appointment_date\") AS \"appointment_date_month\", COUNT(*) AS \"completed_appointments\" FROM \"appointments\" WHERE \"appointments\".\"appointment_date\" >= CAST('2024-01-01' AS DATE) AND \"appointments\".\"appointment_date\" < CAST('2025-01-01' AS DATE) GROUP BY DATE_TRUNC('month', \"appointments\".\"appointment_date\") LIMIT 100"
+    },
+    {
+      "id": "quarterly_revenue_2025",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "timebucket",
+        "date-filter",
+        "instruction"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT DATE_TRUNC('quarter', \"appointments\".\"appointment_date\") AS \"appointment_date_quarter\", SUM(\"appointments\".\"fee\") AS \"revenue\" FROM \"appointments\" WHERE (\"appointments\".\"appointment_date\" >= CAST('2025-01-01' AS DATE) AND \"appointments\".\"appointment_date\" < CAST('2026-01-01' AS DATE)) AND \"appointments\".\"status\" = 'completed' GROUP BY DATE_TRUNC('quarter', \"appointments\".\"appointment_date\") LIMIT 100"
+    },
+    {
+      "id": "busy_doctors",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "having",
+        "join"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Vance', 176), ('Meyer', 165)] (+3 more), got []",
+      "sql": "SELECT \"doctors\".\"last_name\", COUNT(*) AS \"appointment_count\" FROM \"doctors\" INNER JOIN \"appointments\" ON \"doctors\".\"doctor_id\" = \"appointments\".\"doctor_id\" WHERE \"appointments\".\"status\" = 'completed' GROUP BY \"doctors\".\"last_name\" HAVING COUNT(*) > 150 ORDER BY \"appointment_count\" DESC LIMIT 10"
+    },
+    {
+      "id": "departments_over_20k",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "having",
+        "multihop",
+        "instruction"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Cardiology', 80377.0), ('Pediatrics', 20702.0)] (+1 more), got [('Cardiology', 'Patel', 32780.0), ('Cardiology', 'Khan', 27049.0)] (+1 more)",
+      "sql": "SELECT \"departments\".\"name\", \"doctors\".\"last_name\", SUM(\"appointments\".\"fee\") AS \"revenue\" FROM \"appointments\" INNER JOIN \"doctors\" ON \"appointments\".\"doctor_id\" = \"doctors\".\"doctor_id\" INNER JOIN \"departments\" ON \"doctors\".\"department_id\" = \"departments\".\"department_id\" WHERE \"appointments\".\"status\" = 'completed' GROUP BY \"departments\".\"name\", \"doctors\".\"last_name\" HAVING SUM(\"appointments\".\"fee\") > 20000.0 ORDER BY \"revenue\" DESC LIMIT 10"
+    },
+    {
+      "id": "ibuprofen_patients",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "multihop",
+        "distinct"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "cardiology_units",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "multihop",
+        "scalar"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "peds_derm_2023",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "multihop",
+        "in",
+        "date-filter"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "longest_avg_duration_dept",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Orthopedics', 35.357142857142854)], got [('Orthopedics', 34.891304347826086)]",
+      "sql": "SELECT \"departments\".\"name\", AVG(\"appointments\".\"duration_minutes\") AS \"avg_duration\" FROM \"doctors\" INNER JOIN \"departments\" ON \"doctors\".\"department_id\" = \"departments\".\"department_id\" INNER JOIN \"appointments\" ON \"doctors\".\"doctor_id\" = \"appointments\".\"doctor_id\" WHERE \"appointments\".\"status\" = 'completed' GROUP BY \"departments\".\"name\" ORDER BY \"avg_duration\" DESC LIMIT 1"
+    },
+    {
+      "id": "basic_patients_2025",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "join",
+        "distinct",
+        "date-filter"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(93,)], got [('Ueda', 7), ('Quist', 7)] (+10 more)",
+      "sql": "SELECT \"doctors\".\"last_name\", COUNT(DISTINCT \"patients\".\"patient_id\") AS \"distinct_patients\" FROM \"patients\" INNER JOIN \"appointments\" ON \"patients\".\"patient_id\" = \"appointments\".\"patient_id\" INNER JOIN \"doctors\" ON \"appointments\".\"doctor_id\" = \"doctors\".\"doctor_id\" WHERE (\"patients\".\"insurance_plan\" = 'Basic' AND \"appointments\".\"appointment_date\" >= CAST('2025-01-01' AS DATE)) AND \"appointments\".\"appointment_date\" < CAST('2026-01-01' AS DATE) GROUP BY \"doctors\".\"last_name\" LIMIT 1000"
+    },
+    {
+      "id": "most_cancellations_doctor",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "join",
+        "topn",
+        "filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT \"doctors\".\"last_name\", COUNT(*) AS \"cancelled_appointments\" FROM \"doctors\" INNER JOIN \"appointments\" ON \"doctors\".\"doctor_id\" = \"appointments\".\"doctor_id\" WHERE \"appointments\".\"status\" = 'cancelled' GROUP BY \"doctors\".\"last_name\" ORDER BY \"cancelled_appointments\" DESC LIMIT 1"
+    },
+    {
+      "id": "revenue_per_year",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "timebucket",
+        "instruction"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(datetime.datetime(2024, 1, 1, 0, 0), 60108.5), (datetime.datetime(2025, 1, 1, 0, 0), 59113.5)] (+1 more), got [(datetime.datetime(2023, 1, 1, 0, 0), 64097.5)]",
+      "sql": "SELECT DATE_TRUNC('year', \"appointments\".\"appointment_date\") AS \"appointment_date_year\", SUM(\"appointments\".\"fee\") AS \"revenue\" FROM \"appointments\" WHERE (\"appointments\".\"appointment_date\" >= CAST('2020-01-01' AS DATE) AND \"appointments\".\"appointment_date\" < CAST('2023-12-31' AS DATE)) AND \"appointments\".\"status\" = 'completed' GROUP BY DATE_TRUNC('year', \"appointments\".\"appointment_date\") LIMIT 100"
+    },
+    {
+      "id": "doctors_per_department",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT \"departments\".\"name\", COUNT(*) AS \"doctor_count\" FROM \"doctors\" INNER JOIN \"departments\" ON \"doctors\".\"department_id\" = \"departments\".\"department_id\" GROUP BY \"departments\".\"name\" LIMIT 100"
+    },
+    {
+      "id": "pii_phone_numbers",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "restricted_pii",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "pii_patient_names",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "validation_failed",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "salaries",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "beds",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "no_show_rate",
+      "expect": "abstain",
+      "tags": [
+        "known-gap",
+        "ratio"
+      ],
+      "verdict": "correct",
+      "refusal_code": "analyst_handoff",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "cancel_share",
+      "expect": "abstain",
+      "tags": [
+        "known-gap",
+        "ratio"
+      ],
+      "verdict": "correct",
+      "refusal_code": "validation_failed",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "medication_value",
+      "expect": "abstain",
+      "tags": [
+        "known-gap"
+      ],
+      "verdict": "correct",
+      "refusal_code": "validation_failed",
+      "detail": "declined, as expected",
+      "sql": null
+    }
+  ]
+}

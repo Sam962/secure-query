@@ -383,6 +383,34 @@ during deserialization.
 """
 
 
+class AggregateFilter(BaseModel):
+    """HAVING predicate on an aggregate the plan computes, referenced by its alias.
+
+    Example (billing countries with more than 20 invoices):
+        >>> f = AggregateFilter(alias="invoice_count", op="gt", value=LiteralValue(type="integer", value=20))
+
+    Filters on aggregates are standard SQL, not arithmetic between aggregates, so
+    they stay inside the IR boundary (ADR 002).
+    """
+
+    alias: str
+    op: Literal["eq", "ne", "lt", "lte", "gt", "gte", "between"]
+    value: LiteralValue | None = None
+    low: LiteralValue | None = None
+    high: LiteralValue | None = None
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @model_validator(mode="after")
+    def validate_operands(self) -> AggregateFilter:
+        if self.op == "between":
+            if self.low is None or self.high is None or self.value is not None:
+                raise ValueError("AggregateFilter op='between' requires low and high (not value)")
+        elif self.value is None or self.low is not None or self.high is not None:
+            raise ValueError(f"AggregateFilter op={self.op!r} requires value (not low/high)")
+        return self
+
+
 # --- Top-level LogicalPlan ---
 
 
@@ -437,7 +465,7 @@ class LogicalPlan(BaseModel):
     filters: list[Filter] = []
     group_by: GroupBy | None = None
     aggregations: list[Aggregation] = []
-    having: list[Filter] = []
+    having: list[AggregateFilter] = []
     order_by: list[OrderBy] = []
     limit: int | None = None
 

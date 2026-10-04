@@ -141,18 +141,21 @@ def run_live_case(
     *,
     repeats: int = 1,
     max_repairs: int = 1,
+    guard: bool = True,
 ) -> LiveCaseResult:
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
-        result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs))
+        result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs, guard))
     return result
 
 
 def _run_once(
-    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int
+    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int, guard: bool = True
 ) -> Attempt:
     try:
-        planned = plan_question(case.question, catalog, client, max_repairs=max_repairs)
+        planned = plan_question(
+            case.question, catalog, client, max_repairs=max_repairs, guard=guard
+        )
     except PlannerError as exc:
         # Transport failure (e.g. Ollama gone after the laptop slept): score this
         # case as an error and keep going instead of losing the whole run.

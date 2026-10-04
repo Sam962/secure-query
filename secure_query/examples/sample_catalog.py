@@ -185,9 +185,25 @@ def sample_catalog() -> Catalog:
             Synonym(term="customer", table_id="Customer"),
             Synonym(term="customers", table_id="Customer"),
             Synonym(term="client", table_id="Customer"),
+            # Domain verbs that used to be hardcoded in the guard's stop-word list.
+            Synonym(term="billed", table_id="Invoice", column_id="BillingCountry"),
+            Synonym(term="issued", table_id="Invoice", column_id="InvoiceDate"),
+            Synonym(term="sales", table_id="InvoiceLine"),
+            Synonym(term="music", table_id="Track"),
+            Synonym(term="earned", table_id="Invoice", column_id="Total"),
+            Synonym(term="earn", table_id="Invoice", column_id="Total"),
             Synonym(term="clients", table_id="Customer"),
         ],
         metrics=chinook_metrics(),
+        # Domain rules a data owner would write. They used to live in the planner's
+        # system prompt, which made the planner Chinook-specific.
+        instructions=[
+            "Tracks sold are InvoiceLine rows (line items): to count tracks sold, source from "
+            "InvoiceLine, not Track.",
+            "Average revenue per customer is total invoice revenue divided by the number of "
+            "distinct customers (approved metric avg_revenue_per_customer); the average of "
+            "Invoice.Total is the average per invoice, a different number.",
+        ],
         join_keys=[
             JoinKey(
                 left_table="Invoice",
@@ -292,6 +308,7 @@ def chinook_metrics() -> list[MetricSpec]:
     return [
         MetricSpec(
             id="total_revenue",
+            question="What is total invoice revenue?",
             description="Sum of all invoice totals",
             source="Invoice",
             aggregations=["sum:Invoice.Total:total_revenue"],
@@ -300,6 +317,7 @@ def chinook_metrics() -> list[MetricSpec]:
         ),
         MetricSpec(
             id="invoice_count",
+            question="How many invoices are there?",
             description="Count of invoices",
             source="Invoice",
             aggregations=["count:*:invoice_count"],
@@ -307,6 +325,7 @@ def chinook_metrics() -> list[MetricSpec]:
         ),
         MetricSpec(
             id="employee_count",
+            question="How many employees are there?",
             description="Count of employees (staff headcount)",
             source="Employee",
             aggregations=["count:*:employee_count"],
@@ -314,6 +333,7 @@ def chinook_metrics() -> list[MetricSpec]:
         ),
         MetricSpec(
             id="revenue_by_country",
+            question="What is revenue by country?",
             description="Total invoice revenue grouped by customer country",
             source="Invoice",
             joins=["Invoice:Customer:Invoice.CustomerId=Customer.CustomerId"],
@@ -324,6 +344,7 @@ def chinook_metrics() -> list[MetricSpec]:
         ),
         MetricSpec(
             id="revenue_by_billing_country",
+            question="What is revenue by billing country?",
             description="Total invoice revenue grouped by billing country on invoice",
             source="Invoice",
             group_by=["Invoice.BillingCountry"],
@@ -333,6 +354,7 @@ def chinook_metrics() -> list[MetricSpec]:
         ),
         MetricSpec(
             id="revenue_by_genre",
+            question="What is revenue by genre?",
             description="Track sales revenue grouped by genre name",
             source="InvoiceLine",
             joins=[

@@ -15,6 +15,7 @@ from datetime import date, datetime
 from sqlglot import exp
 
 from secure_query.kernel.logical_plan import (
+    AggregateFilter,
     Aggregation,
     Between,
     ColumnRef,
@@ -177,8 +178,9 @@ def _build_select(
     else:
         select = select.select("*")
 
+    by_alias = {agg.alias: agg for agg in plan.aggregations}
     for having_filt in plan.having:
-        select = select.having(_compile_filter(having_filt))
+        select = select.having(_compile_having(having_filt, by_alias))
 
     for ob in plan.order_by:
         select = _apply_order_by(select, ob)
@@ -338,6 +340,24 @@ def _compile_filter(filt: Filter) -> exp.Expression:
     if isinstance(filt, Like):
         return exp.Like(this=left, expression=_compile_literal(filt.pattern))
     raise CompilationError(f"Unknown filter op: {getattr(filt, 'op', '?')}", "$.filters")
+
+
+def _compile_having(filt: AggregateFilter, by_alias: dict[str, Aggregation]) -> exp.Expression:
+    """HAVING on the aggregate expression itself; Postgres rejects aliases in HAVING."""
+    agg = by_alias.get(filt.alias)
+    if agg is None:
+        raise CompilationError(f"HAVING references unknown aggregate alias {filt.alias!r}", "$.having")
+    target = _compile_aggregation(agg).this
+    if filt.op == "between":
+        assert filt.low is not None and filt.high is not None
+        return exp.Between(
+            this=target, low=_compile_literal(filt.low), high=_compile_literal(filt.high)
+        )
+    assert filt.value is not None
+    comparisons = {
+        "eq": exp.EQ, "ne": exp.NEQ, "lt": exp.LT, "lte": exp.LTE, "gt": exp.GT, "gte": exp.GTE,
+    }
+    return comparisons[filt.op](this=target, expression=_compile_literal(filt.value))
 
 
 def _compile_aggregation(agg: Aggregation) -> exp.Expression:

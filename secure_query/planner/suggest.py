@@ -155,21 +155,13 @@ def _overlapping_metrics(question: str, catalog: Catalog) -> list[SuggestedQuest
 
 
 def _question_for_metric(metric: MetricSpec) -> str:
-    """Askable phrasing from the metric id — never the description.
+    """The owner's phrasing if the catalog gives one, else one built from the id.
 
-    Descriptions contain analyst words like "grouped" that the out-of-scope
-    guard treats as unknown catalog terms, so suggesting them loops.
+    Never the description: it contains analyst words like "grouped" that are not
+    catalog terms, so suggesting it would loop back into a refusal.
     """
-    canned = {
-        "total_revenue": "What is total invoice revenue?",
-        "invoice_count": "How many invoices are there?",
-        "employee_count": "How many employees are there?",
-        "revenue_by_country": "What is revenue by country?",
-        "revenue_by_billing_country": "What is revenue by billing country?",
-        "revenue_by_genre": "What is revenue by genre?",
-    }
-    if metric.id in canned:
-        return canned[metric.id]
+    if metric.question:
+        return metric.question
     return f"What is {metric.id.replace('_', ' ')}?"
 
 

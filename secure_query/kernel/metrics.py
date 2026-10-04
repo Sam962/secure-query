@@ -71,6 +71,10 @@ class MetricSpec(BaseModel):
         default=None,
         description="Display unit for the metric result (e.g. USD)",
     )
+    question: str | None = Field(
+        default=None,
+        description="Owner-written phrasing offered as a suggestion (askable in this catalog's terms)",
+    )
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

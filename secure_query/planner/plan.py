@@ -26,12 +26,14 @@ from secure_query.planner.guard import (
     dropped_average,
     dropped_concepts,
     opaque_grouping_keys,
-    out_of_scope_request,
+    inexpressible_request,
+    unknown_terms,
     restricted_request,
     useless_joins,
 )
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.metrics import MetricSpec
+from secure_query.planner.prompt import SYSTEM_PROMPT, build_system_prompt
 from secure_query.kernel.validate import (
     PlanValidationFailed,
     normalize_plan,
@@ -46,145 +48,6 @@ _SQL_LEAK_RE = re.compile(
 _RETRY_AFTER_RE = re.compile(r"try again in ([\d.]+)s", re.IGNORECASE)
 _RATE_LIMIT_MAX_RETRIES = 5
 _RATE_LIMIT_DEFAULT_WAIT_S = 15.0
-
-
-SYSTEM_PROMPT = """You are a query planner for a secure analytics system.
-You MUST output a single JSON object. Never output SQL.
-Never wrap the JSON in markdown fences. Never include explanations outside JSON.
-
-Output ONE of two objects:
-1. A LogicalPlan, when the catalog can answer the question exactly.
-2. A refusal, when it cannot:
-   {"cannot_answer": true, "reason": "<one short sentence>"}
-
-WHEN TO REFUSE — this matters more than being helpful. A refusal is always
-better than a number that looks right but answers a different question.
-Refuse if ANY of these is true:
-- The question needs a table or column that is not in the catalog. Do NOT
-  substitute a similar-sounding one. Check the catalog summary first: if the
-  table is listed (Employee, Track, Genre, etc.), use it. If asked about
-  suppliers, payroll, or inventory and the catalog has none, refuse — do not
-  count customers instead.
-- The question needs arithmetic *between* aggregates: a ratio, a percentage,
-  a share of total, a growth rate, or an average "per" some entity other than
-  the rows being aggregated. This IR has no division, so you cannot express it.
-  Example: "average revenue per customer" means SUM(Total) / COUNT(DISTINCT
-  CustomerId). AVG(Total) is the average per *invoice* — a different, wrong
-  number. Refuse instead of using AVG.
-- The question asks for a column marked [pii=high]. Do not return it, filter on
-  it, group by it, or sort by it — and do not quietly answer a narrower
-  question in its place. Refuse and say the field is restricted.
-Never reuse an unavailable concept as an alias: do not alias a row count as
-"email" or "payroll_total" to make the output look like what was asked for.
-
-Rules:
-- Use ONLY tables and columns listed in the catalog.
-- Use ONLY approved joins from the catalog when joining.
-- Always set limit (1–1000) unless the catalog forbids it; prefer 10 for top-N rankings.
-  When the question asks for every/each/all categories (e.g. "each genre"), set limit
-  high enough to return all groups (often 100–1000), not a top-10 default.
-- To count child rows per parent (tracks per album, albums per artist), source from the
-  child/detail table and join the parent for labels — never count rows on the parent alone.
-- Every column ref must come from source or a joined table; to group by Artist.Name, join Artist.
-- Column refs are objects: {"table_id": "...", "column_id": "..."}.
-- Filter literals use LiteralValue: {"type": "string"|"integer"|"float"|"boolean", "value": ...}.
-- Filters are a discriminated union on "op": eq, ne, lt, lte, gt, gte, in, not_in, between, is_null, not_null, like.
-  Equality filter shape (required keys):
-  {"op": "eq", "column": {"table_id": "Customer", "column_id": "Country"},
-   "value": {"type": "string", "value": "USA"}}
-  IN filter shape (note: "values" is a list of LiteralValue — not "value" with type list):
-  {"op": "in", "column": {"table_id": "Customer", "column_id": "Country"},
-   "values": [
-     {"type": "string", "value": "Brazil"},
-     {"type": "string", "value": "France"}
-   ]}
-  BETWEEN filter shape (note: "low" and "high" — not "values"):
-  {"op": "between", "column": {"table_id": "Invoice", "column_id": "Total"},
-   "low": {"type": "float", "value": 5.0}, "high": {"type": "float", "value": 10.0}}
-  Date ranges on a date/datetime column: use two filters, gte the start and lt the
-  day after the end, with ISO date literals. "in 2023" is:
-  {"op": "gte", "column": {"table_id": "Invoice", "column_id": "InvoiceDate"},
-   "value": {"type": "date", "value": "2023-01-01"}},
-  {"op": "lt", "column": {"table_id": "Invoice", "column_id": "InvoiceDate"},
-   "value": {"type": "date", "value": "2024-01-01"}}
-  Do NOT use "left"/"right" for filters — those are only for join conditions.
-  Do NOT use {"type": "list", "value": [...]} — that is invalid.
-- group_by is either null or {"columns": [...], "time_buckets": []} — never a bare list.
-- Time buckets group a date/datetime column into periods. Required keys are
-  "column" (a ColumnRef) and "grain" (hour|day|week|month|quarter|year):
-  {"column": {"table_id": "Invoice", "column_id": "InvoiceDate"}, "grain": "year"}
-  There is no "unit" or "offset" key. When bucketing a date, put the column in
-  the time_bucket and NOT also in "columns", or you will group by the raw timestamp.
-- Aggregations: {"fn": "count"|"count_distinct"|"sum"|"avg"|"min"|"max", "column": ColumnRef|null, "alias": "..."}.
-  For count(*), set "column": null.
-- Do not invent tables, columns, or join keys.
-- Do not include a "sql" field or any SQL strings.
-- Include "schema_version": "lqp/1".
-- Include "plan_id" as any UUID string (it will be replaced server-side).
-- Alternatively return {"metric_id": "<approved_metric>", "limit": N} when a catalog
-  approved_metric matches the question exactly (prefer this for revenue/count/ratio metrics).
-- When the question asks "which artist/genre/album/playlist/media type", group by the
-  table's display_column or FK label_for (e.g. Artist.Name), never a bare *_Id.
-- To count tracks *sold*, source from InvoiceLine (line items), not Track.
-- Country/city/year tokens in the question (USA, Brazil, London, 2010) are filter
-  literals — use them in filter values; they are not unknown schema concepts.
-
-Filter-and-list example shape:
-{
-  "plan_id": "00000000-0000-0000-0000-000000000002",
-  "schema_version": "lqp/1",
-  "source": "Customer",
-  "joins": [],
-  "filters": [{
-    "op": "eq",
-    "column": {"table_id": "Customer", "column_id": "Country"},
-    "value": {"type": "string", "value": "USA"}
-  }],
-  "group_by": null,
-  "aggregations": [],
-  "having": [],
-  "order_by": [{"column": {"table_id": "Customer", "column_id": "LastName"}, "direction": "asc"}],
-  "limit": 20
-}
-
-Trend (per-period) example shape:
-{
-  "plan_id": "00000000-0000-0000-0000-000000000003",
-  "schema_version": "lqp/1",
-  "source": "Invoice",
-  "joins": [],
-  "filters": [],
-  "group_by": {
-    "columns": [],
-    "time_buckets": [{"column": {"table_id": "Invoice", "column_id": "InvoiceDate"}, "grain": "year"}]
-  },
-  "aggregations": [{"fn": "count", "column": null, "alias": "invoice_count"}],
-  "having": [],
-  "order_by": [],
-  "limit": 100
-}
-
-Minimal aggregate example shape:
-{
-  "plan_id": "00000000-0000-0000-0000-000000000001",
-  "schema_version": "lqp/1",
-  "source": "Invoice",
-  "joins": [{
-    "right_table": "Customer",
-    "kind": "inner",
-    "conditions": [{
-      "left": {"table_id": "Invoice", "column_id": "CustomerId"},
-      "right": {"table_id": "Customer", "column_id": "CustomerId"}
-    }]
-  }],
-  "filters": [],
-  "group_by": {"columns": [{"table_id": "Customer", "column_id": "Country"}], "time_buckets": []},
-  "aggregations": [{"fn": "sum", "column": {"table_id": "Invoice", "column_id": "Total"}, "alias": "revenue"}],
-  "having": [],
-  "order_by": [{"alias": "revenue", "direction": "desc"}],
-  "limit": 10
-}
-"""
 
 
 class LLMClient(Protocol):
@@ -559,11 +422,20 @@ def resolve_llm_settings() -> dict[str, Any] | None:
     )
 
 
-def build_user_prompt(question: str, catalog: Catalog) -> str:
+def build_user_prompt(question: str, catalog: Catalog, *, unknown: list[str] | None = None) -> str:
+    note = ""
+    if unknown:
+        words = ", ".join(f'"{w}"' for w in unknown)
+        note = (
+            f"\nThese words in the question match nothing in the catalog: {words}. "
+            "If one of them names data the answer depends on, refuse. If they are just "
+            "wording (verbs, adjectives, phrasing), ignore them.\n"
+        )
     return (
         "Approved catalog (tables/columns/joins only — no row data):\n"
         f"{catalog.planner_summary()}\n\n"
-        f"User question:\n{question}\n\n"
+        f"User question:\n{question}\n"
+        f"{note}\n"
         "Return only the LogicalPlan JSON object."
     )
 
@@ -617,7 +489,31 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
         return expand_metric_plan(metric, limit=int(limit) if limit is not None else None)
     data["plan_id"] = str(uuid4())
     data.setdefault("schema_version", "lqp/1")
+    if "having" in data:
+        data["having"] = _having_by_alias(data)
     return LogicalPlan.model_validate(data)
+
+
+def _having_by_alias(data: dict[str, Any]) -> Any:
+    """Read column-shaped HAVING items that name one of the plan's own aggregate aliases.
+
+    Models often write {"op": "gt", "column": {"table_id": T, "column_id": "invoice_count"}}.
+    No catalog column is called "invoice_count"; the plan's aggregation is, so the
+    meaning is unambiguous. Anything else is left as-is for validation to reject.
+    """
+    having = data.get("having")
+    aggregations = data.get("aggregations")
+    if not isinstance(having, list) or not isinstance(aggregations, list):
+        return having
+    aliases = {a.get("alias") for a in aggregations if isinstance(a, dict)}
+    converted = []
+    for item in having:
+        column = item.get("column") if isinstance(item, dict) else None
+        if "alias" not in (item or {}) and isinstance(column, dict) and column.get("column_id") in aliases:
+            item = {k: v for k, v in item.items() if k != "column"}
+            item["alias"] = column["column_id"]
+        converted.append(item)
+    return converted
 
 
 def try_compile_metric(
@@ -701,20 +597,15 @@ def plan_question(
                 refused=True,
                 clarify_code="restricted_pii",
             )
-        oos = out_of_scope_request(question, catalog)
-        if oos is not None:
-            return PlannerResult(
-                status="clarify",
-                question=question,
-                attempts=0,
-                clarify_message=oos,
-                refused=True,
-                clarify_code="out_of_scope",
-            )
 
+    # Unknown words are a hint, not a veto: most are ordinary wording ("bought",
+    # "longest"), and only the model reading the sentence can tell those from
+    # missing data ("salary"). A hard refusal here blocked 11 of 23 answerable
+    # questions on an unseen schema.
+    hint = unknown_terms(question, catalog) if guard else []
     messages: list[dict[str, str]] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_user_prompt(question, summary_catalog)},
+        {"role": "system", "content": build_system_prompt(summary_catalog)},
+        {"role": "user", "content": build_user_prompt(question, summary_catalog, unknown=hint)},
     ]
     errors: list[str] = []
     raw_responses: list[str] = []
@@ -745,6 +636,7 @@ def plan_question(
                     or opaque_grouping_keys(question, plan, catalog)
                     or dropped_concepts(question, plan, catalog)
                     or dropped_average(question, plan)
+                    or inexpressible_request(question, catalog)
                 )
                 if gap is not None:
                     return PlannerResult(

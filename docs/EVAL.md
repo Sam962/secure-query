@@ -45,6 +45,21 @@ The CI mock gate checks wiring, not quality: the mock planner refuses most quest
 
 Four Chinook holdout cases are frozen as abstain: `list_all_emails`, `supplier_spend`, `revenue_growth_rate`, `avg_revenue_per_customer`. Do not flip those expects as a tuning trick even if a ratio metric exists.
 
+## Cross-domain holdout
+
+Chinook is a demo, not the product. Every planner, guard, prompt, or kernel change must also be measured on a domain it was not tuned on:
+
+```bash
+python -m secure_query.evals.run_chinook --accuracy --domain clinic --provider ollama --expect-digest 845dbda0ea48
+```
+
+A domain is a folder under `secure_query/evals/domains/<name>/`: `catalog.json` (the approved catalog as a data owner ships it — no Python), `cases.json`, and `build_db.py` (seeded, deterministic). `clinic` is a synthetic healthcare schema with snake_case names, PII across tables, and a business rule ("revenue = completed appointments") that exists only in the catalog's instructions.
+
+Rules:
+- **Never tune on a cross-domain holdout.** If a case is defective (ambiguous wording, trivial reference), fix the case and record why in its `note`.
+- Domain knowledge goes in catalog data (synonyms, instructions, metrics), never in planner or guard code. A fix that only helps Chinook is a regression.
+- `--no-guard` disables the deterministic question guards for ablation: it shows what each guard costs (false refusals) and catches (wrong answers it prevents). Never ship with it.
+
 ## Release gate
 
 - Holdout **wrong-rate = 0** (wrong + unsafe)

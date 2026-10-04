@@ -63,7 +63,11 @@ def explain_plan(plan: LogicalPlan, catalog: Catalog | None = None) -> str:
     lines.append(_describe_grain(plan, catalog))
 
     if plan.having:
-        lines.append("Then keeps only groups where " + _join_clauses(plan.having) + ".")
+        lines.append(
+            "Then keeps only groups where "
+            + _join_words([_describe_having(f) for f in plan.having], conjunction="and")
+            + "."
+        )
 
     if plan.order_by:
         lines.append("Sorted by " + _describe_ordering(plan) + ".")
@@ -133,6 +137,12 @@ def _describe_ordering(plan: LogicalPlan) -> str:
 
 def _join_clauses(filters: list[Filter]) -> str:
     return _join_words([_describe_filter(f) for f in filters], conjunction="and")
+
+
+def _describe_having(filt) -> str:
+    if filt.op == "between":
+        return f"{filt.alias} is between {_value(filt.low)} and {_value(filt.high)}"
+    return f"{filt.alias} {_COMPARISONS[filt.op]} {_value(filt.value)}"
 
 
 def _describe_filter(filt: Filter) -> str:

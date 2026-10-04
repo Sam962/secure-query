@@ -21,3 +21,29 @@ def test_draft_from_tiny_duckdb(tmp_path: Path) -> None:
     assert "Customer" in names
     assert payload["tenant_id"] == "draft"
     assert payload["join_keys"] == []
+
+
+def test_display_column_shorthand_and_bad_label_refs() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    from secure_query.kernel.catalog import Catalog
+
+    def catalog(display: str, label_for: str | None = None) -> Catalog:
+        return Catalog.model_validate(
+            {
+                "tenant_id": "t",
+                "tables": [
+                    {"name": "dept", "display_column": display,
+                     "columns": [{"name": "id", "dtype": "int"}, {"name": "name", "dtype": "str"}]},
+                    {"name": "staff", "columns": [{"name": "dept_id", "dtype": "int", "label_for": label_for}]},
+                ],
+            }
+        )
+
+    assert catalog("name").table_map()["dept"].display_column == "dept.name"
+    assert catalog("dept.name", "dept.name").table_map()["staff"].columns[0].label_for == "dept.name"
+    with pytest.raises(ValidationError, match="display_column"):
+        catalog("title")
+    with pytest.raises(ValidationError, match="label_for"):
+        catalog("name", "dept.title")

@@ -10,6 +10,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from secure_query.kernel.logical_plan import (
+    AggregateFilter,
     Aggregation,
     ColumnRef,
     Eq,
@@ -73,7 +74,7 @@ class _PlanBuilder:
         filters: list[Filter] | None = None,
         group_by: GroupBy | None = None,
         aggregations: list[Aggregation] | None = None,
-        having: list[Filter] | None = None,
+        having: list[AggregateFilter] | None = None,
         order_by: list[OrderBy] | None = None,
         limit: int | None = None,
     ) -> None:
@@ -83,7 +84,7 @@ class _PlanBuilder:
         self._filters: list[Filter] = filters or []
         self._group_by: GroupBy | None = group_by
         self._aggregations: list[Aggregation] = aggregations or []
-        self._having: list[Filter] = having or []
+        self._having: list[AggregateFilter] = having or []
         self._order_by: list[OrderBy] = order_by or []
         self._limit: int | None = limit
 

@@ -454,3 +454,26 @@ def test_date_literals_accept_iso_strings_from_json() -> None:
         LiteralValue.model_validate({"type": "date", "value": "2023-13-45"})
     # Strings stay strings for type=string.
     assert LiteralValue.model_validate({"type": "string", "value": "2023-01-01"}).value == "2023-01-01"
+
+
+def test_count_distinct_of_group_key_is_rejected() -> None:
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.kernel.builder import LQP
+    from secure_query.kernel.validate import validate
+
+    degenerate = (
+        LQP.aggregate(table="Invoice")
+        .group_by_columns(["Invoice.CustomerId"])
+        .agg("count_distinct", "Invoice.CustomerId", alias="customers")
+        .limit(100)
+        .build()
+    )
+    assert "plan.count_of_group_key" in {e.code for e in validate(degenerate, sample_catalog())}
+    fine = (
+        LQP.aggregate(table="Invoice")
+        .group_by_columns(["Invoice.BillingCountry"])
+        .agg("count_distinct", "Invoice.CustomerId", alias="customers")
+        .limit(100)
+        .build()
+    )
+    assert "plan.count_of_group_key" not in {e.code for e in validate(fine, sample_catalog())}

@@ -125,8 +125,7 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     for i, filt in enumerate(plan.filters):
         errors.extend(_check_filter(filt, catalog, f"$.filters[{i}]"))
 
-    for i, filt in enumerate(plan.having):
-        errors.extend(_check_filter(filt, catalog, f"$.having[{i}]"))
+    errors.extend(_check_having(plan, catalog))
 
     if plan.group_by is not None:
         for i, col in enumerate(plan.group_by.columns):
@@ -166,8 +165,72 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     errors.extend(_check_label_aggregates(plan, catalog))
     errors.extend(_check_plan_scope(plan))
     errors.extend(_check_dead_order_keys(plan))
+    errors.extend(_check_count_of_group_key(plan))
 
     return errors
+
+
+def _check_having(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
+    """HAVING must name an aggregate in this plan, compared with a literal of its type."""
+    by_alias = {agg.alias: agg for agg in plan.aggregations}
+    errors: list[ValidationError] = []
+    for i, filt in enumerate(plan.having):
+        path = f"$.having[{i}]"
+        agg = by_alias.get(filt.alias)
+        if agg is None:
+            errors.append(
+                ValidationError(
+                    code="plan.unknown_having_alias",
+                    path=f"{path}.alias",
+                    message=(
+                        f"having alias {filt.alias!r} is not an aggregation alias in this plan; "
+                        f"use one of {sorted(by_alias) or 'the aggregations (none defined)'}"
+                    ),
+                    stage="typecheck",
+                )
+            )
+            continue
+        literals = [filt.value] if filt.value is not None else [filt.low, filt.high]
+        for lit in literals:
+            assert lit is not None
+            if agg.fn in ("count", "count_distinct", "sum", "avg") or agg.column is None:
+                if lit.type not in ("integer", "float"):
+                    errors.append(
+                        ValidationError(
+                            code="typecheck.literal_mismatch",
+                            path=path,
+                            message=f"having on {agg.fn}({filt.alias}) needs a number, got {lit.type!r}",
+                            stage="typecheck",
+                        )
+                    )
+            else:
+                spec = catalog.get_column(agg.column.table_id, agg.column.column_id)
+                errors.extend(_check_literal_type(lit, spec, path))
+    return errors
+
+
+def _check_count_of_group_key(plan: LogicalPlan) -> list[ValidationError]:
+    """count_distinct of a column the plan also groups by is 1 in every group.
+
+    "How many different patients…" planned as GROUP BY patient_id with
+    COUNT(DISTINCT patient_id) returns one row per patient, each saying 1.
+    """
+    if plan.group_by is None:
+        return []
+    keys = set(plan.group_by.columns)
+    return [
+        ValidationError(
+            code="plan.count_of_group_key",
+            path=f"$.aggregations[{i}]",
+            message=(
+                f"count_distinct of {agg.column.table_id}.{agg.column.column_id} while grouping by "
+                "it is 1 in every group. For a single total, drop that column from group_by."
+            ),
+            stage="policy",
+        )
+        for i, agg in enumerate(plan.aggregations)
+        if agg.fn == "count_distinct" and agg.column in keys
+    ]
 
 
 def _check_dead_order_keys(plan: LogicalPlan) -> list[ValidationError]:
@@ -241,8 +304,6 @@ def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:
             )
     for i, filt in enumerate(plan.filters):
         errors.extend(check(filt.column, f"$.filters[{i}].column"))
-    for i, filt in enumerate(plan.having):
-        errors.extend(check(filt.column, f"$.having[{i}].column"))
     if plan.group_by is not None:
         for i, col in enumerate(plan.group_by.columns):
             errors.extend(check(col, f"$.group_by.columns[{i}]"))
@@ -378,7 +439,7 @@ def _check_pii_policy(plan: LogicalPlan, catalog: Catalog) -> list[ValidationErr
     """
     errors: list[ValidationError] = []
 
-    for label, filters in (("filters", plan.filters), ("having", plan.having)):
+    for label, filters in (("filters", plan.filters),):
         for i, filt in enumerate(filters):
             path = f"$.{label}[{i}]"
             if _is_high_pii(catalog, filt.column):
@@ -504,7 +565,7 @@ def _tables_read(plan: LogicalPlan) -> set[str]:
             tables.add(col.table_id)
         for bucket in plan.group_by.time_buckets:
             tables.add(bucket.column.table_id)
-    for filt in list(plan.filters) + list(plan.having):
+    for filt in plan.filters:
         tables.add(filt.column.table_id)
         value = getattr(filt, "value", None)
         if isinstance(value, ColumnRef):
