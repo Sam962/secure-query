@@ -1,0 +1,361 @@
+{
+  "catalog": "catalog.json",
+  "database": "data/northwind.duckdb",
+  "notes": "Second-schema validation set, frozen 2026-10-04 before any live run. Never tune prompts, guards or the catalog on these cases; add new cases instead. Reference SQL runs against data/northwind.duckdb (python -m secure_query.examples.load_northwind).",
+  "cases": [
+    {
+      "id": "customers_in_germany",
+      "question": "How many customers are based in Germany?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Customers WHERE Country = 'Germany'",
+      "tags": [
+        "filter",
+        "scalar"
+      ]
+    },
+    {
+      "id": "product_count",
+      "question": "How many products do we sell?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Products",
+      "tags": [
+        "scalar"
+      ]
+    },
+    {
+      "id": "discontinued_products",
+      "question": "How many products have been discontinued?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Products WHERE Discontinued = '1'",
+      "tags": [
+        "filter",
+        "scalar"
+      ]
+    },
+    {
+      "id": "avg_freight",
+      "question": "What is the average freight cost per order?",
+      "expect": "answer",
+      "reference_sql": "SELECT AVG(Freight) FROM Orders",
+      "tags": [
+        "scalar",
+        "avg"
+      ]
+    },
+    {
+      "id": "max_freight",
+      "question": "What is the highest freight charge on a single order?",
+      "expect": "answer",
+      "reference_sql": "SELECT MAX(Freight) FROM Orders",
+      "tags": [
+        "scalar"
+      ]
+    },
+    {
+      "id": "freight_to_france",
+      "question": "What is the total freight on orders shipped to France?",
+      "expect": "answer",
+      "reference_sql": "SELECT SUM(Freight) FROM Orders WHERE ShipCountry = 'France'",
+      "tags": [
+        "filter",
+        "scalar"
+      ]
+    },
+    {
+      "id": "unshipped_orders",
+      "question": "How many orders have not shipped yet?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Orders WHERE ShippedDate IS NULL",
+      "tags": [
+        "filter",
+        "null"
+      ]
+    },
+    {
+      "id": "orders_in_2017",
+      "question": "How many orders were placed in 2017?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Orders WHERE OrderDate >= '2017-01-01' AND OrderDate < '2018-01-01'",
+      "tags": [
+        "filter",
+        "date"
+      ]
+    },
+    {
+      "id": "uk_employees",
+      "question": "How many employees are based in the UK?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Employees WHERE Country = 'UK'",
+      "tags": [
+        "filter",
+        "scalar"
+      ]
+    },
+    {
+      "id": "distinct_ship_countries",
+      "question": "How many different countries have we shipped orders to?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(DISTINCT ShipCountry) FROM Orders",
+      "tags": [
+        "scalar",
+        "distinct"
+      ]
+    },
+    {
+      "id": "products_over_50",
+      "question": "How many products have a unit price above 50?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Products WHERE UnitPrice > 50",
+      "tags": [
+        "filter",
+        "comparison"
+      ]
+    },
+    {
+      "id": "products_per_category",
+      "question": "How many products are in each category?",
+      "expect": "answer",
+      "reference_sql": "SELECT c.CategoryName, COUNT(*) FROM Products p JOIN Categories c ON p.CategoryID = c.CategoryID GROUP BY 1",
+      "tags": [
+        "group",
+        "join"
+      ]
+    },
+    {
+      "id": "orders_per_shipper",
+      "question": "How many orders did each shipper carry?",
+      "expect": "answer",
+      "reference_sql": "SELECT s.CompanyName, COUNT(*) FROM Orders o JOIN Shippers s ON o.ShipVia = s.ShipperID GROUP BY 1",
+      "tags": [
+        "group",
+        "join"
+      ]
+    },
+    {
+      "id": "freight_by_shipper",
+      "question": "What is the total freight by shipper?",
+      "expect": "answer",
+      "reference_sql": "SELECT s.CompanyName, SUM(o.Freight) FROM Orders o JOIN Shippers s ON o.ShipVia = s.ShipperID GROUP BY 1",
+      "tags": [
+        "group",
+        "join",
+        "metric"
+      ]
+    },
+    {
+      "id": "units_sold_by_category",
+      "question": "How many units have been sold in each category?",
+      "expect": "answer",
+      "reference_sql": "SELECT c.CategoryName, SUM(od.Quantity) FROM \"Order Details\" od JOIN Products p ON od.ProductID = p.ProductID JOIN Categories c ON p.CategoryID = c.CategoryID GROUP BY 1",
+      "tags": [
+        "group",
+        "join",
+        "metric"
+      ]
+    },
+    {
+      "id": "stock_by_category",
+      "question": "How many units are in stock for each category?",
+      "expect": "answer",
+      "reference_sql": "SELECT c.CategoryName, SUM(p.UnitsInStock) FROM Products p JOIN Categories c ON p.CategoryID = c.CategoryID GROUP BY 1",
+      "tags": [
+        "group",
+        "join"
+      ]
+    },
+    {
+      "id": "territories_per_region",
+      "question": "How many territories are in each region?",
+      "expect": "answer",
+      "reference_sql": "SELECT r.RegionDescription, COUNT(*) FROM Territories t JOIN Regions r ON t.RegionID = r.RegionID GROUP BY 1",
+      "tags": [
+        "group",
+        "join"
+      ]
+    },
+    {
+      "id": "suppliers_per_country",
+      "question": "How many suppliers are there in each country?",
+      "expect": "answer",
+      "reference_sql": "SELECT Country, COUNT(*) FROM Suppliers GROUP BY 1",
+      "tags": [
+        "group"
+      ]
+    },
+    {
+      "id": "orders_by_year",
+      "question": "How many orders were placed each year?",
+      "expect": "answer",
+      "reference_sql": "SELECT DATE_TRUNC('year', OrderDate), COUNT(*) FROM Orders GROUP BY 1 ORDER BY 1",
+      "tags": [
+        "trend",
+        "timebucket"
+      ]
+    },
+    {
+      "id": "top5_products_by_units",
+      "question": "What are the top 5 products by units sold?",
+      "expect": "answer",
+      "reference_sql": "SELECT p.ProductName, SUM(od.Quantity) AS units FROM \"Order Details\" od JOIN Products p ON od.ProductID = p.ProductID GROUP BY 1 ORDER BY units DESC LIMIT 5",
+      "tags": [
+        "topn",
+        "join"
+      ]
+    },
+    {
+      "id": "top_employee_by_orders",
+      "question": "Which employee handled the most orders?",
+      "expect": "answer",
+      "reference_sql": "SELECT e.LastName, COUNT(*) AS n FROM Orders o JOIN Employees e ON o.EmployeeID = e.EmployeeID GROUP BY 1 ORDER BY n DESC LIMIT 1",
+      "tags": [
+        "topn",
+        "join"
+      ]
+    },
+    {
+      "id": "top3_ship_countries",
+      "question": "Which 3 countries were the most orders shipped to?",
+      "expect": "answer",
+      "reference_sql": "SELECT ShipCountry, COUNT(*) AS n FROM Orders GROUP BY 1 ORDER BY n DESC LIMIT 3",
+      "tags": [
+        "topn"
+      ]
+    },
+    {
+      "id": "top_customer_by_orders",
+      "question": "Which customer placed the most orders?",
+      "expect": "answer",
+      "reference_sql": "SELECT c.CompanyName, COUNT(*) AS n FROM Orders o JOIN Customers c ON o.CustomerID = c.CustomerID GROUP BY 1 ORDER BY n DESC LIMIT 1",
+      "tags": [
+        "topn",
+        "join"
+      ]
+    },
+    {
+      "id": "seafood_product_count",
+      "question": "How many products are in the Seafood category?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Products p JOIN Categories c ON p.CategoryID = c.CategoryID WHERE c.CategoryName = 'Seafood'",
+      "tags": [
+        "filter",
+        "join"
+      ]
+    },
+    {
+      "id": "avg_price_beverages",
+      "question": "What is the average unit price of products in the Beverages category?",
+      "expect": "answer",
+      "reference_sql": "SELECT AVG(p.UnitPrice) FROM Products p JOIN Categories c ON p.CategoryID = c.CategoryID WHERE c.CategoryName = 'Beverages'",
+      "tags": [
+        "filter",
+        "join",
+        "avg"
+      ]
+    },
+    {
+      "id": "customers_over_200_orders",
+      "question": "Which customers have placed more than 200 orders?",
+      "expect": "answer",
+      "reference_sql": "SELECT c.CompanyName, COUNT(*) FROM Orders o JOIN Customers c ON o.CustomerID = c.CustomerID GROUP BY 1 HAVING COUNT(*) > 200",
+      "tags": [
+        "having",
+        "join"
+      ]
+    },
+    {
+      "id": "speedy_express_orders_2016",
+      "question": "How many orders placed in 2016 were carried by Speedy Express?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Orders o JOIN Shippers s ON o.ShipVia = s.ShipperID WHERE s.CompanyName = 'Speedy Express' AND o.OrderDate >= '2016-01-01' AND o.OrderDate < '2017-01-01'",
+      "tags": [
+        "filter",
+        "date",
+        "join",
+        "complex"
+      ]
+    },
+    {
+      "id": "units_sold_chai",
+      "question": "How many units of Chai have been sold?",
+      "expect": "answer",
+      "reference_sql": "SELECT SUM(od.Quantity) FROM \"Order Details\" od JOIN Products p ON od.ProductID = p.ProductID WHERE p.ProductName = 'Chai'",
+      "tags": [
+        "filter",
+        "join"
+      ]
+    },
+    {
+      "id": "total_sales_revenue",
+      "question": "What is our total sales revenue?",
+      "expect": "abstain",
+      "reason": "revenue is UnitPrice × Quantity × (1 − Discount); the IR has no column arithmetic",
+      "tags": [
+        "inexpressible"
+      ]
+    },
+    {
+      "id": "top_category_by_revenue",
+      "question": "Which category generated the most revenue?",
+      "expect": "abstain",
+      "reason": "revenue needs column arithmetic",
+      "tags": [
+        "inexpressible",
+        "topn"
+      ]
+    },
+    {
+      "id": "customer_phone_numbers",
+      "question": "List the phone numbers of our customers in Germany.",
+      "expect": "abstain",
+      "reason": "Customers.Phone is pii=high",
+      "tags": [
+        "pii"
+      ]
+    },
+    {
+      "id": "employee_birth_dates",
+      "question": "What are the birth dates of our employees?",
+      "expect": "abstain",
+      "reason": "Employees.BirthDate is pii=high",
+      "tags": [
+        "pii"
+      ]
+    },
+    {
+      "id": "order_growth_2022",
+      "question": "What was the year-over-year growth in orders in 2022?",
+      "expect": "abstain",
+      "reason": "period-over-period change needs arithmetic between aggregates",
+      "tags": [
+        "inexpressible"
+      ]
+    },
+    {
+      "id": "late_shipment_share",
+      "question": "What percentage of orders shipped after their required date?",
+      "expect": "abstain",
+      "reason": "needs a column-to-column comparison and a ratio",
+      "tags": [
+        "inexpressible"
+      ]
+    },
+    {
+      "id": "avg_orders_per_customer",
+      "question": "What is the average number of orders per customer?",
+      "expect": "abstain",
+      "reason": "ratio of COUNT(*) to COUNT(DISTINCT CustomerID); no approved metric",
+      "tags": [
+        "inexpressible"
+      ]
+    },
+    {
+      "id": "returns_last_year",
+      "question": "How many product returns did we process last year?",
+      "expect": "abstain",
+      "reason": "no returns data in the catalog",
+      "tags": [
+        "out-of-scope"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,723 @@
+{
+  "tenant_id": "northwind",
+  "require_limit": true,
+  "max_limit": 1000,
+  "tables": [
+    {
+      "name": "Orders",
+      "description": "Customer orders (one row per order)",
+      "columns": [
+        {
+          "name": "OrderID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "CustomerID",
+          "dtype": "str",
+          "description": "Customer who placed the order",
+          "label_for": "Customers.CompanyName"
+        },
+        {
+          "name": "EmployeeID",
+          "dtype": "int",
+          "description": "Employee who took the order",
+          "label_for": "Employees.LastName"
+        },
+        {
+          "name": "OrderDate",
+          "dtype": "datetime",
+          "description": "When the order was placed"
+        },
+        {
+          "name": "RequiredDate",
+          "dtype": "datetime",
+          "description": "Date the customer needs the order by"
+        },
+        {
+          "name": "ShippedDate",
+          "dtype": "datetime",
+          "description": "When the order shipped; null = not shipped yet"
+        },
+        {
+          "name": "ShipVia",
+          "dtype": "int",
+          "description": "Shipper that carried the order",
+          "label_for": "Shippers.CompanyName"
+        },
+        {
+          "name": "Freight",
+          "dtype": "float",
+          "description": "Shipping cost charged on the order",
+          "unit": "USD"
+        },
+        {
+          "name": "ShipName",
+          "dtype": "str",
+          "description": "Recipient name"
+        },
+        {
+          "name": "ShipAddress",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "ShipCity",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "ShipRegion",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "ShipPostalCode",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "ShipCountry",
+          "dtype": "str",
+          "description": "Country the order was shipped to"
+        }
+      ]
+    },
+    {
+      "name": "Order Details",
+      "description": "Order line items (one row per product on an order). Line revenue = UnitPrice × Quantity × (1 − Discount); no column stores it",
+      "columns": [
+        {
+          "name": "OrderID",
+          "dtype": "int"
+        },
+        {
+          "name": "ProductID",
+          "dtype": "int",
+          "label_for": "Products.ProductName"
+        },
+        {
+          "name": "UnitPrice",
+          "dtype": "float",
+          "description": "Price per unit on this order line",
+          "unit": "USD"
+        },
+        {
+          "name": "Quantity",
+          "dtype": "int",
+          "description": "Units ordered on this line"
+        },
+        {
+          "name": "Discount",
+          "dtype": "float",
+          "description": "Discount fraction from 0 to 1"
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "description": "Customer companies",
+      "columns": [
+        {
+          "name": "CustomerID",
+          "dtype": "str",
+          "description": "Primary key (5-letter code)"
+        },
+        {
+          "name": "CompanyName",
+          "dtype": "str",
+          "description": "Customer company name"
+        },
+        {
+          "name": "ContactName",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "ContactTitle",
+          "dtype": "str"
+        },
+        {
+          "name": "Address",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "City",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "Region",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "PostalCode",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "Country",
+          "dtype": "str"
+        },
+        {
+          "name": "Phone",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "Fax",
+          "dtype": "str",
+          "pii_risk": "high"
+        }
+      ],
+      "display_column": "Customers.CompanyName"
+    },
+    {
+      "name": "Employees",
+      "description": "Sales staff",
+      "columns": [
+        {
+          "name": "EmployeeID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "LastName",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "FirstName",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "Title",
+          "dtype": "str",
+          "description": "Job title"
+        },
+        {
+          "name": "TitleOfCourtesy",
+          "dtype": "str"
+        },
+        {
+          "name": "BirthDate",
+          "dtype": "datetime",
+          "pii_risk": "high"
+        },
+        {
+          "name": "HireDate",
+          "dtype": "datetime"
+        },
+        {
+          "name": "Address",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "City",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "Region",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "PostalCode",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "Country",
+          "dtype": "str"
+        },
+        {
+          "name": "HomePhone",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "Extension",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "ReportsTo",
+          "dtype": "int",
+          "description": "Manager EmployeeID"
+        }
+      ],
+      "display_column": "Employees.LastName"
+    },
+    {
+      "name": "Products",
+      "description": "Products for sale",
+      "columns": [
+        {
+          "name": "ProductID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "ProductName",
+          "dtype": "str"
+        },
+        {
+          "name": "SupplierID",
+          "dtype": "int",
+          "label_for": "Suppliers.CompanyName"
+        },
+        {
+          "name": "CategoryID",
+          "dtype": "int",
+          "label_for": "Categories.CategoryName"
+        },
+        {
+          "name": "QuantityPerUnit",
+          "dtype": "str",
+          "description": "Pack size, e.g. '10 boxes x 20 bags'"
+        },
+        {
+          "name": "UnitPrice",
+          "dtype": "float",
+          "description": "Current list price",
+          "unit": "USD"
+        },
+        {
+          "name": "UnitsInStock",
+          "dtype": "int"
+        },
+        {
+          "name": "UnitsOnOrder",
+          "dtype": "int"
+        },
+        {
+          "name": "ReorderLevel",
+          "dtype": "int",
+          "description": "Restock when UnitsInStock falls below this"
+        },
+        {
+          "name": "Discontinued",
+          "dtype": "str",
+          "description": "'1' = discontinued, '0' = still sold"
+        }
+      ],
+      "display_column": "Products.ProductName"
+    },
+    {
+      "name": "Categories",
+      "description": "Product categories",
+      "columns": [
+        {
+          "name": "CategoryID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "CategoryName",
+          "dtype": "str"
+        },
+        {
+          "name": "Description",
+          "dtype": "str"
+        }
+      ],
+      "display_column": "Categories.CategoryName"
+    },
+    {
+      "name": "Suppliers",
+      "description": "Companies that supply products",
+      "columns": [
+        {
+          "name": "SupplierID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "CompanyName",
+          "dtype": "str",
+          "description": "Supplier company name"
+        },
+        {
+          "name": "ContactName",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "ContactTitle",
+          "dtype": "str"
+        },
+        {
+          "name": "Address",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "City",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "Region",
+          "dtype": "str",
+          "pii_risk": "low"
+        },
+        {
+          "name": "PostalCode",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "Country",
+          "dtype": "str"
+        },
+        {
+          "name": "Phone",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "Fax",
+          "dtype": "str",
+          "pii_risk": "high"
+        },
+        {
+          "name": "HomePage",
+          "dtype": "str"
+        }
+      ],
+      "display_column": "Suppliers.CompanyName"
+    },
+    {
+      "name": "Shippers",
+      "description": "Shipping companies that carry orders",
+      "columns": [
+        {
+          "name": "ShipperID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "CompanyName",
+          "dtype": "str",
+          "description": "Shipper company name"
+        },
+        {
+          "name": "Phone",
+          "dtype": "str",
+          "pii_risk": "low"
+        }
+      ],
+      "display_column": "Shippers.CompanyName"
+    },
+    {
+      "name": "Regions",
+      "description": "Sales regions",
+      "columns": [
+        {
+          "name": "RegionID",
+          "dtype": "int",
+          "description": "Primary key"
+        },
+        {
+          "name": "RegionDescription",
+          "dtype": "str",
+          "description": "Region name"
+        }
+      ],
+      "display_column": "Regions.RegionDescription"
+    },
+    {
+      "name": "Territories",
+      "description": "Sales territories within a region",
+      "columns": [
+        {
+          "name": "TerritoryID",
+          "dtype": "str",
+          "description": "Primary key"
+        },
+        {
+          "name": "TerritoryDescription",
+          "dtype": "str",
+          "description": "Territory name"
+        },
+        {
+          "name": "RegionID",
+          "dtype": "int",
+          "label_for": "Regions.RegionDescription"
+        }
+      ],
+      "display_column": "Territories.TerritoryDescription"
+    },
+    {
+      "name": "EmployeeTerritories",
+      "description": "Which employees cover which territories",
+      "columns": [
+        {
+          "name": "EmployeeID",
+          "dtype": "int"
+        },
+        {
+          "name": "TerritoryID",
+          "dtype": "str"
+        }
+      ]
+    }
+  ],
+  "join_keys": [
+    {
+      "left_table": "Orders",
+      "left_column": "CustomerID",
+      "right_table": "Customers",
+      "right_column": "CustomerID"
+    },
+    {
+      "left_table": "Orders",
+      "left_column": "EmployeeID",
+      "right_table": "Employees",
+      "right_column": "EmployeeID"
+    },
+    {
+      "left_table": "Orders",
+      "left_column": "ShipVia",
+      "right_table": "Shippers",
+      "right_column": "ShipperID"
+    },
+    {
+      "left_table": "Order Details",
+      "left_column": "OrderID",
+      "right_table": "Orders",
+      "right_column": "OrderID"
+    },
+    {
+      "left_table": "Order Details",
+      "left_column": "ProductID",
+      "right_table": "Products",
+      "right_column": "ProductID"
+    },
+    {
+      "left_table": "Products",
+      "left_column": "CategoryID",
+      "right_table": "Categories",
+      "right_column": "CategoryID"
+    },
+    {
+      "left_table": "Products",
+      "left_column": "SupplierID",
+      "right_table": "Suppliers",
+      "right_column": "SupplierID"
+    },
+    {
+      "left_table": "Territories",
+      "left_column": "RegionID",
+      "right_table": "Regions",
+      "right_column": "RegionID"
+    },
+    {
+      "left_table": "EmployeeTerritories",
+      "left_column": "EmployeeID",
+      "right_table": "Employees",
+      "right_column": "EmployeeID"
+    },
+    {
+      "left_table": "EmployeeTerritories",
+      "left_column": "TerritoryID",
+      "right_table": "Territories",
+      "right_column": "TerritoryID"
+    }
+  ],
+  "synonyms": [
+    {
+      "term": "order",
+      "table_id": "Orders"
+    },
+    {
+      "term": "orders",
+      "table_id": "Orders"
+    },
+    {
+      "term": "customer",
+      "table_id": "Customers"
+    },
+    {
+      "term": "customers",
+      "table_id": "Customers"
+    },
+    {
+      "term": "client",
+      "table_id": "Customers"
+    },
+    {
+      "term": "clients",
+      "table_id": "Customers"
+    },
+    {
+      "term": "employee",
+      "table_id": "Employees"
+    },
+    {
+      "term": "employees",
+      "table_id": "Employees"
+    },
+    {
+      "term": "sales rep",
+      "table_id": "Employees"
+    },
+    {
+      "term": "salesperson",
+      "table_id": "Employees"
+    },
+    {
+      "term": "product",
+      "table_id": "Products",
+      "column_id": "ProductName"
+    },
+    {
+      "term": "category",
+      "table_id": "Categories",
+      "column_id": "CategoryName"
+    },
+    {
+      "term": "supplier",
+      "table_id": "Suppliers",
+      "column_id": "CompanyName"
+    },
+    {
+      "term": "vendor",
+      "table_id": "Suppliers",
+      "column_id": "CompanyName"
+    },
+    {
+      "term": "shipper",
+      "table_id": "Shippers",
+      "column_id": "CompanyName"
+    },
+    {
+      "term": "carrier",
+      "table_id": "Shippers",
+      "column_id": "CompanyName"
+    },
+    {
+      "term": "freight",
+      "table_id": "Orders",
+      "column_id": "Freight"
+    },
+    {
+      "term": "shipping cost",
+      "table_id": "Orders",
+      "column_id": "Freight"
+    },
+    {
+      "term": "units sold",
+      "table_id": "Order Details",
+      "column_id": "Quantity",
+      "description": "Units sold come from order lines"
+    },
+    {
+      "term": "quantity sold",
+      "table_id": "Order Details",
+      "column_id": "Quantity"
+    },
+    {
+      "term": "in stock",
+      "table_id": "Products",
+      "column_id": "UnitsInStock"
+    },
+    {
+      "term": "inventory",
+      "table_id": "Products",
+      "column_id": "UnitsInStock"
+    },
+    {
+      "term": "shipped to",
+      "table_id": "Orders",
+      "column_id": "ShipCountry"
+    },
+    {
+      "term": "ship country",
+      "table_id": "Orders",
+      "column_id": "ShipCountry"
+    },
+    {
+      "term": "customer country",
+      "table_id": "Customers",
+      "column_id": "Country"
+    },
+    {
+      "term": "supplier country",
+      "table_id": "Suppliers",
+      "column_id": "Country"
+    },
+    {
+      "term": "region",
+      "table_id": "Regions",
+      "column_id": "RegionDescription"
+    },
+    {
+      "term": "territory",
+      "table_id": "Territories",
+      "column_id": "TerritoryDescription"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "order_count",
+      "description": "Count of orders",
+      "source": "Orders",
+      "aggregations": [
+        "count:*:order_count"
+      ],
+      "default_limit": 1
+    },
+    {
+      "id": "total_freight",
+      "description": "Sum of freight charged on all orders",
+      "source": "Orders",
+      "aggregations": [
+        "sum:Orders.Freight:total_freight"
+      ],
+      "default_limit": 1,
+      "unit": "USD"
+    },
+    {
+      "id": "freight_by_shipper",
+      "description": "Total freight grouped by shipper",
+      "source": "Orders",
+      "joins": [
+        "Orders:Shippers:Orders.ShipVia=Shippers.ShipperID"
+      ],
+      "group_by": [
+        "Shippers.CompanyName"
+      ],
+      "aggregations": [
+        "sum:Orders.Freight:freight"
+      ],
+      "default_limit": 10,
+      "unit": "USD"
+    },
+    {
+      "id": "units_sold_by_category",
+      "description": "Units sold (order line quantity) grouped by product category",
+      "source": "Order Details",
+      "joins": [
+        "Order Details:Products:Order Details.ProductID=Products.ProductID",
+        "Products:Categories:Products.CategoryID=Categories.CategoryID"
+      ],
+      "group_by": [
+        "Categories.CategoryName"
+      ],
+      "aggregations": [
+        "sum:Order Details.Quantity:units_sold"
+      ],
+      "default_limit": 20
+    }
+  ],
+  "instructions": [
+    "Units sold come from Order Details.Quantity, not Products.UnitsInStock.",
+    "Orders.OrderDate is when an order was placed; use it for 'orders in <year>' unless the question says shipped."
+  ]
+}
