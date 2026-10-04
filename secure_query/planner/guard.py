@@ -23,7 +23,7 @@ import re
 from dataclasses import dataclass
 
 from secure_query.kernel.catalog import Catalog
-from secure_query.kernel.logical_plan import ColumnRef, LogicalPlan
+from secure_query.kernel.logical_plan import ColumnRef, LiteralValue, LogicalPlan
 
 _MIN_PART_LEN = 4
 
@@ -109,30 +109,17 @@ _STOP_WORDS = frozenset(
         "breakdown",
         "anything",
         "something",
-        "music",
         "based",
+        "issued",
+        "billed",
+        "sold",
+        "earn",
+        "earns",
+        "earned",
+        "earning",
         "located",
         "appear",
         "appearances",
-        "issued",
-        "billed",
-        "customer",
-        "customers",
-        "invoice",
-        "invoices",
-        "track",
-        "tracks",
-        "album",
-        "albums",
-        "artist",
-        "artists",
-        "employee",
-        "employees",
-        "genre",
-        "genres",
-        "playlist",
-        "playlists",
-        "media",
         "year",
         "years",
         "quarter",
@@ -143,13 +130,6 @@ _STOP_WORDS = frozenset(
         "rows",
         "row",
         "every",
-        "billing",
-        "sales",
-        "sold",
-        "earn",
-        "earns",
-        "earned",
-        "earning",
         "work",
         "works",
         "defined",
@@ -176,7 +156,6 @@ _STOP_WORDS = frozenset(
         "links",
         "item",
         "items",
-        "headcount",
         "people",
         "roughly",
         "about",
@@ -184,12 +163,6 @@ _STOP_WORDS = frozenset(
         "appear",
         "appears",
         "appeared",
-        "quantitie",
-        "quantities",
-        "countrie",
-        "countries",
-        "genres",
-        "playlists",
     }
 )
 
@@ -246,6 +219,12 @@ def dropped_concepts(question: str, plan: LogicalPlan, catalog: Catalog) -> str 
     and either reading answers the user.
     """
     used = plan_concepts(plan, catalog)
+    touched = {c.table for c in used}
+    display = {
+        Concept(table=t.name, column=t.display_column.split(".", 1)[1])
+        for t in catalog.tables
+        if t.display_column
+    }
     vocabulary = catalog_vocabulary(catalog)
     literals = _filter_literal_terms(question)
     missing: dict[str, set[Concept]] = {}
@@ -253,17 +232,18 @@ def dropped_concepts(question: str, plan: LogicalPlan, catalog: Catalog) -> str 
     for term in question_terms(question):
         if term in _GENERIC_TERMS or term in _STOP_WORDS or term in literals:
             continue
-        candidates: set[Concept] | None = None
-        for variant in _expand_term(term):
-            if variant in vocabulary:
-                candidates = vocabulary[variant]
-                break
+        candidates = set().union(*(vocabulary.get(v, set()) for v in _expand_term(term)))
         if not candidates:
             continue
-        if any(c.column is None for c in candidates):
-            # Ambiguous between a table and its columns; too weak a signal.
-            continue
         if candidates & used:
+            continue
+        # An entity word ("tracks", "genre") is covered when the plan touches a
+        # table it can mean; an attribute word ("revenue") needs its column.
+        # A table's display column names the entity itself. Joins are
+        # catalog-resolved, so touching a table means reading it.
+        if any(c.column is None or c in display for c in candidates) and {
+            c.table for c in candidates
+        } & touched:
             continue
         missing[term] = candidates
 
@@ -302,7 +282,59 @@ def _describe(missing: dict[str, set[Concept]], *, examples: int = 2) -> str:
     return "; ".join(parts)
 
 
+# Operations the IR cannot express: arithmetic between aggregates, windows,
+# and comparisons against an aggregate. These words are about the query
+# language, not any dataset. Approved ratio metrics return before this check.
+_INEXPRESSIBLE_RE = re.compile(
+    r"\b(percent|percentage|share|ratio|proportion|growth|grow|grew|change|changed|"
+    r"increase|decrease|difference|month over month|year over year|"
+    r"than (?:the )?(?:average|mean)|above average|below average)\b",
+    re.IGNORECASE,
+)
+
+
+def inexpressible_request(question: str) -> str | None:
+    """Reason to refuse when the question needs math the LogicalPlan cannot do."""
+    match = _INEXPRESSIBLE_RE.search(question)
+    if match is None:
+        return None
+    return (
+        f'The question asks for a "{match.group(0)}", which needs arithmetic between '
+        "aggregates or across periods; no plan here can compute it exactly. "
+        "Refusing rather than answering a nearby question."
+    )
+
+
 _AVERAGE_RE = re.compile(r"\b(average|averages|avg|mean)\b", re.IGNORECASE)
+
+
+def unrelated_metric(question: str, metric_id: str) -> str | None:
+    """Reason to refuse when an approved metric shares no word with the question.
+
+    Metrics bypass plan-shape guards, so a model that picks `line_item_revenue`
+    for "how many tracks" would otherwise return a confident wrong number.
+    """
+    asked = question_terms(question)
+    words = {w for w in re.split(r"[^a-z0-9]+", metric_id.lower()) if len(w) >= _MIN_PART_LEN}
+    if any(_expand_term(w) & asked for w in words):
+        return None
+    return (
+        f"The approved metric {metric_id!r} does not match what the question asks for. "
+        "Refusing rather than answering a different question."
+    )
+
+
+_COUNT_RE = re.compile(r"\b(how many|number of|count of)\b", re.IGNORECASE)
+
+
+def dropped_count(question: str, plan: LogicalPlan) -> str | None:
+    """Reason to refuse when the question asks for a count and the plan lists rows."""
+    if plan.aggregations or not _COUNT_RE.search(question):
+        return None
+    return (
+        "The question asks how many, but this plan dropped the count and lists rows. "
+        "Refusing rather than answering a different question."
+    )
 
 
 def dropped_average(question: str, plan: LogicalPlan) -> str | None:
@@ -323,61 +355,77 @@ def dropped_average(question: str, plan: LogicalPlan) -> str | None:
     )
 
 
-def useless_joins(plan: LogicalPlan) -> str | None:
-    """Reason to refuse when a joined table contributes nothing, or None.
+_VALUE_WORD_RE = re.compile(r"\b(?:[A-Z][\w'&]*|(?:19|20)\d\d)\b")
 
-    Joining a table and then never reading a column from it cannot change the
-    result, so the planner meant to use it and forgot — typically by dropping
-    the grouping key, which turns "albums per artist" into one grand total.
 
-    Bridge tables are exempt: `InvoiceLine → Track → Genre` reads no Track
-    column, but Track is how Genre is reached, so it earns its place.
+def dropped_literals(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
+    """Reason to refuse when the question names a value no filter uses.
+
+    "Which AC/DC album has the most tracks?" answered without an AC/DC filter
+    is a confident answer to a different question. Proper nouns and years are
+    filter values (the prompt says so); each must appear in some filter literal.
+    The question's first word, catalog terms and calendar words are skipped.
     """
-    if not plan.joins:
-        return None
+    literals: list[str] = []
+    for filt in plan.filters:
+        for name in ("value", "low", "high", "pattern"):
+            lit = getattr(filt, name, None)
+            if isinstance(lit, LiteralValue):
+                literals.append(str(lit.value).lower())
+        for lit in getattr(filt, "values", []):
+            literals.append(str(lit.value).lower())
+    haystack = " ".join(literals)
+    vocabulary = catalog_vocabulary(catalog)
 
-    referenced: set[str] = {plan.source}
-    for filt in list(plan.filters) + list(plan.having):
-        referenced.add(filt.column.table_id)
-    if plan.group_by is not None:
-        referenced.update(col.table_id for col in plan.group_by.columns)
-        referenced.update(b.column.table_id for b in plan.group_by.time_buckets)
-    for agg in plan.aggregations:
-        if agg.column is not None:
-            referenced.add(agg.column.table_id)
-    for order in plan.order_by:
-        if order.column is not None:
-            referenced.add(order.column.table_id)
+    missing: list[str] = []
+    for match in _VALUE_WORD_RE.finditer(question):
+        word = match.group(0)
+        before = question[: match.start()].rstrip()
+        if not before or before[-1] in ".?!:" or len(word) < 2:
+            continue  # sentence-initial capital, not a proper noun
+        lower = word.lower()
+        if lower in _CALENDAR_TERMS or _term_in_vocabulary(lower, vocabulary):
+            continue
+        if lower not in haystack:
+            missing.append(word)
+    if missing:
+        shown = ", ".join(f'"{w}"' for w in dict.fromkeys(missing))
+        return (
+            f"The question names {shown}, but no filter in this plan uses it. "
+            "Refusing rather than answering without that condition."
+        )
 
-    # COUNT(*) over a join multiplies rows even when no column from the joined
-    # table appears in GROUP BY — dropping those joins would change the answer.
-    if (
-        plan.aggregations
-        and all(a.fn in ("count", "count_distinct") for a in plan.aggregations)
-        and plan.group_by is not None
-        and (plan.group_by.columns or plan.group_by.time_buckets)
-    ):
-        referenced.update(join.right_table for join in plan.joins)
-
-    # A table is also earning its place if another join hangs off it.
-    bridges: set[str] = set()
-    for join in plan.joins:
-        for condition in join.conditions:
-            for side in (condition.left, condition.right):
-                if side.table_id != join.right_table:
-                    bridges.add(side.table_id)
-
-    idle = [
-        join.right_table
-        for join in plan.joins
-        if join.right_table not in referenced and join.right_table not in bridges
+    # The reverse: a value the plan filters on that the question never says.
+    asked = question.lower()
+    numbers = {float(n) for n in re.findall(r"\d+(?:\.\d+)?", question.replace(",", ""))}
+    invented = [
+        lit
+        for filt in plan.filters
+        for lit in _string_literals(filt)
+        if lit.strip("%").lower() not in asked
     ]
-    if not idle:
-        return None
-    return (
-        f"The plan joins {', '.join(sorted(set(idle)))} but never reads a column from "
-        "it, so the join cannot affect the result — most likely a missing grouping key."
-    )
+    numeric = [lit for filt in plan.filters for lit in _numeric_literals(filt)]
+    numeric += [h.value for h in plan.having]
+    invented += [str(lit.value) for lit in numeric if float(lit.value) not in numbers]
+    if invented:
+        shown = ", ".join(f'"{v}"' for v in dict.fromkeys(invented))
+        return (
+            f"This plan filters on {shown}, which the question does not mention; "
+            "no filter in this plan may add conditions the user did not ask for."
+        )
+    return None
+
+
+def _numeric_literals(filt: object) -> list[LiteralValue]:
+    lits = [getattr(filt, n, None) for n in ("value", "low", "high")] + list(getattr(filt, "values", []))
+    return [lit for lit in lits if isinstance(lit, LiteralValue) and lit.type in ("integer", "float")]
+
+
+def _string_literals(filt: object) -> list[str]:
+    lits = [getattr(filt, n, None) for n in ("value", "pattern")] + list(getattr(filt, "values", []))
+    return [
+        lit.value for lit in lits if isinstance(lit, LiteralValue) and isinstance(lit.value, str)
+    ]
 
 
 def _expand_term(term: str) -> set[str]:
@@ -467,10 +515,10 @@ def catalog_vocabulary(catalog: Catalog) -> dict[str, set[Concept]]:
             for term in concept_terms(col.name):
                 add(term, Concept(table=table.name, column=col.name))
     for syn in catalog.synonyms:
-        concept = Concept(table=syn.table_id, column=syn.column_id)
-        for term in concept_terms(syn.term):
-            add(term, concept)
-        add(syn.term.lower().strip(), concept)
+        # Whole phrase only: "music genre" must not make "music" alone mean Genre.Name.
+        # Spaces are dropped to match question_terms' adjacent-word pairs.
+        phrase = re.sub(r"[^a-z0-9]+", "", syn.term.lower())
+        add(phrase, Concept(table=syn.table_id, column=syn.column_id))
     return vocabulary
 
 
@@ -517,6 +565,25 @@ _CALENDAR_TERMS = frozenset(
 
 def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
     """Refuse when the question names concepts absent from catalog + synonyms + metrics."""
+    unknown = unknown_terms(question, catalog)
+    if not unknown:
+        return None
+    shown = ", ".join(f'"{t}"' for t in unknown[:5])
+    extra = len(unknown) - 5
+    if extra > 0:
+        shown = f"{shown}, and {extra} more"
+    return (
+        f"The question mentions terms not in the approved catalog or synonyms: {shown}. "
+        "Refusing rather than guessing."
+    )
+
+
+def unknown_terms(question: str, catalog: Catalog) -> list[str]:
+    """Question words that match nothing in the catalog, synonyms or metrics.
+
+    A word list cannot tell "suppliers" (missing data) from "bought" (ordinary
+    English), so the planner gets these as a hint rather than as a refusal.
+    """
     words = [w for w in re.split(r"[^a-z0-9]+", question.lower()) if w]
     asked: set[str] = set()
     for w in words:
@@ -537,17 +604,7 @@ def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
         if any(term in concept_terms(mid) for mid in catalog.metric_ids):
             continue
         unknown.append(term)
-
-    if not unknown:
-        return None
-    shown = ", ".join(f'"{t}"' for t in unknown[:5])
-    extra = len(unknown) - 5
-    if extra > 0:
-        shown = f"{shown}, and {extra} more"
-    return (
-        f"The question mentions terms not in the approved catalog or synonyms: {shown}. "
-        "Refusing rather than guessing."
-    )
+    return unknown
 
 
 def plan_concepts(plan: LogicalPlan, catalog: Catalog) -> set[Concept]:
@@ -566,7 +623,7 @@ def plan_concepts(plan: LogicalPlan, catalog: Catalog) -> set[Concept]:
             add_column(condition.left)
             add_column(condition.right)
 
-    for filt in list(plan.filters) + list(plan.having):
+    for filt in plan.filters:
         add_column(filt.column)
         value = getattr(filt, "value", None)
         if isinstance(value, ColumnRef):

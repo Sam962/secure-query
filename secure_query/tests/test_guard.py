@@ -16,7 +16,6 @@ from secure_query.planner.guard import (
     dropped_concepts,
     plan_concepts,
     restricted_request,
-    useless_joins,
 )
 
 CATALOG = sample_catalog()
@@ -101,60 +100,6 @@ class TestDroppedConcepts:
         assert dropped_concepts("What is our total revenue, roughly?", plan, CATALOG) is None
 
 
-class TestUselessJoins:
-    def test_flags_a_join_whose_table_is_never_read(self) -> None:
-        """Album JOIN Artist with no grouping returns one grand total, not per artist."""
-        plan = (
-            LQP.aggregate(table="Album")
-            .join("Artist", on=[("Album.ArtistId", "Artist.ArtistId")])
-            .agg("count", None, alias="album_count")
-            .limit(1)
-            .build()
-        )
-        reason = useless_joins(plan)
-        assert reason is not None
-        assert "Artist" in reason
-
-    def test_allows_a_join_used_for_grouping(self) -> None:
-        plan = (
-            LQP.aggregate(table="Album")
-            .join("Artist", on=[("Album.ArtistId", "Artist.ArtistId")])
-            .group_by_columns(["Artist.Name"])
-            .agg("count", None, alias="album_count")
-            .limit(10)
-            .build()
-        )
-        assert useless_joins(plan) is None
-
-    def test_allows_a_bridge_table(self) -> None:
-        """InvoiceLine -> Track -> Genre reads no Track column, but Track is the path."""
-        plan = (
-            LQP.aggregate(table="InvoiceLine")
-            .join("Track", on=[("InvoiceLine.TrackId", "Track.TrackId")])
-            .join("Genre", on=[("Track.GenreId", "Genre.GenreId")])
-            .group_by_columns(["Genre.Name"])
-            .agg("count", None, alias="sold")
-            .limit(10)
-            .build()
-        )
-        assert useless_joins(plan) is None
-
-    def test_allows_a_join_used_only_for_filtering(self) -> None:
-        plan = (
-            LQP.aggregate(table="Invoice")
-            .join("Customer", on=[("Invoice.CustomerId", "Customer.CustomerId")])
-            .filter("Customer.Country", "eq", "USA")
-            .agg("sum", "Invoice.Total", alias="revenue")
-            .limit(1)
-            .build()
-        )
-        assert useless_joins(plan) is None
-
-    def test_no_joins_is_fine(self) -> None:
-        plan = LQP.aggregate(table="Invoice").agg("count", None, alias="n").limit(1).build()
-        assert useless_joins(plan) is None
-
-
 class TestPlanConcepts:
     def test_collects_tables_columns_and_projection(self) -> None:
         plan = (
@@ -206,3 +151,88 @@ def test_calendar_words_are_not_out_of_scope() -> None:
     ):
         assert out_of_scope_request(q, catalog) is None, q
     assert out_of_scope_request("What is our total payroll spend this quarter?", catalog) is not None
+
+
+def test_dropped_literals_catches_missing_value_filter() -> None:
+    from secure_query.kernel.logical_plan import LogicalPlan
+    from secure_query.planner.guard import dropped_literals
+
+    catalog = sample_catalog()
+    base = {
+        "plan_id": "00000000-0000-0000-0000-000000000001",
+        "source": "Track",
+        "group_by": {"columns": [{"table_id": "Album", "column_id": "Title"}]},
+        "aggregations": [{"fn": "count", "column": None, "alias": "n"}],
+        "limit": 1,
+    }
+    q = "Which AC/DC album has the most tracks?"
+    assert "AC" in (dropped_literals(q, LogicalPlan.model_validate(base), catalog) or "")
+    with_filter = {
+        **base,
+        "filters": [
+            {"op": "eq", "column": {"table_id": "Artist", "column_id": "Name"},
+             "value": {"type": "string", "value": "AC/DC"}}
+        ],
+    }
+    assert dropped_literals(q, LogicalPlan.model_validate(with_filter), catalog) is None
+    year_q = "How many invoices were there in 2023?"
+    assert dropped_literals(year_q, LogicalPlan.model_validate(base), catalog) is not None
+
+
+def test_dropped_literals_skips_sentence_starts_and_flags_invented_values() -> None:
+    from secure_query.kernel.logical_plan import LogicalPlan
+    from secure_query.planner.guard import dropped_literals
+
+    catalog = sample_catalog()
+    plan = {
+        "plan_id": "00000000-0000-0000-0000-000000000001",
+        "source": "Customer",
+        "group_by": {"columns": [{"table_id": "Employee", "column_id": "LastName"}]},
+        "aggregations": [{"fn": "count", "column": None, "alias": "n"}],
+        "limit": 10,
+    }
+    q = "How many customers does each support rep look after? Show the rep's last name."
+    assert dropped_literals(q, LogicalPlan.model_validate(plan), catalog) is None
+    invented = {
+        **plan,
+        "filters": [
+            {"op": "in", "column": {"table_id": "Customer", "column_id": "Country"},
+             "values": [{"type": "string", "value": "Mexico"}]}
+        ],
+    }
+    assert "Mexico" in (dropped_literals(q, LogicalPlan.model_validate(invented), catalog) or "")
+
+
+def test_inexpressible_request() -> None:
+    from secure_query.planner.guard import inexpressible_request
+
+    assert inexpressible_request("How did revenue change month over month in 2024?")
+    assert inexpressible_request("Which customers spent more than the average customer?")
+    assert inexpressible_request("What is the average invoice total per country?") is None
+
+
+def test_invented_number_threshold_is_flagged() -> None:
+    from secure_query.kernel.logical_plan import LogicalPlan
+    from secure_query.planner.guard import dropped_literals
+
+    plan = LogicalPlan.model_validate(
+        {
+            "plan_id": "00000000-0000-0000-0000-000000000001",
+            "source": "Invoice",
+            "group_by": {"columns": [{"table_id": "Invoice", "column_id": "BillingCountry"}]},
+            "aggregations": [{"fn": "count", "column": None, "alias": "n"}],
+            "having": [{"alias": "n", "op": "gt", "value": {"type": "float", "value": 20.0}}],
+            "limit": 100,
+        }
+    )
+    catalog = sample_catalog()
+    assert dropped_literals("Which countries have more than 20 invoices?", plan, catalog) is None
+    assert dropped_literals("Which countries have many invoices?", plan, catalog) is not None
+
+
+def test_unrelated_metric() -> None:
+    from secure_query.planner.guard import unrelated_metric
+
+    assert unrelated_metric("How many tracks are in the catalog?", "line_item_revenue")
+    assert unrelated_metric("How many employees work for us?", "employee_count") is None
+    assert unrelated_metric("What is the average revenue per customer?", "avg_revenue_per_customer") is None

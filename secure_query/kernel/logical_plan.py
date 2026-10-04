@@ -383,6 +383,23 @@ during deserialization.
 """
 
 
+class HavingFilter(BaseModel):
+    """Keep only groups whose aggregate passes a comparison (SQL HAVING).
+
+    Targets an aggregation by alias, so "countries with more than 20 invoices"
+    is `{"alias": "invoice_count", "op": "gt", "value": {"type": "integer", "value": 20}}`.
+
+    Example:
+        >>> h = HavingFilter(alias="invoice_count", op="gt", value=LiteralValue(type="integer", value=20))
+    """
+
+    alias: str
+    op: Literal["eq", "ne", "lt", "lte", "gt", "gte"]
+    value: LiteralValue
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 # --- Top-level LogicalPlan ---
 
 
@@ -437,7 +454,7 @@ class LogicalPlan(BaseModel):
     filters: list[Filter] = []
     group_by: GroupBy | None = None
     aggregations: list[Aggregation] = []
-    having: list[Filter] = []
+    having: list[HavingFilter] = []
     order_by: list[OrderBy] = []
     limit: int | None = None
 

@@ -177,8 +177,15 @@ def _build_select(
     else:
         select = select.select("*")
 
-    for having_filt in plan.having:
-        select = select.having(_compile_filter(having_filt))
+    aggs = {agg.alias: agg for agg in plan.aggregations}
+    for having in plan.having:
+        if having.alias not in aggs:
+            raise CompilationError(f"HAVING alias {having.alias!r} is not an aggregation", "$.having")
+        select = select.having(
+            _COMPARISON_EXPRS[having.op](
+                this=_aggregate_expr(aggs[having.alias]), expression=_compile_literal(having.value)
+            )
+        )
 
     for ob in plan.order_by:
         select = _apply_order_by(select, ob)
@@ -340,8 +347,24 @@ def _compile_filter(filt: Filter) -> exp.Expression:
     raise CompilationError(f"Unknown filter op: {getattr(filt, 'op', '?')}", "$.filters")
 
 
+_COMPARISON_EXPRS: dict[str, type[exp.Binary]] = {
+    "eq": exp.EQ,
+    "ne": exp.NEQ,
+    "lt": exp.LT,
+    "lte": exp.LTE,
+    "gt": exp.GT,
+    "gte": exp.GTE,
+}
+
+
 def _compile_aggregation(agg: Aggregation) -> exp.Expression:
-    """Compile an Aggregation to a sqlglot aggregate function call."""
+    """Compile an Aggregation to an aliased sqlglot aggregate."""
+    return exp.Alias(this=_aggregate_expr(agg), alias=exp.to_identifier(agg.alias, quoted=True))
+
+
+def _aggregate_expr(agg: Aggregation) -> exp.Expression:
+    """The aggregate call without its alias (HAVING repeats it; not every dialect
+    lets HAVING reference a SELECT alias)."""
     fn_map = {
         "count": "COUNT",
         "count_distinct": "COUNT",
@@ -369,11 +392,7 @@ def _compile_aggregation(agg: Aggregation) -> exp.Expression:
         agg_expr: exp.Expression = exp.Count(this=exp.Distinct(expressions=[inner]))
     else:
         agg_expr = exp.Anonymous(this=fn_name, expressions=[inner])
-
-    return exp.Alias(
-        this=agg_expr,
-        alias=exp.to_identifier(agg.alias, quoted=True),
-    )
+    return agg_expr
 
 
 def _compile_time_bucket(tb: TimeBucket) -> exp.Expression:

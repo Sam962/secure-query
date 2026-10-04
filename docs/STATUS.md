@@ -1,6 +1,6 @@
 # Status
 
-**Updated:** 2026-08-18
+**Updated:** 2026-10-04
 
 ## Ready
 
@@ -53,8 +53,22 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
    - [x] Found while doing this: a principal slice with no join keys between its
      tables fell back to "allow any join". `join_keys` is now a strict allowlist;
      `allow_any_join` is an explicit dev-only flag.
-4. [ ] Metric × dimension planning: the model picks
-   `{metric, dimensions, filters, time_grain}`; joins come from the catalog.
+4. [x] Joins come from the catalog, not the model (`kernel/joins.py`). The model
+   names columns only; any `joins` it writes are dropped. The kernel connects
+   the tables it reads through `join_keys` by shortest path and rejects
+   ambiguous paths (`plan.ambiguous_join_path`), unreachable tables and
+   fan-out: SUM/AVG/COUNT over rows a one-to-many join repeats (`plan.fan_out`;
+   `JoinKey.left` is the many side). FK group keys are rewritten to their
+   `label_for` column.
+   - [x] `having` targets an aggregate alias (`HavingFilter`).
+   - [x] Guards that no longer fit were removed (`useless_joins`, lookup-group
+     inference). New deterministic guards, all dataset-agnostic: a named value
+     (proper noun, year) with no filter, a filter value the question never
+     says (`dropped_filter`), "how many" without a count, an approved metric
+     sharing no word with the question, inexpressible operations (percent,
+     change, than average …). Chinook nouns removed from the guard stop-word list.
+   - [ ] Prompt examples still use Chinook table names; generalise and check
+     on a second schema.
 5. [x] Eval report: Wilson 95% bounds, answer-rate and over-refusal on answerable
    cases, per-control refusal scorecard, per-tag breakdown, `--json` output.
 6. [ ] Nightly live-model eval job (CI keeps the mock gate).
@@ -76,14 +90,18 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
    - Caveat: the first two rules were designed after seeing holdout failures.
      Dev results are the evidence they generalise.
 
-8. [ ] Complex questions (20 dev cases, `--only complex`): 0 wrong but answer-rate
-   35% (6/17), over-refusal 65% — see [baselines/complex-2026-10-04.json](baselines/complex-2026-10-04.json).
-   - [ ] Keyword out-of-scope guard: 6 false vs 3 correct refusals on this set.
-     Ordinary verbs/adjectives ("generated", "bought", "length") read as unknown concepts.
-   - [ ] HAVING cannot reference an aggregate: `having` filters take a ColumnRef,
-     so "more than 20 invoices" is inexpressible. Needs an alias target.
-   - [ ] Multi-hop joins: the model misplaces filters, guesses column names, and
-     forgets joins (3 cases) — the target of item 4.
+8. [ ] Complex questions (20 dev cases): answer-rate 35% (6/17) →
+   **65% (11/17)**, still 0 wrong; target 70%. Full dev 113/121, 0 wrong
+   (95% CI 0–3.1%), answer-rate 93%; holdout 12/12, 0 wrong. qwen2.5:7b @
+   845dbda0ea48, 1 repeat. See [baselines/dev-joins-2026-10-04.json](baselines/dev-joins-2026-10-04.json).
+   - [x] Keyword out-of-scope guard no longer refuses questions (6 false vs 3
+     correct). It still filters catalog suggestions.
+   - [x] HAVING on an aggregate alias.
+   - [ ] Remaining refusals on complex: the model drops a filter it was given
+     (Jazz, AC/DC), groups by the wrong key (artist revenue), or converts units
+     ("5 minutes" → 300000 ms, refused as an unmentioned value).
+   - Caveat: the inexpressible-operation words were chosen from dev cases; the
+     holdout `revenue_growth_rate` also matches them.
 
 ### Phase B — real domain (needs a design partner)
 

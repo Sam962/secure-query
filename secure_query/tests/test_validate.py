@@ -16,7 +16,6 @@ from secure_query.kernel.logical_plan import (
     LogicalPlan,
 )
 from secure_query.examples.sample_catalog import sample_catalog
-from secure_query.planner.guard import useless_joins
 from secure_query.kernel.validate import PlanValidationFailed, normalize_plan, validate, validate_and_compile
 
 PLAN_ID = UUID("12345678-1234-1234-1234-123456789abc")
@@ -344,41 +343,7 @@ def test_validate_and_compile_raises() -> None:
 
 
 class TestNormalizePlan:
-    """Catalog-driven rewrites for joined lookups and idle joins."""
-
-    def test_infers_group_by_when_lookup_is_joined_but_unread(self) -> None:
-        """Album JOIN Artist with COUNT(*) but no GROUP BY → group by Artist.Name."""
-        catalog = sample_catalog()
-        raw = (
-            LQP.aggregate(table="Album")
-            .join("Artist", on=[("Album.ArtistId", "Artist.ArtistId")])
-            .agg("count", None, alias="album_count")
-            .order_by("album_count", direction="desc")
-            .limit(1)
-            .build()
-        )
-        plan = normalize_plan(raw, catalog)
-        assert useless_joins(plan) is None
-        assert plan.group_by is not None
-        assert ColumnRef(table_id="Artist", column_id="Name") in plan.group_by.columns
-
-    def test_count_join_chain_not_flagged_when_grouping_lookup_label(self) -> None:
-        """Extra hops on a COUNT plan must not trip useless_joins if they multiply rows."""
-        catalog = sample_catalog()
-        raw = (
-            LQP.aggregate(table="Genre")
-            .join("Track", on=[("Genre.GenreId", "Track.GenreId")])
-            .join("InvoiceLine", on=[("Track.TrackId", "InvoiceLine.TrackId")])
-            .join("Invoice", on=[("InvoiceLine.InvoiceId", "Invoice.InvoiceId")])
-            .join("Customer", on=[("Invoice.CustomerId", "Customer.CustomerId")])
-            .join("Employee", on=[("Customer.SupportRepId", "Employee.EmployeeId")])
-            .group_by_columns(["Genre.Name"])
-            .agg("count", None, alias="track_count")
-            .order_by("track_count", direction="desc")
-            .limit(1)
-            .build()
-        )
-        assert useless_joins(raw) is None
+    """Catalog-driven rewrites of planner output."""
 
     def test_rewrites_fk_group_key_to_label_when_lookup_is_joined(self) -> None:
         catalog = sample_catalog()

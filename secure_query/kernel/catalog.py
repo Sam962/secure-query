@@ -59,7 +59,13 @@ class TableSpec(BaseModel):
 
 
 class JoinKey(BaseModel):
-    """Approved equi-join between two columns."""
+    """Approved equi-join between two columns.
+
+    Direction matters: `left` is the many side (the foreign key) and `right` is
+    the one side (the key it references), as in an information_schema foreign
+    key. The kernel uses it to reject joins that would duplicate rows under an
+    aggregate.
+    """
 
     left_table: str
     left_column: str
@@ -221,10 +227,10 @@ class Catalog(BaseModel):
             for rule in self.instructions:
                 lines.append(f"  - {rule}")
         if self.join_keys:
-            lines.append("approved_joins:")
+            lines.append("relationships (many → one; joins are added automatically):")
             for jk in self.join_keys:
                 lines.append(
-                    f"  - {jk.left_table}.{jk.left_column} = "
+                    f"  - {jk.left_table}.{jk.left_column} → "
                     f"{jk.right_table}.{jk.right_column}"
                 )
         return "\n".join(lines)

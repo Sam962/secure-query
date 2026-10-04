@@ -162,6 +162,13 @@ def sample_catalog() -> Catalog:
         synonyms=[
             Synonym(term="revenue", table_id="Invoice", column_id="Total", description="Invoice revenue"),
             Synonym(term="sales", table_id="Invoice", column_id="Total"),
+            Synonym(term="sales", table_id="InvoiceLine", column_id="UnitPrice"),
+            Synonym(
+                term="revenue",
+                table_id="InvoiceLine",
+                column_id="UnitPrice",
+                description="Line revenue per track sold (Quantity is always 1); use for revenue by track, genre, artist or album",
+            ),
             Synonym(term="spend", table_id="Invoice", column_id="Total"),
             Synonym(term="genre", table_id="Genre", column_id="Name"),
             Synonym(term="music genre", table_id="Genre", column_id="Name"),
@@ -188,6 +195,10 @@ def sample_catalog() -> Catalog:
             Synonym(term="clients", table_id="Customer"),
         ],
         metrics=chinook_metrics(),
+        instructions=[
+            "Tracks sold and quantities sold come from InvoiceLine (one row per track "
+            "on an invoice), not Track.",
+        ],
         join_keys=[
             JoinKey(
                 left_table="Invoice",

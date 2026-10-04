@@ -12,6 +12,7 @@ from dataclasses import replace
 from secure_query.kernel.catalog import Catalog, ColumnSpec
 from secure_query.kernel.compile import CompiledQuery, CompilationError, compile, compile_ratio
 from secure_query.kernel.errors import ValidationError
+from secure_query.kernel.joins import fan_out_errors, resolve_joins
 from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
@@ -125,8 +126,26 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     for i, filt in enumerate(plan.filters):
         errors.extend(_check_filter(filt, catalog, f"$.filters[{i}]"))
 
-    for i, filt in enumerate(plan.having):
-        errors.extend(_check_filter(filt, catalog, f"$.having[{i}]"))
+    aliases = {agg.alias for agg in plan.aggregations}
+    for i, having in enumerate(plan.having):
+        if having.alias not in aliases:
+            errors.append(
+                ValidationError(
+                    code="plan.unknown_having_alias",
+                    path=f"$.having[{i}].alias",
+                    message=f"HAVING alias {having.alias!r} is not an aggregation in this plan",
+                    stage="typecheck",
+                )
+            )
+        if having.value.type not in ("integer", "float"):
+            errors.append(
+                ValidationError(
+                    code="typecheck.literal_mismatch",
+                    path=f"$.having[{i}].value",
+                    message="HAVING compares an aggregate to a number",
+                    stage="typecheck",
+                )
+            )
 
     if plan.group_by is not None:
         for i, col in enumerate(plan.group_by.columns):
@@ -166,6 +185,7 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     errors.extend(_check_label_aggregates(plan, catalog))
     errors.extend(_check_plan_scope(plan))
     errors.extend(_check_dead_order_keys(plan))
+    errors.extend(fan_out_errors(plan, catalog))
 
     return errors
 
@@ -179,6 +199,21 @@ def _check_dead_order_keys(plan: LogicalPlan) -> list[ValidationError]:
     and the LIMIT keeps the alphabetically first groups instead of the top ones.
     """
     group_by = plan.group_by
+    if plan.aggregations:
+        keys = set(group_by.columns) if group_by is not None else set()
+        for i, ob in enumerate(plan.order_by):
+            if ob.column is not None and ob.column not in keys:
+                return [
+                    ValidationError(
+                        code="plan.order_key_not_grouped",
+                        path=f"$.order_by[{i}].column",
+                        message=(
+                            f"order_by {ob.column.table_id}.{ob.column.column_id} is not a "
+                            "group_by column; sort by an aggregate alias or a grouped column"
+                        ),
+                        stage="typecheck",
+                    )
+                ]
     if group_by is None or group_by.time_buckets or not group_by.columns or not plan.aggregations:
         return []
     unsorted = set(group_by.columns)
@@ -241,8 +276,6 @@ def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:
             )
     for i, filt in enumerate(plan.filters):
         errors.extend(check(filt.column, f"$.filters[{i}].column"))
-    for i, filt in enumerate(plan.having):
-        errors.extend(check(filt.column, f"$.having[{i}].column"))
     if plan.group_by is not None:
         for i, col in enumerate(plan.group_by.columns):
             errors.extend(check(col, f"$.group_by.columns[{i}]"))
@@ -378,7 +411,7 @@ def _check_pii_policy(plan: LogicalPlan, catalog: Catalog) -> list[ValidationErr
     """
     errors: list[ValidationError] = []
 
-    for label, filters in (("filters", plan.filters), ("having", plan.having)):
+    for label, filters in (("filters", plan.filters),):
         for i, filt in enumerate(filters):
             path = f"$.{label}[{i}]"
             if _is_high_pii(catalog, filt.column):
@@ -490,39 +523,58 @@ def _check_pii_policy(plan: LogicalPlan, catalog: Catalog) -> list[ValidationErr
 def normalize_plan(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
     """Rewrite common planner mistakes using catalog label/display metadata.
 
+    Joins are rebuilt from catalog.join_keys first, so the rewrites below see
+    the approved join tree. Raises PlanValidationFailed when no unique approved
+    path connects the tables the plan reads.
+
     Idempotent: safe to call more than once on the same plan.
     """
+    plan = _drop_tautological_having(_drop_bucketed_group_columns(plan))
     plan = _rewrite_fk_group_keys(plan, catalog)
-    return _infer_lookup_grouping(plan, catalog)
+    plan, join_errors = resolve_joins(plan, catalog)
+    if join_errors:
+        raise PlanValidationFailed(join_errors)
+    return plan
 
 
-def _tables_read(plan: LogicalPlan) -> set[str]:
-    """Tables whose columns appear outside join ON clauses."""
-    tables = {plan.source}
-    if plan.group_by is not None:
-        for col in plan.group_by.columns:
-            tables.add(col.table_id)
-        for bucket in plan.group_by.time_buckets:
-            tables.add(bucket.column.table_id)
-    for filt in list(plan.filters) + list(plan.having):
-        tables.add(filt.column.table_id)
-        value = getattr(filt, "value", None)
-        if isinstance(value, ColumnRef):
-            tables.add(value.table_id)
-    for agg in plan.aggregations:
-        if agg.column is not None:
-            tables.add(agg.column.table_id)
-    for order in plan.order_by:
-        if order.column is not None:
-            tables.add(order.column.table_id)
-    return tables
+def _drop_tautological_having(plan: LogicalPlan) -> LogicalPlan:
+    """Every group has COUNT >= 1, so `count > 0` / `count >= 1` filters nothing."""
+    counts = {a.alias for a in plan.aggregations if a.fn in ("count", "count_distinct") and a.column is None}
+    kept = [
+        h
+        for h in plan.having
+        if not (
+            h.alias in counts
+            and ((h.op == "gt" and h.value.value == 0) or (h.op == "gte" and h.value.value == 1))
+        )
+    ]
+    if len(kept) == len(plan.having):
+        return plan
+    return plan.model_copy(update={"having": kept})
+
+
+def _drop_bucketed_group_columns(plan: LogicalPlan) -> LogicalPlan:
+    """Grouping by a raw timestamp next to its own bucket defeats the bucket."""
+    group_by = plan.group_by
+    if group_by is None or not group_by.time_buckets:
+        return plan
+    bucketed = {tb.column for tb in group_by.time_buckets}
+    columns = [c for c in group_by.columns if c not in bucketed]
+    if len(columns) == len(group_by.columns):
+        return plan
+    return plan.model_copy(
+        update={"group_by": GroupBy(columns=columns, time_buckets=list(group_by.time_buckets))}
+    )
 
 
 def _rewrite_fk_group_keys(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
-    """Replace FK grouping keys with catalog label_for targets when joined."""
+    """Replace FK grouping keys with their catalog label_for column.
+
+    Joins are resolved afterwards, so the label's table is always reachable
+    when the catalog has a path to it.
+    """
     if plan.group_by is None or not plan.group_by.columns:
         return plan
-    reachable = {plan.source, *(j.right_table for j in plan.joins)}
     new_cols: list[ColumnRef] = []
     changed = False
     for col in plan.group_by.columns:
@@ -530,7 +582,7 @@ def _rewrite_fk_group_keys(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
         if spec is not None and spec.label_for:
             label_table, label_col = spec.label_for.split(".", 1)
             label = ColumnRef(table_id=label_table, column_id=label_col)
-            if label_table in reachable and label != col:
+            if catalog.has_table(label_table) and label != col:
                 new_cols.append(label)
                 changed = True
                 continue
@@ -544,35 +596,6 @@ def _rewrite_fk_group_keys(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
                 time_buckets=list(plan.group_by.time_buckets),
             )
         }
-    )
-
-
-def _infer_lookup_grouping(plan: LogicalPlan, catalog: Catalog) -> LogicalPlan:
-    """When a lookup table is joined but never read, group by its display column."""
-    if not plan.joins or not plan.aggregations:
-        return plan
-    read = _tables_read(plan)
-    new_cols = list(plan.group_by.columns) if plan.group_by is not None else []
-    time_buckets = list(plan.group_by.time_buckets) if plan.group_by is not None else []
-    changed = False
-    for join in plan.joins:
-        table = catalog.table_map().get(join.right_table)
-        if table is None or not table.display_column:
-            continue
-        if join.right_table in read:
-            continue
-        label_table, label_col = table.display_column.split(".", 1)
-        label = ColumnRef(table_id=label_table, column_id=label_col)
-        if label in new_cols:
-            continue
-        new_cols.append(label)
-        read.add(join.right_table)
-        read.add(label_table)
-        changed = True
-    if not changed:
-        return plan
-    return plan.model_copy(
-        update={"group_by": GroupBy(columns=new_cols, time_buckets=time_buckets)}
     )
 
 

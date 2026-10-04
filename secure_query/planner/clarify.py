@@ -12,6 +12,7 @@ ClarifyCode = Literal[
     "restricted_pii",
     "out_of_scope",
     "dropped_concept",
+    "dropped_filter",
     "useless_join",
     "validation_failed",
     "planner_refusal",
@@ -81,6 +82,8 @@ def code_from_guard_message(message: str | None, *, refused: bool) -> ClarifyCod
         or "approved catalog or synonyms" in lower
     ):
         return "out_of_scope"
+    if "no filter in this plan" in lower:
+        return "dropped_filter"
     if "useless" in lower and "join" in lower:
         return "useless_join"
     if "dropped" in lower or "never used" in lower or "named" in lower:

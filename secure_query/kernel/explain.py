@@ -63,7 +63,8 @@ def explain_plan(plan: LogicalPlan, catalog: Catalog | None = None) -> str:
     lines.append(_describe_grain(plan, catalog))
 
     if plan.having:
-        lines.append("Then keeps only groups where " + _join_clauses(plan.having) + ".")
+        clauses = [f"{h.alias} {_COMPARISONS[h.op]} {_value(h.value)}" for h in plan.having]
+        lines.append("Then keeps only groups where " + _join_words(clauses, conjunction="and") + ".")
 
     if plan.order_by:
         lines.append("Sorted by " + _describe_ordering(plan) + ".")

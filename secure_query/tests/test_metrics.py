@@ -144,14 +144,33 @@ def test_ratio_metric_applies_row_filters() -> None:
     assert got == pytest.approx(want)
 
 
-def test_ratio_metric_row_filter_outside_plan_fails_closed() -> None:
+def test_ratio_metric_row_filter_on_parent_table_joins_via_catalog() -> None:
+    """A row filter on a to-one parent is applied through the approved join."""
     metric = _metric("avg_revenue_per_customer")
     other_table = Eq(
         column=ColumnRef(table_id="Customer", column_id="Country"),
         value=LiteralValue(type="string", value="USA"),
     )
     plan = expand_metric_plan(metric).model_copy(update={"filters": [other_table]})
-    with pytest.raises(PlanValidationFailed):
+    compiled = validate_and_compile_metric(metric, plan, sample_catalog())
+    con = duckdb.connect(_DB, read_only=True)
+    got = con.execute(compiled.sql).fetchone()[0]
+    want = con.execute(
+        'SELECT SUM(i."Total") / COUNT(DISTINCT i."CustomerId") FROM "Invoice" i '
+        'JOIN "Customer" c ON i."CustomerId" = c."CustomerId" WHERE c."Country" = \'USA\''
+    ).fetchone()[0]
+    assert got == pytest.approx(want)
+
+
+def test_ratio_metric_row_filter_on_child_table_fails_closed() -> None:
+    """A row filter on a one-to-many child would inflate SUM(Total): refuse."""
+    metric = _metric("avg_revenue_per_customer")
+    child = Eq(
+        column=ColumnRef(table_id="InvoiceLine", column_id="Quantity"),
+        value=LiteralValue(type="integer", value=1),
+    )
+    plan = expand_metric_plan(metric).model_copy(update={"filters": [child]})
+    with pytest.raises(PlanValidationFailed, match="plan.fan_out"):
         validate_and_compile_metric(metric, plan, sample_catalog())
 
 

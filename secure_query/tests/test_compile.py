@@ -567,3 +567,37 @@ def test_compile_rejects_cross_join() -> None:
     with pytest.raises(CompilationError, match="Cross joins"):
         compile(plan)
 
+
+
+def test_having_filters_on_aggregate_alias() -> None:
+
+    from secure_query.examples.sample_catalog import sample_catalog
+    from secure_query.kernel.logical_plan import HavingFilter
+    from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
+
+    plan = LogicalPlan.model_validate(
+        {
+            "plan_id": "00000000-0000-0000-0000-000000000001",
+            "source": "Invoice",
+            "group_by": {"columns": [{"table_id": "Invoice", "column_id": "BillingCountry"}]},
+            "aggregations": [{"fn": "count", "column": None, "alias": "invoice_count"}],
+            "having": [{"alias": "invoice_count", "op": "gt", "value": {"type": "integer", "value": 20}}],
+            "limit": 100,
+        }
+    )
+    compiled = validate_and_compile(plan, sample_catalog())
+    assert 'HAVING COUNT(*) > 20' in compiled.sql
+    con = duckdb.connect("data/chinook.duckdb", read_only=True)
+    got = sorted(con.execute(compiled.sql).fetchall())
+    want = sorted(
+        con.execute(
+            "SELECT BillingCountry, COUNT(*) FROM Invoice GROUP BY 1 HAVING COUNT(*) > 20"
+        ).fetchall()
+    )
+    assert got == want and got
+
+    bad = plan.model_copy(
+        update={"having": [HavingFilter(alias="nope", op="gt", value=plan.having[0].value)]}
+    )
+    with pytest.raises(PlanValidationFailed, match="unknown_having_alias"):
+        validate_and_compile(bad, sample_catalog())

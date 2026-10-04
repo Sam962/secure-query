@@ -24,11 +24,13 @@ from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.planner.guard import (
     dropped_average,
+    dropped_count,
     dropped_concepts,
+    dropped_literals,
+    inexpressible_request,
+    unrelated_metric,
     opaque_grouping_keys,
-    out_of_scope_request,
     restricted_request,
-    useless_joins,
 )
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.metrics import MetricSpec
@@ -61,12 +63,11 @@ WHEN TO REFUSE — this matters more than being helpful. A refusal is always
 better than a number that looks right but answers a different question.
 Refuse if ANY of these is true:
 - The question needs a table or column that is not in the catalog. Do NOT
-  substitute a similar-sounding one. Check the catalog summary first: if the
-  table is listed (Employee, Track, Genre, etc.), use it. If asked about
-  suppliers, payroll, or inventory and the catalog has none, refuse — do not
-  count customers instead.
+  substitute a similar-sounding one or count a different entity instead. If
+  the table is listed in the catalog summary, use it.
 - The question needs arithmetic *between* aggregates: a ratio, a percentage,
-  a share of total, a growth rate, or an average "per" some entity other than
+  a share of total, a growth rate or period-over-period change, a comparison
+  against an average, or an average "per" some entity other than
   the rows being aggregated. This IR has no division, so you cannot express it.
   Example: "average revenue per customer" means SUM(Total) / COUNT(DISTINCT
   CustomerId). AVG(Total) is the average per *invoice* — a different, wrong
@@ -79,13 +80,13 @@ Never reuse an unavailable concept as an alias: do not alias a row count as
 
 Rules:
 - Use ONLY tables and columns listed in the catalog.
-- Use ONLY approved joins from the catalog when joining.
+- Do NOT write joins. There is no "joins" field: reference columns from any
+  related table and the system adds the approved joins between them.
 - Always set limit (1–1000) unless the catalog forbids it; prefer 10 for top-N rankings.
   When the question asks for every/each/all categories (e.g. "each genre"), set limit
   high enough to return all groups (often 100–1000), not a top-10 default.
-- To count child rows per parent (tracks per album, albums per artist), source from the
-  child/detail table and join the parent for labels — never count rows on the parent alone.
-- Every column ref must come from source or a joined table; to group by Artist.Name, join Artist.
+- "source" is the most detailed table you aggregate. To count child rows per parent,
+  source from the child table and group by a parent column — never count rows on the parent alone.
 - Column refs are objects: {"table_id": "...", "column_id": "..."}.
 - Filter literals use LiteralValue: {"type": "string"|"integer"|"float"|"boolean", "value": ...}.
 - Filters are a discriminated union on "op": eq, ne, lt, lte, gt, gte, in, not_in, between, is_null, not_null, like.
@@ -115,26 +116,23 @@ Rules:
   {"column": {"table_id": "Invoice", "column_id": "InvoiceDate"}, "grain": "year"}
   There is no "unit" or "offset" key. When bucketing a date, put the column in
   the time_bucket and NOT also in "columns", or you will group by the raw timestamp.
+- "having" keeps groups by an aggregate's alias and a number — use it ONLY for
+  conditions on an aggregate ("more than 20 invoices"); never repeat that number as a row filter:
+  "having": [{"alias": "invoice_count", "op": "gt", "value": {"type": "integer", "value": 20}}]
+  ops: eq, ne, lt, lte, gt, gte.
 - Aggregations: {"fn": "count"|"count_distinct"|"sum"|"avg"|"min"|"max", "column": ColumnRef|null, "alias": "..."}.
   For count(*), set "column": null.
-- Do not invent tables, columns, or join keys.
+- Do not invent tables or columns.
 - Do not include a "sql" field or any SQL strings.
-- Include "schema_version": "lqp/1".
-- Include "plan_id" as any UUID string (it will be replaced server-side).
 - Alternatively return {"metric_id": "<approved_metric>", "limit": N} when a catalog
   approved_metric matches the question exactly (prefer this for revenue/count/ratio metrics).
-- When the question asks "which artist/genre/album/playlist/media type", group by the
-  table's display_column or FK label_for (e.g. Artist.Name), never a bare *_Id.
-- To count tracks *sold*, source from InvoiceLine (line items), not Track.
-- Country/city/year tokens in the question (USA, Brazil, London, 2010) are filter
-  literals — use them in filter values; they are not unknown schema concepts.
+- When the question asks "which <entity>", group by that table's display column or
+  the column's "label via" target, never a bare *Id column.
+- Names, places, years and other proper nouns in the question are filter values.
 
 Filter-and-list example shape:
 {
-  "plan_id": "00000000-0000-0000-0000-000000000002",
-  "schema_version": "lqp/1",
   "source": "Customer",
-  "joins": [],
   "filters": [{
     "op": "eq",
     "column": {"table_id": "Customer", "column_id": "Country"},
@@ -149,10 +147,7 @@ Filter-and-list example shape:
 
 Trend (per-period) example shape:
 {
-  "plan_id": "00000000-0000-0000-0000-000000000003",
-  "schema_version": "lqp/1",
   "source": "Invoice",
-  "joins": [],
   "filters": [],
   "group_by": {
     "columns": [],
@@ -166,17 +161,7 @@ Trend (per-period) example shape:
 
 Minimal aggregate example shape:
 {
-  "plan_id": "00000000-0000-0000-0000-000000000001",
-  "schema_version": "lqp/1",
   "source": "Invoice",
-  "joins": [{
-    "right_table": "Customer",
-    "kind": "inner",
-    "conditions": [{
-      "left": {"table_id": "Invoice", "column_id": "CustomerId"},
-      "right": {"table_id": "Customer", "column_id": "CustomerId"}
-    }]
-  }],
   "filters": [],
   "group_by": {"columns": [{"table_id": "Customer", "column_id": "Country"}], "time_buckets": []},
   "aggregations": [{"fn": "sum", "column": {"table_id": "Invoice", "column_id": "Total"}, "alias": "revenue"}],
@@ -617,7 +602,18 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
         return expand_metric_plan(metric, limit=int(limit) if limit is not None else None)
     data["plan_id"] = str(uuid4())
     data.setdefault("schema_version", "lqp/1")
+    # Joins come from the catalog (kernel.joins); whatever the model wrote is dropped.
+    data.pop("joins", None)
     return LogicalPlan.model_validate(data)
+
+
+def _metric_id(raw: str) -> str | None:
+    """The metric_id a planner response asks for, if any (no validation)."""
+    try:
+        data = json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
+    except json.JSONDecodeError:
+        return None
+    return str(data["metric_id"]) if isinstance(data, dict) and data.get("metric_id") else None
 
 
 def try_compile_metric(
@@ -701,16 +697,6 @@ def plan_question(
                 refused=True,
                 clarify_code="restricted_pii",
             )
-        oos = out_of_scope_request(question, catalog)
-        if oos is not None:
-            return PlannerResult(
-                status="clarify",
-                question=question,
-                attempts=0,
-                clarify_message=oos,
-                refused=True,
-                clarify_code="out_of_scope",
-            )
 
     messages: list[dict[str, str]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -725,6 +711,19 @@ def plan_question(
         raw = client.complete(messages)
         raw_responses.append(raw)
         try:
+            metric_id = _metric_id(raw)
+            mismatch = unrelated_metric(question, metric_id) if guard and metric_id else None
+            if mismatch is not None:
+                return PlannerResult(
+                    status="clarify",
+                    question=question,
+                    attempts=attempts,
+                    errors=errors,
+                    clarify_message=mismatch,
+                    raw_responses=raw_responses,
+                    refused=True,
+                    clarify_code="dropped_concept",
+                )
             metric_plan, metric_compiled, metric = try_compile_metric(raw, catalog)
             if metric_compiled is not None:
                 return PlannerResult(
@@ -741,10 +740,12 @@ def plan_question(
             compiled = validate_and_compile(plan, catalog)
             if guard:
                 gap = (
-                    useless_joins(plan)
+                    inexpressible_request(question)
                     or opaque_grouping_keys(question, plan, catalog)
                     or dropped_concepts(question, plan, catalog)
                     or dropped_average(question, plan)
+                    or dropped_count(question, plan)
+                    or dropped_literals(question, plan, catalog)
                 )
                 if gap is not None:
                     return PlannerResult(
