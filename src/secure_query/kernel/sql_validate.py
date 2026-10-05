@@ -23,7 +23,7 @@ import hashlib
 
 import sqlglot
 from sqlglot import exp
-from sqlglot.errors import OptimizeError, ParseError
+from sqlglot.errors import OptimizeError, SqlglotError
 from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import traverse_scope
 
@@ -60,7 +60,7 @@ def validate_sql(sql: str, catalog: Catalog) -> CompiledQuery:
     dialect = "duckdb"  # the model is prompted for DuckDB SQL; output uses catalog.sql_dialect
     try:
         statements = [s for s in sqlglot.parse(sql, read=dialect) if s is not None]
-    except ParseError as exc:
+    except SqlglotError as exc:  # ParseError, TokenError, …
         raise SqlValidationFailed([_error("sql.parse", str(exc).splitlines()[0])]) from exc
     if len(statements) != 1:
         raise SqlValidationFailed([_error("sql.statements", "exactly one statement is allowed")])
@@ -83,7 +83,7 @@ def validate_sql(sql: str, catalog: Catalog) -> CompiledQuery:
         tree = qualify(
             tree, schema=schema, dialect=dialect, validate_qualify_columns=True, identify=True
         )
-    except OptimizeError as exc:
+    except (OptimizeError, SqlglotError) as exc:
         raise SqlValidationFailed([_error("sql.unknown_column", str(exc).splitlines()[0])]) from exc
 
     errors: list[ValidationError] = []

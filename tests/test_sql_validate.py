@@ -149,3 +149,7 @@ def test_unused_join_is_rejected_unless_deduplicated() -> None:
         "SELECT t.Name, il.UnitPrice FROM Track t JOIN InvoiceLine il ON il.TrackId = t.TrackId",
         CATALOG,
     )
+
+
+def test_untokenizable_sql_is_a_validation_error() -> None:
+    assert "sql.parse" in codes("SELECT Name FROM Genre WHERE Name = 'unterminated")

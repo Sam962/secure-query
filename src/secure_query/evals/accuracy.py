@@ -160,9 +160,15 @@ def run_live_case(
     planner = planner or plan_question
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
-        result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs, planner))
+        try:
+            result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs, planner))
+        except Exception as exc:  # noqa: BLE001 — one bad case must not end a long run
+            result.attempts.append(Attempt(ERROR, f"harness error: {type(exc).__name__}: {exc}"))
     for _ in range(samples):
-        result.samples.append(_sample(case, catalog, sample_client, db_path, max_repairs, planner))
+        try:
+            result.samples.append(_sample(case, catalog, sample_client, db_path, max_repairs, planner))
+        except Exception as exc:  # noqa: BLE001
+            result.samples.append({"status": "error", "detail": f"{type(exc).__name__}: {exc}"})
     return result
 
 

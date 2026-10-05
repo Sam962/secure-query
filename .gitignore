@@ -27,3 +27,4 @@ data/
 # Local auth config with real tokens (use *.example.json in repo)
 config/principals.json
 **/principals.local.json
+.wt-run/
