@@ -195,7 +195,9 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     if args.sample_cases and args.sample_cases < len(items):
         import random
 
-        items = random.Random(args.seed).sample(items, args.sample_cases)
+        # Keep source order (grouped by database) so prompts share a cached prefix.
+        keep = set(random.Random(args.seed).sample(range(len(items)), args.sample_cases))
+        items = [it for i, it in enumerate(items) if i in keep]
     if args.limit:
         items = items[: args.limit]
     case_delay = args.case_delay
