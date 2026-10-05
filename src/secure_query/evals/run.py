@@ -72,6 +72,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--limit", type=int, default=None, help="Run only the first N cases")
     parser.add_argument(
+        "--planner", choices=("lqp", "sql"), default="lqp",
+        help="lqp: model writes a LogicalPlan; sql: model writes SQL, kernel validates it",
+    )
+    parser.add_argument(
         "--samples",
         type=int,
         default=0,
@@ -204,6 +208,12 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     if case_delay is None:
         case_delay = 1.5 if provider == "groq" else 0.0
 
+    from secure_query.planner import plan_question
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    planner = plan_sql_question if args.planner == "sql" else plan_question
+    print(f"planner={args.planner}")
+
     def run_one(item):
         case, catalog, db_path = item
         if case_delay > 0:
@@ -211,6 +221,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         return run_live_case(
             case, catalog, client, db_path,
             repeats=args.repeat, samples=args.samples, sample_client=sample_client,
+            planner=planner,
         )
 
     from concurrent.futures import ThreadPoolExecutor

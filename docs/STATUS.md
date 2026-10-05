@@ -157,6 +157,28 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
    - Caveat: the inexpressible-operation words were chosen from dev cases; the
      holdout `revenue_growth_rate` also matches them.
 
+### Spider dev (unseen schemas) — 2026-10-04
+
+400 seeded questions (seed 0) over 20 auto-catalogued databases, qwen2.5:7b @
+845dbda0ea48, K=3 samples at T=0.7, Ollama with 4 parallel slots.
+See [baselines/spider-dev400-sc3-2026-10-04.json](baselines/spider-dev400-sc3-2026-10-04.json);
+`python -m secure_query.evals.consistency <that file>` reproduces the table.
+
+| Policy | Answer-rate | Wrong | Wrong 95% hi | Precision |
+|--------|-------------|-------|--------------|-----------|
+| baseline (T=0 plan) | 26.8% | 16.0% | 19.9% | 62.6% |
+| answer only if 3/3 samples agree | 22.5% | 7.2% | 10.2% | 75.6% |
+
+- Chinook's ~1% wrong does not transfer. Hand review of 22 simple-question
+  wrongs: ~11 real (dropped grouping, wrong key, COUNT DISTINCT for a list),
+  ~6 measurement artifacts (tie order scored strictly, 1000-row cap),
+  ~4 IR limits (no DISTINCT list), ~2 gold noise. Real wrong ≈ 11–13%.
+- Nested / set-operation questions (95 of 400): 0 answerable by the IR, yet
+  the model answers ~30% of them wrongly: 29 of 64 wrongs.
+- Guards on unseen schemas: `dropped_concept` stopped 80 wrong / cost 9 right;
+  `dropped_filter` 16 / 12.
+- Coverage loss: 95 answerable questions end in `validation_failed`.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).

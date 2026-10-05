@@ -39,6 +39,9 @@ ABSTAINED = "abstained"
 ERROR = "error"
 UNSAFE = "unsafe"
 
+ROW_CAP = 10_000
+"""Rows fetched for scoring. Above any catalog max_limit, so scoring never truncates."""
+
 _EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 _FLOAT_TOL = 1e-4
 
@@ -151,45 +154,52 @@ def run_live_case(
     max_repairs: int = 1,
     samples: int = 0,
     sample_client: Any = None,
+    planner: Any = None,
 ) -> LiveCaseResult:
+    """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question."""
+    planner = planner or plan_question
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
-        result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs))
+        result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs, planner))
     for _ in range(samples):
-        result.samples.append(_sample(case, catalog, sample_client, db_path, max_repairs))
+        result.samples.append(_sample(case, catalog, sample_client, db_path, max_repairs, planner))
     return result
 
 
 def _sample(
-    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int
+    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int, planner: Any
 ) -> dict[str, Any]:
     """One extra plan through the full pipeline: its shape, rows and verdict."""
     try:
-        planned = plan_question(case.question, catalog, client, max_repairs=max_repairs)
+        planned = planner(case.question, catalog, client, max_repairs=max_repairs)
     except PlannerError as exc:
         return {"status": "error", "detail": str(exc)}
-    if planned.status != "ok" or planned.compiled is None or planned.plan is None:
+    if planned.status != "ok" or planned.compiled is None:
         return {"status": "refused", "code": planned.clarify_code}
     verdict, fingerprint = _judge(case, planned.compiled, db_path)
     return {
         "status": "answered" if verdict else "error",
-        "shape": plan_shape(planned.plan),
+        "shape": _shape(planned),
         "fingerprint": fingerprint,
         "verdict": verdict,
     }
 
 
+def _shape(planned: Any) -> str:
+    return plan_shape(planned.plan) if planned.plan is not None else planned.compiled.plan_hash
+
+
 def _run_once(
-    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int
+    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int, planner: Any
 ) -> Attempt:
     try:
-        planned = plan_question(case.question, catalog, client, max_repairs=max_repairs)
+        planned = planner(case.question, catalog, client, max_repairs=max_repairs)
     except PlannerError as exc:
         # Transport failure (e.g. Ollama gone after the laptop slept): score this
         # case as an error and keep going instead of losing the whole run.
         return Attempt(ERROR, f"planner error: {exc}")
 
-    if planned.status != "ok" or planned.plan is None:
+    if planned.status != "ok" or planned.compiled is None:
         if planned.refused_by_model:
             code = "planner_refusal"
         else:
@@ -206,10 +216,15 @@ def _run_once(
             blocked=blocked,
         )
 
-    shape = plan_shape(planned.plan)
+    shape = _shape(planned)
 
     try:
-        compiled = validate_and_compile(planned.plan, catalog)
+        # LogicalPlans are re-validated here; metric and SQL-path queries arrive compiled.
+        compiled = (
+            validate_and_compile(planned.plan, catalog)
+            if planned.plan is not None and planned.metric is None
+            else planned.compiled
+        )
     except PlanValidationFailed as exc:
         if case.expect == "abstain":
             return Attempt(
@@ -219,7 +234,7 @@ def _run_once(
 
     try:
         executed = execute_duckdb(
-            compiled, db_path, plan=planned.plan, options=ExecuteOptions(max_rows=1000)
+            compiled, db_path, plan=planned.plan, options=ExecuteOptions(max_rows=ROW_CAP)
         )
     except ExecutionError as exc:
         return Attempt(ERROR, str(exc), shape, compiled.sql)
@@ -254,7 +269,7 @@ def _run_once(
 def _judge(case: LiveCase, compiled: Any, db_path: Path) -> tuple[str | None, str | None]:
     """Execute a compiled plan and compare with the reference: ("right"|"wrong"|None, fingerprint)."""
     try:
-        executed = execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=1000))
+        executed = execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=ROW_CAP))
     except ExecutionError:
         return None, None
     actual = list(executed.rows)

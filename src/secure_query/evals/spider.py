@@ -181,7 +181,7 @@ def build_catalog(split: str, schema: dict) -> Catalog:
         tenant_id=f"spider_{db_id}",
         tables=[TableSpec(name=t, columns=cols) for t, cols in by_table.items()],
         join_keys=join_keys,
-        max_limit=1000,
+        max_limit=10_000,  # benchmark gold can return thousands of rows
     )
 
 
@@ -242,7 +242,9 @@ def load_spider(split: str, *, limit: int | None = None) -> list[tuple[LiveCase,
             expect="answer",
             reference_sql=item["query"],
             reference_db=str(sqlite_path),
-            ordered=" order by " in item["query"].lower(),
+            # Row sets: tied ORDER BY keys make strict order arbitrary. Top-N is
+            # still checked through the LIMIT tie logic.
+            ordered=False,
             tags=(*gold_tags(item["query"]), f"db:{db_id}"),
             extra_columns_ok=True,
         )
