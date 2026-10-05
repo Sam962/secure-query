@@ -1,0 +1,107 @@
+{
+  "catalog": "../northwind/catalog.json",
+  "database": "northwind.duckdb",
+  "notes": "Northwind dev cases: tune here. The frozen holdout is suites/northwind/cases.json.",
+  "cases": [
+    {
+      "id": "nwdev_top_shipper_by_freight",
+      "question": "Which shipper charged the most freight in total?",
+      "expect": "answer",
+      "reference_sql": "SELECT s.CompanyName, SUM(o.Freight) AS f FROM Orders o JOIN Shippers s ON o.ShipVia = s.ShipperID GROUP BY 1 ORDER BY f DESC LIMIT 1",
+      "tags": [
+        "unordered-limit",
+        "topn"
+      ]
+    },
+    {
+      "id": "nwdev_smallest_freight",
+      "question": "What is the smallest freight charge on any order?",
+      "expect": "answer",
+      "reference_sql": "SELECT MIN(Freight) FROM Orders",
+      "tags": [
+        "unordered-limit",
+        "scalar"
+      ]
+    },
+    {
+      "id": "nwdev_category_fewest_products",
+      "question": "Which category has the fewest products?",
+      "expect": "answer",
+      "reference_sql": "SELECT c.CategoryName, COUNT(*) AS n FROM Products p JOIN Categories c ON p.CategoryID = c.CategoryID GROUP BY 1 ORDER BY n ASC LIMIT 1",
+      "tags": [
+        "unordered-limit",
+        "topn"
+      ]
+    },
+    {
+      "id": "nwdev_country_fewest_orders",
+      "question": "Which country were the fewest orders shipped to?",
+      "expect": "answer",
+      "reference_sql": "SELECT ShipCountry, COUNT(*) AS n FROM Orders GROUP BY 1 ORDER BY n ASC LIMIT 1",
+      "tags": [
+        "unordered-limit",
+        "topn"
+      ]
+    },
+    {
+      "id": "nwdev_supplier_count",
+      "question": "How many suppliers do we buy from?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Suppliers",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ]
+    },
+    {
+      "id": "nwdev_product_count_carry",
+      "question": "How many products do we carry?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Products",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ]
+    },
+    {
+      "id": "nwdev_category_count",
+      "question": "How many product categories do we sell?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Categories",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ]
+    },
+    {
+      "id": "nwdev_shipper_count",
+      "question": "How many shippers deliver our orders?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Shippers",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ]
+    },
+    {
+      "id": "nwdev_territory_count",
+      "question": "How many sales territories do our employees cover?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM Territories",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ]
+    },
+    {
+      "id": "nwdev_order_line_count",
+      "question": "How many order lines are there?",
+      "expect": "answer",
+      "reference_sql": "SELECT COUNT(*) FROM \"Order Details\"",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ]
+    }
+  ]
+}

@@ -344,6 +344,46 @@ def extra_dev_cases() -> list[dict]:
         ]
     )
 
+    # LIMIT 1 over groups needs an ORDER BY; "how many X" must count X's rows.
+    cases.extend(
+        [
+            {
+                "id": "dev_genre_fewest_tracks",
+                "question": "Which genre has the fewest tracks?",
+                "expect": "answer",
+                "reference_sql": (
+                    "SELECT Genre.Name, COUNT(*) AS n FROM Track JOIN Genre "
+                    "ON Track.GenreId = Genre.GenreId GROUP BY 1 ORDER BY n ASC LIMIT 1"
+                ),
+                "tags": ["unordered-limit", "topn", "dev-generated"],
+            },
+            {
+                "id": "dev_top_media_type_by_tracks",
+                "question": "Which media type has the most tracks?",
+                "expect": "answer",
+                "reference_sql": (
+                    "SELECT MediaType.Name, COUNT(*) AS n FROM Track JOIN MediaType "
+                    "ON Track.MediaTypeId = MediaType.MediaTypeId GROUP BY 1 ORDER BY n DESC LIMIT 1"
+                ),
+                "tags": ["unordered-limit", "topn", "dev-generated"],
+            },
+            {
+                "id": "dev_album_count_for_sale",
+                "question": "How many albums do we sell?",
+                "expect": "answer",
+                "reference_sql": "SELECT COUNT(*) FROM Album",
+                "tags": ["count-entity", "scalar", "dev-generated"],
+            },
+            {
+                "id": "dev_playlist_count_listened",
+                "question": "How many playlists do customers listen to?",
+                "expect": "answer",
+                "reference_sql": "SELECT COUNT(*) FROM Playlist",
+                "tags": ["count-entity", "scalar", "dev-generated"],
+            },
+        ]
+    )
+
     # "average X per Y": only an AVG over Y's own rows answers it. Anything else
     # is a total divided by a count of Y, which the IR cannot compute.
     cases.extend(

@@ -396,6 +396,53 @@ def averaged_per_other_entity(
     )
 
 
+_COUNT_NOUN_RE = re.compile(
+    r"\b(?:how many|number of|count of)\s+(?:distinct\s+|different\s+|unique\s+)?([a-z]+)",
+    re.IGNORECASE,
+)
+
+
+def counted_other_entity(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
+    """Reason to refuse when "how many X" counts rows of a table that is not X.
+
+    COUNT(*) counts the plan's source rows. "How many products do we sell?"
+    answered by counting order lines is a real number for a different noun. The
+    source is accepted when X names it, or when another word in the question
+    names it through the catalog ("how many tracks were *sold*" may count sale
+    lines when the catalog maps "sold" to that table).
+    """
+    match = _COUNT_NOUN_RE.search(question)
+    if match is None:
+        return None
+    counted = {plan.source for a in plan.aggregations if a.fn == "count" and a.column is None}
+    counted |= {a.column.table_id for a in plan.aggregations if a.fn == "count" and a.column}
+    if not counted:
+        return None
+    noun = match.group(1).lower()
+    vocabulary = catalog_vocabulary(catalog)
+    display = {t.name: t.display_column for t in catalog.tables}
+    noun_terms = _expand_term(noun)
+    entity_tables = {
+        c.table
+        for term in noun_terms
+        for c in vocabulary.get(term, set())
+        if c.column is None or display.get(c.table) == f"{c.table}.{c.column}"
+    }
+    if not entity_tables or counted <= entity_tables:
+        return None
+    named = {
+        c.table
+        for term in question_terms(question) - noun_terms
+        for c in vocabulary.get(term, set())
+    }
+    if counted <= entity_tables | named:
+        return None
+    return (
+        f'The question asks how many {noun}, but this plan counts '
+        f"{', '.join(sorted(counted))} rows. Refusing rather than counting something else."
+    )
+
+
 _VALUE_WORD_RE = re.compile(r"\b(?:[A-Z][\w'&]*|(?:19|20)\d\d)\b")
 
 

@@ -31,6 +31,7 @@ from secure_query.kernel.validate import (
 from secure_query.planner.clarify import ClarifyCode, code_from_guard_message
 from secure_query.planner.guard import (
     averaged_per_other_entity,
+    counted_other_entity,
     dropped_average,
     dropped_concepts,
     dropped_count,
@@ -59,6 +60,7 @@ _POST_PLAN_GUARDS: tuple[tuple[ClarifyCode, _PostPlanGuard], ...] = (
     ("dropped_concept", lambda q, plan, catalog: dropped_average(q, plan)),
     ("analyst_handoff", averaged_per_other_entity),
     ("dropped_concept", lambda q, plan, catalog: dropped_count(q, plan)),
+    ("dropped_concept", counted_other_entity),
     ("dropped_filter", dropped_literals),
 )
 

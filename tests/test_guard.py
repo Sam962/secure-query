@@ -274,3 +274,17 @@ def test_average_per_other_entity_is_refused() -> None:
     assert averaged_per_other_entity("Average total for each customer", grouped, CATALOG) is None
     # "per" followed by a word that names no table: nothing to check.
     assert averaged_per_other_entity("Average total per cent", per_invoice, CATALOG) is None
+
+
+def test_count_must_run_over_the_counted_noun() -> None:
+    from secure_query.kernel.builder import LQP
+    from secure_query.planner.guard import counted_other_entity
+
+    lines = LQP.aggregate(table="InvoiceLine").agg("count", None, alias="n").limit(1).build()
+    tracks = LQP.aggregate(table="Track").agg("count", None, alias="n").limit(1).build()
+    assert counted_other_entity("How many tracks are there?", lines, CATALOG) is not None
+    assert counted_other_entity("How many tracks are there?", tracks, CATALOG) is None
+    # "sold" maps to InvoiceLine in the catalog, so counting sale lines is the reading.
+    assert counted_other_entity("How many tracks have we sold?", lines, CATALOG) is None
+    # The noun names no table: nothing to check.
+    assert counted_other_entity("How many units in total?", lines, CATALOG) is None

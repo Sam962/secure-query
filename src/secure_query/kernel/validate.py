@@ -185,6 +185,7 @@ def validate(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
     errors.extend(_check_label_aggregates(plan, catalog))
     errors.extend(_check_plan_scope(plan))
     errors.extend(_check_dead_order_keys(plan))
+    errors.extend(_check_arbitrary_group(plan))
     errors.extend(fan_out_errors(plan, catalog))
 
     return errors
@@ -234,6 +235,31 @@ def _check_dead_order_keys(plan: LogicalPlan) -> list[ValidationError]:
         if ob.column is not None:
             unsorted.discard(ob.column)
     return []
+
+
+def _check_arbitrary_group(plan: LogicalPlan) -> list[ValidationError]:
+    """Reject LIMIT 1 over groups with no ORDER BY: it returns an arbitrary group.
+
+    A larger LIMIT without ORDER BY is fine when it covers every group (a yearly
+    trend, a per-shipper total), and the group count is unknown here. One row
+    out of several groups is never a meaningful answer without a ranking.
+    """
+    group_by = plan.group_by
+    if group_by is None or not (group_by.columns or group_by.time_buckets):
+        return []
+    if plan.order_by or plan.limit != 1:
+        return []
+    return [
+        ValidationError(
+            code="plan.arbitrary_group",
+            path="$.limit",
+            message=(
+                "limit 1 over grouped rows with no order_by returns an arbitrary group; "
+                "order by the measure being ranked, or drop the grouping for a single total"
+            ),
+            stage="policy",
+        )
+    ]
 
 
 def _check_plan_scope(plan: LogicalPlan) -> list[ValidationError]:

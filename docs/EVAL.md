@@ -57,6 +57,7 @@ python -m secure_query.evals.run --provider ollama \
   --suite northwind --expect-digest 845dbda0ea48
 ```
 
+Dev cases for Northwind live in `suites/northwind_dev/` (`--suite northwind_dev`).
 `cases.json` (36 cases: 28 answer, 8 abstain) was frozen before the first live
 run. Treat the whole file as a holdout: never tune prompts, guards or the
 Northwind catalog against its failures. To work on a failure mode it exposed,

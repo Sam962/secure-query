@@ -419,3 +419,17 @@ def test_date_literals_accept_iso_strings_from_json() -> None:
         LiteralValue.model_validate({"type": "date", "value": "2023-13-45"})
     # Strings stay strings for type=string.
     assert LiteralValue.model_validate({"type": "string", "value": "2023-01-01"}).value == "2023-01-01"
+
+
+def test_limit_one_over_unordered_groups_is_rejected() -> None:
+    catalog = sample_catalog()
+    grouped = (
+        LQP.aggregate(table="Invoice")
+        .group_by_columns(["Invoice.BillingCountry"])
+        .agg("sum", "Invoice.Total", alias="revenue")
+    )
+    codes = {e.code for e in validate(grouped.limit(1).build(), catalog)}
+    assert "plan.arbitrary_group" in codes
+    # Ranked, or a limit that can cover every group: fine.
+    assert not validate(grouped.order_by("revenue", direction="desc").limit(1).build(), catalog)
+    assert not validate(grouped.limit(100).build(), catalog)

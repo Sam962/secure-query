@@ -18,7 +18,7 @@
 **Holdout (qwen2.5:7b @ 845dbda0ea48, 2026-10-04):** 12/12, 0 wrong (3 repeats) with
 the old Chinook-worded prompt; 11/12 with the generic prompt alone; **12/12, 0 wrong**
 with the generic prompt + `averaged_per_other_entity` guard (1 repeat; see item 4).
-**Northwind (second schema):** 22/36, 4 wrong.
+**Northwind (second schema):** 23/36, 2 wrong (was 4 at first run).
 **Dev:** 100/101, 0 wrong. The 2026-10-03 failure was model drift (tag re-pulled
 2026-09-07); see [baselines/holdout-2026-10-04.txt](baselines/holdout-2026-10-04.txt).
 `llama3.2` is not a valid regression test.
@@ -105,6 +105,20 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
      reports `stopped-wrong` / `cost-right`, so this needs no ablation next time.
      Scored run (no product change): Chinook `dropped_concept` stopped-wrong 12 /
      cost-right 0; Northwind 3 / 3. See [baselines/chinook-guard-scorecard-2026-10-04.json](baselines/chinook-guard-scorecard-2026-10-04.json).
+   - [x] Northwind wrong answers 4 → **2** (22 → 23/36, 95% CI 1.5–18.1%):
+     kernel rule `plan.arbitrary_group` (LIMIT 1 over groups with no ORDER BY)
+     sends `max_freight` to repair, now correct; guard `counted_other_entity`
+     ("how many X" must count X's rows unless another question word names the
+     source through the catalog) refuses `product_count`. Chinook holdout 12/12,
+     0 wrong; no existing case changed verdict. 14 new dev cases (`--suite
+     northwind_dev`, `--only unordered-limit,count-entity`); the model got these
+     right unaided, so the rules are backstops there. Not caught: counting a
+     bridge table whose name contains the noun (EmployeeTerritories for
+     "territories"). See [baselines/northwind-count-limit-2026-10-04.json](baselines/northwind-count-limit-2026-10-04.json).
+   - [ ] New failure mode (dev): "Which X has the most/fewest …?" answered with a
+     ranked top-10 list instead of the single row (2 dev cases).
+   - [ ] Remaining Northwind wrong: an added filter the question never states
+     (`freight_to_france`), and revenue as SUM(UnitPrice) (`total_sales_revenue`).
    - [ ] `dropped_filter` costs more than it saves on Chinook dev (stopped-wrong 1,
      cost-right 2; Northwind 1 / 2). It still prevents wrong answers, so fix its
      misfires (unit conversions, values the plan expresses via another column)
