@@ -79,6 +79,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--sample-temperature", type=float, default=0.7)
     parser.add_argument(
+        "--sample-cases", type=int, default=None, metavar="N",
+        help="Evaluate a seeded random subset of N cases",
+    )
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--workers", type=int, default=1,
+        help="Cases evaluated concurrently (the LLM server must allow parallel requests)",
+    )
+    parser.add_argument(
         "--provider",
         choices=("ollama", "groq", "openai", "mock"),
         default=None,
@@ -183,33 +192,43 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     if args.only:
         needles = [n.strip() for n in args.only.split(",") if n.strip()]
         items = [it for it in items if any(n in it[0].case_id or n in it[0].tags for n in needles)]
+    if args.sample_cases and args.sample_cases < len(items):
+        import random
+
+        items = random.Random(args.seed).sample(items, args.sample_cases)
     if args.limit:
         items = items[: args.limit]
     case_delay = args.case_delay
     if case_delay is None:
         case_delay = 1.5 if provider == "groq" else 0.0
 
-    results = []
-    for i, (case, catalog, db_path) in enumerate(items):
-        if i and case_delay > 0:
+    def run_one(item):
+        case, catalog, db_path = item
+        if case_delay > 0:
             time.sleep(case_delay)
-        result = run_live_case(
+        return run_live_case(
             case, catalog, client, db_path,
             repeats=args.repeat, samples=args.samples, sample_client=sample_client,
         )
-        results.append(result)
-        mark = _MARKS.get(result.verdict, result.verdict)
-        consistency = ""
-        if args.repeat > 1:
-            # Refusals produce no plan, so there is no shape to agree on.
-            consistency = (
-                f" [{result.consistency:.0%} stable]" if result.consistency else " [no plan]"
-            )
-        print(f"  [{mark:7}] {case.case_id}{consistency}")
-        if result.verdict != "correct":
-            print(f"            {result.attempts[-1].detail}")
-            if result.attempts[-1].sql:
-                print(f"            sql: {result.attempts[-1].sql}")
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    results = []
+    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
+        for result in pool.map(run_one, items):  # input order, so output is stable
+            results.append(result)
+            mark = _MARKS.get(result.verdict, result.verdict)
+            consistency = ""
+            if args.repeat > 1:
+                # Refusals produce no plan, so there is no shape to agree on.
+                consistency = (
+                    f" [{result.consistency:.0%} stable]" if result.consistency else " [no plan]"
+                )
+            print(f"  [{mark:7}] {result.case.case_id}{consistency}", flush=True)
+            if result.verdict != "correct":
+                print(f"            {result.attempts[-1].detail}")
+                if result.attempts[-1].sql:
+                    print(f"            sql: {result.attempts[-1].sql}")
 
     stats = summarise(results)
     low, high = stats["wrong_rate_ci95"]
