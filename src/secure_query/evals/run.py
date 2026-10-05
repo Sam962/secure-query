@@ -29,17 +29,17 @@ from secure_query.planner import (
 )
 
 
-def _client(provider: str | None):
-    if provider is None:
+def _client(provider: str | None, temperature: float = 0.0):
+    if provider is None and temperature == 0.0:
         return default_client()
-    provider = provider.lower()
+    provider = (provider or os.environ.get("SECURE_QUERY_PROVIDER") or "ollama").lower()
     if provider == "mock":
         return MockLLMClient()
     os.environ["SECURE_QUERY_PROVIDER"] = provider
     settings = resolve_llm_settings()
     if settings is None:
         raise PlannerError(f"Could not resolve provider={provider}")
-    return OpenAIClient(**settings)
+    return OpenAIClient(**settings, temperature=temperature)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -70,6 +70,14 @@ def main(argv: list[str] | None = None) -> int:
             "Its 'catalog' and 'database' keys replace Chinook; --split is ignored"
         ),
     )
+    parser.add_argument("--limit", type=int, default=None, help="Run only the first N cases")
+    parser.add_argument(
+        "--samples",
+        type=int,
+        default=0,
+        help="Also sample N plans per case at --sample-temperature and log them (self-consistency)",
+    )
+    parser.add_argument("--sample-temperature", type=float, default=0.7)
     parser.add_argument(
         "--provider",
         choices=("ollama", "groq", "openai", "mock"),
@@ -133,18 +141,23 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     )
     from secure_query.evals.suite_loader import load_suite
 
-    if args.suite:
+    if args.suite and args.suite.startswith("spider-"):
+        from secure_query.evals.spider import load_spider
+
+        items = load_spider(args.suite.removeprefix("spider-"))
+    elif args.suite:
         catalog, db_path, suite = _load_domain_suite(args.suite)
-        print(f"=== Execution accuracy (suite={args.suite}, tenant={catalog.tenant_id}) ===")
+        items = [(case, catalog, db_path) for case in suite]
     else:
-        catalog, db_path, suite = sample_catalog(), DUCKDB_PATH, load_suite(split=args.split)
-        print()
-        print(f"=== Execution accuracy (split={args.split}) ===")
-    if not db_path.exists():
-        print(f"ERROR: database missing at {db_path}", file=sys.stderr)
+        items = [(case, sample_catalog(), DUCKDB_PATH) for case in load_suite(split=args.split)]
+    print(f"=== Execution accuracy ({args.suite or 'chinook split=' + args.split}) ===")
+    missing = {str(db) for _, _, db in items if not db.exists()}
+    if missing:
+        print(f"ERROR: database missing: {sorted(missing)[:3]}", file=sys.stderr)
         return -1
     try:
         client = _client(args.provider)
+        sample_client = _client(args.provider, args.sample_temperature) if args.samples else None
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return -1
@@ -169,20 +182,21 @@ def _run_accuracy(args: argparse.Namespace) -> int:
 
     if args.only:
         needles = [n.strip() for n in args.only.split(",") if n.strip()]
-        suite = [
-            c
-            for c in suite
-            if any(n in c.case_id or n in c.tags for n in needles)
-        ]
+        items = [it for it in items if any(n in it[0].case_id or n in it[0].tags for n in needles)]
+    if args.limit:
+        items = items[: args.limit]
     case_delay = args.case_delay
     if case_delay is None:
         case_delay = 1.5 if provider == "groq" else 0.0
 
     results = []
-    for i, case in enumerate(suite):
+    for i, (case, catalog, db_path) in enumerate(items):
         if i and case_delay > 0:
             time.sleep(case_delay)
-        result = run_live_case(case, catalog, client, db_path, repeats=args.repeat)
+        result = run_live_case(
+            case, catalog, client, db_path,
+            repeats=args.repeat, samples=args.samples, sample_client=sample_client,
+        )
         results.append(result)
         mark = _MARKS.get(result.verdict, result.verdict)
         consistency = ""
@@ -282,6 +296,8 @@ def _write_json_report(path, stats, results, *, provider, model, digest) -> None
                 ),
                 "detail": r.attempts[-1].detail if r.attempts else None,
                 "blocked": r.attempts[-1].blocked if r.attempts else None,
+                "fingerprint": r.attempts[-1].fingerprint if r.attempts else None,
+                "samples": r.samples,
                 "sql": r.attempts[-1].sql if r.attempts else None,
             }
             for r in results

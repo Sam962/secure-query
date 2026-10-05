@@ -39,6 +39,7 @@ class OpenAIClient:
         base_url: str | None = None,
         provider: str = "openai",
         json_mode: bool | None = None,
+        temperature: float = 0.0,
     ) -> None:
         try:
             from openai import OpenAI
@@ -48,6 +49,7 @@ class OpenAIClient:
             ) from exc
 
         self.provider = provider
+        self.temperature = temperature
         self._model = model or "gpt-4o-mini"
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
@@ -71,7 +73,7 @@ class OpenAIClient:
         create_kwargs: dict[str, Any] = {
             "model": self._model,
             "messages": messages,
-            "temperature": 0,
+            "temperature": self.temperature,
         }
         if self._json_mode:
             create_kwargs["response_format"] = {"type": "json_object"}
