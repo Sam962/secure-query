@@ -179,6 +179,32 @@ See [baselines/spider-dev400-sc3-2026-10-04.json](baselines/spider-dev400-sc3-20
   `dropped_filter` 16 / 12.
 - Coverage loss: 95 answerable questions end in `validation_failed`.
 
+### LQP vs validated SQL on Spider dev — 2026-10-06
+
+Same 400 questions, model, K=3 samples and scoring (LQP main verdicts re-scored:
+[spider-dev400-sc3-2026-10-04.rescored.json](baselines/spider-dev400-sc3-2026-10-04.rescored.json);
+SQL: [spider-dev400-sql-sc3-2026-10-05.json](baselines/spider-dev400-sql-sc3-2026-10-05.json)).
+Right / wrong are shares of all 400 questions.
+
+| Planner | Policy | Right | Wrong | Wrong 95% hi | Precision |
+|---------|--------|-------|-------|--------------|-----------|
+| LQP | baseline | 27.8% | 15.0% | 18.8% | 64.9% |
+| LQP | 3/3 agree | 23.2% | 6.5% | 9.4% | 78.2% |
+| SQL | baseline | 63.0% | 21.0% | 25.3% | 75.0% |
+| SQL | 2/3 agree | 60.2% | 15.0% | 18.8% | 80.1% |
+| SQL | 3/3 agree | 53.5% | 9.8% | 13.1% | 84.6% |
+
+- Validated SQL gives 2.2–2.3× the right answers at every operating point,
+  with higher precision. It answers nested/set questions the LQP cannot
+  (22% / 16% right) but is wrong on 41% / 50% of them at baseline.
+- The SQL path has none of the LQP semantic guards yet; on LQP,
+  `dropped_concept` alone stopped 80 wrong answers.
+- 20 SQL answers fail at execution (type mismatches on Spider's text-typed
+  columns, ungrouped columns): no dry-run repair yet.
+- Hand review of 16 SQL wrongs: ~4 gold noise, the rest real model errors
+  (wrong column, missing/extra join, FK id instead of name, COUNT for SUM).
+- Neither path is near the 2% target with qwen2.5:7b.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
