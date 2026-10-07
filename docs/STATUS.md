@@ -205,6 +205,26 @@ Right / wrong are shares of all 400 questions.
   (wrong column, missing/extra join, FK id instead of name, COUNT for SUM).
 - Neither path is near the 2% target with qwen2.5:7b.
 
+### Validated SQL with guards — 2026-10-06
+
+Same 400 Spider dev questions. SQL path with fan-out check and the shared
+semantic guards; `dropped_filter` language fix (number words, possessives,
+short catalog words, adjective forms) measured by re-running the 35 cases it
+refused ([merged result](baselines/spider-dev400-sqlguard-sc3-2026-10-06.merged.json)).
+
+| Planner | Policy | Right | Wrong | Wrong 95% hi | Precision |
+|---------|--------|-------|-------|--------------|-----------|
+| LQP | 3/3 agree | 23.2% | 6.5% | 9.4% | 78.2% |
+| SQL, no guards | 3/3 agree | 53.5% | 9.8% | 13.1% | 84.6% |
+| SQL + guards | baseline | 57.8% | 13.8% | 17.5% | 80.8% |
+| SQL + guards | 3/3 agree | 49.8% | 7.0% | 9.9% | 87.7% |
+
+- At the LQP's wrong-rate, validated SQL answers 2.1× as many questions right.
+- Guards on SQL: `dropped_concept` stopped 25 wrong / cost 14 right;
+  `dropped_filter` (after the fix) 4 / 7, was 7 / 27.
+- Still open: 18 execution errors (no dry-run repair), 27 model refusals,
+  and the 2% target. Next evidence: Spider test (held out) and a stronger model.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
