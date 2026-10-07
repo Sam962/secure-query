@@ -1,6 +1,6 @@
 # IR boundary — what LogicalPlan will never do
 
-**Status:** Accepted  
+**Status:** Superseded in part by [ADR 003](003-validated-sql-planner.md) (2026-10-06)  
 **Date:** 2026-08-18
 
 ## Decision

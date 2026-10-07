@@ -212,13 +212,17 @@ def restricted_request(question: str, catalog: Catalog) -> str | None:
 
 
 def dropped_concepts(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
+    """Reason to refuse when the plan never returns a concept the question asks about."""
+    return missing_concepts(question, plan_concepts(plan, catalog), catalog)
+
+
+def missing_concepts(question: str, used: set[Concept], catalog: Catalog) -> str | None:
     """Reason to refuse after planning, or None if the plan covers the question.
 
     A term is satisfied if *any* catalog entity it could refer to appears in the
     plan, because "customer" may mean the Customer table or Invoice.CustomerId
     and either reading answers the user.
     """
-    used = plan_concepts(plan, catalog)
     touched = {c.table for c in used}
     display = {
         Concept(table=t.name, column=t.display_column.split(".", 1)[1])
@@ -329,7 +333,11 @@ _COUNT_RE = re.compile(r"\b(how many|number of|count of)\b", re.IGNORECASE)
 
 def dropped_count(question: str, plan: LogicalPlan) -> str | None:
     """Reason to refuse when the question asks for a count and the plan lists rows."""
-    if plan.aggregations or not _COUNT_RE.search(question):
+    return lists_instead_of_count(question, aggregated=bool(plan.aggregations))
+
+
+def lists_instead_of_count(question: str, *, aggregated: bool) -> str | None:
+    if aggregated or not _COUNT_RE.search(question):
         return None
     return (
         "The question asks how many, but this plan dropped the count and lists rows. "
@@ -345,9 +353,11 @@ def dropped_average(question: str, plan: LogicalPlan) -> str | None:
     customer" can come back as a SUM and a COUNT side by side: real numbers,
     but not the one asked for. Approved ratio metrics never reach this guard.
     """
-    if not _AVERAGE_RE.search(question):
-        return None
-    if any(agg.fn == "avg" for agg in plan.aggregations):
+    return missing_average(question, averaged=any(a.fn == "avg" for a in plan.aggregations))
+
+
+def missing_average(question: str, *, averaged: bool) -> str | None:
+    if averaged or not _AVERAGE_RE.search(question):
         return None
     return (
         "The question asks for an average, but this plan dropped it (no AVG is "
@@ -447,22 +457,39 @@ _VALUE_WORD_RE = re.compile(r"\b(?:[A-Z][\w'&]*|(?:19|20)\d\d)\b")
 
 
 def dropped_literals(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
-    """Reason to refuse when the question names a value no filter uses.
+    """Reason to refuse when the question names a value no filter uses, or vice versa.
 
     "Which AC/DC album has the most tracks?" answered without an AC/DC filter
-    is a confident answer to a different question. Proper nouns and years are
-    filter values (the prompt says so); each must appear in some filter literal.
-    The question's first word, catalog terms and calendar words are skipped.
+    is a confident answer to a different question.
     """
-    literals: list[str] = []
+    values: list[str] = []
     for filt in plan.filters:
         for name in ("value", "low", "high", "pattern"):
             lit = getattr(filt, name, None)
             if isinstance(lit, LiteralValue):
-                literals.append(str(lit.value).lower())
-        for lit in getattr(filt, "values", []):
-            literals.append(str(lit.value).lower())
-    haystack = " ".join(literals)
+                values.append(str(lit.value))
+        values += [str(lit.value) for lit in getattr(filt, "values", [])]
+    strings = [lit for filt in plan.filters for lit in _string_literals(filt)]
+    numbers = [lit.value for filt in plan.filters for lit in _numeric_literals(filt)]
+    numbers += [h.value.value for h in plan.having]
+    return unmatched_values(question, values, strings, numbers, catalog)
+
+
+def unmatched_values(
+    question: str,
+    values: list[str],
+    strings: list[str],
+    numbers: list[float | int],
+    catalog: Catalog,
+) -> str | None:
+    """Named values must be filtered on, and filters may not invent values.
+
+    `values`: every filter literal (proper nouns and years in the question
+    must appear among them; sentence-initial capitals, catalog terms and
+    calendar words are skipped). `strings` / `numbers`: filter literals that
+    must themselves appear in the question.
+    """
+    haystack = " ".join(v.lower() for v in values)
     vocabulary = catalog_vocabulary(catalog)
 
     missing: list[str] = []
@@ -483,18 +510,10 @@ def dropped_literals(question: str, plan: LogicalPlan, catalog: Catalog) -> str 
             "Refusing rather than answering without that condition."
         )
 
-    # The reverse: a value the plan filters on that the question never says.
     asked = question.lower()
-    numbers = {float(n) for n in re.findall(r"\d+(?:\.\d+)?", question.replace(",", ""))}
-    invented = [
-        lit
-        for filt in plan.filters
-        for lit in _string_literals(filt)
-        if lit.strip("%").lower() not in asked
-    ]
-    numeric = [lit for filt in plan.filters for lit in _numeric_literals(filt)]
-    numeric += [h.value for h in plan.having]
-    invented += [str(lit.value) for lit in numeric if float(lit.value) not in numbers]
+    said = {float(n) for n in re.findall(r"\d+(?:\.\d+)?", question.replace(",", ""))}
+    invented = [v for v in strings if v.strip("%").lower() not in asked]
+    invented += [str(n) for n in numbers if float(n) not in said]
     if invented:
         shown = ", ".join(f'"{v}"' for v in dict.fromkeys(invented))
         return (

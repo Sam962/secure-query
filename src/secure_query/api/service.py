@@ -42,6 +42,7 @@ from secure_query.planner.clarify import (
     question_too_long,
 )
 from secure_query.planner.retrieve import catalog_for_prompt, retrieve_k_from_env, retrieve_tables
+from secure_query.planner.sql_plan import plan_sql_question
 from secure_query.planner.suggest import SuggestedQuestion, suggest_questions
 
 
@@ -144,13 +145,24 @@ def ask(
     retrieved = retrieve_tables(question, scoped, k=retrieve_k_from_env(len(scoped.tables)))
     prompt_catalog = catalog_for_prompt(scoped, retrieved) if retrieved else scoped
 
-    planned = plan_question(
-        question,
-        scoped,
-        client or default_client(),
-        max_repairs=1,
-        prompt_catalog=prompt_catalog,
-    )
+    sql_mode = planner_mode() == "sql"
+    if sql_mode:
+        planned = plan_sql_question(
+            question,
+            scoped,
+            client or default_client(),
+            max_repairs=1,
+            row_filters=principal.row_filters,
+            prompt_catalog=prompt_catalog,
+        )
+    else:
+        planned = plan_question(
+            question,
+            scoped,
+            client or default_client(),
+            max_repairs=1,
+            prompt_catalog=prompt_catalog,
+        )
 
     if planned.status != "ok" or (planned.compiled is None and planned.plan is None):
         code = planned.clarify_code or ("planner_refusal" if planned.refused else "validation_failed")
@@ -169,7 +181,9 @@ def ask(
     metric = planned.metric
     ratio = metric if metric is not None and metric.kind == "ratio" else None
 
-    if plan is not None:
+    if sql_mode:
+        pass  # validate_sql already applied the principal's row filters
+    elif plan is not None:
         plan = inject_row_filters(plan, principal)
         try:
             if ratio is not None:
@@ -209,7 +223,9 @@ def ask(
 
     assert compiled is not None
 
-    if metric is not None and metric.kind != "plan":
+    if sql_mode:
+        explanation = "Model-written SQL, validated and rewritten against the approved catalog"
+    elif metric is not None and metric.kind != "plan":
         explanation = f"Approved metric {metric.id}: {metric.description}"
     else:
         explanation = explain_plan(plan) if plan else "Approved metric"
@@ -275,6 +291,12 @@ def ask(
         plan=plan,
         compiled=compiled,
     )
+
+
+def planner_mode() -> str:
+    """SECURE_QUERY_PLANNER: "lqp" (default, LogicalPlan) or "sql" (validated SQL, see ADR 003)."""
+    mode = (os.environ.get("SECURE_QUERY_PLANNER") or "lqp").strip().lower()
+    return mode if mode in ("lqp", "sql") else "lqp"
 
 
 def production_auth_blocked() -> str | None:

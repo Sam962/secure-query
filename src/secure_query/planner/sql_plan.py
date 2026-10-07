@@ -9,9 +9,19 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 
 from secure_query.kernel.catalog import Catalog
-from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
+from secure_query.kernel.logical_plan import Filter
+from secure_query.kernel.sql_validate import SqlValidationFailed, ValidatedSql, validate_sql
+from secure_query.planner.clarify import ClarifyCode
+from secure_query.planner.guard import (
+    Concept,
+    lists_instead_of_count,
+    missing_average,
+    missing_concepts,
+    unmatched_values,
+)
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 
@@ -53,13 +63,48 @@ def _parse(raw: str) -> dict:
     return data
 
 
+def sql_refusal(
+    question: str, validated: ValidatedSql, catalog: Catalog
+) -> tuple[ClarifyCode, str] | None:
+    """The LogicalPlan path's semantic guards, applied to what the validated SQL reads.
+
+    Arithmetic refusals (percent, growth, ratios) do not apply: SQL can compute them.
+    """
+    used = {Concept(table=t) for t in validated.tables}
+    used |= {Concept(table=t, column=c) for t, c in validated.columns}
+    numbers = list(validated.filter_numbers)
+    checks: tuple[tuple[ClarifyCode, str | None], ...] = (
+        ("dropped_concept", missing_concepts(question, used, catalog)),
+        ("dropped_concept", missing_average(question, averaged="avg" in validated.aggregates)),
+        ("dropped_concept", lists_instead_of_count(question, aggregated=bool(validated.aggregates))),
+        (
+            "dropped_filter",
+            unmatched_values(
+                question,
+                [*validated.filter_strings, *(f"{n:g}" for n in numbers)],
+                list(validated.filter_strings),
+                numbers,
+                catalog,
+            ),
+        ),
+    )
+    return next(((code, msg) for code, msg in checks if msg is not None), None)
+
+
 def plan_sql_question(
-    question: str, catalog: Catalog, client: LLMClient, *, max_repairs: int = 1
+    question: str,
+    catalog: Catalog,
+    client: LLMClient,
+    *,
+    max_repairs: int = 1,
+    row_filters: Sequence[Filter] = (),
+    guard: bool = True,
+    prompt_catalog: Catalog | None = None,
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors."""
     messages = [
         {"role": "system", "content": SQL_SYSTEM_PROMPT},
-        {"role": "user", "content": build_sql_prompt(question, catalog)},
+        {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog)},
     ]
     errors: list[str] = []
     raw_responses: list[str] = []
@@ -80,11 +125,25 @@ def plan_sql_question(
                     refused_by_model=True,
                     clarify_code="planner_refusal",
                 )
-            compiled = validate_sql(str(data["sql"]), catalog)
+            validated = validate_sql(str(data["sql"]), catalog, row_filters=row_filters)
+            refusal = sql_refusal(question, validated, catalog) if guard else None
+            if refusal is not None:
+                code, message = refusal
+                return PlannerResult(
+                    status="clarify",
+                    question=question,
+                    attempts=attempt,
+                    errors=errors,
+                    clarify_message=message,
+                    raw_responses=raw_responses,
+                    refused=True,
+                    clarify_code=code,
+                    blocked=validated.compiled,
+                )
             return PlannerResult(
                 status="ok",
                 question=question,
-                compiled=compiled,
+                compiled=validated.compiled,
                 attempts=attempt,
                 raw_responses=raw_responses,
             )

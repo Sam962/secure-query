@@ -96,10 +96,11 @@ def test_valid_query_is_regenerated_and_limited() -> None:
         "GROUP BY g.Name ORDER BY n DESC",
         CATALOG,
     )
-    assert "LIMIT 1000" in compiled.sql
-    assert compiled.plan_hash.startswith("sql:")
+    assert "LIMIT 1000" in compiled.compiled.sql
+    assert compiled.compiled.plan_hash.startswith("sql:")
+    assert ("Genre", "Name") in compiled.columns
     capped = validate_sql("SELECT Name FROM Genre LIMIT 999999", CATALOG)
-    assert "LIMIT 1000" in capped.sql
+    assert "LIMIT 1000" in capped.compiled.sql
 
 
 def test_nested_and_set_queries_are_expressible() -> None:
@@ -153,3 +154,140 @@ def test_unused_join_is_rejected_unless_deduplicated() -> None:
 
 def test_untokenizable_sql_is_a_validation_error() -> None:
     assert "sql.parse" in codes("SELECT Name FROM Genre WHERE Name = 'unterminated")
+
+
+def test_fan_out_aggregates_are_rejected() -> None:
+    inflated = (
+        "SELECT SUM(i.Total) FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId"
+    )
+    assert "sql.fan_out" in codes(inflated)
+    validate_sql(inflated.replace("SUM(i.Total)", "COUNT(DISTINCT i.InvoiceId)"), CATALOG)
+    validate_sql(inflated.replace("SUM(i.Total)", "MAX(i.Total)"), CATALOG)
+    # Many-side measure grouped by a one-side label: exact.
+    validate_sql(
+        "SELECT c.Country, SUM(i.Total) FROM Invoice i JOIN Customer c "
+        "ON i.CustomerId = c.CustomerId GROUP BY c.Country",
+        CATALOG,
+    )
+
+
+def test_identifiers_keep_catalog_case() -> None:
+    sql = validate_sql("select name from genre", CATALOG).compiled.sql
+    assert '"Genre"' in sql and '"Name"' in sql
+
+
+ROW_FILTER_PROBES = [
+    "SELECT COUNT(*) FROM Customer",
+    "SELECT COUNT(*) FROM Customer AS c WHERE 1 = 1",
+    "SELECT COUNT(*) FROM (SELECT CustomerId FROM Customer) t",
+    "WITH all_c AS (SELECT CustomerId FROM Customer) SELECT COUNT(*) FROM all_c",
+    "SELECT COUNT(*) FROM (SELECT CustomerId FROM Customer UNION ALL SELECT CustomerId FROM Customer) t",
+]
+
+USA_INVOICES = "SELECT COUNT(*) FROM Invoice i JOIN Customer c ON i.CustomerId = c.CustomerId WHERE c.Country = 'USA'"
+INDIRECT_PROBES = [
+    # Never mentions Customer: the filter must still reach Invoice through its join path.
+    "SELECT COUNT(*) FROM Invoice",
+    "SELECT COUNT(*) FROM (SELECT InvoiceId FROM Invoice) t",
+    "SELECT COUNT(*) FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId "
+    "WHERE il.InvoiceLineId IS NULL OR TRUE",
+]
+
+
+@pytest.mark.parametrize("sql", ROW_FILTER_PROBES)
+def test_row_filters_cannot_be_escaped(sql: str) -> None:
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+    import duckdb
+
+    usa = Eq(
+        op="eq",
+        column=ColumnRef(table_id="Customer", column_id="Country"),
+        value=LiteralValue(type="string", value="USA"),
+    )
+    filtered = validate_sql(sql, CATALOG, row_filters=[usa]).compiled.sql
+    con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
+    try:
+        allowed = con.execute("SELECT COUNT(*) FROM Customer WHERE Country = 'USA'").fetchone()[0]
+        got = con.execute(filtered).fetchone()[0]
+    finally:
+        con.close()
+    assert got in (allowed, 2 * allowed)  # UNION ALL doubles the filtered rows, never more
+
+
+@pytest.mark.parametrize("sql", INDIRECT_PROBES)
+def test_row_filters_reach_related_tables(sql: str) -> None:
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+    import duckdb
+
+    usa = Eq(
+        op="eq",
+        column=ColumnRef(table_id="Customer", column_id="Country"),
+        value=LiteralValue(type="string", value="USA"),
+    )
+    filtered = validate_sql(sql, CATALOG, row_filters=[usa]).compiled.sql
+    con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
+    try:
+        got = con.execute(filtered).fetchone()[0]
+        expected = con.execute(
+            USA_INVOICES.replace(
+                "FROM Invoice i", "FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId"
+            )
+            if "InvoiceLine" in sql
+            else USA_INVOICES
+        ).fetchone()[0]
+    finally:
+        con.close()
+    assert got == expected
+
+
+def test_row_filter_on_unrelated_table_is_rejected() -> None:
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    usa = Eq(
+        op="eq",
+        column=ColumnRef(table_id="Customer", column_id="Country"),
+        value=LiteralValue(type="string", value="USA"),
+    )
+    cut = CATALOG.model_copy(
+        update={"join_keys": [jk for jk in CATALOG.join_keys if jk.left_table != "PlaylistTrack"]}
+    )
+    with pytest.raises(SqlValidationFailed) as info:
+        validate_sql("SELECT Name FROM Playlist", cut, row_filters=[usa])
+    assert "sql.row_filter_unreachable" in {e.code for e in info.value.errors}
+
+
+def test_sql_path_runs_semantic_guards_and_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    dropped = plan_sql_question(
+        "How many customers live in Brazil?",
+        CATALOG,
+        MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})]),
+    )
+    assert dropped.clarify_code == "dropped_filter" and dropped.blocked is not None
+
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    usa = Eq(
+        op="eq",
+        column=ColumnRef(table_id="Customer", column_id="Country"),
+        value=LiteralValue(type="string", value="USA"),
+    )
+    filtered = plan_sql_question(
+        "How many invoices are there?",
+        CATALOG,
+        MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) FROM Invoice"})]),
+        row_filters=[usa],
+    )
+    assert filtered.status == "ok" and "EXISTS" in filtered.compiled.sql

@@ -159,7 +159,7 @@ def _build_select(
         select = _apply_join(select, join)
 
     for filt in plan.filters:
-        select = select.where(_compile_filter(filt))
+        select = select.where(compile_filter(filt))
 
     if plan.group_by:
         select = _apply_group_by(select, plan.group_by, plan.aggregations)
@@ -305,7 +305,7 @@ def _compile_value(val: ColumnRef | LiteralValue) -> exp.Expression:
     return _compile_literal(val)
 
 
-def _compile_filter(filt: Filter) -> exp.Expression:
+def compile_filter(filt: Filter) -> exp.Expression:
     """Compile a Filter predicate to a sqlglot expression."""
     left = _compile_column_ref(filt.column)
 

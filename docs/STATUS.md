@@ -231,6 +231,7 @@ Do **not** build self-serve “paste a Databricks URL and chat.” Unity Catalog
 
 ## Intentional non-goals
 
-- LLM-written SQL, regex “SELECT-only” safety, SQL error-repair loops
+- Running model-written SQL as written, or regex “SELECT-only” safety. Model SQL is
+  parsed, validated and regenerated ([ADR 003](adr/003-validated-sql-planner.md))
 - Growing LogicalPlan into a general SQL AST ([ADR 002](adr/002-ir-boundary.md))
 - Sending result cells to an LLM ([ADR 001](adr/001-result-policy.md))

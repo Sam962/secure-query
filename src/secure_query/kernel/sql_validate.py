@@ -13,13 +13,17 @@ the resolved tree must satisfy the same policy the LogicalPlan path enforces:
 
 The SQL that runs is regenerated from the validated tree, never the model text.
 
-Not yet enforced on this path: principal row filters (LogicalPlan path only)
-and fan-out detection. Both are required before production use.
+Also enforced, as on the LogicalPlan path: aggregates over rows a one-to-many
+join repeats are rejected (fan-out), and principal row filters are injected by
+replacing each filtered base table with a filtered subquery, so no part of the
+query can see unfiltered rows.
 """
 
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 import sqlglot
 from sqlglot import exp
@@ -28,8 +32,10 @@ from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import traverse_scope
 
 from secure_query.kernel.catalog import Catalog
-from secure_query.kernel.compile import CompiledQuery
+from secure_query.kernel.compile import CompiledQuery, compile_filter
 from secure_query.kernel.errors import ValidationError
+from secure_query.kernel.joins import approved_path
+from secure_query.kernel.logical_plan import Filter
 
 _STATEMENTS = tuple(
     getattr(exp, name)
@@ -45,6 +51,21 @@ _STATEMENTS = tuple(
 _SAFE_ANONYMOUS = frozenset({"strftime", "strptime", "date_part", "datediff", "date_diff"})
 
 
+@dataclass(frozen=True)
+class ValidatedSql:
+    """A policy-checked query plus what it reads, for semantic guards and audit."""
+
+    compiled: CompiledQuery
+    columns: frozenset[tuple[str, str]]
+    """(table, column) for every catalog column the query reads, canonical names."""
+    tables: frozenset[str]
+    filter_strings: tuple[str, ...]
+    """String literals in WHERE / HAVING / ON (values the query filters on)."""
+    filter_numbers: tuple[float, ...]
+    aggregates: frozenset[str]
+    """Lower-case aggregate names used (count, sum, avg, min, max)."""
+
+
 class SqlValidationFailed(Exception):
     def __init__(self, errors: list[ValidationError]) -> None:
         self.errors = errors
@@ -55,8 +76,10 @@ def _error(code: str, message: str) -> ValidationError:
     return ValidationError(code=code, path="$.sql", message=message, stage="policy")
 
 
-def validate_sql(sql: str, catalog: Catalog) -> CompiledQuery:
-    """Return the compiled, policy-checked query or raise SqlValidationFailed."""
+def validate_sql(
+    sql: str, catalog: Catalog, *, row_filters: Sequence[Filter] = ()
+) -> ValidatedSql:
+    """Return the policy-checked query (with row filters applied) or raise SqlValidationFailed."""
     dialect = "duckdb"  # the model is prompted for DuckDB SQL; output uses catalog.sql_dialect
     try:
         statements = [s for s in sqlglot.parse(sql, read=dialect) if s is not None]
@@ -86,7 +109,9 @@ def validate_sql(sql: str, catalog: Catalog) -> CompiledQuery:
     except (OptimizeError, SqlglotError) as exc:
         raise SqlValidationFailed([_error("sql.unknown_column", str(exc).splitlines()[0])]) from exc
 
+    _restore_case(tree, tables)
     errors: list[ValidationError] = []
+    used: set[tuple[str, str]] = set()
     for func in tree.find_all(exp.Anonymous):
         if str(func.this).lower() not in _SAFE_ANONYMOUS:
             errors.append(_error("sql.function", f"function {func.this} is not allowed"))
@@ -109,15 +134,156 @@ def validate_sql(sql: str, catalog: Catalog) -> CompiledQuery:
                 errors.append(
                     _error("sql.pii", f"{spec_table.name}.{spec.name} is restricted (pii=high)")
                 )
+            else:
+                used.add((spec_table.name, spec.name))
         errors.extend(_check_joins(scope, base, catalog))
         errors.extend(_check_unused_joins(scope))
+        errors.extend(_check_fan_out(scope, base, catalog))
     if errors:
         raise SqlValidationFailed(errors)
 
+    strings, numbers = _filter_literals(tree)
+    aggregates = frozenset(
+        type(a).__name__.lower() for a in tree.find_all(exp.Count, exp.Sum, exp.Avg, exp.Min, exp.Max)
+    )
+    read_tables = frozenset(
+        tables[t.name.lower()].name for t in tree.find_all(exp.Table) if t.name.lower() in tables
+    )
+    _inject_row_filters(tree, tables, row_filters, catalog)
     _enforce_limit(tree, catalog)
     out = tree.sql(dialect=catalog.sql_dialect)
     digest = hashlib.sha256(out.encode()).hexdigest()
-    return CompiledQuery(sql=out, plan_hash=f"sql:{digest[:16]}", sql_hash=digest, parameters=[])
+    return ValidatedSql(
+        compiled=CompiledQuery(sql=out, plan_hash=f"sql:{digest[:16]}", sql_hash=digest, parameters=[]),
+        columns=frozenset(used),
+        tables=read_tables,
+        filter_strings=strings,
+        filter_numbers=numbers,
+        aggregates=aggregates,
+    )
+
+
+def _restore_case(tree: exp.Expression, tables: dict) -> None:
+    """qualify lower-cases identifiers; put back catalog spelling (case-sensitive backends)."""
+    columns = {
+        c.name.lower(): c.name for t in tables.values() for c in t.columns
+    }
+    for table in tree.find_all(exp.Table):
+        spec = tables.get(table.name.lower())
+        if spec is not None:
+            table.set("this", exp.to_identifier(spec.name, quoted=True))
+    for column in tree.find_all(exp.Column):
+        canonical = columns.get(column.name.lower())
+        if canonical is not None:
+            column.set("this", exp.to_identifier(canonical, quoted=True))
+
+
+def _filter_literals(tree: exp.Expression) -> tuple[tuple[str, ...], tuple[float, ...]]:
+    strings: list[str] = []
+    numbers: list[float] = []
+    for clause in tree.find_all(exp.Where, exp.Having, exp.Join):
+        for lit in clause.find_all(exp.Literal):
+            if lit.is_string:
+                strings.append(lit.this)
+            elif lit.is_number:
+                numbers.append(float(lit.this))
+    return tuple(strings), tuple(numbers)
+
+
+def _inject_row_filters(
+    tree: exp.Expression, tables: dict, row_filters: Sequence[Filter], catalog: Catalog
+) -> None:
+    """Restrict every base table the query reads to rows the principal may see.
+
+    A filtered table X becomes (SELECT * FROM X WHERE <filters>). Any other
+    table T is restricted through its approved join path to X with an EXISTS
+    semi-join (no row duplication in either direction), the same rows the
+    LogicalPlan path reaches by auto-joining X. A table with no approved path
+    to X cannot be filtered and is rejected.
+    """
+    by_table: dict[str, list[Filter]] = {}
+    for filt in row_filters:
+        canonical = tables[filt.column.table_id.lower()].name
+        by_table.setdefault(canonical, []).append(filt)
+    if not by_table:
+        return
+    errors: list[ValidationError] = []
+    for table in list(tree.find_all(exp.Table)):
+        spec = tables.get(table.name.lower())
+        if spec is None:
+            continue  # CTE reference: its body is rewritten through its own tables
+        outer = "_rf_row"
+        inner = exp.select("*").from_(
+            exp.Table(this=exp.to_identifier(spec.name, quoted=True), alias=exp.TableAlias(this=exp.to_identifier(outer, quoted=True)))
+        )
+        for target, filters in by_table.items():
+            if target == spec.name:
+                for filt in filters:
+                    inner = inner.where(_requalify(compile_filter(filt), spec.name, outer))
+                continue
+            try:
+                path = approved_path(catalog, spec.name, target)
+            except ValueError as exc:
+                errors.append(_error("sql.row_filter_ambiguous", str(exc)))
+                continue
+            if path is None:
+                errors.append(
+                    _error(
+                        "sql.row_filter_unreachable",
+                        f"{spec.name} has no approved join path to {target}, so the "
+                        "principal's row filter cannot be applied",
+                    )
+                )
+                continue
+            inner = inner.where(_exists_through(path, filters, outer))
+        alias = table.alias or spec.name
+        table.replace(
+            exp.Subquery(this=inner, alias=exp.TableAlias(this=exp.to_identifier(alias, quoted=True)))
+        )
+    if errors:
+        raise SqlValidationFailed(errors)
+
+
+def _requalify(node: exp.Expression, table: str, alias: str) -> exp.Expression:
+    for col in node.find_all(exp.Column):
+        if col.table == table:
+            col.set("table", exp.to_identifier(alias, quoted=True))
+    return node
+
+
+def _exists_through(path: list, filters: list[Filter], outer: str) -> exp.Expression:
+    """EXISTS (SELECT 1 FROM t1 JOIN t2 ... WHERE t1.k = outer.k AND <filters>)."""
+
+    def ident(name: str) -> exp.Identifier:
+        return exp.to_identifier(name, quoted=True)
+
+    first_from, first_to, first_key = path[0]
+    from_col, to_col = (
+        (first_key.left_column, first_key.right_column)
+        if first_key.left_table == first_from
+        else (first_key.right_column, first_key.left_column)
+    )
+    sub = exp.select(exp.Literal.number(1)).from_(exp.Table(this=ident(first_to)))
+    sub = sub.where(
+        exp.EQ(
+            this=exp.Column(this=ident(to_col), table=ident(first_to)),
+            expression=exp.Column(this=ident(from_col), table=ident(outer)),
+        )
+    )
+    for prev, node, key in path[1:]:
+        left_col, right_col = (
+            (key.left_column, key.right_column) if key.left_table == prev else (key.right_column, key.left_column)
+        )
+        sub = sub.join(
+            exp.Table(this=ident(node)),
+            on=exp.EQ(
+                this=exp.Column(this=ident(left_col), table=ident(prev)),
+                expression=exp.Column(this=ident(right_col), table=ident(node)),
+            ),
+        )
+    for filt in filters:
+        sub = sub.where(compile_filter(filt))
+    return exp.Exists(this=sub)
 
 
 def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
@@ -181,6 +347,75 @@ def _check_unused_joins(scope) -> list[ValidationError]:
                     f"{join.this.name} is joined but none of its columns are used, which "
                     "repeats or drops rows; remove the join, or use EXISTS / DISTINCT if it "
                     "is meant as a filter",
+                )
+            )
+    return errors
+
+
+_FAN_OUT_SAFE = (exp.Min, exp.Max)
+
+
+def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
+    """Aggregates over rows that a one-to-many join repeats are inflated.
+
+    Mirrors kernel.joins.fan_out_errors: stepping from alias a to b is to-one
+    when the ON equality follows a join key from its many side to its one side.
+    An aggregate over alias T is exact only if every step outward from T is
+    to-one; COUNT(*) needs some alias to be that grain. COUNT(DISTINCT), MIN
+    and MAX are unaffected. Joins with a CTE / derived side are not checked.
+    """
+    select = scope.expression
+    if not isinstance(select, exp.Select) or not select.args.get("joins"):
+        return []
+    aggs = [a for a in select.find_all(exp.AggFunc) if a.find_ancestor(exp.Select) is select]
+    if not aggs:
+        return []
+    to_one: dict[str, dict[str, bool]] = {}
+    for join in select.args["joins"]:
+        on = join.args.get("on")
+        for eq in on.find_all(exp.EQ) if on is not None else []:
+            left, right = eq.this, eq.expression
+            if not (isinstance(left, exp.Column) and isinstance(right, exp.Column)):
+                continue
+            lt, rt = base.get(left.table), base.get(right.table)
+            if lt is None or rt is None:
+                return []  # derived side: cardinality unknown, not checked
+            forward = any(
+                jk.left_table.lower() == lt.name.lower()
+                and jk.left_column.lower() == left.name.lower()
+                and jk.right_table.lower() == rt.name.lower()
+                and jk.right_column.lower() == right.name.lower()
+                for jk in catalog.join_keys
+            )
+            to_one.setdefault(left.table, {})[right.table] = forward
+            to_one.setdefault(right.table, {})[left.table] = not forward
+
+    def is_grain(alias: str) -> bool:
+        seen, stack = {alias}, [alias]
+        while stack:
+            here = stack.pop()
+            for nxt, one in to_one.get(here, {}).items():
+                if nxt in seen:
+                    continue
+                if not one:
+                    return False
+                seen.add(nxt)
+                stack.append(nxt)
+        return True
+
+    errors: list[ValidationError] = []
+    for agg in aggs:
+        if isinstance(agg, _FAN_OUT_SAFE) or agg.find(exp.Distinct):
+            continue
+        aliases = {c.table for c in agg.find_all(exp.Column)}
+        ok = all(is_grain(a) for a in aliases) if aliases else any(is_grain(a) for a in to_one)
+        if not ok:
+            errors.append(
+                _error(
+                    "sql.fan_out",
+                    f"{agg.sql()} would be inflated: a one-to-many join repeats its rows. "
+                    "Aggregate the many-side table, pre-aggregate in a subquery, or use "
+                    "COUNT(DISTINCT ...) / MIN / MAX",
                 )
             )
     return errors

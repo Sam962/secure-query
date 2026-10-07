@@ -144,6 +144,36 @@ def resolve_joins(plan: LogicalPlan, catalog: Catalog) -> tuple[LogicalPlan, lis
     return plan.model_copy(update={"joins": joins}), []
 
 
+def approved_path(catalog: Catalog, start: str, target: str) -> list[tuple[str, str, JoinKey]] | None:
+    """The unique shortest join path start → target as (from, to, key) steps.
+
+    None when target is unreachable. Raises ValueError when two shortest paths
+    exist (same rule as resolve_joins: never pick a relationship silently).
+    """
+    graph = _graph(catalog)
+    dist, count, parent = {start: 0}, {start: 1}, {}
+    queue = deque([start])
+    while queue:
+        node = queue.popleft()
+        for nxt, key in graph.get(node, []):
+            if nxt not in dist:
+                dist[nxt], count[nxt], parent[nxt] = dist[node] + 1, count[node], (node, key)
+                queue.append(nxt)
+            elif dist[nxt] == dist[node] + 1:
+                count[nxt] += count[node]
+    if target not in dist:
+        return None
+    if count[target] > 1:
+        raise ValueError(f"more than one approved join path from {start} to {target}")
+    path = []
+    node = target
+    while node != start:
+        prev, key = parent[node]
+        path.append((prev, node, key))
+        node = prev
+    return list(reversed(path))
+
+
 _FANOUT_SAFE_AGGS = {"min", "max", "count_distinct"}
 
 

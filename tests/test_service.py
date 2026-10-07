@@ -92,3 +92,27 @@ def test_builtin_metric_refused_under_principal_row_filters() -> None:
     )
     assert outcome.status == "clarify"
     assert outcome.clarify_code == "auth"
+
+
+def test_sql_planner_mode_applies_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
+    import json
+
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+    from secure_query.planner import MockLLMClient
+
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
+    usa_only = Eq(
+        op="eq",
+        column=ColumnRef(table_id="Customer", column_id="Country"),
+        value=LiteralValue(type="string", value="USA"),
+    )
+    outcome = ask(
+        "How many invoices are there?",
+        principal=Principal(principal_id="us-team", tenant_id="chinook", row_filters=(usa_only,)),
+        config=runtime_config(),
+        catalog=sample_catalog(),
+        client=MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) FROM Invoice"})]),
+        confirm_only=True,
+    )
+    assert outcome.status == "confirm"
+    assert "EXISTS" in outcome.sql and "'USA'" in outcome.sql
