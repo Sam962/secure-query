@@ -5,8 +5,11 @@ Backend: DuckDB, read-only.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from dataclasses import asdict, dataclass
@@ -19,9 +22,23 @@ from secure_query.kernel.compile import CompiledQuery
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import LogicalPlan
 
+log = logging.getLogger(__name__)
+
+# After a timeout the query is interrupted, then the worker is given this long
+# to stop so it is joined rather than leaked.
+CANCEL_GRACE_SECONDS = 1.0
+
 
 class ExecutionError(Exception):
-    """Raised when execution fails (timeout, DB error, etc.)."""
+    """Raised when execution fails (timeout, DB error, etc.).
+
+    `audit_id` names the audit record holding the detail; clients get the id,
+    never the database's error text.
+    """
+
+    def __init__(self, message: str, *, audit_id: str | None = None) -> None:
+        super().__init__(message)
+        self.audit_id = audit_id
 
 
 @dataclass(frozen=True)
@@ -40,7 +57,9 @@ class AuditRecord:
 
     timestamp: str
     status: str  # ok | timeout | error
-    question: str | None
+    question_sha256: str | None
+    """The question is not stored: users type anything into it."""
+    question_length: int | None
     plan_id: str | None
     plan_json: str | None
     explanation: str | None
@@ -54,6 +73,7 @@ class AuditRecord:
     backend: str = "duckdb"
     principal_id: str | None = None
     tenant_id: str | None = None
+    audit_id: str = ""
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
@@ -123,7 +143,7 @@ def execute_duckdb(
             error=f"query exceeded timeout_seconds={opts.timeout_seconds}",
         )
         _maybe_write_audit(opts.audit_path, audit)
-        raise ExecutionError(audit.error or "timeout") from exc
+        raise ExecutionError(audit.error or "timeout", audit_id=audit.audit_id) from exc
     except Exception as exc:  # noqa: BLE001 — record then re-raise as ExecutionError
         duration_ms = (time.perf_counter() - started) * 1000
         if isinstance(exc, ExecutionError):
@@ -140,7 +160,7 @@ def execute_duckdb(
             error=str(exc),
         )
         _maybe_write_audit(opts.audit_path, audit)
-        raise ExecutionError(str(exc)) from exc
+        raise ExecutionError(str(exc), audit_id=audit.audit_id) from exc
 
     _maybe_write_audit(opts.audit_path, audit)
     return ExecutionResult(
@@ -161,28 +181,39 @@ def _run_with_timeout(
     max_rows: int,
     read_only: bool,
 ) -> tuple[list[str], list[tuple[Any, ...]], bool]:
-    """Run `sql`, returning within `timeout_seconds` even if the query overruns.
+    """Run `sql`, returning shortly after `timeout_seconds` even if the query overruns.
 
-    On timeout the DuckDB connection is interrupted so the query stops consuming
-    resources, and the caller is never blocked waiting for the worker thread.
+    On timeout the connection is interrupted, which stops a DuckDB query within
+    milliseconds, and the worker is joined (up to CANCEL_GRACE_SECONDS) before the
+    connection is closed, so neither the thread nor the query is left running.
     """
     import duckdb
 
     con = duckdb.connect(str(path), read_only=read_only)
-    pool = ThreadPoolExecutor(max_workers=1)
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sq-duckdb")
     fut = pool.submit(_execute_once, con, sql, max_rows)
     try:
         return fut.result(timeout=timeout_seconds)
     except FuturesTimeout:
         con.interrupt()
+        _await_stop(fut, "duckdb")
         raise
     finally:
-        # wait=False: a runaway query must not extend the caller's wall clock.
-        pool.shutdown(wait=False)
+        pool.shutdown(wait=fut.done())
         if fut.done():
             _safe_close(con)
         else:
             fut.add_done_callback(lambda _f: _safe_close(con))
+
+
+def _await_stop(fut: Any, backend: str) -> None:
+    """Give a cancelled query CANCEL_GRACE_SECONDS to stop; log if it does not."""
+    try:
+        fut.result(timeout=CANCEL_GRACE_SECONDS)
+    except FuturesTimeout:
+        log.warning("%s query still running %.1fs after cancel", backend, CANCEL_GRACE_SECONDS)
+    except Exception:  # noqa: BLE001 — the interrupt error is expected
+        pass
 
 
 def _safe_close(con: Any) -> None:
@@ -221,7 +252,8 @@ def _make_audit(
     return AuditRecord(
         timestamp=datetime.now(timezone.utc).isoformat(),
         status=status,
-        question=question,
+        question_sha256=hashlib.sha256(question.encode()).hexdigest() if question else None,
+        question_length=len(question) if question else None,
         plan_id=str(plan.plan_id) if plan is not None else None,
         plan_json=plan.to_json() if plan is not None else None,
         explanation=explain_plan(plan) if plan is not None else None,
@@ -235,6 +267,7 @@ def _make_audit(
         backend=backend,
         principal_id=who["principal_id"],
         tenant_id=who["tenant_id"],
+        audit_id=uuid.uuid4().hex,
     )
 
 

@@ -6,6 +6,7 @@ Callers must never send principal_id, tenant_id, or allowed_tables in the body.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 from dataclasses import dataclass
@@ -24,6 +25,10 @@ class AuthError(Exception):
     def __init__(self, message: str, *, status_code: int = 401) -> None:
         super().__init__(message)
         self.status_code = status_code
+
+
+class AuthConfigError(RuntimeError):
+    """The auth configuration is unsafe; the service must not start."""
 
 
 AuthMode = Literal["dev", "token", "header"]
@@ -103,11 +108,40 @@ def auth_mode() -> AuthMode:
     return "dev"
 
 
+def trusted_proxies() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+    """SECURE_QUERY_TRUSTED_PROXIES: comma-separated IPs / CIDRs allowed to set identity headers."""
+    raw = os.environ.get("SECURE_QUERY_TRUSTED_PROXIES") or ""
+    try:
+        return [ipaddress.ip_network(part.strip(), strict=False) for part in raw.split(",") if part.strip()]
+    except ValueError as exc:
+        raise AuthConfigError(f"SECURE_QUERY_TRUSTED_PROXIES is invalid: {exc}") from exc
+
+
+def check_auth_config() -> None:
+    """Fail closed at startup: header mode trusts X-Forwarded-User, so it needs a proxy allowlist."""
+    if auth_mode() == "header" and not trusted_proxies():
+        raise AuthConfigError(
+            "SECURE_QUERY_AUTH_MODE=header requires SECURE_QUERY_TRUSTED_PROXIES "
+            "(the SSO proxy addresses allowed to set identity headers)"
+        )
+
+
+def _from_trusted_proxy(client_host: str | None) -> bool:
+    if not client_host:
+        return False
+    try:
+        address = ipaddress.ip_address(client_host)
+    except ValueError:
+        return False
+    return any(address in network for network in trusted_proxies())
+
+
 def resolve_principal(
     *,
     authorization: str | None = None,
     forwarded_user: str | None = None,
     settings: dict[str, Any] | None = None,
+    client_host: str | None = None,
 ) -> Principal:
     """Resolve the caller. Never reads identity from a JSON body."""
     mode = auth_mode()
@@ -129,7 +163,14 @@ def resolve_principal(
             raise AuthError("invalid or missing API token", status_code=401)
         return _principal_from_registry(principal_id, tenant_id, principals, allow_missing=False)
 
-    # header: trusted SSO / Databricks Apps gateway
+    # header: trusted SSO / Databricks Apps gateway. The identity header is only
+    # believed when the request came through an allowlisted proxy.
+    if not trusted_proxies():
+        raise AuthError(
+            "header auth is not configured (SECURE_QUERY_TRUSTED_PROXIES)", status_code=503
+        )
+    if not _from_trusted_proxy(client_host):
+        raise AuthError("request did not come through a trusted proxy", status_code=403)
     user = (forwarded_user or "").strip()
     if not user:
         raise AuthError("missing identity header", status_code=401)

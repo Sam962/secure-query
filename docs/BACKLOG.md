@@ -4,7 +4,7 @@ Work items from the independent review. Detail and evidence live in
 [`REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md). Do not retune prompts or guards on
 holdout case ids ([EVAL.md](EVAL.md)).
 
-**Status:** Waves 1–2 done (2026-10-06); later waves open. Check a box when merged; leave the ID stable.
+**Status:** Waves 1–3 done (2026-10-07); later waves open. Check a box when merged; leave the ID stable.
 
 | Wave | Theme | Items | Why this order |
 |------|--------|-------|----------------|
@@ -137,7 +137,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 
 ## Wave 3 — security ops
 
-### [ ] H7. Enforce read-only on Postgres and Databricks
+### [x] H7. Enforce read-only on Postgres and Databricks
 
 - **Severity:** High
 - **Files:** `src/secure_query/engine/postgres.py` (138–140),
@@ -147,14 +147,14 @@ holdout case ids ([EVAL.md](EVAL.md)).
 - **Done when:** a compiled `SELECT` still runs; a write (if it reached execute)
   fails at the session. `/ready` reports the Databricks grant check.
 
-### [ ] M1. Stop writing raw questions to the audit log
+### [x] M1. Stop writing raw questions to the audit log
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/engine/execute.py` (`AuditRecord`, ~39–66)
 - **Do:** Store `sha256(question)` + length. Keep `plan_hash` and SQL.
 - **Done when:** JSONL rows have no plaintext question. Tests assert the hash field.
 
-### [ ] M2. Do not leak DB errors, unhandled PlannerError, or tenant on `/ready`
+### [x] M2. Do not leak DB errors, unhandled PlannerError, or tenant on `/ready`
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/api/http.py` (103–115, 154–155)
@@ -164,7 +164,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 - **Done when:** a forced execute error returns a generic body; `/ready` without
   auth does not name the tenant.
 
-### [ ] M3. Timeouts must cancel the in-flight query
+### [x] M3. Timeouts must cancel the in-flight query
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/engine/execute.py` (172–181),
@@ -176,7 +176,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 - **Done when:** a timeout test shows the worker is not left running; no
   `shutdown(wait=False)` leak.
 
-### [ ] L13. Fail closed if `header` auth has no trusted-proxy check
+### [x] L13. Fail closed if `header` auth has no trusted-proxy check
 
 - **Severity:** Low (security-adjacent)
 - **Files:** `src/secure_query/auth/__init__.py` (131–135)
@@ -384,11 +384,11 @@ Still references `sample_catalog.py` and `auth.py`.
 | H5 | OpenAI timeout / retries | 2 | done |
 | M5 | Stable catalog prefix | 2 | done |
 | M6 | Structured outputs | 2 | done |
-| H7 | PG/DBX read-only | 3 | open |
-| M1 | Hash questions in audit | 3 | open |
-| M2 | Generic client errors | 3 | open |
-| M3 | Cancel on timeout | 3 | open |
-| L13 | Header mode fail-closed | 3 | open |
+| H7 | PG/DBX read-only | 3 | done |
+| M1 | Hash questions in audit | 3 | done |
+| M2 | Generic client errors | 3 | done |
+| M3 | Cancel on timeout | 3 | done |
+| L13 | Header mode fail-closed | 3 | done |
 | M4 | Compile cache lock | 4 | open |
 | M8 | SQL dialect from catalog | 4 | open |
 | M9 | Mock client SQL marker | 4 | open |

@@ -46,3 +46,73 @@ def test_ratio_metric_postgres_dialect() -> None:
     sqlglot.parse(sql, dialect="postgres")
     assert "CustomerId" in sql
     assert "DOUBLE PRECISION" in sql
+
+
+class _FakeCursor:
+    description = [("n",)]
+
+    def fetchmany(self, n):
+        return [(1,)]
+
+
+class _FakePg:
+    """Stands in for psycopg: records session statements, can cancel the query."""
+
+    class errors:
+        class QueryCanceled(Exception):
+            pass
+
+    def __init__(self, cancel: bool = False) -> None:
+        self.statements: list[str] = []
+        self.cancel = cancel
+        self.closed = False
+
+    def connect(self, dsn, **kwargs):
+        self.kwargs = kwargs
+        return self
+
+    def execute(self, sql):
+        self.statements.append(sql)
+        if self.cancel and not sql.startswith("SET"):
+            raise self.errors.QueryCanceled("canceling statement due to statement timeout")
+        return _FakeCursor()
+
+    def close(self):
+        self.closed = True
+
+
+def test_postgres_session_is_read_only_and_server_timed(monkeypatch) -> None:
+    """H7 + M3: the session refuses writes; the server cancels on timeout; no thread pool."""
+    import sys
+
+    from secure_query.engine.execute import ExecuteOptions
+    from secure_query.engine.postgres import execute_postgres
+    from secure_query.kernel.compile import CompiledQuery
+
+    fake = _FakePg()
+    monkeypatch.setitem(sys.modules, "psycopg", fake)
+    compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
+    result = execute_postgres(compiled, "postgresql://x", options=ExecuteOptions(timeout_seconds=2))
+    assert fake.statements[:2] == ["SET default_transaction_read_only = on", "SET statement_timeout = 2000"]
+    assert result.rows == [(1,)] and fake.closed and fake.kwargs["autocommit"] is True
+
+
+def test_postgres_statement_timeout_is_audited_as_timeout(monkeypatch, tmp_path) -> None:
+    import json
+    import sys
+
+    import pytest
+
+    from secure_query.engine.execute import ExecuteOptions, ExecutionError
+    from secure_query.engine.postgres import execute_postgres
+    from secure_query.kernel.compile import CompiledQuery
+
+    fake = _FakePg(cancel=True)
+    monkeypatch.setitem(sys.modules, "psycopg", fake)
+    audit = tmp_path / "audit.jsonl"
+    compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
+    with pytest.raises(ExecutionError, match="timeout") as info:
+        execute_postgres(compiled, "postgresql://x", options=ExecuteOptions(audit_path=audit))
+    record = json.loads(audit.read_text())
+    assert record["status"] == "timeout" and record["audit_id"] == info.value.audit_id
+    assert fake.closed

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from typing import Any
 from urllib.parse import urlparse, urlunparse
@@ -89,7 +88,7 @@ def execute_postgres(
             backend="postgres",
         )
         _maybe_write_audit(opts.audit_path, audit)
-        raise ExecutionError(audit.error or "timeout") from exc
+        raise ExecutionError(audit.error or "timeout", audit_id=audit.audit_id) from exc
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, ExecutionError):
             raise
@@ -107,7 +106,7 @@ def execute_postgres(
             backend="postgres",
         )
         _maybe_write_audit(opts.audit_path, audit)
-        raise ExecutionError(str(exc)) from exc
+        raise ExecutionError(str(exc), audit_id=audit.audit_id) from exc
 
     _maybe_write_audit(opts.audit_path, audit)
     return ExecutionResult(
@@ -127,6 +126,12 @@ def _run_with_timeout(
     timeout_seconds: float,
     max_rows: int,
 ) -> tuple[list[str], list[tuple[Any, ...]], bool]:
+    """Run `sql` in a read-only session; the server enforces the timeout.
+
+    `default_transaction_read_only` makes Postgres itself refuse writes, so the
+    SQL validator is not the only barrier. `statement_timeout` cancels the query
+    server-side, so no worker thread is needed and none can be left running.
+    """
     try:
         import psycopg
     except ImportError as exc:
@@ -135,29 +140,18 @@ def _run_with_timeout(
         ) from exc
 
     timeout_ms = max(1, int(timeout_seconds * 1000))
-    conn = psycopg.connect(_normalize_dsn(dsn), autocommit=True)
+    conn = psycopg.connect(
+        _normalize_dsn(dsn), autocommit=True, connect_timeout=max(1, int(timeout_seconds))
+    )
     try:
+        conn.execute("SET default_transaction_read_only = on")
         conn.execute(f"SET statement_timeout = {timeout_ms}")
-        pool = ThreadPoolExecutor(max_workers=1)
-        fut = pool.submit(_execute_once, conn, sql, max_rows)
         try:
-            return fut.result(timeout=timeout_seconds)
-        except FuturesTimeout:
-            try:
-                conn.cancel()
-            except Exception:  # noqa: BLE001
-                pass
-            raise
-        finally:
-            pool.shutdown(wait=False)
-            if fut.done():
-                _safe_close(conn)
-            else:
-                fut.add_done_callback(lambda _f: _safe_close(conn))
-    except Exception:
-        if not conn.closed:
-            _safe_close(conn)
-        raise
+            return _execute_once(conn, sql, max_rows)
+        except psycopg.errors.QueryCanceled as exc:
+            raise FuturesTimeout(str(exc)) from exc
+    finally:
+        _safe_close(conn)
 
 
 def _execute_once(

@@ -19,6 +19,7 @@ from secure_query.engine.execute import (
     ExecuteOptions,
     ExecutionError,
     ExecutionResult,
+    _await_stop,
     _make_audit,
     _maybe_write_audit,
 )
@@ -231,7 +232,12 @@ def execute_databricks(
     options: ExecuteOptions | None = None,
     connection: Any | None = None,
 ) -> ExecutionResult:
-    """Run compiled SQL on a Databricks SQL warehouse (read-only grants assumed)."""
+    """Run compiled SQL on a Databricks SQL warehouse.
+
+    The warehouse principal must hold SELECT-only privileges (USE CATALOG / USE
+    SCHEMA / SELECT); `databricks_grant_check` verifies that at /ready. On timeout
+    the running statement is cancelled and the worker joined.
+    """
     opts = options or ExecuteOptions()
     if opts.max_rows < 1:
         raise ValueError("max_rows must be >= 1")
@@ -254,12 +260,20 @@ def execute_databricks(
         )
 
     started = time.perf_counter()
-    pool = ThreadPoolExecutor(max_workers=1)
-    fut = pool.submit(_execute_once, connection, compiled.sql, opts.max_rows)
+    cursor = connection.cursor()
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sq-databricks")
+    fut = pool.submit(_execute_once, cursor, compiled.sql, opts.max_rows)
     try:
         try:
             columns, rows, truncated = fut.result(timeout=opts.timeout_seconds)
         except FuturesTimeout as exc:
+            cancel = getattr(cursor, "cancel", None)
+            if cancel is not None:
+                try:
+                    cancel()
+                except Exception:  # noqa: BLE001 — the timeout is still reported
+                    pass
+            _await_stop(fut, "databricks")
             duration_ms = (time.perf_counter() - started) * 1000
             audit = _make_audit(
                 status="timeout",
@@ -274,7 +288,7 @@ def execute_databricks(
                 backend="databricks",
             )
             _maybe_write_audit(opts.audit_path, audit)
-            raise ExecutionError(audit.error or "timeout") from exc
+            raise ExecutionError(audit.error or "timeout", audit_id=audit.audit_id) from exc
         except Exception as exc:  # noqa: BLE001
             duration_ms = (time.perf_counter() - started) * 1000
             if isinstance(exc, ExecutionError):
@@ -292,9 +306,10 @@ def execute_databricks(
                 backend="databricks",
             )
             _maybe_write_audit(opts.audit_path, audit)
-            raise ExecutionError(str(exc)) from exc
+            raise ExecutionError(str(exc), audit_id=audit.audit_id) from exc
     finally:
-        pool.shutdown(wait=False)
+        pool.shutdown(wait=fut.done())
+        _safe_close(cursor)
         if owns_connection:
             _safe_close(connection)
 
@@ -337,18 +352,67 @@ def _connect(*, host: str, http_path: str, access_token: str) -> Any:
 
 
 def _execute_once(
-    connection: Any, sql: str, max_rows: int
+    cursor: Any, sql: str, max_rows: int
 ) -> tuple[list[str], list[tuple[Any, ...]], bool]:
+    cursor.execute(sql)
+    cols = [d[0] for d in (cursor.description or [])]
+    fetched = cursor.fetchmany(max_rows + 1)
+    truncated = len(fetched) > max_rows
+    rows = [tuple(r) for r in fetched[:max_rows]]
+    return cols, rows, truncated
+
+
+# Privileges that let the warehouse principal change data or metadata.
+_WRITE_PRIVILEGES = frozenset(
+    {
+        "ALL PRIVILEGES", "ALL_PRIVILEGES", "MODIFY", "CREATE", "CREATE TABLE", "CREATE_TABLE",
+        "CREATE SCHEMA", "CREATE_SCHEMA", "CREATE FUNCTION", "CREATE_FUNCTION",
+        "CREATE VOLUME", "CREATE_VOLUME", "CREATE MATERIALIZED VIEW", "CREATE_MATERIALIZED_VIEW",
+        "WRITE VOLUME", "WRITE_VOLUME", "WRITE FILES", "WRITE_FILES", "APPLY TAG", "APPLY_TAG",
+        "MANAGE", "OWNERSHIP", "OWN",
+    }
+)
+
+
+def databricks_grant_check(connection: Any | None = None) -> dict[str, str]:
+    """Is the warehouse principal SELECT-only on SECURE_QUERY_DATABRICKS_SCHEMA?
+
+    Returns {"status": "select_only" | "write_privileges" | "unchecked", "detail"}.
+    Only direct grants to the current user are visible to SHOW GRANTS; grants
+    through groups are not, so "select_only" is a necessary check, not a proof.
+    """
+    schema = (os.environ.get("SECURE_QUERY_DATABRICKS_SCHEMA") or "").strip()
+    if not schema:
+        return {"status": "unchecked", "detail": "SECURE_QUERY_DATABRICKS_SCHEMA not set"}
+    owns = connection is None
+    if connection is None:
+        settings = databricks_settings_from_env()
+        connection = _connect(
+            host=settings["host"],
+            http_path=settings["http_path"],
+            access_token=settings["access_token"],
+        )
     cursor = connection.cursor()
     try:
-        cursor.execute(sql)
-        cols = [d[0] for d in (cursor.description or [])]
-        fetched = cursor.fetchmany(max_rows + 1)
-        truncated = len(fetched) > max_rows
-        rows = [tuple(r) for r in fetched[:max_rows]]
-        return cols, rows, truncated
+        cursor.execute("SELECT current_user()")
+        user = str(cursor.fetchone()[0])
+        quoted = ".".join(f"`{part.replace('`', '``')}`" for part in schema.split("."))
+        cursor.execute(f"SHOW GRANTS ON SCHEMA {quoted}")
+        cols = [d[0].lower() for d in (cursor.description or [])]
+        grants = [dict(zip(cols, row, strict=False)) for row in cursor.fetchall()]
     finally:
-        cursor.close()
+        _safe_close(cursor)
+        if owns:
+            _safe_close(connection)
+    mine = {
+        str(g.get("actiontype") or g.get("privilege") or "").upper()
+        for g in grants
+        if str(g.get("principal") or "") == user
+    }
+    write = sorted(mine & _WRITE_PRIVILEGES)
+    if write:
+        return {"status": "write_privileges", "detail": f"{user} has {', '.join(write)} on {schema}"}
+    return {"status": "select_only", "detail": f"{user}: {', '.join(sorted(mine)) or 'no direct grants'}"}
 
 
 def _safe_close(con: Any) -> None:
