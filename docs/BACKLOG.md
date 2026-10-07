@@ -4,7 +4,7 @@ Work items from the independent review. Detail and evidence live in
 [`REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md). Do not retune prompts or guards on
 holdout case ids ([EVAL.md](EVAL.md)).
 
-**Status:** Waves 1–6 merged (2026-10-07). L10 open (revert).
+**Status:** Waves 1–6 merged (2026-10-07).
 Check a box when the change is in the tree; leave the ID stable.
 
 | Wave | Theme | Items | Why this order |
@@ -356,11 +356,12 @@ Compose passes `OPENAI_API_KEY` / provider / model from the host env.
 
 `requirements.lock` from `pip-compile` / pinned extras (see file).
 
-### [ ] L10. Memoize `catalog.table_map()` / `column_map()`
+### [x] L10. Memoize `catalog.table_map()` / `column_map()`
 
 The per-instance cache in the tree is unsafe: `model_copy(update=...)` copies
 `__dict__` without revalidation, so a copied catalog keeps its parent's tables
-(used by the dialect and overlay paths). The dict build costs ~0.5 µs. Revert.
+(used by the dialect and overlay paths). The dict build costs ~0.5 µs. Closed
+without a cache (2026-10-07).
 
 ### [x] L11. CI: cache Chinook; broaden the no-f-string-SQL check
 
@@ -417,7 +418,7 @@ Now `demo/chinook.py` and `auth/__init__.py`.
 | L4 | skipif Chinook | 6 | done |
 | L5 | dotenv + compose key | 6 | done |
 | L6 | Lockfile | 6 | done |
-| L10 | Memoize table_map | 6 | revert |
+| L10 | Memoize table_map | 6 | won't do (unsafe, no gain) |
 | L11 | CI cache + SQL grep | 6 | done |
 | L12 | SECURITY.md paths | 6 | done |
 
