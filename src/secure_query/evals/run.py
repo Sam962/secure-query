@@ -328,6 +328,7 @@ def _write_json_report(path, stats, results, *, provider, model, digest) -> None
                 ),
                 "detail": r.attempts[-1].detail if r.attempts else None,
                 "blocked": r.attempts[-1].blocked if r.attempts else None,
+                "blocked_sql": r.attempts[-1].blocked_sql if r.attempts else None,
                 "fingerprint": r.attempts[-1].fingerprint if r.attempts else None,
                 "samples": r.samples,
                 "sql": r.attempts[-1].sql if r.attempts else None,

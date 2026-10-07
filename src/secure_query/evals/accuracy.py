@@ -78,6 +78,8 @@ class Attempt:
     "right" or "wrong"; None when there was no plan to score (e.g. model refusal)."""
     fingerprint: str | None = None
     """Order-insensitive hash of the returned rows, for agreement analysis."""
+    blocked_sql: str | None = None
+    """SQL of the plan a guard refused (never executed by the product)."""
 
 
 @dataclass
@@ -220,6 +222,7 @@ def _run_once(
             planned.clarify_message or "planner declined",
             refusal_code=code,
             blocked=blocked,
+            blocked_sql=planned.blocked.sql if planned.blocked else None,
         )
 
     shape = _shape(planned)
