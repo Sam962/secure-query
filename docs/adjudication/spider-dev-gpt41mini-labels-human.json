@@ -1,0 +1,222 @@
+{
+ "dev_0016_concert_singer:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'average of all stadiums' may mean AVG(capacity); gold returns an arbitrary row's Average column"
+ },
+ "dev_0035_concert_singer:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps a singer with zero concerts; question says 'each singer'"
+ },
+ "dev_0038_concert_singer:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold repeats a singer (no DISTINCT); same set of names"
+ },
+ "dev_0111_car_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "split 'amc hornet sportabout (sw)' into Make/Model; empty result"
+ },
+ "dev_0125_car_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Horsepower is text; SQLite compares text > 150 as true; numeric reading gives 49"
+ },
+ "dev_0126_car_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same SQLite text/number affinity artifact"
+ },
+ "dev_0130_car_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "filtered 'Europe' but data is 'europe'; empty result"
+ },
+ "dev_0150_car_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'names' answered with Maker short name instead of FullName"
+ },
+ "dev_0182_flight_2:answered_wrong": {
+  "label": "real_error",
+  "reason": "'Jetblue Airways' casing does not match stored 'JetBlue Airways'; empty"
+ },
+ "dev_0367_cre_Doc_Template_Mgt:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "includes documents with zero paragraphs"
+ },
+ "dev_0375_cre_Doc_Template_Mgt:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "document with zero paragraphs is the fewest; gold ignores them"
+ },
+ "dev_0376_cre_Doc_Template_Mgt:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "same as above"
+ },
+ "dev_0403_course_teach:answered_wrong": {
+  "label": "real_error",
+  "reason": "'math' does not match stored 'Math'; empty"
+ },
+ "dev_0406_course_teach:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "includes teachers with zero courses"
+ },
+ "dev_0525_student_transcripts_tracking:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'at most 2 sections' includes courses with 0 sections"
+ },
+ "dev_0531_student_transcripts_tracking:answered_wrong": {
+  "label": "real_error",
+  "reason": "took substring 'the computer' literally; empty"
+ },
+ "dev_0578_student_transcripts_tracking:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "question asks for addresses; gold returns a count"
+ },
+ "dev_0583_student_transcripts_tracking:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold filters lowercase 'haiti' and misses stored 'Haiti'"
+ },
+ "dev_0610_tvshow:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "question omits the '!' that is in the stored title"
+ },
+ "dev_0636_tvshow:answered_wrong": {
+  "label": "real_error",
+  "reason": "channel-level NOT IN instead of country-level exclusion"
+ },
+ "dev_0637_tvshow:answered_wrong": {
+  "label": "real_error",
+  "reason": "'Ben Jones and Michael Chang' needs both; IN means either"
+ },
+ "dev_0645_tvshow:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold repeats values; same distinct package options"
+ },
+ "dev_0646_tvshow:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same as above"
+ },
+ "dev_0687_voter_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold counts area-code rows (305); there are 51 states"
+ },
+ "dev_0701_voter_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "case-sensitive 'Al' (question quotes it) vs SQLite case-insensitive LIKE"
+ },
+ "dev_0725_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'republics' read as LIKE '%Republic%'"
+ },
+ "dev_0755_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold applies 'official' only to English; ours to both; gold returns all columns"
+ },
+ "dev_0759_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'republic government' read as LIKE '%Republic%'"
+ },
+ "dev_0774_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'less than any country' read as less than every (MIN) vs some (MAX)"
+ },
+ "dev_0778_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "codes from country table (includes countries without language rows)"
+ },
+ "dev_0784_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "no DISTINCT; 2 different cities share a name"
+ },
+ "dev_0816_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold uses an ungrouped column; ours handles ties correctly"
+ },
+ "dev_0817_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same as above"
+ },
+ "dev_0818_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold returns per-country rows, not a count"
+ },
+ "dev_0819_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same as above"
+ },
+ "dev_0895_network_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "excludes students named as someone's friend; gold reading (own friend list) is more natural"
+ },
+ "dev_0896_network_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "same as above"
+ },
+ "dev_0905_network_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "grouped by name, merging two students with the same name"
+ },
+ "dev_0944_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold JOIN has no ON (cross join), returns every professional"
+ },
+ "dev_0945_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same as above"
+ },
+ "dev_0960_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold uses MAX(age) for the youngest dog"
+ },
+ "dev_0961_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same as above"
+ },
+ "dev_0996_dog_kennels:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "breed and size names instead of codes; same combinations"
+ },
+ "dev_0129_car_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "'Europe' vs stored 'europe'; empty"
+ },
+ "dev_0158_car_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "filtered Make = 'volvo' where Model = 'volvo'; empty"
+ },
+ "dev_0161_car_1:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold returns per-group counts; ours the count asked for (4)"
+ },
+ "dev_0162_car_1:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same as above"
+ },
+ "dev_0175_car_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "question is contradictory; 7 vs 6 rows, conservative"
+ },
+ "dev_0354_cre_Doc_Template_Mgt:blocked_wrong": {
+  "label": "real_error",
+  "reason": "wrong column (Template_Details) for template type descriptions"
+ },
+ "dev_0530_student_transcripts_tracking:blocked_wrong": {
+  "label": "real_error",
+  "reason": "counts distinct students and LEFT JOINs; differs from gold, conservative"
+ },
+ "dev_0549_student_transcripts_tracking:blocked_wrong": {
+  "label": "real_error",
+  "reason": "'North Carolina' vs stored 'NorthCarolina'; empty"
+ },
+ "dev_0550_student_transcripts_tracking:blocked_wrong": {
+  "label": "real_error",
+  "reason": "same as above"
+ },
+ "dev_0906_network_1:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "'has the most likes' read as likes received; gold uses likes given"
+ },
+ "dev_0907_network_1:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "same as above"
+ },
+ "dev_0943_dog_kennels:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "'two or more types' is COUNT(DISTINCT type); gold counts treatments"
+ }
+}

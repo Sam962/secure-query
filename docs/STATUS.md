@@ -249,6 +249,14 @@ Results: [SQL](baselines/spider-dev400-sql-gpt41mini-sc3-2026-10-06.json),
   (SQLite text/number affinity, case-insensitive LIKE, a cross-join gold query).
   Exact-match scoring on Spider is now noisier than the errors it measures.
 
+### Adjudicated wrong-rate — 2026-10-06
+
+Two raters (developer + gpt-5, blind, conservative merge) on every disputed
+case of the gpt-4.1-mini SQL run; see [adjudication/README.md](adjudication/README.md).
+**Real wrong-rate 2.75% (11/400, 95% CI 1.5–4.9%)**, plus 4.5% ambiguous
+questions answered under a defensible reading. 8 of 18 real errors are value
+grounding (the model guesses stored spellings/case) — the next fix.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
