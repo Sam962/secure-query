@@ -1,0 +1,222 @@
+{
+ "dev_0016_concert_singer:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question’s “average of all stadiums” could mean the Average field in the stadium table (gold) or the average capacity across stadiums (system), and the system’s interpretation is reasonable."
+ },
+ "dev_0035_concert_singer:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“For each singer” can reasonably include singers with zero concerts, so the LEFT JOIN with 0 counts is a valid interpretation while the gold query excludes them via an inner join."
+ },
+ "dev_0038_concert_singer:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether duplicate singer names should be collapsed, so returning distinct names (system) vs all appearances (gold) are both reasonable interpretations."
+ },
+ "dev_0111_car_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question targets the car named “amc hornet sportabout (sw)”; the gold correctly filters by that value in car_names.Make, while the system incorrectly split it into Make='amc' and Model='hornet sportabout (sw)', yielding no result."
+ },
+ "dev_0125_car_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question implies a numeric comparison, but the gold query compares a text Horsepower to 150 without casting (likely doing lexicographic/incorrect coercion), whereas the system correctly casts to integer before comparing."
+ },
+ "dev_0126_car_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query compares a string column to a number without casting, likely doing lexicographic comparison and overcounting, while the system correctly casts horsepower to numeric before comparing > 150."
+ },
+ "dev_0130_car_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filtered continents by 'Europe' instead of the dataset’s lowercase 'europe', yielding no matches and missing countries like France and Germany that the question requires."
+ },
+ "dev_0150_car_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to use the short Maker or the FullName for “names,” and counting distinct models is also a reasonable interpretation, so the system’s output matches a valid reading despite differing from the gold."
+ },
+ "dev_0182_flight_2:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used a case-mismatched airline name ('Jetblue' vs 'JetBlue'), yielding no match, whereas the question clearly refers to JetBlue Airways and the gold query correctly returns its abbreviation."
+ },
+ "dev_0367_cre_Doc_Template_Mgt:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for all document ids and their paragraph counts (including zero), but the gold groups only Paragraphs (excluding documents with no paragraphs); the system’s LEFT JOIN correctly returns all documents with zero counts."
+ },
+ "dev_0375_cre_Doc_Template_Mgt:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to include documents with zero paragraphs; the system included zero-count documents via LEFT JOIN while the gold query excludes them, so both readings are reasonable."
+ },
+ "dev_0376_cre_Doc_Template_Mgt:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question naturally includes documents with zero paragraphs, but the gold query ignores them by grouping only Paragraphs; the system’s LEFT JOIN correctly considers zero-count documents."
+ },
+ "dev_0403_course_teach:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used a case-sensitive equality with 'math' instead of 'Math', yielding no matches, whereas the question refers to the course named Math whose teachers the gold query correctly returns."
+ },
+ "dev_0406_course_teach:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to include teachers with zero courses, so returning all teachers with 0 counts via a LEFT JOIN is a reasonable interpretation (vs gold’s inner join showing only those with courses)."
+ },
+ "dev_0525_student_transcripts_tracking:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query’s inner join excludes courses with zero sections, but “at most 2 sections” should include 0–2, and the system’s LEFT JOIN with COUNT(section_id) correctly includes zero-section courses."
+ },
+ "dev_0531_student_transcripts_tracking:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrase “has the substring the computer” can be read as the literal substring “the computer” (system) or simply “computer” (gold), so both interpretations are plausible."
+ },
+ "dev_0578_student_transcripts_tracking:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks to list the distinct addresses where students currently live, but the gold query returns only a count; the system correctly lists the distinct address rows via Students.current_address_id → Addresses."
+ },
+ "dev_0583_student_transcripts_tracking:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses country = 'haiti', which misses records stored as 'Haiti' under case-sensitive equality; the system’s query matches the intended condition and returns the correct students."
+ },
+ "dev_0610_tvshow:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used an exact title without the exclamation mark, yielding no match, whereas the question clearly refers to that cartoon and requires matching the actual title (or a looser match) to return the channel’s series name."
+ },
+ "dev_0636_tvshow:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query returns countries of channels without Todd Casey cartoons, which can include countries that do have such cartoons on other channels, whereas the question requires excluding any country that airs any Todd Casey cartoon at all."
+ },
+ "dev_0637_tvshow:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question implies channels playing cartoons by both Ben Jones and Michael Chang, but the system query uses OR (IN) and returns channels with either director, overinclusive versus the gold’s intersection."
+ },
+ "dev_0645_tvshow:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system removed duplicates with DISTINCT while the question does not specify whether to deduplicate package options, so both interpretations (per-channel vs unique package options) are reasonable."
+ },
+ "dev_0646_tvshow:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to return unique package options or one per channel, so DISTINCT vs duplicates is ambiguous."
+ },
+ "dev_0687_voter_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the number of states (distinct state values), but the gold counts all rows in AREA_CODE_STATE (area codes), whereas the system correctly counts DISTINCT state values."
+ },
+ "dev_0701_voter_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify case sensitivity; interpreting the substring 'Al' literally (case-sensitive) yields 3 matches, while the gold assumes a case-insensitive match including 'Walser'."
+ },
+ "dev_0725_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“Which are republics” can reasonably mean any government form containing ‘Republic’, not only those exactly equal to ‘Republic’, so using LIKE '%Republic%' is a valid interpretation."
+ },
+ "dev_0755_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly returns distinct country names with English or Dutch as an official language, while the gold query returns full joined rows (extra columns), so the mismatch is a formatting/column-selection artifact rather than an error."
+ },
+ "dev_0759_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrase “republic government” can reasonably include any GovernmentForm containing “Republic,” so filtering with LIKE '%Republic%' (and counting distinct countries) is a valid interpretation, while the gold enforces the narrower GovernmentForm = 'Republic'."
+ },
+ "dev_0774_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "“Less than any country in Asia” implies less than every Asian country (i.e., below the minimum Asian population), but the gold uses < MAX; the system correctly uses < MIN."
+ },
+ "dev_0778_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system includes countries with no language records (from country) as not speaking English, while the gold only considers countries appearing in countrylanguage; the question does not specify whether to include countries lacking language data."
+ },
+ "dev_0784_world_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The difference is due to DISTINCT vs non-DISTINCT city names; the question doesn’t specify uniqueness, so returning all city rows (including duplicate names across countries) is a reasonable interpretation while the filtering logic matches the intent."
+ },
+ "dev_0816_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query incorrectly selects a non-aggregated Language with GROUP BY CountryCode (not guaranteed to match the max), whereas the system correctly returns the language(s) with the maximum percentage per country, allowing ties consistent with the question."
+ },
+ "dev_0817_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly returns the language(s) with the maximum percentage per country (including ties), while the gold query selects an arbitrary language under GROUP BY and suppresses ties, which does not faithfully answer the question."
+ },
+ "dev_0818_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts all countries where Spanish appears, not where it is the top language, while the system query correctly counts countries where Spanish has the maximum percentage per country."
+ },
+ "dev_0819_world_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts countries where Spanish is present at all rather than where it is the highest-percentage language, while the system query correctly counts countries where Spanish is the maximum-percentage language per country."
+ },
+ "dev_0895_network_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify directionality, so interpreting “no friends” as not appearing in either student_id or friend_id (system) is as reasonable as only checking student_id (gold)."
+ },
+ "dev_0896_network_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly excludes students appearing in either Friend.student_id or Friend.friend_id (matching 'no friends'), while the gold only excludes those appearing as student_id and can misclassify students who appear only as friend_id."
+ },
+ "dev_0905_network_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by name instead of student ID, merging different students with the same name and altering counts (e.g., “Gabriel”=2, missing “John”), so its result misrepresents per-student likes."
+ },
+ "dev_0944_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system SQL is semantically equivalent to the gold query (professionals with treatments below the global average), so the differing result count is an execution/artifact issue rather than a logic error."
+ },
+ "dev_0945_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query omits a join condition between Professionals and Treatments, effectively yielding all professionals, while the system’s properly joined query matches the question’s intent to return only professionals who performed under-average-cost treatments."
+ },
+ "dev_0960_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses MAX(age), which returns the oldest dog, whereas the question asks for the youngest; the system’s use of latest date_of_birth matches the intent."
+ },
+ "dev_0961_dog_kennels:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses MAX(age), selecting the oldest dog(s), while the question asks for the youngest; the system’s query correctly targets the most recent date_of_birth."
+ },
+ "dev_0996_dog_kennels:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to return codes or descriptive names; the system returned distinct breed and size names matching the same combinations as the gold’s codes."
+ },
+ "dev_0129_car_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "The system filtered on 'Europe' (capitalized) instead of the dataset’s 'europe', yielding no matches despite otherwise correct grouping logic."
+ },
+ "dev_0158_car_1:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "“A volvo model” means a model made by Volvo (the make), so filtering on car_names.Make='volvo' fits the question, whereas the gold incorrectly filters on car_names.Model='volvo'."
+ },
+ "dev_0161_car_1:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the number of countries with more than 2 car makers; the system correctly returns a single count (4), while the gold query returns per-country maker totals (4,4,3,5) instead of the count of such countries."
+ },
+ "dev_0162_car_1:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query returns per-country maker counts (multiple rows) rather than the total number of countries with >2 makers; the system correctly counts those countries, matching the question."
+ },
+ "dev_0175_car_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "The system treated “more than 3 car makers” as a global dataset condition rather than a per‑maker constraint tied to associated entries, so it fails the intended second filter."
+ },
+ "dev_0354_cre_Doc_Template_Mgt:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "“Descriptions for templates” could reasonably mean either the template type descriptions (gold) or the Templates.Template_Details for templates used in documents (system), so both readings are valid."
+ },
+ "dev_0530_student_transcripts_tracking:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "“Most students registered” can reasonably mean counting distinct students per semester; the system counts DISTINCT student_id while the gold counts enrolment rows, both plausible interpretations."
+ },
+ "dev_0549_student_transcripts_tracking:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly filters for 'North Carolina' per the question, while the gold uses the dataset’s nonstandard 'NorthCarolina' literal; the discrepancy is a formatting artifact rather than a logical error."
+ },
+ "dev_0550_student_transcripts_tracking:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system’s logic is correct and uses the question’s natural value 'North Carolina', while the gold relies on dataset-specific 'NorthCarolina' formatting, causing a spurious mismatch."
+ },
+ "dev_0906_network_1:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query finds the student who likes the most others (grouping by student_id), but the question asks who has received the most likes (grouping by liked_id), which the system query correctly targets."
+ },
+ "dev_0907_network_1:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "“Student with the most likes” can mean either the student who received the most likes (liked_id) or who gave the most likes (student_id); the system chose the former while the gold chose the latter."
+ },
+ "dev_0943_dog_kennels:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for professionals with two or more types of treatments (distinct treatment_type_code), but the gold query counts total treatments; the system correctly uses COUNT(DISTINCT treatment_type_code) >= 2."
+ }
+}

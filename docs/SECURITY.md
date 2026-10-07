@@ -18,10 +18,10 @@
 
 | Control | Implementation | Verified by |
 |---------|----------------|-------------|
-| LLM never outputs SQL | `planner.parse_plan_json` + `_SQL_LEAK_RE` | `test_planner.py`, CI grep |
+| LLM never outputs SQL | `planner.plan.parse_plan_json` + `_SQL_LEAK_RE` | `test_planner.py`, CI grep |
 | validate before compile | `validate_and_compile()` | unit tests |
-| AST-only compile | `compile.py` sqlglot nodes | CI grep (no f-strings) |
-| Execute RO + timeout + limit | `execute.py` | `test_execute.py` |
+| AST-only compile | `kernel/compile.py` sqlglot nodes | CI grep (no f-string SQL) |
+| Execute RO + timeout + limit | `engine/execute.py` | `test_execute.py` |
 | Audit trail with principal | `AuditRecord` JSONL | `test_execute.py`, `test_databricks.py` |
 | Approved catalog only | `sample_catalog.py` / reviewed UC draft | catalog tests |
 | Tenant / role isolation | `auth.py` principal + row filters + metric slice | `test_auth.py` |
@@ -40,17 +40,28 @@
 
 Unknown tokens/users are 401/403. A missing `allowed_tables` list in the registry is **no tables**, not all tables (except `dev` mode, where omitted env means the full demo catalog).
 
-Ratio metrics compile SQL without a `LogicalPlan`, so they are refused when the principal has mandatory `row_filters`. Unity Catalog RLS is the backstop on Databricks.
+Ratio metrics (`numerator` / `denominator`) expand to a `LogicalPlan`, so mandatory `row_filters` are injected and validated like any plan; a row filter on a table the metric does not read fails closed. `builtin` metrics compile from a code-registered AST without a plan, so they are refused when the principal has `row_filters`. Unity Catalog RLS is the backstop on Databricks.
 
 ## Databricks
 
 - `execute_databricks` runs compiled SQL on a SQL warehouse. Use a SELECT-only token; UC still enforces grants.
-- `draft_catalog` / `fetch_unity_catalog_draft` build an **unapproved** catalog from `information_schema`. A data owner must review PII flags and joins before that object is the planner allowlist.
+- `draft_catalog` / `fetch_unity_catalog_draft` build an **unapproved** catalog from `information_schema`. A data owner must review PII flags and joins before that object is the planner allowlist. Unity Catalog is warehouse governance; it does not replace the Secure Query catalog.
 - Local DuckDB remains the CI/demo path. Warehouse catalogs set `sql_dialect="databricks"`.
 
 ## Rules
 
-1. Empty `join_keys` is dev-only; production catalogs must allowlist joins.
-2. Retrieval (future) is never a security control — always validate the full authorized catalog.
-3. Ratio metrics compile via whitelisted AST builders in `metrics.py`, not LLM SQL, and only if every table they read is in the principal's catalog.
-4. Never accept `principal_id`, `tenant_id`, or `allowed_tables` from a request body.
+1. `join_keys` is a strict allowlist: an empty list allows no joins. `allow_any_join=true` is dev-only. Principal slices keep only join keys between their allowed tables.
+2. Retrieval is never a security control — `validate()` always uses the full authorized catalog; a retrieval miss is a refusal, not a leak.
+3. Metrics are analyst-owned definitions in the catalog (`Catalog.metrics`), validated against the catalog at load. They are offered only if every table they read is in the principal's catalog. The model can pick a `metric_id`; it never supplies a definition.
+4. Never accept `principal_id`, `tenant_id`, `allowed_tables`, or `sql` from a request body (`extra=forbid`).
+5. `SECURE_QUERY_ENV=production` refuses `AUTH_MODE=dev`.
+
+## Postgres
+
+- `execute_postgres` uses the same timeout, row cap, and audit record as DuckDB.
+- Compile with `sql_dialect="postgres"` (set automatically when `SECURE_QUERY_BACKEND=postgres`).
+- Use a SELECT-only role. Do not reuse a role that can write agent memory or DDL.
+
+## Adversarial coverage
+
+`tests/test_adversarial.py` checks: SQL in planner JSON, SQL pasted as the question, and unknown API fields. Compile is AST-only; CI greps `kernel/compile.py` for f-string SQL.

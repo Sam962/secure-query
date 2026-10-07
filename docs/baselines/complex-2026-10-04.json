@@ -1,0 +1,374 @@
+{
+  "generated_at": "2026-10-04T15:15:07+00:00",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "summary": {
+    "total": 20,
+    "correct": 9,
+    "wrong": 0,
+    "unsafe": 0,
+    "abstained": 11,
+    "error": 0,
+    "accuracy": 0.45,
+    "wrong_rate": 0.0,
+    "wrong_rate_ci95": [
+      0.0,
+      0.16113012549493322
+    ],
+    "abstain_rate": 0.55,
+    "answerable": 17,
+    "answer_rate": 0.35294117647058826,
+    "over_refusal_rate": 0.6470588235294118,
+    "by_tag": {
+      "comparison": {
+        "abstained": 1
+      },
+      "complex": {
+        "abstained": 11,
+        "correct": 9
+      },
+      "date-filter": {
+        "correct": 3,
+        "abstained": 2
+      },
+      "dev-generated": {
+        "abstained": 11,
+        "correct": 9
+      },
+      "distinct": {
+        "abstained": 1
+      },
+      "group": {
+        "correct": 2,
+        "abstained": 4
+      },
+      "having": {
+        "abstained": 2
+      },
+      "in": {
+        "correct": 2
+      },
+      "join": {
+        "abstained": 4
+      },
+      "known-gap": {
+        "correct": 3
+      },
+      "multihop": {
+        "abstained": 6,
+        "correct": 1
+      },
+      "scalar": {
+        "correct": 1
+      },
+      "timebucket": {
+        "correct": 3
+      },
+      "topn": {
+        "abstained": 5
+      },
+      "trend": {
+        "correct": 3
+      }
+    },
+    "by_refusal_code": {
+      "out_of_scope": {
+        "false": 6,
+        "correct": 3
+      },
+      "planner_refusal": {
+        "false": 1
+      },
+      "validation_failed": {
+        "false": 4
+      }
+    },
+    "consistency": 1.0
+  },
+  "cases": [
+    {
+      "id": "dev_complex_genre_revenue_top5",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "out_of_scope",
+      "detail": "The question mentions terms not in the approved catalog or synonyms: \"generated\". Refusing rather than guessing.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_artist_revenue_top5",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "planner_refusal",
+      "detail": "The question asks about \"revenue\" (Invoice.Total), which this plan never returns. Refusing rather than answering a narrower question.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_tracks_sold_per_media_type",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT \"MediaType\".\"Name\", COUNT(*) AS \"quantity\" FROM \"InvoiceLine\" INNER JOIN \"Track\" ON \"InvoiceLine\".\"TrackId\" = \"Track\".\"TrackId\" INNER JOIN \"MediaType\" ON \"Track\".\"MediaTypeId\" = \"MediaType\".\"MediaTypeId\" GROUP BY \"MediaType\".\"Name\" ORDER BY \"quantity\" DESC LIMIT 100"
+    },
+    {
+      "id": "dev_complex_revenue_per_year",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "trend",
+        "timebucket"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT DATE_TRUNC('year', \"Invoice\".\"InvoiceDate\") AS \"InvoiceDate_year\", SUM(\"Invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" GROUP BY DATE_TRUNC('year', \"Invoice\".\"InvoiceDate\") ORDER BY \"total_revenue\" DESC LIMIT 100"
+    },
+    {
+      "id": "dev_complex_monthly_invoices_2022",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "trend",
+        "timebucket",
+        "date-filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT DATE_TRUNC('month', \"Invoice\".\"InvoiceDate\") AS \"InvoiceDate_month\", COUNT(*) AS \"invoice_count\" FROM \"Invoice\" WHERE \"Invoice\".\"InvoiceDate\" >= CAST('2022-01-01' AS DATE) AND \"Invoice\".\"InvoiceDate\" < CAST('2023-01-01' AS DATE) GROUP BY DATE_TRUNC('month', \"Invoice\".\"InvoiceDate\") LIMIT 100"
+    },
+    {
+      "id": "dev_complex_countries_over_20_invoices",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "having",
+        "group"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_genre_revenue_2023_top3",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn",
+        "date-filter"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_distinct_jazz_buyers",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "distinct"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "out_of_scope",
+      "detail": "The question mentions terms not in the approved catalog or synonyms: \"bought\", \"different\". Refusing rather than guessing.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_long_tracks_per_genre",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "join",
+        "group",
+        "comparison"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "out_of_scope",
+      "detail": "The question mentions terms not in the approved catalog or synonyms: \"longer\", \"minute\", \"minutes\". Refusing rather than guessing.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_customers_per_rep",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "join",
+        "group"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "out_of_scope",
+      "detail": "The question mentions terms not in the approved catalog or synonyms: \"look\". Refusing rather than guessing.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_top_rep_by_revenue",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "out_of_scope",
+      "detail": "The question mentions terms not in the approved catalog or synonyms: \"generated\". Refusing rather than guessing.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_avg_length_per_media_type",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "join",
+        "group"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "out_of_scope",
+      "detail": "The question mentions terms not in the approved catalog or synonyms: \"length\". Refusing rather than guessing.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_countries_over_40_rev_2024",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "having",
+        "join",
+        "date-filter"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_quarterly_revenue_2025",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "trend",
+        "timebucket",
+        "date-filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT DATE_TRUNC('quarter', \"Invoice\".\"InvoiceDate\") AS \"InvoiceDate_quarter\", SUM(\"Invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" WHERE \"Invoice\".\"InvoiceDate\" >= CAST('2025-01-01' AS DATE) AND \"Invoice\".\"InvoiceDate\" < CAST('2026-01-01' AS DATE) GROUP BY DATE_TRUNC('quarter', \"Invoice\".\"InvoiceDate\") LIMIT 100"
+    },
+    {
+      "id": "dev_complex_invoices_canada_france_2023",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "in",
+        "date-filter",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" WHERE (\"Invoice\".\"BillingCountry\" IN ('Canada', 'France') AND \"Invoice\".\"InvoiceDate\" >= CAST('2023-01-01' AS DATE)) AND \"Invoice\".\"InvoiceDate\" < CAST('2024-01-01' AS DATE) LIMIT 100"
+    },
+    {
+      "id": "dev_complex_acdc_album_most_tracks",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "validation_failed",
+      "detail": "Could not produce a valid LogicalPlan after 2 attempt(s). Please rephrase or narrow the question.",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_avg_invoice_three_countries",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "in",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "sql": "SELECT \"Invoice\".\"BillingCountry\", AVG(\"Invoice\".\"Total\") AS \"avg_total\" FROM \"Invoice\" WHERE \"Invoice\".\"BillingCountry\" IN ('USA', 'Canada', 'Brazil') GROUP BY \"Invoice\".\"BillingCountry\" ORDER BY \"avg_total\" DESC LIMIT 100"
+    },
+    {
+      "id": "dev_complex_rock_revenue_share",
+      "expect": "abstain",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "known-gap"
+      ],
+      "verdict": "correct",
+      "refusal_code": "out_of_scope",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_mom_revenue_change_2024",
+      "expect": "abstain",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "known-gap"
+      ],
+      "verdict": "correct",
+      "refusal_code": "out_of_scope",
+      "detail": "declined, as expected",
+      "sql": null
+    },
+    {
+      "id": "dev_complex_above_average_customers",
+      "expect": "abstain",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "known-gap"
+      ],
+      "verdict": "correct",
+      "refusal_code": "out_of_scope",
+      "detail": "declined, as expected",
+      "sql": null
+    }
+  ]
+}

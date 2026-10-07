@@ -1,0 +1,16 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECURE_QUERY_AUTH_MODE: dev
+      SECURE_QUERY_ENV: development
+      SECURE_QUERY_PRINCIPAL_ID: demo-user
+      SECURE_QUERY_TENANT_ID: chinook
+      SECURE_QUERY_AUDIT_PATH: data/audit.jsonl
+    volumes:
+      - sq-data:/app/data
+
+volumes:
+  sq-data:

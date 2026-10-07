@@ -1,0 +1,576 @@
+{
+  "generated_at": "2026-10-04T20:08:03+00:00",
+  "provider": "ollama",
+  "model": "qwen2.5:7b",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "summary": {
+    "total": 36,
+    "correct": 22,
+    "wrong": 4,
+    "unsafe": 0,
+    "abstained": 10,
+    "error": 0,
+    "accuracy": 0.6111111111111112,
+    "wrong_rate": 0.1111111111111111,
+    "wrong_rate_ci95": [
+      0.04406568908741834,
+      0.2531512901503632
+    ],
+    "abstain_rate": 0.2777777777777778,
+    "answerable": 28,
+    "answer_rate": 0.5357142857142857,
+    "over_refusal_rate": 0.35714285714285715,
+    "by_tag": {
+      "avg": {
+        "abstained": 2
+      },
+      "comparison": {
+        "correct": 1
+      },
+      "complex": {
+        "abstained": 1
+      },
+      "date": {
+        "correct": 1,
+        "abstained": 1
+      },
+      "distinct": {
+        "abstained": 1
+      },
+      "filter": {
+        "correct": 5,
+        "abstained": 5,
+        "wrong": 1
+      },
+      "group": {
+        "correct": 6,
+        "abstained": 1
+      },
+      "having": {
+        "correct": 1
+      },
+      "inexpressible": {
+        "wrong": 1,
+        "correct": 4
+      },
+      "join": {
+        "correct": 8,
+        "abstained": 6
+      },
+      "metric": {
+        "correct": 1,
+        "abstained": 1
+      },
+      "null": {
+        "correct": 1
+      },
+      "out-of-scope": {
+        "correct": 1
+      },
+      "pii": {
+        "correct": 2
+      },
+      "scalar": {
+        "correct": 2,
+        "wrong": 3,
+        "abstained": 3
+      },
+      "timebucket": {
+        "correct": 1
+      },
+      "topn": {
+        "abstained": 2,
+        "correct": 3
+      },
+      "trend": {
+        "correct": 1
+      }
+    },
+    "by_refusal_code": {
+      "dropped_concept": {
+        "blocked_wrong": 3,
+        "blocked_right": 3,
+        "correct": 1
+      },
+      "dropped_filter": {
+        "blocked_wrong": 1,
+        "blocked_right": 2
+      },
+      "planner_refusal": {
+        "false": 1,
+        "correct": 3
+      },
+      "restricted_pii": {
+        "correct": 1
+      },
+      "validation_failed": {
+        "correct": 2
+      }
+    },
+    "consistency": 1.0
+  },
+  "cases": [
+    {
+      "id": "customers_in_germany",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customers\" WHERE \"Customers\".\"Country\" = 'Germany' LIMIT 10"
+    },
+    {
+      "id": "product_count",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(77,)], got [(609283,)]",
+      "blocked": null,
+      "sql": "SELECT COUNT(*) AS \"product_count\" FROM \"Order Details\" ORDER BY \"product_count\" DESC LIMIT 10"
+    },
+    {
+      "id": "discontinued_products",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "scalar"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"discontinued\" (Products.Discontinued), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "wrong",
+      "sql": null
+    },
+    {
+      "id": "avg_freight",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "avg"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "planner_refusal",
+      "detail": "The question needs arithmetic between aggregates to calculate average freight cost per order.",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "max_freight",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(587.0,)], got [('Speedy Express', 1330884.75)]",
+      "blocked": null,
+      "sql": "SELECT \"Shippers\".\"CompanyName\", SUM(\"Orders\".\"Freight\") AS \"freight\" FROM \"Orders\" INNER JOIN \"Shippers\" ON \"Orders\".\"ShipVia\" = \"Shippers\".\"ShipperID\" GROUP BY \"Shippers\".\"CompanyName\" LIMIT 1"
+    },
+    {
+      "id": "freight_to_france",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "scalar"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(442055.75,)], got [(442020.75,)]",
+      "blocked": null,
+      "sql": "SELECT SUM(\"Orders\".\"Freight\") AS \"total_freight\" FROM \"Orders\" WHERE \"Orders\".\"ShipCountry\" = 'France' AND NOT \"Orders\".\"ShippedDate\" IS NULL LIMIT 1"
+    },
+    {
+      "id": "unshipped_orders",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "null"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT COUNT(*) AS \"order_count\" FROM \"Orders\" WHERE \"Orders\".\"ShippedDate\" IS NULL LIMIT 10"
+    },
+    {
+      "id": "orders_in_2017",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "date"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT COUNT(*) AS \"order_count\" FROM \"Orders\" WHERE \"Orders\".\"OrderDate\" >= CAST('2017-01-01' AS DATE) AND \"Orders\".\"OrderDate\" < CAST('2018-01-01' AS DATE) LIMIT 10"
+    },
+    {
+      "id": "uk_employees",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT COUNT(*) AS \"employee_count\" FROM \"Employees\" WHERE \"Employees\".\"Country\" = 'UK' LIMIT 10"
+    },
+    {
+      "id": "distinct_ship_countries",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "distinct"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"shipped\" (Orders.ShippedDate), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "right",
+      "sql": null
+    },
+    {
+      "id": "products_over_50",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT COUNT(*) AS \"product_count\" FROM \"Products\" WHERE \"Products\".\"UnitPrice\" > 50.0 ORDER BY \"product_count\" DESC LIMIT 10"
+    },
+    {
+      "id": "products_per_category",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Categories\".\"CategoryName\", COUNT(*) AS \"product_count\" FROM \"Products\" INNER JOIN \"Categories\" ON \"Products\".\"CategoryID\" = \"Categories\".\"CategoryID\" GROUP BY \"Categories\".\"CategoryName\" ORDER BY \"product_count\" DESC LIMIT 100"
+    },
+    {
+      "id": "orders_per_shipper",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Shippers\".\"CompanyName\", COUNT(*) AS \"order_count\" FROM \"Orders\" INNER JOIN \"Shippers\" ON \"Orders\".\"ShipVia\" = \"Shippers\".\"ShipperID\" GROUP BY \"Shippers\".\"CompanyName\" ORDER BY \"order_count\" DESC LIMIT 100"
+    },
+    {
+      "id": "freight_by_shipper",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "join",
+        "metric"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Shippers\".\"CompanyName\", SUM(\"Orders\".\"Freight\") AS \"freight\" FROM \"Orders\" INNER JOIN \"Shippers\" ON \"Orders\".\"ShipVia\" = \"Shippers\".\"ShipperID\" GROUP BY \"Shippers\".\"CompanyName\" LIMIT 100"
+    },
+    {
+      "id": "units_sold_by_category",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "join",
+        "metric"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"units\" (Order Details.UnitPrice, Products.QuantityPerUnit, and 3 more), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "right",
+      "sql": null
+    },
+    {
+      "id": "stock_by_category",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Categories\".\"CategoryName\", SUM(\"Products\".\"UnitsInStock\") AS \"in_stock\" FROM \"Products\" INNER JOIN \"Categories\" ON \"Products\".\"CategoryID\" = \"Categories\".\"CategoryID\" GROUP BY \"Categories\".\"CategoryName\" ORDER BY \"in_stock\" DESC LIMIT 100"
+    },
+    {
+      "id": "territories_per_region",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Regions\".\"RegionDescription\", COUNT(*) AS \"territory_count\" FROM \"Territories\" INNER JOIN \"Regions\" ON \"Territories\".\"RegionID\" = \"Regions\".\"RegionID\" GROUP BY \"Regions\".\"RegionDescription\" ORDER BY \"territory_count\" DESC LIMIT 100"
+    },
+    {
+      "id": "suppliers_per_country",
+      "expect": "answer",
+      "tags": [
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Suppliers\".\"Country\", COUNT(*) AS \"supplier_count\" FROM \"Suppliers\" GROUP BY \"Suppliers\".\"Country\" ORDER BY \"supplier_count\" DESC LIMIT 100"
+    },
+    {
+      "id": "orders_by_year",
+      "expect": "answer",
+      "tags": [
+        "trend",
+        "timebucket"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT DATE_TRUNC('year', \"Orders\".\"OrderDate\") AS \"OrderDate_year\", COUNT(*) AS \"order_count\" FROM \"Orders\" GROUP BY DATE_TRUNC('year', \"Orders\".\"OrderDate\") ORDER BY \"order_count\" DESC LIMIT 100"
+    },
+    {
+      "id": "top5_products_by_units",
+      "expect": "answer",
+      "tags": [
+        "topn",
+        "join"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"units\" (Order Details.UnitPrice, Products.QuantityPerUnit, and 3 more), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "wrong",
+      "sql": null
+    },
+    {
+      "id": "top_employee_by_orders",
+      "expect": "answer",
+      "tags": [
+        "topn",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Employees\".\"LastName\", COUNT(*) AS \"order_count\" FROM \"Orders\" INNER JOIN \"Employees\" ON \"Orders\".\"EmployeeID\" = \"Employees\".\"EmployeeID\" GROUP BY \"Employees\".\"LastName\" ORDER BY \"order_count\" DESC LIMIT 1"
+    },
+    {
+      "id": "top3_ship_countries",
+      "expect": "answer",
+      "tags": [
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"shipped\" (Orders.ShippedDate), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "right",
+      "sql": null
+    },
+    {
+      "id": "top_customer_by_orders",
+      "expect": "answer",
+      "tags": [
+        "topn",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Customers\".\"CompanyName\", COUNT(*) AS \"order_count\" FROM \"Orders\" INNER JOIN \"Customers\" ON \"Orders\".\"CustomerID\" = \"Customers\".\"CustomerID\" GROUP BY \"Customers\".\"CompanyName\" ORDER BY \"order_count\" DESC LIMIT 1"
+    },
+    {
+      "id": "seafood_product_count",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "join"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_filter",
+      "detail": "The question names \"Seafood\", but no filter in this plan uses it. Refusing rather than answering without that condition.",
+      "blocked": "wrong",
+      "sql": null
+    },
+    {
+      "id": "avg_price_beverages",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "join",
+        "avg"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_filter",
+      "detail": "The question names \"Beverages\", but no filter in this plan uses it. Refusing rather than answering without that condition.",
+      "blocked": "right",
+      "sql": null
+    },
+    {
+      "id": "customers_over_200_orders",
+      "expect": "answer",
+      "tags": [
+        "having",
+        "join"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "sql": "SELECT \"Customers\".\"CompanyName\", COUNT(*) AS \"order_count\" FROM \"Orders\" INNER JOIN \"Customers\" ON \"Orders\".\"CustomerID\" = \"Customers\".\"CustomerID\" GROUP BY \"Customers\".\"CompanyName\" HAVING COUNT(*) > 200 ORDER BY \"order_count\" DESC LIMIT 100"
+    },
+    {
+      "id": "speedy_express_orders_2016",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "date",
+        "join",
+        "complex"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_filter",
+      "detail": "The question names \"Speedy\", \"Express\", but no filter in this plan uses it. Refusing rather than answering without that condition.",
+      "blocked": "right",
+      "sql": null
+    },
+    {
+      "id": "units_sold_chai",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "join"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"units\" (Order Details.UnitPrice, Products.QuantityPerUnit, and 3 more), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "wrong",
+      "sql": null
+    },
+    {
+      "id": "total_sales_revenue",
+      "expect": "abstain",
+      "tags": [
+        "inexpressible"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "answered a question it should have declined (revenue is UnitPrice \u00d7 Quantity \u00d7 (1 \u2212 Discount); the IR has no column arithmetic)",
+      "blocked": null,
+      "sql": "SELECT SUM(\"Order Details\".\"UnitPrice\") AS \"revenue\" FROM \"Order Details\" LIMIT 1"
+    },
+    {
+      "id": "top_category_by_revenue",
+      "expect": "abstain",
+      "tags": [
+        "inexpressible",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": "validation_failed",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "customer_phone_numbers",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "dropped_concept",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "employee_birth_dates",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "restricted_pii",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "order_growth_2022",
+      "expect": "abstain",
+      "tags": [
+        "inexpressible"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "late_shipment_share",
+      "expect": "abstain",
+      "tags": [
+        "inexpressible"
+      ],
+      "verdict": "correct",
+      "refusal_code": "validation_failed",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "avg_orders_per_customer",
+      "expect": "abstain",
+      "tags": [
+        "inexpressible"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    },
+    {
+      "id": "returns_last_year",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "sql": null
+    }
+  ]
+}

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "secure-query"
-version = "0.2.0"
+version = "0.4.0"
 description = "Governed talk-to-data: LogicalPlan → validate(catalog) → AST compile → audit"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +16,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "ruff>=0.6",
     "duckdb>=0.10",
     "fastapi>=0.110",
     "httpx>=0.27",
@@ -27,14 +28,30 @@ api = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.27",
     "httpx>=0.27",
+    "duckdb>=0.10",
 ]
 databricks = [
     "databricks-sql-connector>=3.0",
 ]
+postgres = [
+    "psycopg[binary]>=3.1",
+]
 
 [tool.setuptools.packages.find]
-include = ["secure_query*"]
+where = ["src"]
+
+[tool.setuptools.package-data]
+secure_query = ["api/static/*.html", "evals/suites/**/*.json", "evals/suites/**/*.sql", "evals/suites/**/*.md"]
 
 [tool.pytest.ini_options]
-testpaths = ["secure_query/tests"]
-pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["secure_query"]

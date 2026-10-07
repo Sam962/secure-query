@@ -1,0 +1,24 @@
+Holdout + dev accuracy — 2026-10-04
+Provider: ollama (qwen2.5:7b, digest 845dbda0ea48, manifest dated 2026-09-07)
+Data: Chinook commit ac32dbc (sha256 7651ba37...), invoices dated 2021-2025
+
+Holdout (--split holdout --repeat 3 --expect-digest 845dbda0ea48 --fail-on-wrong)
+accuracy      100% (12/12)
+wrong         0%   (0/12)
+abstained     0%   (0/12)   # 4 cases expect=abstain and declined as designed
+consistency   100%
+
+Dev (--split dev --expect-digest 845dbda0ea48)
+accuracy      99%  (100/101)
+wrong         0%   (0/101)
+abstained     1%   (1/101)  # dev_track_count: model says "catalog" means a missing table
+
+Changes since 2026-10-03 (10/12, 2 wrong): dead order-key validation, dropped_average
+guard, ISO date literals, between/date-range prompt shapes, calendar words in guard,
+tie-aware top-N scoring, 13 dev cases with trivial (0) references fixed.
+
+Not comparable to the 2026-10-03 dev run (86/101, 8 wrong): most of those "wrong"
+verdicts were tie-order noise with SQL identical to the reference, and 13 dev cases
+had trivial references. Two of the fixes were designed after seeing holdout failures;
+0/101 wrong on dev is the evidence they generalise, 0/12 holdout alone is not.
+Statistical bound: 0/113 wrong ⇒ true wrong-rate < ~2.7% (95%, rule of three).
