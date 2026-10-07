@@ -6,7 +6,6 @@ import re
 from typing import Literal
 
 from secure_query.kernel.catalog import Catalog
-from secure_query.kernel.metrics import metrics_for_catalog
 
 ClarifyCode = Literal[
     "restricted_pii",
@@ -57,7 +56,7 @@ def ambiguous_metrics(question: str, catalog: Catalog) -> str | None:
     q = " ".join((question or "").lower().split())
     hits = [
         m.id
-        for m in metrics_for_catalog(catalog)
+        for m in catalog.metrics
         if m.id.replace("_", " ") in q
     ]
     if len(hits) > 1:

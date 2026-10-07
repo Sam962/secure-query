@@ -1,7 +1,7 @@
-"""Fluent builder API for constructing LogicalPlan instances.
+"""Fluent LogicalPlan builder for tests and local demos.
 
-Useful for tests and fixtures. Production planners should emit LogicalPlan JSON
-directly (structured LLM output), then validate + compile.
+Not part of the kernel. Production planners emit LogicalPlan JSON (or SQL)
+directly; this helper only builds fixtures.
 """
 
 from __future__ import annotations
@@ -174,7 +174,7 @@ class _PlanBuilder:
 
 
 class LQP:
-    """Entry point for the fluent LogicalPlan builder API."""
+    """Entry point for the fluent LogicalPlan builder API (tests/demo only)."""
 
     def __init__(self) -> None:  # pragma: no cover
         raise TypeError("LQP is a namespace; do not instantiate it directly.")

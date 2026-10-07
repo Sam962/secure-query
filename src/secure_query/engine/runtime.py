@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Literal
 
 from secure_query.auth import Principal
-from secure_query.demo.load_chinook import DUCKDB_PATH
 from secure_query.engine.databricks import databricks_settings_from_env, execute_databricks
 from secure_query.engine.domains import load_domain_catalog
 from secure_query.engine.execute import ExecuteOptions, ExecutionError, ExecutionResult, execute_duckdb
@@ -74,7 +73,7 @@ def runtime_config() -> RuntimeConfig:
         backend=backend,
         catalog=load_active_catalog(),
         audit_path=default_audit_path(),
-        duckdb_path=Path(DUCKDB_PATH),
+        duckdb_path=Path(os.environ.get("SECURE_QUERY_DUCKDB") or "data/chinook.duckdb"),
         postgres_dsn=postgres_dsn() if backend == "postgres" else None,
     )
 

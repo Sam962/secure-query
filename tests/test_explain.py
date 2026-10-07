@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from secure_query.kernel.builder import LQP
+from secure_query.demo.lqp import LQP
 from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import (

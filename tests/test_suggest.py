@@ -97,14 +97,13 @@ def test_suggestions_are_askable_and_omit_grouped() -> None:
         assert out_of_scope_request(item.question, catalog) is None
 
 
-def test_out_of_scope_message_maps_to_out_of_scope_code() -> None:
-    from secure_query.planner.clarify import code_from_guard_message
+def test_out_of_scope_guard_returns_out_of_scope_code() -> None:
+    from secure_query.planner.guard import out_of_scope_request
 
-    code = code_from_guard_message(
-        'The question mentions terms not in the approved catalog or synonyms: "grouped".',
-        refused=True,
-    )
-    assert code == "out_of_scope"
+    catalog = sample_catalog()
+    hit = out_of_scope_request("What is our total payroll spend this quarter?", catalog)
+    assert hit is not None
+    assert hit[0] == "out_of_scope"
 
 
 def test_ambiguous_metrics_suggest_each_named_metric() -> None:

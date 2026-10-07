@@ -63,8 +63,9 @@ def result_column_units(
 
         metric = get_metric(compiled.plan_hash.split(":")[1], catalog)
         if metric is not None and metric.unit:
+            labels = {g.split(".")[-1].lower() for g in metric.group_by}
             for i, name in enumerate(columns):
-                if name.lower() not in {"country", "name", "title"}:
+                if name.lower() not in labels:
                     units[i] = metric.unit
             if any(units):
                 return units

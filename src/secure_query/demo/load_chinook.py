@@ -6,7 +6,7 @@ back to a tiny synthetic dataset with the same schema when offline.
 The DDL below is the single source of truth for both paths, so an offline run
 produces the same shape as a downloaded one — only the row counts differ. Note
 that this mirrors the *source* database. What the planner is allowed to see is
-a separate, curated decision, made in `sample_catalog.py`.
+a separate, curated decision, made in `demo/chinook.py`.
 
 Usage:
     pip install -e ".[dev]"

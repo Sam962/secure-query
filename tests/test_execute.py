@@ -12,12 +12,12 @@ import pytest
 
 from secure_query.demo.chinook import sample_catalog
 from secure_query.demo.load_chinook import create_schema
+from secure_query.demo.lqp import LQP
 from secure_query.engine.execute import (
     ExecuteOptions,
     ExecutionError,
     execute_duckdb,
 )
-from secure_query.kernel.builder import LQP
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.kernel.validate import validate_and_compile
 

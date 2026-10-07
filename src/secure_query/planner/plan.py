@@ -51,29 +51,28 @@ _SQL_LEAK_RE = re.compile(
     re.IGNORECASE,
 )
 
-_PostPlanGuard = Callable[[str, LogicalPlan, Catalog], str | None]
+_PostPlanGuard = Callable[[str, LogicalPlan, Catalog], tuple[ClarifyCode, str] | None]
 
-# Deterministic checks on a valid plan, in order, each with the code it reports.
-# The first one that objects refuses the question.
-_POST_PLAN_GUARDS: tuple[tuple[ClarifyCode, _PostPlanGuard], ...] = (
-    ("analyst_handoff", lambda q, plan, catalog: inexpressible_request(q)),
-    ("dropped_concept", opaque_grouping_keys),
-    ("dropped_concept", dropped_concepts),
-    ("dropped_concept", lambda q, plan, catalog: dropped_average(q, plan)),
-    ("analyst_handoff", averaged_per_other_entity),
-    ("dropped_concept", lambda q, plan, catalog: dropped_count(q, plan)),
-    ("dropped_concept", counted_other_entity),
-    ("dropped_filter", dropped_literals),
+# Deterministic checks on a valid plan, in order; the first (code, message) refuses.
+_POST_PLAN_GUARDS: tuple[_PostPlanGuard, ...] = (
+    lambda q, plan, catalog: inexpressible_request(q),
+    opaque_grouping_keys,
+    dropped_concepts,
+    lambda q, plan, catalog: dropped_average(q, plan),
+    averaged_per_other_entity,
+    lambda q, plan, catalog: dropped_count(q, plan),
+    counted_other_entity,
+    dropped_literals,
 )
 
 
 def _post_plan_refusal(
     question: str, plan: LogicalPlan, catalog: Catalog
 ) -> tuple[ClarifyCode, str] | None:
-    for code, check in _POST_PLAN_GUARDS:
-        message = check(question, plan, catalog)
-        if message is not None:
-            return code, message
+    for check in _POST_PLAN_GUARDS:
+        hit = check(question, plan, catalog)
+        if hit is not None:
+            return hit
     return None
 
 
@@ -142,11 +141,10 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
         from secure_query.kernel.metrics import (
             assert_metric_authorized,
             expand_metric_plan,
-            metrics_for_catalog,
         )
 
         mid = str(data["metric_id"])
-        metrics = {m.id: m for m in metrics_for_catalog(catalog)}
+        metrics = {m.id: m for m in catalog.metrics}
         if mid not in metrics:
             raise ValueError(f"Unknown metric_id: {mid!r}")
         metric = metrics[mid]
@@ -242,13 +240,14 @@ def plan_question(
     if guard:
         blocked = restricted_request(question, catalog)
         if blocked is not None:
+            code, message = blocked
             return PlannerResult(
                 status="clarify",
                 question=question,
                 attempts=0,
-                clarify_message=blocked,
+                clarify_message=message,
                 refused=True,
-                clarify_code="restricted_pii",
+                clarify_code=code,
             )
 
     messages: list[dict[str, str]] = [
@@ -271,15 +270,16 @@ def plan_question(
             metric_id = _metric_id(raw)
             mismatch = unrelated_metric(question, metric_id) if guard and metric_id else None
             if mismatch is not None:
+                code, message = mismatch
                 return PlannerResult(
                     status="clarify",
                     question=question,
                     attempts=attempts,
                     errors=errors,
-                    clarify_message=mismatch,
+                    clarify_message=message,
                     raw_responses=raw_responses,
                     refused=True,
-                    clarify_code="dropped_concept",
+                    clarify_code=code,
                 )
             metric_plan, metric_compiled, metric = try_compile_metric(raw, catalog)
             if metric_compiled is not None:

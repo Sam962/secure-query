@@ -10,6 +10,7 @@ import json
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from dataclasses import asdict, dataclass
@@ -89,35 +90,26 @@ class ExecutionResult:
     compiled: CompiledQuery
 
 
-def execute_duckdb(
+def run_with_policy(
     compiled: CompiledQuery,
-    db_path: str | Path,
     *,
     plan: LogicalPlan | None = None,
     question: str | None = None,
     principal: Principal | None = None,
     options: ExecuteOptions | None = None,
+    backend: str = "duckdb",
+    runner: Callable[[], tuple[list[str], list[tuple[Any, ...]], bool]],
 ) -> ExecutionResult:
-    """Run compiled SQL on DuckDB with timeout + row cap + audit stub."""
+    """Shared timeout/audit wrapper around a backend runner (S6)."""
     opts = options or ExecuteOptions()
     if opts.max_rows < 1:
         raise ValueError("max_rows must be >= 1")
     if opts.timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be > 0")
 
-    path = Path(db_path)
-    if not path.exists():
-        raise ExecutionError(f"Database not found: {path}")
-
     started = time.perf_counter()
     try:
-        columns, rows, truncated = _run_with_timeout(
-            path,
-            compiled.sql,
-            timeout_seconds=opts.timeout_seconds,
-            max_rows=opts.max_rows,
-            read_only=opts.read_only,
-        )
+        columns, rows, truncated = runner()
         duration_ms = (time.perf_counter() - started) * 1000
         audit = _make_audit(
             status="ok",
@@ -128,6 +120,7 @@ def execute_duckdb(
             row_count=len(rows),
             truncated=truncated,
             duration_ms=duration_ms,
+            backend=backend,
         )
     except FuturesTimeout as exc:
         duration_ms = (time.perf_counter() - started) * 1000
@@ -141,6 +134,7 @@ def execute_duckdb(
             truncated=False,
             duration_ms=duration_ms,
             error=f"query exceeded timeout_seconds={opts.timeout_seconds}",
+            backend=backend,
         )
         _maybe_write_audit(opts.audit_path, audit)
         raise ExecutionError(audit.error or "timeout", audit_id=audit.audit_id) from exc
@@ -158,6 +152,7 @@ def execute_duckdb(
             truncated=False,
             duration_ms=duration_ms,
             error=str(exc),
+            backend=backend,
         )
         _maybe_write_audit(opts.audit_path, audit)
         raise ExecutionError(str(exc), audit_id=audit.audit_id) from exc
@@ -170,6 +165,37 @@ def execute_duckdb(
         duration_ms=duration_ms,
         audit=audit,
         compiled=compiled,
+    )
+
+
+def execute_duckdb(
+    compiled: CompiledQuery,
+    db_path: str | Path,
+    *,
+    plan: LogicalPlan | None = None,
+    question: str | None = None,
+    principal: Principal | None = None,
+    options: ExecuteOptions | None = None,
+) -> ExecutionResult:
+    """Run compiled SQL on DuckDB with timeout + row cap + audit stub."""
+    path = Path(db_path)
+    if not path.exists():
+        raise ExecutionError(f"Database not found: {path}")
+    opts = options or ExecuteOptions()
+    return run_with_policy(
+        compiled,
+        plan=plan,
+        question=question,
+        principal=principal,
+        options=opts,
+        backend="duckdb",
+        runner=lambda: _run_with_timeout(
+            path,
+            compiled.sql,
+            timeout_seconds=opts.timeout_seconds,
+            max_rows=opts.max_rows,
+            read_only=opts.read_only,
+        ),
     )
 
 

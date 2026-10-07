@@ -33,6 +33,7 @@ from secure_query.kernel.logical_plan import (
     OrderBy,
     TimeBucket,
 )
+from tests.conftest import requires_chinook
 
 PLAN_ID = UUID("12345678-1234-1234-1234-123456789abc")
 
@@ -550,6 +551,7 @@ def test_compile_rejects_cross_join() -> None:
 
 
 
+@requires_chinook
 def test_having_filters_on_aggregate_alias() -> None:
 
     from secure_query.demo.chinook import sample_catalog

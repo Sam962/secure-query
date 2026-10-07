@@ -80,22 +80,7 @@ def resolve_joins(plan: LogicalPlan, catalog: Catalog) -> tuple[LogicalPlan, lis
     joins: list[Join] = []
 
     while pending:
-        # Multi-source BFS from the tree, counting shortest paths per table.
-        dist = {t: 0 for t in tree}
-        count = {t: 1 for t in tree}
-        parent: dict[str, tuple[str, JoinKey]] = {}
-        queue = deque(sorted(tree))
-        while queue:
-            node = queue.popleft()
-            for nxt, key in graph.get(node, []):
-                if nxt not in dist:
-                    dist[nxt] = dist[node] + 1
-                    count[nxt] = count[node]
-                    parent[nxt] = (node, key)
-                    queue.append(nxt)
-                elif dist[nxt] == dist[node] + 1:
-                    count[nxt] += count[node]
-
+        dist, count, parent = _bfs(graph, tree)
         unreachable = sorted(t for t in pending if t not in dist)
         if unreachable:
             return plan, [
@@ -144,6 +129,27 @@ def resolve_joins(plan: LogicalPlan, catalog: Catalog) -> tuple[LogicalPlan, lis
     return plan.model_copy(update={"joins": joins}), []
 
 
+def _bfs(
+    graph: dict[str, list[_Edge]], starts: set[str] | list[str]
+) -> tuple[dict[str, int], dict[str, int], dict[str, tuple[str, JoinKey]]]:
+    """Shortest-path BFS from one or more starts. `count[t] > 1` means ambiguous."""
+    dist = {t: 0 for t in starts}
+    count = {t: 1 for t in starts}
+    parent: dict[str, tuple[str, JoinKey]] = {}
+    queue = deque(sorted(starts))
+    while queue:
+        node = queue.popleft()
+        for nxt, key in graph.get(node, []):
+            if nxt not in dist:
+                dist[nxt] = dist[node] + 1
+                count[nxt] = count[node]
+                parent[nxt] = (node, key)
+                queue.append(nxt)
+            elif dist[nxt] == dist[node] + 1:
+                count[nxt] += count[node]
+    return dist, count, parent
+
+
 def approved_path(catalog: Catalog, start: str, target: str) -> list[tuple[str, str, JoinKey]] | None:
     """The unique shortest join path start → target as (from, to, key) steps.
 
@@ -151,16 +157,7 @@ def approved_path(catalog: Catalog, start: str, target: str) -> list[tuple[str, 
     exist (same rule as resolve_joins: never pick a relationship silently).
     """
     graph = _graph(catalog)
-    dist, count, parent = {start: 0}, {start: 1}, {}
-    queue = deque([start])
-    while queue:
-        node = queue.popleft()
-        for nxt, key in graph.get(node, []):
-            if nxt not in dist:
-                dist[nxt], count[nxt], parent[nxt] = dist[node] + 1, count[node], (node, key)
-                queue.append(nxt)
-            elif dist[nxt] == dist[node] + 1:
-                count[nxt] += count[node]
+    dist, count, parent = _bfs(graph, {start})
     if target not in dist:
         return None
     if count[target] > 1:
@@ -175,6 +172,21 @@ def approved_path(catalog: Catalog, start: str, target: str) -> list[tuple[str, 
 
 
 _FANOUT_SAFE_AGGS = {"min", "max", "count_distinct"}
+
+
+def grain_ok(to_one: dict[str, dict[str, bool]], table: str) -> bool:
+    """True when every step outward from `table` in `to_one` is many→one."""
+    seen, stack = {table}, [table]
+    while stack:
+        here = stack.pop()
+        for nxt, one in to_one.get(here, {}).items():
+            if nxt in seen:
+                continue
+            if not one:
+                return False
+            seen.add(nxt)
+            stack.append(nxt)
+    return True
 
 
 def fan_out_errors(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]:
@@ -201,28 +213,15 @@ def fan_out_errors(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]
             to_one.setdefault(prev.table_id, {})[node.table_id] = forward
             to_one.setdefault(node.table_id, {})[prev.table_id] = not forward
 
-    def is_grain(table: str) -> bool:
-        seen, stack = {table}, [table]
-        while stack:
-            here = stack.pop()
-            for nxt, one in to_one.get(here, {}).items():
-                if nxt in seen:
-                    continue
-                if not one:
-                    return False
-                seen.add(nxt)
-                stack.append(nxt)
-        return True
-
     errors: list[ValidationError] = []
     for i, agg in enumerate(plan.aggregations):
         if agg.fn in _FANOUT_SAFE_AGGS:
             continue
         if agg.column is None:
-            ok = any(is_grain(t) for t in to_one)
+            ok = any(grain_ok(to_one, t) for t in to_one)
             what = "COUNT(*)"
         else:
-            ok = is_grain(agg.column.table_id)
+            ok = grain_ok(to_one, agg.column.table_id)
             what = f"{agg.fn}({agg.column.table_id}.{agg.column.column_id})"
         if not ok:
             errors.append(

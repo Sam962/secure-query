@@ -17,6 +17,7 @@ from secure_query.kernel.logical_plan import (
     LogicalPlan,
 )
 from secure_query.kernel.validate import PlanValidationFailed, normalize_plan, validate_and_compile
+from tests.conftest import requires_chinook
 
 _DB = "data/chinook.duckdb"
 CATALOG = sample_catalog()
@@ -32,6 +33,7 @@ def _plan(**kw) -> LogicalPlan:
     )
 
 
+@requires_chinook
 def test_multi_hop_path_is_added_when_model_omits_joins() -> None:
     plan = _plan(
         source="InvoiceLine",
@@ -129,6 +131,7 @@ def test_sum_over_one_side_of_fan_out_is_rejected() -> None:
         validate_and_compile(plan, sample_catalog())
 
 
+@requires_chinook
 def test_count_distinct_across_fan_out_is_allowed() -> None:
     plan = _plan(
         source="InvoiceLine",
@@ -160,6 +163,7 @@ USA_BILLING = {
 }
 
 
+@requires_chinook
 def test_list_filtered_by_child_table_keeps_parent_grain() -> None:
     """Customers with a USA invoice: one row per customer, Customer columns only."""
     sql = validate_and_compile(_list_plan("Customer", [USA_BILLING]), CATALOG).sql

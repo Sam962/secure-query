@@ -1,9 +1,11 @@
 """Named domain catalogs: one approved allowlist per domain.
 
 SECURE_QUERY_DOMAINS=id:path,id2:path2 registers catalog JSON files ('-' or
-'sample' means the Chinook demo). SECURE_QUERY_CATALOG_FILE registers a single
-domain called "default". Every catalog gets the knowledge overlay and the SQL
-dialect of the execute backend.
+'sample' means the Chinook demo). SECURE_QUERY_CATALOG_FILE registers
+a single domain called "default". Every catalog gets the knowledge overlay and
+the SQL dialect of the execute backend.
+
+Only the sample domain imports the demo package, and only when it is loaded.
 """
 
 from __future__ import annotations
@@ -11,7 +13,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from secure_query.demo.chinook import sample_catalog
 from secure_query.kernel.catalog import Catalog
 from secure_query.planner.knowledge import overlay_from_env
 
@@ -57,9 +58,12 @@ def load_domain_catalog(
     if did not in registry:
         raise KeyError(f"unknown domain {did!r}; known: {sorted(registry)}")
     domain = registry[did]
-    catalog = (
-        Catalog.from_json_file(domain.catalog_file) if domain.catalog_file else sample_catalog()
-    )
+    if domain.catalog_file:
+        catalog = Catalog.from_json_file(domain.catalog_file)
+    else:
+        from secure_query.demo.chinook import sample_catalog
+
+        catalog = sample_catalog()
     catalog = overlay_from_env(catalog)
     if dialect and catalog.sql_dialect != dialect:
         catalog = catalog.model_copy(update={"sql_dialect": dialect})

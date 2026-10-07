@@ -18,6 +18,7 @@ _LOCAL_TIMEOUT_S = 120.0  # a local 7B model can take longer than a hosted API
 _MAX_RETRIES = 2
 _MAX_TOKENS = 1200
 _SEED = 7
+DEFAULT_MODEL = "gpt-4o-mini"
 
 
 class LLMClient(Protocol):
@@ -63,7 +64,7 @@ class OpenAIClient:
         self.temperature = temperature
         # OpenAI enforces json_schema response formats; local/compat servers may not.
         self.structured_outputs = provider == "openai"
-        self._model = model or "gpt-4o-mini"
+        self._model = model or DEFAULT_MODEL
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
         )
@@ -398,7 +399,7 @@ def resolve_llm_settings() -> dict[str, Any] | None:
         settings: dict[str, Any] = {
             "provider": "openai",
             "api_key": key,
-            "model": os.environ.get("SECURE_QUERY_MODEL", "gpt-4o-mini"),
+            "model": os.environ.get("SECURE_QUERY_MODEL", DEFAULT_MODEL),
             "json_mode": True,
         }
         if explicit_base:

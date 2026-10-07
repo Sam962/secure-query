@@ -34,7 +34,7 @@ from sqlglot.optimizer.scope import traverse_scope
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery, compile_filter, exists_through
 from secure_query.kernel.errors import ValidationError
-from secure_query.kernel.joins import approved_path
+from secure_query.kernel.joins import approved_path, grain_ok
 from secure_query.kernel.logical_plan import Filter
 
 _STATEMENTS = tuple(
@@ -408,25 +408,16 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
             to_one.setdefault(left.table, {})[right.table] = forward
             to_one.setdefault(right.table, {})[left.table] = not forward
 
-    def is_grain(alias: str) -> bool:
-        seen, stack = {alias}, [alias]
-        while stack:
-            here = stack.pop()
-            for nxt, one in to_one.get(here, {}).items():
-                if nxt in seen:
-                    continue
-                if not one:
-                    return False
-                seen.add(nxt)
-                stack.append(nxt)
-        return True
-
     errors: list[ValidationError] = []
     for agg in aggs:
         if isinstance(agg, _FAN_OUT_SAFE) or agg.find(exp.Distinct):
             continue
         aliases = {c.table for c in agg.find_all(exp.Column)}
-        ok = all(is_grain(a) for a in aliases) if aliases else any(is_grain(a) for a in to_one)
+        ok = (
+            all(grain_ok(to_one, a) for a in aliases)
+            if aliases
+            else any(grain_ok(to_one, a) for a in to_one)
+        )
         if not ok:
             errors.append(
                 _error(

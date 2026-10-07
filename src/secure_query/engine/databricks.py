@@ -9,7 +9,6 @@ approves the resulting Catalog before it is used as the security boundary.
 from __future__ import annotations
 
 import os
-import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from typing import Any
@@ -20,8 +19,8 @@ from secure_query.engine.execute import (
     ExecutionError,
     ExecutionResult,
     _await_stop,
-    _make_audit,
-    _maybe_write_audit,
+    _safe_close,
+    run_with_policy,
 )
 from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
 from secure_query.kernel.compile import CompiledQuery
@@ -259,80 +258,36 @@ def execute_databricks(
             access_token=str(settings["access_token"]),
         )
 
-    started = time.perf_counter()
-    cursor = connection.cursor()
-    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sq-databricks")
-    fut = pool.submit(_execute_once, cursor, compiled.sql, opts.max_rows)
-    try:
+    def _runner() -> tuple[list[str], list[tuple[Any, ...]], bool]:
+        cursor = connection.cursor()
+        pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sq-databricks")
+        fut = pool.submit(_execute_once, cursor, compiled.sql, opts.max_rows)
         try:
-            columns, rows, truncated = fut.result(timeout=opts.timeout_seconds)
-        except FuturesTimeout as exc:
-            cancel = getattr(cursor, "cancel", None)
-            if cancel is not None:
-                try:
-                    cancel()
-                except Exception:  # noqa: BLE001 — the timeout is still reported
-                    pass
-            _await_stop(fut, "databricks")
-            duration_ms = (time.perf_counter() - started) * 1000
-            audit = _make_audit(
-                status="timeout",
-                compiled=compiled,
-                plan=plan,
-                question=question,
-                principal=principal,
-                row_count=0,
-                truncated=False,
-                duration_ms=duration_ms,
-                error=f"query exceeded timeout_seconds={opts.timeout_seconds}",
-                backend="databricks",
-            )
-            _maybe_write_audit(opts.audit_path, audit)
-            raise ExecutionError(audit.error or "timeout", audit_id=audit.audit_id) from exc
-        except Exception as exc:  # noqa: BLE001
-            duration_ms = (time.perf_counter() - started) * 1000
-            if isinstance(exc, ExecutionError):
+            try:
+                return fut.result(timeout=opts.timeout_seconds)
+            except FuturesTimeout:
+                cancel = getattr(cursor, "cancel", None)
+                if cancel is not None:
+                    try:
+                        cancel()
+                    except Exception:  # noqa: BLE001 — the timeout is still reported
+                        pass
+                _await_stop(fut, "databricks")
                 raise
-            audit = _make_audit(
-                status="error",
-                compiled=compiled,
-                plan=plan,
-                question=question,
-                principal=principal,
-                row_count=0,
-                truncated=False,
-                duration_ms=duration_ms,
-                error=str(exc),
-                backend="databricks",
-            )
-            _maybe_write_audit(opts.audit_path, audit)
-            raise ExecutionError(str(exc), audit_id=audit.audit_id) from exc
-    finally:
-        pool.shutdown(wait=fut.done())
-        _safe_close(cursor)
-        if owns_connection:
-            _safe_close(connection)
+        finally:
+            pool.shutdown(wait=fut.done())
+            _safe_close(cursor)
+            if owns_connection:
+                _safe_close(connection)
 
-    duration_ms = (time.perf_counter() - started) * 1000
-    audit = _make_audit(
-        status="ok",
-        compiled=compiled,
+    return run_with_policy(
+        compiled,
         plan=plan,
         question=question,
         principal=principal,
-        row_count=len(rows),
-        truncated=truncated,
-        duration_ms=duration_ms,
+        options=opts,
         backend="databricks",
-    )
-    _maybe_write_audit(opts.audit_path, audit)
-    return ExecutionResult(
-        columns=columns,
-        rows=rows,
-        truncated=truncated,
-        duration_ms=duration_ms,
-        audit=audit,
-        compiled=compiled,
+        runner=_runner,
     )
 
 
@@ -413,10 +368,3 @@ def databricks_grant_check(connection: Any | None = None) -> dict[str, str]:
     if write:
         return {"status": "write_privileges", "detail": f"{user} has {', '.join(write)} on {schema}"}
     return {"status": "select_only", "detail": f"{user}: {', '.join(sorted(mine)) or 'no direct grants'}"}
-
-
-def _safe_close(con: Any) -> None:
-    try:
-        con.close()
-    except Exception:  # noqa: BLE001
-        pass

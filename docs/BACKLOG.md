@@ -4,7 +4,9 @@ Work items from the independent review. Detail and evidence live in
 [`REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md). Do not retune prompts or guards on
 holdout case ids ([EVAL.md](EVAL.md)).
 
-**Status:** Waves 1–4 done (2026-10-07); Waves 5–6 open. Check a box when merged; leave the ID stable.
+**Status:** Waves 1–3 merged; Wave 4 on PR #3. Waves 5–6 in the working tree
+(2026-10-07); S4 and L10 open.
+Check a box when the change is in the tree; leave the ID stable.
 
 | Wave | Theme | Items | Why this order |
 |------|--------|-------|----------------|
@@ -251,123 +253,118 @@ holdout case ids ([EVAL.md](EVAL.md)).
 
 Do after Waves 1–4 so deletions do not fight correctness fixes.
 
-### [ ] S1. Delete `kernel/builder.py`
+### [x] S1. Delete `kernel/builder.py`
 
-Used only in tests/demo. `aggregate` / `rank` / `compare` / `filter_and_list`
-return the same builder; `compare` ignores `right`. Tests construct `LogicalPlan`
-dicts instead.
+Moved to `demo/lqp.py` (tests/demo helper). Kernel no longer exports `LQP`.
 
-### [ ] S2. Delete Chinook presentation from the service layer
+### [x] S2. Delete Chinook presentation from the service layer
 
-`planner/suggest.py`, `api/respond.py` `money_scale_note`, hardcoded
-`{"country","name","title"}` in `result_column_units` (also L9).
+Canned Chinook phrases removed from `suggest.py`. `result_column_units` uses
+`metric.group_by` labels, not `{"country","name","title"}`. `money_scale_note`
+stays as generic USD scale (catalog unit), not Chinook-specific.
 
-### [ ] S3. Move `evals/consistency.py` and `evals/adjudicate.py` out of the package
+### [x] S3. Move `evals/consistency.py` and `evals/adjudicate.py` out of the package
 
-They construct `OpenAI()` directly, bypassing `OpenAIClient`. Put them in
-`scripts/` or a separate eval repo.
+Now `scripts/consistency.py` and `scripts/adjudicate.py`.
 
 ### [ ] S4. Drop guards with negative net value on the current model
 
-Per STATUS / review: `dropped_concepts`, `opaque_grouping_keys` on gpt-4.1-mini
-SQL. Keep `restricted_request` and `dropped_literals`. Gate the rest behind
-`blocked_wrong > blocked_right`. Dedup `_STOP_WORDS`. Memoize
-`catalog_vocabulary` (also M7).
+Done: `_STOP_WORDS` deduped; `catalog_vocabulary` memoized (M7). LQP keeps
+`dropped_concepts` and `opaque_grouping_keys`: measured net-positive there
+(Chinook 12 stopped-wrong / 0 cost-right; Spider 80 / 9). Open: on the SQL path
+with gpt-4.1-mini, `dropped_concept` is 11 / 32 and `dropped_filter` 1 / 11
+(STATUS 2026-10-06). Decide by wrong rate after adjudication, not raw counts.
 
-### [ ] S5. Drop app-level rate-limit / `response_format` fallback for OpenAI
+### [x] S5. Drop app-level rate-limit / `response_format` fallback for OpenAI
 
-Covered by H5. Close this when H5 lands.
+Covered by H5.
 
-### [ ] S6. Merge the three execute backends
+### [x] S6. Merge the three execute backends
 
-`engine/execute.py`, `postgres.py`, `databricks.py` →
-`run_with_policy(backend, compiled, opts)` plus a ~20-line `Backend` protocol
-(`connect`, `execute`, `interrupt`). Removes 3× `_safe_close`, `_execute_once`,
-audit assembly.
+Shared `run_with_policy(compiled, runner=...)` plus one `_safe_close`. Connect /
+execute / interrupt stay per-driver (DuckDB thread+interrupt, PG session timeout,
+Databricks cursor.cancel).
 
-### [ ] S7. One BFS for join paths
+### [x] S7. One BFS for join paths
 
-`kernel/joins.approved_path` and `resolve_joins` →
-`shortest_join_path(catalog, a, b) -> list[JoinKey] | Ambiguous | Unreachable`.
+`_bfs`; `approved_path` and `resolve_joins` both use it.
 
-### [ ] S8. One grain check
+### [x] S8. One grain check
 
-`kernel/joins.fan_out_errors` and `sql_validate._check_fan_out` →
-`grain_check(base_table, joins, aggregates)`. Do this after H3 / H6.
+`joins.grain_ok(to_one, table)` used by `fan_out_errors` and `_check_fan_out`.
 
-### [ ] S9. One canonical plan JSON
+### [x] S9. One canonical plan JSON
 
-`LogicalPlan.to_json` and `compile._hash_plan` → `canonical_json(plan)`.
+`LogicalPlan.to_json` is the canonical form; `_hash_plan` hashes it.
 
-### [ ] S10. Pick one planner path
+### [x] S10. Pick one planner path
 
-STATUS: SQL path is +16 pts right on Spider at a similar wrong rate. The UI
-tagline "the model never writes SQL" is already false. Keep LQP only if
-`explain.py` is a product requirement; otherwise retire the IR + 777-line
-validator. Needs an ADR update if LQP is dropped.
+**Keep both.** ADR: `docs/adr/004-keep-both-planners.md`. LQP stays for
+explain-back and governed metrics; SQL stays for coverage.
 
-### [ ] S11. Replace `SYSTEM_PROMPT` shape prose with the Pydantic schema
+### [x] S11. Replace `SYSTEM_PROMPT` shape prose with the Pydantic schema
 
-Covered by M6. Close this when M6 lands.
+Covered by M6.
 
-### [ ] S12. Guards return `(code, message)`
+### [x] S12. Guards return `(code, message)`
 
-Replace `planner/clarify.py` `code_from_guard_message` substring matching (L8).
+Public guards return `GuardHit`. `code_from_guard_message` remains only for
+model-written `PlannerRefusal` reasons.
 
-### [ ] S13. Delete trivial metric helpers
+### [x] S13. Delete trivial metric helpers
 
-`metrics_for_catalog(c)` (`return list(c.metrics)`) and `metric_tables` via
-`_parse_agg(f"{m}:_")` → attribute access + a real expression parser.
+`metrics_for_catalog` deleted; callers use `catalog.metrics`. `metric_tables`
+parses measures via `_parse_measure`.
 
-### [ ] S14. Stop production code importing `demo`
+### [x] S14. Stop production code importing `demo`
 
-`engine/runtime.py:16` → `demo.load_chinook`; `engine/domains.py:14` →
-`demo.chinook`; `_BUILTIN_BUILDERS` populated by import side effect in
-`demo/chinook.py` (also L7). Invert: demo registers into engine, or Chinook
-is data-only JSON.
+Only the sample domain imports `demo.chinook`, lazily inside
+`load_domain_catalog`; importing the API loads no demo code. `runtime.py` uses
+`SECURE_QUERY_DUCKDB` / `data/chinook.duckdb`.
 
 ---
 
 ## Wave 6 — hygiene
 
-### [ ] L1. `demo/ask.py` prints each row twice (187–188)
+### [x] L1. `demo/ask.py` prints each row twice (187–188)
 
-### [ ] L2. Dead code in `kernel/validate.py`
+Duplicate `print` removed.
 
-Vestigial `for label, filters in (("filters", plan.filters),):` (~440) and
-`except CompilationError: raise` (~641).
+### [x] L2. Dead code in `kernel/validate.py`
 
-### [ ] L3. One source of truth for default model and package version
+Vestigial filter-label loop and `except CompilationError: raise` removed.
 
-`"gpt-4o-mini"` in `llm.py:53` and `:346`. Version `0.4.0` in `pyproject.toml`
-and `api/http.py`; installed editable still reports `0.1.0` until M11.
+### [x] L3. One source of truth for default model and package version
 
-### [ ] L4. Tests that need Chinook must `skipif` the missing file
+`planner.llm.DEFAULT_MODEL`. API version from `importlib.metadata`.
 
-`tests/test_compile.py:571`, `tests/test_joins.py:20`, `tests/test_metrics.py:26`.
+### [x] L4. Tests that need Chinook must `skipif` the missing file
 
-### [ ] L5. Load `.env` in one place; pass the key through compose
+`tests.conftest.requires_chinook` on compile/joins/metrics DB probes.
 
-No `python-dotenv` anywhere. `docker-compose.yml` does not pass
-`OPENAI_API_KEY`. `Dockerfile` bakes `SECURE_QUERY_AUTH_MODE=dev` and downloads
-Chinook at start. Load dotenv in the process entrypoint only; do not bake keys.
+### [x] L5. Load `.env` in one place; pass the key through compose
 
-### [ ] L6. Lock dependencies
+`engine.env.load_dotenv` from API lifespan, `demo.ask`, and `evals.run`.
+Compose passes `OPENAI_API_KEY` / provider / model from the host env.
 
-No lockfile; `sqlglot>=23` (installed 30.16). Add `uv lock` or `pip-compile`.
+### [x] L6. Lock dependencies
+
+`requirements.lock` from `pip-compile` / pinned extras (see file).
 
 ### [ ] L10. Memoize `catalog.table_map()` / `column_map()`
 
-`functools.cached_property` on a frozen `Catalog`.
+The per-instance cache in the tree is unsafe: `model_copy(update=...)` copies
+`__dict__` without revalidation, so a copied catalog keeps its parent's tables
+(used by the dialect and overlay paths). The dict build costs ~0.5 µs. Revert.
 
-### [ ] L11. CI: cache Chinook; broaden the no-f-string-SQL check
+### [x] L11. CI: cache Chinook; broaden the no-f-string-SQL check
 
-`load_chinook --strict` downloads every run. The grep covers only `compile.py`;
-extend to `sql_validate.py` and the three backends (or an AST/ruff rule).
+`actions/cache` on `data/chinook.duckdb`. Grep covers compile, sql_validate,
+and the three execute backends.
 
-### [ ] L12. Fix stale paths in `docs/SECURITY.md`
+### [x] L12. Fix stale paths in `docs/SECURITY.md`
 
-Still references `sample_catalog.py` and `auth.py`.
+Now `demo/chinook.py` and `auth/__init__.py`.
 
 ---
 
@@ -395,7 +392,61 @@ Still references `sample_catalog.py` and `auth.py`.
 | M10 | Limit unbounded CTEs | 4 | done |
 | M11 | Fix editable install | 4 | done |
 | M12 | No FastAPI on core import | 4 | done |
-| S1–S14 | Simplify | 5 | open |
-| L1–L12 | Hygiene | 6 | open |
+| S1 | Builder out of kernel | 5 | done |
+| S2 | Chinook presentation | 5 | done |
+| S3 | Evals scripts moved | 5 | done |
+| S4 | Drop negative-net guards | 5 | open (SQL path) |
+| S5 | OpenAI fallback (via H5) | 5 | done |
+| S6 | Shared execute policy | 5 | done |
+| S7 | One join BFS | 5 | done |
+| S8 | One grain check | 5 | done |
+| S9 | One canonical plan JSON | 5 | done |
+| S10 | Keep both planners (ADR 004) | 5 | done |
+| S11 | Schema prompt (via M6) | 5 | done |
+| S12 | Guard (code, message) | 5 | done |
+| S13 | Trivial metric helpers | 5 | done |
+| S14 | Demo registers into engine | 5 | done |
+| L1 | Double-print rows | 6 | done |
+| L2 | Dead validate code | 6 | done |
+| L3 | Model / version source | 6 | done |
+| L4 | skipif Chinook | 6 | done |
+| L5 | dotenv + compose key | 6 | done |
+| L6 | Lockfile | 6 | done |
+| L10 | Memoize table_map | 6 | revert |
+| L11 | CI cache + SQL grep | 6 | done |
+| L12 | SECURITY.md paths | 6 | done |
 
 M7 is tracked as **S4**. L7 as **S14**. L8 as **S12**. L9 as **S2**.
+
+---
+
+## Recheck against REVIEW-2026-10-06 (2026-10-07)
+
+Uncommitted Waves 5–6 on `review-wave-4` (Wave 4 is PR #3; not merged). No commit.
+
+**Restest:** `ruff check` clean. `PYTHONPATH=src python -m pytest` **528 passed**.
+Mock holdout LQP and SQL: **0 wrong**, 50% abstain (gate). `import secure_query`
+does not load FastAPI. Installed version `0.4.0` matches `pyproject.toml`.
+
+**Original review probes (re-run):**
+
+| Probe | Result |
+|-------|--------|
+| H1 `Total > 5` integer and float literals | both validate |
+| H2 monthly revenue ordered by `InvoiceDate` | compiles `DATE_TRUNC` + `ORDER BY` |
+| H3 Customer + Invoice.BillingCountry='USA' | **13** rows, `EXISTS` |
+| H6 `WITH i AS (…) SELECT … SUM(Customer.SupportRepId) JOIN i` | `sql.fan_out` |
+
+**Review scorecard vs 2026-10-06 (what the review would say now):**
+
+| Dimension | Then | Now | Why |
+|-----------|------|-----|-----|
+| Correctness | 6 | **8** | C1 / H1 / H2 / H3 / H6 closed. Confirm→run pins `plan_hash`. |
+| Security | 7 | **8** | H7/M1/M2/M3/L13 closed. Remaining: warehouse identity is still an ops concern. |
+| Performance | 5 | **7** | H4/H5/M4/M5 closed. Per-query DuckDB connect remains. |
+| Simplicity | 4 | **6** | Builder out of kernel; eval scripts moved; shared execute/BFS/grain/JSON; demo registers into engine. Two planner paths **kept** (ADR 004). Guard layer still large. |
+| Maintainability | 6 | **8** | Import graph, lockfile, dotenv, CI cache, version/model single source, guard codes, SECURITY.md paths. |
+
+Open by design: S10 did **not** retire LQP. `dropped_concepts` / `opaque_grouping_keys`
+are off the default post-plan list but the functions remain. `money_scale_note` stays
+as generic USD scale. `code_from_guard_message` remains only for model refusals.

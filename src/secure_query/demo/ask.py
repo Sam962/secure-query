@@ -28,6 +28,7 @@ from secure_query.auth import (
     resolve_principal,
 )
 from secure_query.demo.load_chinook import DUCKDB_PATH, load_sample_db
+from secure_query.engine.env import load_dotenv
 from secure_query.engine.execute import ExecuteOptions, ExecutionError
 from secure_query.engine.runtime import runtime_config
 from secure_query.planner import (
@@ -63,6 +64,7 @@ def _client_from_args(provider: str | None):
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()
     parser = argparse.ArgumentParser(description="Secure-query NL → LogicalPlan → execute")
     parser.add_argument(
         "--provider",
@@ -184,7 +186,6 @@ def main(argv: list[str] | None = None) -> int:
         print(outcome.scale_note)
     print(outcome.columns)
     for row in outcome.rows:
-        print(tuple(row) if not isinstance(row, tuple) else row)
         print(tuple(row) if not isinstance(row, tuple) else row)
     print()
     print(

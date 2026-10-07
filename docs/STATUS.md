@@ -162,7 +162,7 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
 400 seeded questions (seed 0) over 20 auto-catalogued databases, qwen2.5:7b @
 845dbda0ea48, K=3 samples at T=0.7, Ollama with 4 parallel slots.
 See [baselines/spider-dev400-sc3-2026-10-04.json](baselines/spider-dev400-sc3-2026-10-04.json);
-`python -m secure_query.evals.consistency <that file>` reproduces the table.
+`python scripts/consistency.py <that file>` reproduces the table.
 
 | Policy | Answer-rate | Wrong | Wrong 95% hi | Precision |
 |--------|-------------|-------|--------------|-----------|

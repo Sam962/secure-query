@@ -7,7 +7,6 @@ Change dialect= below if your target is not DuckDB.
 from __future__ import annotations
 
 import hashlib
-import json
 import threading
 from collections import OrderedDict
 from collections.abc import Sequence
@@ -434,12 +433,7 @@ def _compile_time_bucket(tb: TimeBucket) -> exp.Expression:
 
 def _hash_plan(plan: LogicalPlan) -> str:
     """Compute a stable SHA-256 hash of the plan's canonical JSON form."""
-    canonical = json.dumps(
-        json.loads(plan.model_dump_json()),
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return hashlib.sha256(canonical.encode()).hexdigest()
+    return hashlib.sha256(plan.to_json().encode()).hexdigest()
 
 
 def exists_through(path: Sequence, filters: Sequence[Filter], outer: str) -> exp.Expression:

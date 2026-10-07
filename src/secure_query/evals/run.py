@@ -18,6 +18,7 @@ import time
 from pathlib import Path
 
 from secure_query.demo.chinook import sample_catalog
+from secure_query.engine.env import load_dotenv
 from secure_query.kernel.catalog import Catalog
 from secure_query.planner import (
     MockLLMClient,
@@ -43,6 +44,7 @@ def _client(provider: str | None, temperature: float = 0.0):
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()
     parser = argparse.ArgumentParser(description="Execution-accuracy eval runner")
     parser.add_argument(
         "--repeat",
