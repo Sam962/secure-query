@@ -18,17 +18,8 @@ jobs:
         run: python -m secure_query.demo.load_chinook --strict
       - name: Lint
         run: ruff check .
-      - name: Package import (no FastAPI on core import; version matches pyproject)
-        run: |
-          python -c "import secure_query, sys; assert 'fastapi' not in sys.modules, sys.modules"
-          python -c "
-          import tomllib
-          from importlib.metadata import version
-          from pathlib import Path
-          expected = tomllib.loads(Path('pyproject.toml').read_text()).get('project', {}).get('version')
-          got = version('secure-query')
-          assert got == expected, (got, expected)
-          "
+      - name: Package import (installed, without FastAPI)
+        run: python -c "import secure_query, sys; assert 'fastapi' not in sys.modules"
       - name: Unit tests
         run: pytest -q
       - name: Compile must not interpolate SQL

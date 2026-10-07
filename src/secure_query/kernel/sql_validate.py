@@ -502,32 +502,41 @@ def _limit_value(query: exp.Expression) -> int | None:
     return None
 
 
-def _is_simple_scan(select: exp.Select) -> bool:
-    """Single-table SELECT with no filter, group, join, or aggregate — a raw scan."""
-    if select.args.get("where") or select.args.get("group") or select.args.get("having"):
-        return False
-    if select.args.get("joins") or select.find(exp.AggFunc) or select.args.get("distinct"):
-        return False
-    return True
+# Outer-query clauses under which LIMIT n of the source equals LIMIT n of the result.
+_PROJECTION_ONLY = frozenset({"expressions", "from", "from_", "limit", "with", "with_"})
 
 
-def _pass_through_cte_alias(query: exp.Query) -> str | None:
-    """Alias of a CTE that the outer query only projects (FROM cte, no WHERE/JOIN/GROUP)."""
-    if not isinstance(query, exp.Select) or not _is_simple_scan(query):
+def _projected_source(query: exp.Query) -> exp.Select | None:
+    """The SELECT a bare-projection query reads, if it reads one CTE or subquery.
+
+    Only then can the outer LIMIT be pushed in: any ORDER BY, OFFSET, WHERE, join,
+    GROUP BY, DISTINCT, window or expression needs rows beyond the first n.
+    """
+    if not isinstance(query, exp.Select):
         return None
+    if any(v for k, v in query.args.items() if k not in _PROJECTION_ONLY):
+        return None
+    for col in query.expressions:
+        inner = col.this if isinstance(col, exp.Alias) else col
+        if not isinstance(inner, (exp.Column, exp.Star)):
+            return None
     from_ = query.args.get("from_") or query.args.get("from")
     src = from_.this if from_ is not None else None
-    if src is None:
+    if isinstance(src, exp.Subquery):
+        target = src.this
+    elif isinstance(src, exp.Table) and not src.db:
+        ctes = {c.alias_or_name.lower(): c.this for c in query.ctes}
+        target = ctes.get(src.name.lower())
+    else:
         return None
-    return src.alias_or_name
+    return target if isinstance(target, exp.Select) else None
 
 
 def _enforce_limit(tree: exp.Query, catalog: Catalog) -> None:
-    """Cap the outer LIMIT and push it into a pass-through CTE so it is not a full scan.
+    """Cap the outer LIMIT, and push it into the CTE/subquery a bare projection reads.
 
     `WITH i AS (SELECT * FROM Invoice) SELECT * FROM i LIMIT 10` would otherwise
-    materialize every Invoice row on a warehouse before the outer LIMIT. Joined or
-    aggregated CTEs are left alone — they need their full input.
+    materialize every Invoice row on a warehouse that does not inline the CTE.
     """
     value = _limit_value(tree)
     if value is None and not catalog.require_limit:
@@ -535,17 +544,8 @@ def _enforce_limit(tree: exp.Query, catalog: Catalog) -> None:
     cap = min(value or catalog.max_limit, catalog.max_limit)
     if value is None or value > catalog.max_limit:
         tree.set("limit", exp.Limit(expression=exp.Literal.number(cap)))
-    alias = _pass_through_cte_alias(tree)
-    with_ = tree.args.get("with_") or tree.args.get("with")
-    ctes = list(getattr(tree, "ctes", None) or (with_.expressions if with_ is not None else []))
-    if alias is None or not ctes:
-        return
-    for cte in ctes:
-        if cte.alias_or_name.lower() != alias.lower():
-            continue
-        inner = cte.this
-        if not isinstance(inner, exp.Select) or not _is_simple_scan(inner):
-            continue
-        if _limit_value(inner) is None:
-            inner.set("limit", exp.Limit(expression=exp.Literal.number(cap)))
-
+    source = _projected_source(tree)
+    if source is not None:
+        inner = _limit_value(source)
+        if inner is None or inner > cap:
+            source.set("limit", exp.Limit(expression=exp.Literal.number(cap)))

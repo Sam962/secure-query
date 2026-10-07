@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
+from sqlglot import exp
 
 from secure_query.demo.chinook import sample_catalog
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
@@ -344,18 +347,45 @@ def test_pass_through_cte_limit_is_pushed_in() -> None:
     assert int(cte.args["limit"].expression.this) == 10
 
 
-def test_joined_cte_is_not_limited() -> None:
-    """A CTE used in a join still needs all its rows; do not push the outer LIMIT."""
+@pytest.mark.parametrize(
+    "outer",
+    [
+        "SELECT * FROM i ORDER BY Total DESC LIMIT 3",  # top-n needs every row
+        "SELECT * FROM i LIMIT 3 OFFSET 5",
+        "SELECT * FROM i WHERE Total > 10 LIMIT 3",
+        "SELECT DISTINCT Total FROM i LIMIT 3",
+        "SELECT InvoiceId, ROW_NUMBER() OVER (ORDER BY Total) AS r FROM i LIMIT 3",
+        "SELECT i.Total, c.Country FROM i JOIN Customer c ON i.CustomerId = c.CustomerId LIMIT 3",
+    ],
+)
+def test_cte_limit_is_not_pushed_when_the_outer_query_needs_more_rows(outer: str) -> None:
     import sqlglot
 
     out = validate_sql(
-        "WITH i AS (SELECT InvoiceId, CustomerId, Total FROM Invoice) "
-        "SELECT c.Country, SUM(i.Total) AS revenue FROM i "
-        "JOIN Customer c ON i.CustomerId = c.CustomerId GROUP BY c.Country LIMIT 10",
-        CATALOG,
+        f"WITH i AS (SELECT InvoiceId, CustomerId, Total FROM Invoice) {outer}", CATALOG
     ).compiled.sql
-    cte = (sqlglot.parse_one(out, read="duckdb").ctes or [])[0].this
+    cte = sqlglot.parse_one(out, read="duckdb").ctes[0].this
     assert cte.args.get("limit") is None
+
+
+def test_pushed_limit_returns_the_same_rows_as_the_original() -> None:
+    import duckdb
+
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+
+    if not Path(DUCKDB_PATH).exists():
+        pytest.skip("Chinook DuckDB not loaded")
+    con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
+    sql = "WITH i AS (SELECT InvoiceId, Total FROM Invoice) SELECT * FROM i ORDER BY Total DESC LIMIT 3"
+    assert con.execute(validate_sql(sql, CATALOG).compiled.sql).fetchall() == con.execute(sql).fetchall()
+
+
+def test_subquery_limit_is_pushed_in() -> None:
+    import sqlglot
+
+    out = validate_sql("SELECT * FROM (SELECT InvoiceId FROM Invoice) AS s LIMIT 7", CATALOG).compiled.sql
+    inner = sqlglot.parse_one(out, read="duckdb").find(exp.Subquery).this
+    assert int(inner.args["limit"].expression.this) == 7
 
 
 def test_select_star_cte_bypass_is_grain_checked_without_pii() -> None:
