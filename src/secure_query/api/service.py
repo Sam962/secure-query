@@ -79,6 +79,8 @@ class ReviewMismatch(Exception):
     """The artifact sent to execute no longer compiles to the reviewed plan_hash."""
 
 
+# Value lookups that ground the SQL planner's string literals: small and fast.
+_PROBE_OPTIONS = ExecuteOptions(max_rows=50, timeout_seconds=5.0)
 _SQL_EXPLANATION = "Model-written SQL, validated and rewritten against the approved catalog"
 
 
@@ -168,6 +170,9 @@ def ask(
             row_filters=principal.row_filters,
             prompt_catalog=prompt_catalog,
             relevant_tables=relevant,
+            value_probe=lambda probe: execute_compiled_query(
+                probe, config, principal=principal, options=_PROBE_OPTIONS
+            ).rows,
         )
     else:
         planned = plan_question(

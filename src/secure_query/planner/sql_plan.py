@@ -25,6 +25,7 @@ from secure_query.planner.guard import (
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
+from secure_query.planner.sql_values import ValueProbe, ground_literals
 
 SQL_SYSTEM_PROMPT = """You translate a question into ONE read-only {dialect} SQL query over an approved catalog.
 Output a single JSON object and nothing else:
@@ -110,8 +111,12 @@ def plan_sql_question(
     guard: bool = True,
     prompt_catalog: Catalog | None = None,
     relevant_tables: Sequence[str] = (),
+    value_probe: ValueProbe | None = None,
 ) -> PlannerResult:
-    """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors."""
+    """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
+
+    With `value_probe`, string literals are grounded against stored values first.
+    """
     messages = [
         {"role": "system", "content": sql_system_prompt(catalog.sql_dialect)},
         {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog, relevant_tables)},
@@ -135,7 +140,12 @@ def plan_sql_question(
                     refused_by_model=True,
                     clarify_code="planner_refusal",
                 )
-            validated = validate_sql(str(data["sql"]), catalog, row_filters=row_filters)
+            sql = str(data["sql"])
+            validated = validate_sql(sql, catalog, row_filters=row_filters)
+            if value_probe is not None:
+                grounded = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
+                if grounded != sql:
+                    sql, validated = grounded, validate_sql(grounded, catalog, row_filters=row_filters)
             refusal = sql_refusal(question, validated, catalog) if guard else None
             if refusal is not None:
                 code, message = refusal
@@ -154,7 +164,7 @@ def plan_sql_question(
                 status="ok",
                 question=question,
                 compiled=validated.compiled,
-                source_sql=str(data["sql"]),
+                source_sql=sql,
                 attempts=attempt,
                 raw_responses=raw_responses,
             )

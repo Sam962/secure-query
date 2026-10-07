@@ -28,6 +28,7 @@
 | Server-side identity | `resolve_principal()` | `test_auth.py`, `test_api.py` |
 | Header identity only via a trusted proxy | `SECURE_QUERY_TRUSTED_PROXIES`; startup refuses `header` mode without it | `test_auth.py` |
 | No DB error text to clients | `api/http.py` handlers: generic 503 + audit id, 502 for planner failures; `/ready` names no tenant or path | `test_api.py` |
+| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM | `test_sql_values.py` |
 | No CROSS JOIN | validate + compile | `test_validate.py`, `test_auth.py` |
 
 ## Identity

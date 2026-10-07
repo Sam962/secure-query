@@ -24,6 +24,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
+from functools import partial
 from itertools import permutations
 from pathlib import Path
 from typing import Any
@@ -170,8 +171,10 @@ def run_live_case(
 ) -> LiveCaseResult:
     """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question."""
     planner = planner or plan_question
-    if planner is plan_sql_question and case.sql_reference:
-        case = replace(case, expect="answer", reference_sql=case.sql_reference)
+    if planner is plan_sql_question:
+        if case.sql_reference:
+            case = replace(case, expect="answer", reference_sql=case.sql_reference)
+        planner = partial(plan_sql_question, value_probe=partial(_probe, db_path))
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
         try:
@@ -311,6 +314,10 @@ def _matches(
         return True
     unlimited = _unlimited_reference_rows(case, db_path)
     return unlimited is not None and _valid_tie_resolution(actual, expected, unlimited)
+
+
+def _probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:
+    return execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=50, timeout_seconds=5.0)).rows
 
 
 def _fingerprint(rows: list[tuple[Any, ...]]) -> str:
