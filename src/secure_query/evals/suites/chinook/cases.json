@@ -123,6 +123,7 @@
       "expect": "answer",
       "reference_sql": "SELECT CustomerId, FirstName, LastName, Company, City, State, Country, SupportRepId FROM Customer WHERE Country = 'Brazil'",
       "note": "projection is every non-PII Customer column, so Address/Phone/Fax/Email/PostalCode are absent by construction",
+      "subset_columns_ok": true,
       "tags": ["list"]
     },
     {

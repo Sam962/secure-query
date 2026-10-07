@@ -56,7 +56,55 @@ def test_reference_sql_runs_and_returns_rows(case: LiveCase) -> None:
     assert rows, f"{case.case_id} reference returned no rows"
 
 
+@pytest.mark.skipif(not DUCKDB_PATH.exists(), reason="sample DB not built")
+@pytest.mark.parametrize("case", [c for c in SUITE if c.sql_reference], ids=lambda c: c.case_id)
+def test_sql_reference_runs_and_returns_one_row_or_more(case: LiveCase) -> None:
+    import duckdb
+
+    con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
+    try:
+        rows = con.execute(case.sql_reference or "").fetchall()
+    finally:
+        con.close()
+    assert rows and rows[0][0] is not None, f"{case.case_id} sql_reference returned nothing"
+
+
+def test_sql_planner_scores_ir_gap_cases_against_sql_reference() -> None:
+    import json
+
+    from secure_query.evals.accuracy import run_live_case
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    case = LiveCase(
+        case_id="x", question="How many invoices are there?", expect="abstain", reason="IR gap",
+        sql_reference="SELECT COUNT(*) FROM Invoice",
+    )
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+    from secure_query.demo.chinook import sample_catalog
+
+    client = MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) AS n FROM Invoice"})])
+    result = run_live_case(case, sample_catalog(), client, DUCKDB_PATH, planner=plan_sql_question)
+    assert result.case.expect == "answer" and result.verdict == CORRECT
+
+
 class TestResultComparison:
+    def test_text_time_bucket_matches_its_start_date(self) -> None:
+        from datetime import datetime
+
+        assert _results_match([("2022-03", 7)], [(datetime(2022, 3, 1), 7)], ordered=False)
+        assert _results_match([("2022", 7)], [(datetime(2022, 1, 1), 7)], ordered=False)
+        assert not _results_match([("2022-04", 7)], [(datetime(2022, 3, 1), 7)], ordered=False)
+        assert not _results_match([("2022", 7)], [(datetime(2022, 3, 1), 7)], ordered=False)
+
+    def test_subset_columns_only_when_allowed(self) -> None:
+        expected = [("Opera", 1)]
+        assert not _results_match([("Opera",)], expected, ordered=False)
+        assert _results_match([("Opera",)], expected, ordered=False, subset_columns_ok=True)
+        assert not _results_match([("Jazz",)], expected, ordered=False, subset_columns_ok=True)
+
+
     def test_identical_results_match(self) -> None:
         assert _results_match([("USA", 5)], [("USA", 5)], ordered=True)
 

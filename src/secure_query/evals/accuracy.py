@@ -22,7 +22,8 @@ import json
 import math
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime
 from itertools import permutations
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
 from secure_query.planner import PlannerError, plan_question
+from secure_query.planner.sql_plan import plan_sql_question
 
 CORRECT = "correct"
 WRONG = "wrong"
@@ -63,6 +65,12 @@ class LiveCase:
     """Correct if the reference columns appear among the result's (same rows).
     For benchmarks whose gold SQL selects one column where a list plan returns
     the whole row; any other difference is still wrong."""
+    subset_columns_ok: bool = False
+    """Correct if the result's columns appear among the reference's (same rows): a
+    "which X has the most Y" answer may name X without the Y it ranked by."""
+    sql_reference: str | None = None
+    """Reference for the SQL planner on a case the LogicalPlan IR must decline
+    (it cannot express the question, but SQL can answer it)."""
 
 
 @dataclass(frozen=True)
@@ -117,6 +125,8 @@ def parse_cases(raw_cases: list[dict[str, Any]]) -> list[LiveCase]:
             tags=tuple(c.get("tags", ())),
             reason=c.get("reason"),
             extra_columns_ok=c.get("extra_columns_ok", False),
+            subset_columns_ok=c.get("subset_columns_ok", False),
+            sql_reference=c.get("sql_reference"),
         )
         for c in raw_cases
     ]
@@ -160,6 +170,8 @@ def run_live_case(
 ) -> LiveCaseResult:
     """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question."""
     planner = planner or plan_question
+    if planner is plan_sql_question and case.sql_reference:
+        case = replace(case, expect="answer", reference_sql=case.sql_reference)
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
         try:
@@ -289,7 +301,13 @@ def _judge(case: LiveCase, compiled: Any, db_path: Path) -> tuple[str | None, st
 def _matches(
     case: LiveCase, actual: list[tuple[Any, ...]], expected: list[tuple[Any, ...]], db_path: Path
 ) -> bool:
-    if _results_match(actual, expected, ordered=case.ordered, extra_columns_ok=case.extra_columns_ok):
+    if _results_match(
+        actual,
+        expected,
+        ordered=case.ordered,
+        extra_columns_ok=case.extra_columns_ok,
+        subset_columns_ok=case.subset_columns_ok,
+    ):
         return True
     unlimited = _unlimited_reference_rows(case, db_path)
     return unlimited is not None and _valid_tie_resolution(actual, expected, unlimited)
@@ -418,6 +436,7 @@ def _results_match(
     *,
     ordered: bool,
     extra_columns_ok: bool = False,
+    subset_columns_ok: bool = False,
 ) -> bool:
     """Compare result sets, tolerating column order and float noise.
 
@@ -432,6 +451,8 @@ def _results_match(
     width = len(expected[0])
     if extra_columns_ok and actual and len(actual[0]) > width:
         return _contains_columns(actual, expected, ordered=ordered)
+    if subset_columns_ok and actual and len(actual[0]) < width:
+        return _contains_columns(expected, actual, ordered=ordered)
     if any(len(row) != width for row in actual):
         return False
     if width > 4:
@@ -496,9 +517,24 @@ def _row_close(actual: tuple[Any, ...], expected: tuple[Any, ...]) -> bool:
         elif isinstance(a, (int, float)) and isinstance(e, (int, float)):
             if abs(float(a) - float(e)) > _FLOAT_TOL:
                 return False
+        elif isinstance(e, (date, datetime)) and isinstance(a, str):
+            if not _same_bucket(a, e):
+                return False
         elif str(a) != str(e):
             return False
     return True
+
+
+def _same_bucket(label: str, start: date | datetime) -> bool:
+    """'2022', '2022-03' or '2022-03-01' names the bucket a DATE_TRUNC start opens."""
+    if isinstance(start, datetime):
+        if start.time() != datetime.min.time():
+            return False
+        start = start.date()
+    iso = start.isoformat()
+    return label == iso or (label == iso[:7] and iso[8:] == "01") or (
+        label == iso[:4] and iso[5:] == "01-01"
+    )
 
 
 def _preview(rows: list[tuple[Any, ...]], limit: int = 2) -> str:

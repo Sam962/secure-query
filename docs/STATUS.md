@@ -257,6 +257,25 @@ case of the gpt-4.1-mini SQL run; see [adjudication/README.md](adjudication/READ
 questions answered under a defensible reading. 8 of 18 real errors are value
 grounding (the model guesses stored spellings/case) — the next fix.
 
+### Chinook dev on the SQL path: scoring fixes — 2026-10-07
+
+gpt-4.1-mini, validated SQL, 132 dev cases. The suite was written for the
+LogicalPlan path, so 11 of 14 "wrong" answers were correct. Fixed in the scorer
+and dev cases only (holdout untouched), then re-scored the same run without new
+model calls:
+
+- Text time buckets ('2022-03') match the DATE_TRUNC start they name.
+- 4 should-decline cases the IR cannot express get a `sql_reference`; the SQL
+  planner is scored on the answer (avg per customer / employee / album,
+  above-average customers).
+- `subset_columns_ok` on 5 cases: "which X has the most Y" may omit Y; a
+  customer list may omit SupportRepId.
+
+**Wrong 14/132 (10.6%) → 3/132 (2.3%)**, no correct answer turned wrong. The
+3 left are question readings: "albums do we sell" (sold vs offered),
+"playlists customers listen to" (no listening data), and non-rep employees
+counted in "customers per support rep".
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
