@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from secure_query.demo.chinook import sample_catalog
-from secure_query.kernel.builder import LQP
+from secure_query.demo.lqp import LQP
 from secure_query.planner.guard import (
     Concept,
     dropped_concepts,
@@ -19,6 +19,10 @@ from secure_query.planner.guard import (
 )
 
 CATALOG = sample_catalog()
+
+
+def _msg(hit) -> str | None:
+    return None if hit is None else hit[1]
 
 
 class TestRestrictedRequest:
@@ -34,7 +38,7 @@ class TestRestrictedRequest:
     def test_refuses_questions_naming_a_high_pii_column(self, question: str) -> None:
         reason = restricted_request(question, CATALOG)
         assert reason is not None
-        assert "Customer.Email" in reason
+        assert "Customer.Email" in _msg(reason)
 
     @pytest.mark.parametrize(
         "question",
@@ -79,7 +83,7 @@ class TestDroppedConcepts:
         plan = LQP.aggregate(table="Invoice").agg("count", None, alias="n").limit(1).build()
         reason = dropped_concepts("How many invoices were billed to each country?", plan, CATALOG)
         assert reason is not None
-        assert "Country" in reason
+        assert "Country" in _msg(reason)
 
     def test_table_level_terms_are_too_weak_to_refuse_on(self) -> None:
         """'customer' could mean the table or CustomerId; do not refuse on that."""
@@ -119,8 +123,7 @@ class TestPlanConcepts:
 
 
 def test_average_question_answered_without_avg_is_refused() -> None:
-    from secure_query.kernel.builder import LQP
-    from secure_query.planner.clarify import code_from_guard_message
+    from secure_query.demo.lqp import LQP
     from secure_query.planner.guard import dropped_average
 
     sum_and_count = (
@@ -130,9 +133,9 @@ def test_average_question_answered_without_avg_is_refused() -> None:
         .limit(1)
         .build()
     )
-    msg = dropped_average("What is the mean spend per buyer?", sum_and_count)
-    assert msg is not None
-    assert code_from_guard_message(msg, refused=True) == "dropped_concept"
+    hit = dropped_average("What is the mean spend per buyer?", sum_and_count)
+    assert hit is not None
+    assert hit[0] == "dropped_concept"
 
     with_avg = LQP.aggregate(table="Invoice").agg("avg", "Invoice.Total", alias="a").limit(1).build()
     assert dropped_average("What is the average invoice total?", with_avg) is None
@@ -166,7 +169,7 @@ def test_dropped_literals_catches_missing_value_filter() -> None:
         "limit": 1,
     }
     q = "Which AC/DC album has the most tracks?"
-    assert "AC" in (dropped_literals(q, LogicalPlan.model_validate(base), catalog) or "")
+    assert "AC" in (_msg(dropped_literals(q, LogicalPlan.model_validate(base), catalog)) or "")
     with_filter = {
         **base,
         "filters": [
@@ -200,7 +203,7 @@ def test_dropped_literals_skips_sentence_starts_and_flags_invented_values() -> N
              "values": [{"type": "string", "value": "Mexico"}]}
         ],
     }
-    assert "Mexico" in (dropped_literals(q, LogicalPlan.model_validate(invented), catalog) or "")
+    assert "Mexico" in (_msg(dropped_literals(q, LogicalPlan.model_validate(invented), catalog)) or "")
 
 
 def test_inexpressible_request() -> None:
@@ -240,19 +243,17 @@ def test_unrelated_metric() -> None:
 
 def test_dropped_concepts_refusal_is_scored_as_that_guard() -> None:
     """Scorecards credit refusals by code; a mislabel hides a guard's over-refusal."""
-    from secure_query.kernel.builder import LQP
-    from secure_query.planner.clarify import code_from_guard_message
+    from secure_query.demo.lqp import LQP
     from secure_query.planner.guard import dropped_concepts
 
     plan = LQP.aggregate(table="Invoice").agg("count", None, alias="n").limit(1).build()
-    msg = dropped_concepts("How many invoices per genre?", plan, CATALOG)
-    assert msg is not None
-    assert code_from_guard_message(msg, refused=True) == "dropped_concept"
+    hit = dropped_concepts("How many invoices per genre?", plan, CATALOG)
+    assert hit is not None
+    assert hit[0] == "dropped_concept"
 
 
 def test_average_per_other_entity_is_refused() -> None:
-    from secure_query.kernel.builder import LQP
-    from secure_query.planner.clarify import code_from_guard_message
+    from secure_query.demo.lqp import LQP
     from secure_query.planner.guard import averaged_per_other_entity
 
     per_invoice = LQP.aggregate(table="Invoice").agg("avg", "Invoice.Total", alias="a").limit(1).build()
@@ -264,9 +265,9 @@ def test_average_per_other_entity_is_refused() -> None:
         .build()
     )
     for plan in (per_invoice, grouped):
-        msg = averaged_per_other_entity("What is the average spend per customer?", plan, CATALOG)
-        assert msg is not None
-        assert code_from_guard_message(msg, refused=True) == "analyst_handoff"
+        hit = averaged_per_other_entity("What is the average spend per customer?", plan, CATALOG)
+        assert hit is not None
+        assert hit[0] == "analyst_handoff"
 
     # AVG over the named entity's own rows answers "per <entity>".
     assert averaged_per_other_entity("Average total per invoice?", per_invoice, CATALOG) is None
@@ -277,7 +278,7 @@ def test_average_per_other_entity_is_refused() -> None:
 
 
 def test_count_must_run_over_the_counted_noun() -> None:
-    from secure_query.kernel.builder import LQP
+    from secure_query.demo.lqp import LQP
     from secure_query.planner.guard import counted_other_entity
 
     lines = LQP.aggregate(table="InvoiceLine").agg("count", None, alias="n").limit(1).build()

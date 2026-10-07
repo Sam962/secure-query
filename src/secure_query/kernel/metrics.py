@@ -208,18 +208,17 @@ def metric_tables(metric: MetricSpec) -> frozenset[str]:
         tables.add(right_table)
     for ref in metric.group_by:
         tables.add(_parse_col(ref).table_id)
-    measures = list(metric.aggregations)
-    measures += [f"{m}:_" for m in (metric.numerator, metric.denominator) if m]
-    for spec in measures:
+    for spec in metric.aggregations:
         agg = _parse_agg(spec)
         if agg.column is not None:
             tables.add(agg.column.table_id)
+    for measure in (metric.numerator, metric.denominator):
+        if not measure:
+            continue
+        agg = _parse_measure(measure, "_")
+        if agg.column is not None:
+            tables.add(agg.column.table_id)
     return frozenset(tables)
-
-
-def metrics_for_catalog(catalog: Catalog) -> list[MetricSpec]:
-    """Approved metrics defined on this catalog."""
-    return list(catalog.metrics)
 
 
 def get_metric(metric_id: str, catalog: Catalog) -> MetricSpec | None:

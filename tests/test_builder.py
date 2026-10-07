@@ -9,7 +9,7 @@ filter_raw escape hatch, and import from the top-level package.
 import pytest
 from pydantic import ValidationError
 
-from secure_query.kernel.builder import LQP, _parse_col
+from secure_query.demo.lqp import LQP, _parse_col
 from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,

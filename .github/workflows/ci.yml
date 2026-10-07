@@ -14,6 +14,11 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: pip install -e ".[dev,planner,api]"
+      - name: Cache Chinook sample DB
+        uses: actions/cache@v4
+        with:
+          path: data/chinook.duckdb
+          key: chinook-${{ hashFiles('src/secure_query/demo/load_chinook.py') }}
       - name: Load pinned Chinook sample DB
         run: python -m secure_query.demo.load_chinook --strict
       - name: Lint
@@ -22,10 +27,11 @@ jobs:
         run: python -c "import secure_query, sys; assert 'fastapi' not in sys.modules"
       - name: Unit tests
         run: pytest -q
-      - name: Compile must not interpolate SQL
+      - name: Compile path must not interpolate SQL
         run: |
-          if grep -E 'f["'\''].*\b(SELECT|INSERT|UPDATE|DELETE)\b' src/secure_query/kernel/compile.py; then
-            echo "compile.py must not f-string SQL"; exit 1
+          files="src/secure_query/kernel/compile.py src/secure_query/kernel/sql_validate.py src/secure_query/engine/execute.py src/secure_query/engine/postgres.py src/secure_query/engine/databricks.py"
+          if grep -E 'f["'\''].*\b(SELECT|INSERT|UPDATE|DELETE)\b' $files; then
+            echo "must not f-string SQL"; exit 1
           fi
       - name: Planner tests reject SQL in model output
         run: pytest -q tests/test_planner.py tests/test_adversarial.py

@@ -15,13 +15,13 @@ from secure_query.kernel.metrics import (
     expand_metric_plan,
     get_metric,
     metric_tables,
-    metrics_for_catalog,
 )
 from secure_query.kernel.validate import (
     PlanValidationFailed,
     validate_and_compile,
     validate_and_compile_metric,
 )
+from tests.conftest import requires_chinook
 
 _DB = "data/chinook.duckdb"
 
@@ -52,7 +52,7 @@ def _tiny_catalog(**updates) -> dict:
 
 def test_chinook_metrics_live_on_catalog() -> None:
     catalog = sample_catalog()
-    assert [m.id for m in metrics_for_catalog(catalog)] == [m.id for m in chinook_metrics()]
+    assert [m.id for m in catalog.metrics] == [m.id for m in chinook_metrics()]
     assert catalog.metric_ids == [m.id for m in chinook_metrics()]
 
 
@@ -113,6 +113,7 @@ def test_total_revenue_metric_expands_and_compiles() -> None:
     assert "Invoice" in compiled.sql
 
 
+@requires_chinook
 def test_ratio_metric_compiles_and_matches_reference() -> None:
     metric = _metric("avg_revenue_per_customer")
     compiled = validate_and_compile_metric(metric, expand_metric_plan(metric), sample_catalog())
@@ -125,6 +126,7 @@ def test_ratio_metric_compiles_and_matches_reference() -> None:
     assert got == pytest.approx(want)
 
 
+@requires_chinook
 def test_ratio_metric_applies_row_filters() -> None:
     metric = _metric("avg_revenue_per_customer")
     usa_only = Eq(
@@ -144,6 +146,7 @@ def test_ratio_metric_applies_row_filters() -> None:
     assert got == pytest.approx(want)
 
 
+@requires_chinook
 def test_ratio_metric_row_filter_on_parent_table_joins_via_catalog() -> None:
     """A row filter on a to-one parent is applied through the approved join."""
     metric = _metric("avg_revenue_per_customer")

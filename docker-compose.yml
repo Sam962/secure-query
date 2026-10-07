@@ -9,6 +9,9 @@ services:
       SECURE_QUERY_PRINCIPAL_ID: demo-user
       SECURE_QUERY_TENANT_ID: chinook
       SECURE_QUERY_AUDIT_PATH: data/audit.jsonl
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SECURE_QUERY_PROVIDER: ${SECURE_QUERY_PROVIDER:-}
+      SECURE_QUERY_MODEL: ${SECURE_QUERY_MODEL:-}
     volumes:
       - sq-data:/app/data
 

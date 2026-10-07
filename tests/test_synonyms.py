@@ -1,7 +1,7 @@
 """Tests for catalog synonyms and out-of-scope guards."""
 
 from secure_query.demo.chinook import sample_catalog
-from secure_query.kernel.builder import LQP
+from secure_query.demo.lqp import LQP
 from secure_query.planner.guard import catalog_vocabulary, opaque_grouping_keys, out_of_scope_request
 
 
@@ -28,11 +28,11 @@ def test_genre_synonym_in_vocabulary() -> None:
 
 def test_supplier_question_is_out_of_scope() -> None:
     catalog = sample_catalog()
-    msg = out_of_scope_request(
+    hit = out_of_scope_request(
         "How much did we spend with our suppliers last quarter?", catalog
     )
-    assert msg is not None
-    assert "supplier" in msg.lower()
+    assert hit is not None
+    assert "supplier" in hit[1].lower()
 
 
 def test_brazil_customer_question_not_out_of_scope() -> None:
@@ -70,7 +70,7 @@ def test_opaque_grouping_refuses_artist_id() -> None:
         "Which artist has the most albums? Just the top one.", plan, catalog
     )
     assert reason is not None
-    assert "Artist.Name" in reason
+    assert "Artist.Name" in reason[1]
 
 
 def test_revenue_question_not_out_of_scope() -> None:

@@ -23,8 +23,8 @@
 | AST-only compile | `kernel/compile.py` sqlglot nodes | CI grep (no f-string SQL) |
 | Execute RO + timeout + limit | `engine/execute.py`; Postgres session `default_transaction_read_only`; timeouts cancel the query | `test_execute.py`, `test_postgres.py`, `test_databricks.py` |
 | Audit trail with principal | `AuditRecord` JSONL; the question is stored as SHA-256 + length, never as text | `test_execute.py`, `test_databricks.py` |
-| Approved catalog only | `sample_catalog.py` / reviewed UC draft | catalog tests |
-| Tenant / role isolation | `auth.py` principal + row filters + metric slice | `test_auth.py` |
+| Approved catalog only | `demo/chinook.py` / reviewed UC draft | catalog tests |
+| Tenant / role isolation | `auth/__init__.py` principal + row filters + metric slice | `test_auth.py` |
 | Server-side identity | `resolve_principal()` | `test_auth.py`, `test_api.py` |
 | Header identity only via a trusted proxy | `SECURE_QUERY_TRUSTED_PROXIES`; startup refuses `header` mode without it | `test_auth.py` |
 | No DB error text to clients | `api/http.py` handlers: generic 503 + audit id, 502 for planner failures; `/ready` names no tenant or path | `test_api.py` |
@@ -67,4 +67,4 @@ Ratio metrics (`numerator` / `denominator`) expand to a `LogicalPlan`, so mandat
 
 ## Adversarial coverage
 
-`tests/test_adversarial.py` checks: SQL in planner JSON, SQL pasted as the question, and unknown API fields. Compile is AST-only; CI greps `kernel/compile.py` for f-string SQL.
+`tests/test_adversarial.py` checks: SQL in planner JSON, SQL pasted as the question, and unknown API fields. Compile is AST-only; CI greps `compile.py`, `sql_validate.py`, and the execute backends for f-string SQL.

@@ -7,8 +7,8 @@ independent model rater to label it with a fixed rubric. A human rater labels
 the same packets blind; the merge is conservative (real_error if either says so).
 
 Usage:
-    python -m secure_query.evals.adjudicate packets REPORT.json [BLOCKED.json] -o packets.json
-    python -m secure_query.evals.adjudicate rate packets.json -o model_labels.json --model gpt-5-2025-08-07
+    python scripts/adjudicate.py packets REPORT.json [BLOCKED.json] -o packets.json
+    python scripts/adjudicate.py rate packets.json -o model_labels.json --model gpt-5-2025-08-07
 """
 
 from __future__ import annotations
@@ -16,9 +16,14 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from pathlib import Path
 
 import duckdb
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_ROOT / "src"))
 
 from secure_query.evals.spider import load_spider
 

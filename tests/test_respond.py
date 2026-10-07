@@ -9,7 +9,7 @@ from secure_query.api.respond import (
     result_column_units,
 )
 from secure_query.demo.chinook import sample_catalog
-from secure_query.kernel.builder import LQP
+from secure_query.demo.lqp import LQP
 
 
 def test_binary_float_dust_rounds_to_cents() -> None:

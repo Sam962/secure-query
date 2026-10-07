@@ -3,7 +3,6 @@
 This package is the security boundary. The LLM never lives here.
 """
 
-from secure_query.kernel.builder import LQP
 from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, Synonym, TableSpec
 from secure_query.kernel.compile import CompilationError, CompiledQuery, compile
 from secure_query.kernel.errors import ValidationError
@@ -17,7 +16,6 @@ __all__ = [
     "CompilationError",
     "CompiledQuery",
     "JoinKey",
-    "LQP",
     "LogicalPlan",
     "Synonym",
     "TableSpec",

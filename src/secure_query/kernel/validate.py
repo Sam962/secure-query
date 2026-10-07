@@ -10,7 +10,7 @@ import re
 from dataclasses import replace
 
 from secure_query.kernel.catalog import Catalog, ColumnSpec
-from secure_query.kernel.compile import CompilationError, CompiledQuery, SemiJoin, compile, compile_ratio
+from secure_query.kernel.compile import CompiledQuery, SemiJoin, compile, compile_ratio
 from secure_query.kernel.errors import ValidationError
 from secure_query.kernel.joins import fan_out_errors, many_side_paths, resolve_joins
 from secure_query.kernel.logical_plan import (
@@ -442,28 +442,27 @@ def _check_pii_policy(plan: LogicalPlan, catalog: Catalog) -> list[ValidationErr
     """
     errors: list[ValidationError] = []
 
-    for label, filters in (("filters", plan.filters),):
-        for i, filt in enumerate(filters):
-            path = f"$.{label}[{i}]"
-            if _is_high_pii(catalog, filt.column):
-                errors.append(
-                    _pii_error(
-                        "policy.pii_filter_blocked",
-                        path,
-                        filt.column,
-                        "cannot be used in filters",
-                    )
+    for i, filt in enumerate(plan.filters):
+        path = f"$.filters[{i}]"
+        if _is_high_pii(catalog, filt.column):
+            errors.append(
+                _pii_error(
+                    "policy.pii_filter_blocked",
+                    path,
+                    filt.column,
+                    "cannot be used in filters",
                 )
-            value = getattr(filt, "value", None)
-            if isinstance(value, ColumnRef) and _is_high_pii(catalog, value):
-                errors.append(
-                    _pii_error(
-                        "policy.pii_filter_blocked",
-                        f"{path}.value",
-                        value,
-                        "cannot be used in filters",
-                    )
+            )
+        value = getattr(filt, "value", None)
+        if isinstance(value, ColumnRef) and _is_high_pii(catalog, value):
+            errors.append(
+                _pii_error(
+                    "policy.pii_filter_blocked",
+                    f"{path}.value",
+                    value,
+                    "cannot be used in filters",
                 )
+            )
 
     if plan.group_by is not None:
         for i, col in enumerate(plan.group_by.columns):
@@ -646,12 +645,9 @@ def validate_and_compile(plan: LogicalPlan, catalog: Catalog) -> CompiledQuery:
         if is_list_intent(plan)
         else None
     )
-    try:
-        return compile(
-            plan, dialect=catalog.sql_dialect, projection=projection, semi_joins=semi_joins
-        )
-    except CompilationError:
-        raise
+    return compile(
+        plan, dialect=catalog.sql_dialect, projection=projection, semi_joins=semi_joins
+    )
 
 
 def _list_semi_joins(

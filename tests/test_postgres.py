@@ -5,7 +5,7 @@ from __future__ import annotations
 import sqlglot
 
 from secure_query.demo.chinook import sample_catalog
-from secure_query.kernel.builder import LQP
+from secure_query.demo.lqp import LQP
 from secure_query.kernel.compile import compile
 from secure_query.kernel.metrics import expand_metric_plan, get_metric
 from secure_query.kernel.validate import validate_and_compile, validate_and_compile_metric

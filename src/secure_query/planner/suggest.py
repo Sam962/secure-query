@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict
 
 from secure_query.kernel.catalog import Catalog
-from secure_query.kernel.metrics import MetricSpec, metrics_for_catalog
+from secure_query.kernel.metrics import MetricSpec
 from secure_query.planner.retrieve import tokenize
 
 if TYPE_CHECKING:
@@ -72,7 +72,7 @@ def suggest_questions(
 
 def _starters(catalog: Catalog) -> list[SuggestedQuestion]:
     out: list[SuggestedQuestion] = []
-    for metric in metrics_for_catalog(catalog):
+    for metric in catalog.metrics:
         if metric.kind == "ratio":
             continue
         question = _question_for_metric(metric)
@@ -92,7 +92,7 @@ def _starters(catalog: Catalog) -> list[SuggestedQuestion]:
 def _ambiguous_metric_options(question: str, catalog: Catalog) -> list[SuggestedQuestion]:
     q = " ".join(question.lower().split())
     out: list[SuggestedQuestion] = []
-    for metric in metrics_for_catalog(catalog):
+    for metric in catalog.metrics:
         phrase = metric.id.replace("_", " ")
         if phrase and phrase in q:
             out.append(
@@ -135,7 +135,7 @@ def _overlapping_metrics(question: str, catalog: Catalog) -> list[SuggestedQuest
     if not q_tokens:
         return []
     scored: list[tuple[int, MetricSpec]] = []
-    for metric in metrics_for_catalog(catalog):
+    for metric in catalog.metrics:
         if metric.kind == "ratio":
             continue
         id_tokens = tokenize(metric.id.replace("_", " "))
@@ -160,16 +160,6 @@ def _question_for_metric(metric: MetricSpec) -> str:
     Descriptions contain analyst words like "grouped" that the out-of-scope
     guard treats as unknown catalog terms, so suggesting them loops.
     """
-    canned = {
-        "total_revenue": "What is total invoice revenue?",
-        "invoice_count": "How many invoices are there?",
-        "employee_count": "How many employees are there?",
-        "revenue_by_country": "What is revenue by country?",
-        "revenue_by_billing_country": "What is revenue by billing country?",
-        "revenue_by_genre": "What is revenue by genre?",
-    }
-    if metric.id in canned:
-        return canned[metric.id]
     return f"What is {metric.id.replace('_', ' ')}?"
 
 

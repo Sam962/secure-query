@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import uuid
 from contextlib import asynccontextmanager
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from secure_query.api.service import ReviewMismatch, ask, execute_reviewed, production_auth_blocked
 from secure_query.auth import AuthError, check_auth_config, resolve_principal
 from secure_query.engine.databricks import databricks_grant_check
+from secure_query.engine.env import load_dotenv
 from secure_query.engine.execute import ExecuteOptions, ExecutionError
 from secure_query.engine.runtime import get_runtime, load_active_catalog
 from secure_query.planner import PlannerError, get_client
@@ -38,14 +40,22 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
+    load_dotenv()
     check_auth_config()  # refuse to start with an unsafe auth configuration
     yield
+
+
+def _package_version() -> str:
+    try:
+        return pkg_version("secure-query")
+    except Exception:  # noqa: BLE001 — uninstalled source tree
+        return "0.0.0"
 
 
 app = FastAPI(
     lifespan=_lifespan,
     title="Secure Query API",
-    version="0.4.0",
+    version=_package_version(),
     description="Governed talk-to-data: LogicalPlan → validate → AST compile → execute.",
 )
 

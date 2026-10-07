@@ -21,9 +21,16 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import ColumnRef, LiteralValue, LogicalPlan
+
+if TYPE_CHECKING:
+    from secure_query.planner.clarify import ClarifyCode
+
+GuardHit = tuple["ClarifyCode", str]
 
 _MIN_PART_LEN = 4
 
@@ -129,7 +136,6 @@ _STOP_WORDS = frozenset(
         "limited",
         "rows",
         "row",
-        "every",
         "work",
         "works",
         "defined",
@@ -140,12 +146,9 @@ _STOP_WORDS = frozenset(
         "higher",
         "lower",
         "greater",
-        "appear",
         "distinct",
-        "either",
         "both",
         "per",
-        "each",
         "largest",
         "smallest",
         "biggest",
@@ -160,7 +163,6 @@ _STOP_WORDS = frozenset(
         "roughly",
         "about",
         "approximately",
-        "appear",
         "appears",
         "appeared",
     }
@@ -178,7 +180,7 @@ class Concept:
         return self.table if self.column is None else f"{self.table}.{self.column}"
 
 
-def restricted_request(question: str, catalog: Catalog) -> str | None:
+def restricted_request(question: str, catalog: Catalog) -> GuardHit | None:
     """Reason to refuse before planning, or None to proceed.
 
     Only refuses on terms whose every possible meaning is a high-PII column.
@@ -206,14 +208,16 @@ def restricted_request(question: str, catalog: Catalog) -> str | None:
     if not restricted:
         return None
     return (
+        "restricted_pii",
         f"That question asks for restricted data: {_describe(restricted)}. "
-        "Those fields are not available through this interface."
+        "Those fields are not available through this interface.",
     )
 
 
-def dropped_concepts(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
+def dropped_concepts(question: str, plan: LogicalPlan, catalog: Catalog) -> GuardHit | None:
     """Reason to refuse when the plan never returns a concept the question asks about."""
-    return missing_concepts(question, plan_concepts(plan, catalog), catalog)
+    message = missing_concepts(question, plan_concepts(plan, catalog), catalog)
+    return None if message is None else ("dropped_concept", message)
 
 
 def missing_concepts(question: str, used: set[Concept], catalog: Catalog) -> str | None:
@@ -297,22 +301,23 @@ _INEXPRESSIBLE_RE = re.compile(
 )
 
 
-def inexpressible_request(question: str) -> str | None:
+def inexpressible_request(question: str) -> GuardHit | None:
     """Reason to refuse when the question needs math the LogicalPlan cannot do."""
     match = _INEXPRESSIBLE_RE.search(question)
     if match is None:
         return None
     return (
+        "analyst_handoff",
         f'The question asks for a "{match.group(0)}", which needs arithmetic between '
         "aggregates or across periods; no plan here can compute it exactly. "
-        "Refusing rather than answering a nearby question."
+        "Refusing rather than answering a nearby question.",
     )
 
 
 _AVERAGE_RE = re.compile(r"\b(average|averages|avg|mean)\b", re.IGNORECASE)
 
 
-def unrelated_metric(question: str, metric_id: str) -> str | None:
+def unrelated_metric(question: str, metric_id: str) -> GuardHit | None:
     """Reason to refuse when an approved metric shares no word with the question.
 
     Metrics bypass plan-shape guards, so a model that picks `line_item_revenue`
@@ -323,17 +328,19 @@ def unrelated_metric(question: str, metric_id: str) -> str | None:
     if any(_expand_term(w) & asked for w in words):
         return None
     return (
+        "dropped_concept",
         f"The approved metric {metric_id!r} does not match what the question asks for. "
-        "Refusing rather than answering a different question."
+        "Refusing rather than answering a different question.",
     )
 
 
 _COUNT_RE = re.compile(r"\b(how many|number of|count of)\b", re.IGNORECASE)
 
 
-def dropped_count(question: str, plan: LogicalPlan) -> str | None:
+def dropped_count(question: str, plan: LogicalPlan) -> GuardHit | None:
     """Reason to refuse when the question asks for a count and the plan lists rows."""
-    return lists_instead_of_count(question, aggregated=bool(plan.aggregations))
+    message = lists_instead_of_count(question, aggregated=bool(plan.aggregations))
+    return None if message is None else ("dropped_concept", message)
 
 
 def lists_instead_of_count(question: str, *, aggregated: bool) -> str | None:
@@ -345,7 +352,7 @@ def lists_instead_of_count(question: str, *, aggregated: bool) -> str | None:
     )
 
 
-def dropped_average(question: str, plan: LogicalPlan) -> str | None:
+def dropped_average(question: str, plan: LogicalPlan) -> GuardHit | None:
     """Reason to refuse when the question asks for an average and the plan has none.
 
     "average" is in _GENERIC_TERMS because it names no catalog column, so
@@ -353,7 +360,8 @@ def dropped_average(question: str, plan: LogicalPlan) -> str | None:
     customer" can come back as a SUM and a COUNT side by side: real numbers,
     but not the one asked for. Approved ratio metrics never reach this guard.
     """
-    return missing_average(question, averaged=any(a.fn == "avg" for a in plan.aggregations))
+    message = missing_average(question, averaged=any(a.fn == "avg" for a in plan.aggregations))
+    return None if message is None else ("dropped_concept", message)
 
 
 def missing_average(question: str, *, averaged: bool) -> str | None:
@@ -372,7 +380,7 @@ _AVG_PER_RE = re.compile(
 
 def averaged_per_other_entity(
     question: str, plan: LogicalPlan, catalog: Catalog
-) -> str | None:
+) -> GuardHit | None:
     """Reason to refuse when "average X per Y" averages rows of a table other than Y.
 
     AVG(Total) over invoices is the average per *invoice*. "Average spend per
@@ -399,10 +407,11 @@ def averaged_per_other_entity(
     if not entity_tables or averaged <= entity_tables:
         return None
     return (
+        "analyst_handoff",
         f'The question asks for an average per {word}, but this plan averages '
         f"{', '.join(sorted(averaged))} rows. A per-{word} figure is a ratio (a total "
         f"divided by a count of {word}s), which no plan here can compute. "
-        f'To get one average for each {word}, ask "average … for each {word}".'
+        f'To get one average for each {word}, ask "average … for each {word}".',
     )
 
 
@@ -412,7 +421,7 @@ _COUNT_NOUN_RE = re.compile(
 )
 
 
-def counted_other_entity(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
+def counted_other_entity(question: str, plan: LogicalPlan, catalog: Catalog) -> GuardHit | None:
     """Reason to refuse when "how many X" counts rows of a table that is not X.
 
     COUNT(*) counts the plan's source rows. "How many products do we sell?"
@@ -448,15 +457,16 @@ def counted_other_entity(question: str, plan: LogicalPlan, catalog: Catalog) -> 
     if counted <= entity_tables | named:
         return None
     return (
+        "dropped_concept",
         f'The question asks how many {noun}, but this plan counts '
-        f"{', '.join(sorted(counted))} rows. Refusing rather than counting something else."
+        f"{', '.join(sorted(counted))} rows. Refusing rather than counting something else.",
     )
 
 
 _VALUE_WORD_RE = re.compile(r"\b(?:[A-Z][\w'&]*|(?:19|20)\d\d)\b")
 
 
-def dropped_literals(question: str, plan: LogicalPlan, catalog: Catalog) -> str | None:
+def dropped_literals(question: str, plan: LogicalPlan, catalog: Catalog) -> GuardHit | None:
     """Reason to refuse when the question names a value no filter uses, or vice versa.
 
     "Which AC/DC album has the most tracks?" answered without an AC/DC filter
@@ -472,7 +482,8 @@ def dropped_literals(question: str, plan: LogicalPlan, catalog: Catalog) -> str 
     strings = [lit for filt in plan.filters for lit in _string_literals(filt)]
     numbers = [lit.value for filt in plan.filters for lit in _numeric_literals(filt)]
     numbers += [h.value.value for h in plan.having]
-    return unmatched_values(question, values, strings, numbers, catalog)
+    message = unmatched_values(question, values, strings, numbers, catalog)
+    return None if message is None else ("dropped_filter", message)
 
 
 def unmatched_values(
@@ -642,28 +653,40 @@ def concept_terms(name: str) -> set[str]:
 
 def catalog_vocabulary(catalog: Catalog) -> dict[str, set[Concept]]:
     """Map every term a user might say to the catalog entities it could mean."""
+    return _catalog_vocabulary_cached(_vocab_cache_key(catalog))
+
+
+def _vocab_cache_key(catalog: Catalog) -> tuple:
+    return (
+        tuple((t.name, tuple(c.name for c in t.columns)) for t in catalog.tables),
+        tuple((s.term, s.table_id, s.column_id) for s in catalog.synonyms),
+    )
+
+
+@lru_cache(maxsize=64)
+def _catalog_vocabulary_cached(key: tuple) -> dict[str, set[Concept]]:
+    """Build vocabulary from a hashable catalog snapshot (S4 / M7)."""
+    tables, synonyms = key
     vocabulary: dict[str, set[Concept]] = {}
 
     def add(term: str, concept: Concept) -> None:
         vocabulary.setdefault(term, set()).add(concept)
 
-    for table in catalog.tables:
-        for term in concept_terms(table.name):
-            add(term, Concept(table=table.name))
-        for col in table.columns:
-            for term in concept_terms(col.name):
-                add(term, Concept(table=table.name, column=col.name))
-    for syn in catalog.synonyms:
-        # Whole phrase only: "music genre" must not make "music" alone mean Genre.Name.
-        # Spaces are dropped to match question_terms' adjacent-word pairs.
-        phrase = re.sub(r"[^a-z0-9]+", "", syn.term.lower())
-        add(phrase, Concept(table=syn.table_id, column=syn.column_id))
+    for table_name, columns in tables:
+        for term in concept_terms(table_name):
+            add(term, Concept(table=table_name))
+        for col_name in columns:
+            for term in concept_terms(col_name):
+                add(term, Concept(table=table_name, column=col_name))
+    for term, table_id, column_id in synonyms:
+        phrase = re.sub(r"[^a-z0-9]+", "", term.lower())
+        add(phrase, Concept(table=table_id, column=column_id))
     return vocabulary
 
 
 def opaque_grouping_keys(
     question: str, plan: LogicalPlan, catalog: Catalog
-) -> str | None:
+) -> GuardHit | None:
     """Refuse when grouping by an FK id but the question asks for a readable label."""
     if plan.group_by is None:
         return None
@@ -681,8 +704,9 @@ def opaque_grouping_keys(
         if label in used:
             continue
         return (
+            "dropped_concept",
             f"The plan groups by {col.table_id}.{col.column_id} but the question "
-            f"asks for a human-readable label; group by {spec.label_for} instead."
+            f"asks for a human-readable label; group by {spec.label_for} instead.",
         )
     return None
 
@@ -701,7 +725,7 @@ _CALENDAR_TERMS = frozenset(
 )
 
 
-def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
+def out_of_scope_request(question: str, catalog: Catalog) -> GuardHit | None:
     """Refuse when the question names concepts absent from catalog + synonyms + metrics."""
     unknown = unknown_terms(question, catalog)
     if not unknown:
@@ -711,8 +735,9 @@ def out_of_scope_request(question: str, catalog: Catalog) -> str | None:
     if extra > 0:
         shown = f"{shown}, and {extra} more"
     return (
+        "out_of_scope",
         f"The question mentions terms not in the approved catalog or synonyms: {shown}. "
-        "Refusing rather than guessing."
+        "Refusing rather than guessing.",
     )
 
 

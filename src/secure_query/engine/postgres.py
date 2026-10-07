@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import time
 from concurrent.futures import TimeoutError as FuturesTimeout
 from typing import Any
 from urllib.parse import urlparse, urlunparse
@@ -13,8 +12,8 @@ from secure_query.engine.execute import (
     ExecuteOptions,
     ExecutionError,
     ExecutionResult,
-    _make_audit,
-    _maybe_write_audit,
+    _safe_close,
+    run_with_policy,
 )
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.kernel.logical_plan import LogicalPlan
@@ -53,69 +52,19 @@ def execute_postgres(
     if not target:
         raise ExecutionError("Postgres DSN not configured")
 
-    started = time.perf_counter()
-    try:
-        columns, rows, truncated = _run_with_timeout(
+    return run_with_policy(
+        compiled,
+        plan=plan,
+        question=question,
+        principal=principal,
+        options=opts,
+        backend="postgres",
+        runner=lambda: _run_with_timeout(
             target,
             compiled.sql,
             timeout_seconds=opts.timeout_seconds,
             max_rows=opts.max_rows,
-        )
-        duration_ms = (time.perf_counter() - started) * 1000
-        audit = _make_audit(
-            status="ok",
-            compiled=compiled,
-            plan=plan,
-            question=question,
-            principal=principal,
-            row_count=len(rows),
-            truncated=truncated,
-            duration_ms=duration_ms,
-            backend="postgres",
-        )
-    except FuturesTimeout as exc:
-        duration_ms = (time.perf_counter() - started) * 1000
-        audit = _make_audit(
-            status="timeout",
-            compiled=compiled,
-            plan=plan,
-            question=question,
-            principal=principal,
-            row_count=0,
-            truncated=False,
-            duration_ms=duration_ms,
-            error=f"query exceeded timeout_seconds={opts.timeout_seconds}",
-            backend="postgres",
-        )
-        _maybe_write_audit(opts.audit_path, audit)
-        raise ExecutionError(audit.error or "timeout", audit_id=audit.audit_id) from exc
-    except Exception as exc:  # noqa: BLE001
-        if isinstance(exc, ExecutionError):
-            raise
-        duration_ms = (time.perf_counter() - started) * 1000
-        audit = _make_audit(
-            status="error",
-            compiled=compiled,
-            plan=plan,
-            question=question,
-            principal=principal,
-            row_count=0,
-            truncated=False,
-            duration_ms=duration_ms,
-            error=str(exc),
-            backend="postgres",
-        )
-        _maybe_write_audit(opts.audit_path, audit)
-        raise ExecutionError(str(exc), audit_id=audit.audit_id) from exc
-
-    _maybe_write_audit(opts.audit_path, audit)
-    return ExecutionResult(
-        columns=columns,
-        rows=rows,
-        truncated=truncated,
-        duration_ms=duration_ms,
-        audit=audit,
-        compiled=compiled,
+        ),
     )
 
 
@@ -163,13 +112,6 @@ def _execute_once(
     truncated = len(fetched) > max_rows
     rows = [tuple(row) for row in fetched[:max_rows]]
     return cols, rows, truncated
-
-
-def _safe_close(conn: Any) -> None:
-    try:
-        conn.close()
-    except Exception:  # noqa: BLE001
-        pass
 
 
 def _normalize_dsn(dsn: str) -> str:

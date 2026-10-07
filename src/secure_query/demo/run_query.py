@@ -10,8 +10,8 @@ from pathlib import Path
 
 from secure_query.demo.chinook import sample_catalog
 from secure_query.demo.load_chinook import DATA_DIR, DUCKDB_PATH, load_sample_db
+from secure_query.demo.lqp import LQP
 from secure_query.engine.execute import ExecuteOptions, execute_duckdb
-from secure_query.kernel.builder import LQP
 from secure_query.kernel.validate import validate_and_compile
 
 

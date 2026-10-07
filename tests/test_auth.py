@@ -18,7 +18,7 @@ from secure_query.auth import (
 )
 from secure_query.demo.chinook import sample_catalog
 from secure_query.kernel.logical_plan import ColumnRef, Eq, Join, LiteralValue, LogicalPlan
-from secure_query.kernel.metrics import metric_tables, metrics_for_catalog
+from secure_query.kernel.metrics import metric_tables
 from secure_query.kernel.validate import validate, validate_and_compile
 from secure_query.planner import try_compile_metric
 
@@ -108,7 +108,7 @@ def test_invoice_principal_keeps_invoice_metrics_only() -> None:
     assert "avg_revenue_per_customer" in ids
     assert "employee_count" not in ids
     assert "revenue_by_genre" not in ids
-    for metric in metrics_for_catalog(sliced):
+    for metric in sliced.metrics:
         assert metric_tables(metric) <= {"Invoice", "Customer"}
 
 
@@ -231,7 +231,7 @@ def test_load_principal_registry_tokens_env(monkeypatch: pytest.MonkeyPatch) -> 
 
 def test_restricted_principal_cannot_make_unapproved_joins() -> None:
     """Slicing away every join key must deny joins, not fall back to allow-any."""
-    from secure_query.kernel.builder import LQP
+    from secure_query.demo.lqp import LQP
 
     base = sample_catalog()
     p = Principal(

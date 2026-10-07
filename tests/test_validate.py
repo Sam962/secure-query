@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 
 from secure_query.demo.chinook import sample_catalog
-from secure_query.kernel.builder import LQP
+from secure_query.demo.lqp import LQP
 from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
 from secure_query.kernel.logical_plan import (
     Aggregation,
@@ -377,7 +377,7 @@ def test_cross_join_rejected_by_policy() -> None:
 def test_order_keys_after_full_group_key_are_rejected() -> None:
     """ORDER BY Country, revenue DESC LIMIT 5 returns the alphabetically first countries."""
     from secure_query.demo.chinook import sample_catalog
-    from secure_query.kernel.builder import LQP
+    from secure_query.demo.lqp import LQP
     from secure_query.kernel.validate import validate
 
     def plan(order: list[tuple[str, str]]):
