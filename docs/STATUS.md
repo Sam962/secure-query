@@ -304,6 +304,25 @@ are dropped. Dev with grounding (replay) is 1.75%: test is ~2 points worse,
 inside overlapping intervals. Remaining value errors are synonyms ('United
 States'/'USA'), case-sensitive LIKE and coded flags ('Y'/1), not spellings.
 
+### Absent values and case-insensitive LIKE — 2026-10-07
+
+Across ~860 saved Spider answers (dev + test, after grounding), a filter value
+that no stored row has occurred 6 times, and all 6 were adjudicated real errors.
+The SQL planner now names such a value back to the model in its repair round
+("no stored Customers.country equals 'United States'"), without revealing any
+stored value; if the model keeps it, the empty answer stands. LIKE patterns
+become ILIKE.
+
+Measured (gpt-4.1-mini, live on every affected case): case-insensitive LIKE 3
+wrong → right (replay over all 18 LIKE queries: 0 right → wrong); 5 real errors
+become refusals ('United States', 'Mckeown', 'amc', is_buyer 'Y' twice — the
+model's retry with 'yes' is stopped by `dropped_filter`). Spider test real
+wrong 15 → **11/400 (2.75%)**. Legitimately empty questions on Chinook
+(Antarctica, Iceland, 'CEO') still answer; 'Polka' is declined with a true
+message. No triggers on Chinook dev, Northwind or Northwind dev. Cost: one extra
+LLM call, only on these questions (~0.7%). Turning the refusals into right
+answers would need stored values in the prompt (per-catalog opt-in, not done).
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
