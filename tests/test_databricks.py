@@ -140,3 +140,74 @@ def test_execute_databricks_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
             connection=_FakeConnection(rows=[], columns=["n"]),
             options=ExecuteOptions(timeout_seconds=0.1),
         )
+
+
+def test_databricks_timeout_cancels_the_running_statement() -> None:
+    """M3: on timeout the statement is cancelled and the worker joined."""
+    import threading
+
+    cancelled = threading.Event()
+
+    class SlowCursor:
+        description = [("n",)]
+
+        def execute(self, sql):
+            cancelled.wait(5)  # runs until cancelled
+
+        def fetchmany(self, n):
+            return []
+
+        def cancel(self):
+            cancelled.set()
+
+        def close(self):
+            pass
+
+    con = _FakeConnection(rows=[], columns=["n"])
+    con.cursor = lambda: SlowCursor()  # type: ignore[method-assign]
+    compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
+    before = set(threading.enumerate())
+    with pytest.raises(ExecutionError, match="timeout"):
+        execute_databricks(compiled, connection=con, options=ExecuteOptions(timeout_seconds=0.2))
+    assert cancelled.is_set()
+    assert not [t for t in set(threading.enumerate()) - before if t.name.startswith("sq-databricks")]
+
+
+class _GrantCursor:
+    def __init__(self, grants: list[tuple[str, str]]) -> None:
+        self._grants = grants
+        self.description = None
+
+    def execute(self, sql):
+        if sql.startswith("SHOW GRANTS"):
+            self.description = [("Principal",), ("ActionType",), ("ObjectType",), ("ObjectKey",)]
+        self.sql = sql
+
+    def fetchone(self):
+        return ("svc-reader@corp",)
+
+    def fetchall(self):
+        return [(p, a, "SCHEMA", "main.sales") for p, a in self._grants]
+
+    def close(self):
+        pass
+
+
+def _grant_connection(grants):
+    con = _FakeConnection(rows=[], columns=[])
+    con.cursor = lambda: _GrantCursor(grants)  # type: ignore[method-assign]
+    return con
+
+
+def test_grant_check_reports_select_only_write_and_unchecked(monkeypatch) -> None:
+    from secure_query.engine.databricks import databricks_grant_check
+
+    monkeypatch.delenv("SECURE_QUERY_DATABRICKS_SCHEMA", raising=False)
+    assert databricks_grant_check(_grant_connection([]))["status"] == "unchecked"
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    ok = databricks_grant_check(
+        _grant_connection([("svc-reader@corp", "SELECT"), ("svc-reader@corp", "USE SCHEMA"), ("admins", "MODIFY")])
+    )
+    assert ok["status"] == "select_only"  # another principal's MODIFY is not ours
+    bad = databricks_grant_check(_grant_connection([("svc-reader@corp", "MODIFY")]))
+    assert bad["status"] == "write_privileges" and "MODIFY" in bad["detail"]

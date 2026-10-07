@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -70,7 +71,11 @@ def test_execute_ok_and_audit_file(tiny_db: Path, tmp_path: Path) -> None:
     assert audit_path.exists()
     line = json.loads(audit_path.read_text().strip().splitlines()[-1])
     assert line["status"] == "ok"
-    assert line["question"] == "revenue by country"
+    # M1: the audit log never stores the question text.
+    assert "question" not in line and "revenue by country" not in json.dumps(line)
+    assert line["question_sha256"] == hashlib.sha256(b"revenue by country").hexdigest()
+    assert line["question_length"] == len("revenue by country")
+    assert line["audit_id"]
     assert "SELECT" in line["sql"]
     assert "principal_id" in line
     assert "tenant_id" in line
@@ -163,3 +168,21 @@ def test_missing_db_raises(tmp_path: Path) -> None:
     compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
     with pytest.raises(ExecutionError, match="not found"):
         execute_duckdb(compiled, tmp_path / "nope.duckdb")
+
+
+def test_timeout_leaves_no_worker_running(tiny_db: Path) -> None:
+    """M3: after a timeout the interrupted query's worker thread is joined, not leaked."""
+    import threading
+
+    compiled = CompiledQuery(
+        sql="SELECT COUNT(*) FROM range(200000000) a, range(200000) b",
+        plan_hash="p",
+        sql_hash="s",
+        parameters=[],
+    )
+    before = set(threading.enumerate())
+    with pytest.raises(ExecutionError, match="timeout") as info:
+        execute_duckdb(compiled, tiny_db, options=ExecuteOptions(timeout_seconds=0.3))
+    assert info.value.audit_id  # M2: the client gets a reference, the log has the detail
+    left = [t for t in set(threading.enumerate()) - before if t.name.startswith("sq-duckdb")]
+    assert not left

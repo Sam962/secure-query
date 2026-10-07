@@ -175,10 +175,11 @@ def test_token_mode_requires_bearer(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_header_mode_unknown_user_forbidden(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "header")
+    monkeypatch.setenv("SECURE_QUERY_TRUSTED_PROXIES", "10.0.0.0/8")
     monkeypatch.delenv("SECURE_QUERY_API_TOKENS", raising=False)
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
     with pytest.raises(AuthError) as exc:
-        resolve_principal(forwarded_user="nobody")
+        resolve_principal(forwarded_user="nobody", client_host="10.1.2.3")
     assert exc.value.status_code == 403
 
 
@@ -205,9 +206,10 @@ def test_principals_file_row_filters(tmp_path, monkeypatch: pytest.MonkeyPatch) 
         encoding="utf-8",
     )
     monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "header")
+    monkeypatch.setenv("SECURE_QUERY_TRUSTED_PROXIES", "10.0.0.5")
     monkeypatch.setenv("SECURE_QUERY_PRINCIPALS_FILE", str(path))
     monkeypatch.delenv("SECURE_QUERY_API_TOKENS", raising=False)
-    principal = resolve_principal(forwarded_user="usa-manager")
+    principal = resolve_principal(forwarded_user="usa-manager", client_host="10.0.0.5")
     assert principal.allowed_tables == frozenset({"Customer"})
     assert len(principal.row_filters) == 1
     bound = inject_row_filters(
@@ -249,3 +251,30 @@ def test_restricted_principal_cannot_make_unapproved_joins() -> None:
     )
     codes = {e.code for e in validate(plan, sliced)}
     assert "policy.join_not_allowed" in codes
+
+
+def test_header_mode_without_trusted_proxies_refuses_to_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    """L13: X-Forwarded-User is only safe behind a known proxy."""
+    from fastapi.testclient import TestClient
+
+    from secure_query.api import app
+    from secure_query.auth import AuthConfigError, check_auth_config
+
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "header")
+    monkeypatch.delenv("SECURE_QUERY_TRUSTED_PROXIES", raising=False)
+    with pytest.raises(AuthConfigError):
+        check_auth_config()
+    with pytest.raises(AuthConfigError):
+        with TestClient(app):  # app startup runs the check
+            pass
+    monkeypatch.setenv("SECURE_QUERY_TRUSTED_PROXIES", "10.0.0.0/8, 192.168.1.4")
+    check_auth_config()
+
+
+def test_header_identity_is_ignored_unless_from_a_trusted_proxy(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "header")
+    monkeypatch.setenv("SECURE_QUERY_TRUSTED_PROXIES", "10.0.0.0/8")
+    for host in (None, "203.0.113.9", "not-an-ip"):
+        with pytest.raises(AuthError) as exc:
+            resolve_principal(forwarded_user="alice", client_host=host)
+        assert exc.value.status_code == 403

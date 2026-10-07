@@ -241,3 +241,65 @@ def test_two_asks_share_one_llm_client_and_one_catalog(monkeypatch: pytest.Monke
         assert client.post("/ask/confirm", json={"question": "revenue by country"}).status_code == 200
     assert built == {"client": 1, "runtime": 1}
     assert runtime_module.get_runtime() is runtime_module.get_runtime()
+
+
+def test_execute_errors_reach_the_client_without_database_text(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """M2: the client gets a generic message and the audit reference, never DB detail."""
+    from secure_query.engine.execute import ExecutionError
+
+    def boom(*_a, **_k):
+        raise ExecutionError(
+            'Catalog Error: Table with name "SecretPayroll" does not exist at /srv/data/x.duckdb',
+            audit_id="abc123",
+        )
+
+    monkeypatch.setattr("secure_query.api.http.ask", boom)
+    response = client.post("/ask", json={"question": "anything"})
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert "abc123" in detail
+    assert "SecretPayroll" not in detail and "/srv" not in detail
+
+
+def test_planner_failure_is_a_502_not_a_traceback(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from secure_query.planner import PlannerError
+
+    def down(*_a, **_k):
+        raise PlannerError("LLM request failed (openai gpt): Error code: 401 - invalid_api_key")
+
+    monkeypatch.setattr("secure_query.api.http.ask", down)
+    response = client.post("/ask/confirm", json={"question": "anything"})
+    assert response.status_code == 502
+    assert "invalid_api_key" not in response.json()["detail"]
+
+
+def test_ready_does_not_name_the_tenant(client: TestClient) -> None:
+    body = client.get("/ready").json()
+    assert "catalog_tenant" not in body and "chinook" not in json.dumps(body)
+
+
+def test_ready_reports_the_databricks_grant_check(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """H7: a warehouse principal with write privileges is not ready."""
+    from secure_query.engine import runtime as runtime_module
+
+    config = runtime_module.runtime_config()
+    monkeypatch.setattr(
+        "secure_query.api.http.get_runtime", lambda: config.__class__(**{**config.__dict__, "backend": "databricks"})
+    )
+    monkeypatch.setattr(
+        "secure_query.api.http.databricks_grant_check",
+        lambda: {"status": "select_only", "detail": "svc: SELECT"},
+    )
+    assert client.get("/ready").json()["databricks_grants"] == "select_only"
+    monkeypatch.setattr(
+        "secure_query.api.http.databricks_grant_check",
+        lambda: {"status": "write_privileges", "detail": "svc has MODIFY on main.sales"},
+    )
+    response = client.get("/ready")
+    assert response.status_code == 503 and "MODIFY" not in response.text
