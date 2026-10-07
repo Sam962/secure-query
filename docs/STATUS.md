@@ -225,6 +225,30 @@ refused ([merged result](baselines/spider-dev400-sqlguard-sc3-2026-10-06.merged.
 - Still open: 18 execution errors (no dry-run repair), 27 model refusals,
   and the 2% target. Next evidence: Spider test (held out) and a stronger model.
 
+### Model × planner on Spider dev — 2026-10-06
+
+Same 400 questions, guards on, K=3. gpt-4.1-mini-2025-04-14 vs qwen2.5:7b.
+Results: [SQL](baselines/spider-dev400-sql-gpt41mini-sc3-2026-10-06.json),
+[LQP](baselines/spider-dev400-lqp-gpt41mini-sc3-2026-10-06.json).
+
+| Model | Planner | Right (baseline) | Wrong (baseline) | Right (3/3) | Wrong (3/3) | Precision (baseline) |
+|-------|---------|------------------|------------------|-------------|-------------|----------------------|
+| qwen2.5:7b | LQP | 27.8% | 15.0% | 23.2% | 6.5% | 64.9% |
+| qwen2.5:7b | SQL | 57.8% | 13.8% | 49.8% | 7.0% | 80.8% |
+| gpt-4.1-mini | LQP | 52.2% | 11.8% | 43.5% | 6.2% | 81.6% |
+| gpt-4.1-mini | SQL | 68.8% | 10.8% | 64.2% | 8.2% | 86.5% |
+
+- The model explains most of the LQP gap (23% → 44% at 3/3); SQL still leads
+  by 16–20 points of right answers at a similar wrong rate.
+- With the stronger model, sample agreement helps little (errors are consistent),
+  and the lexical guards on SQL cost more than they save: `dropped_concept`
+  stopped 11 wrong / cost 32 right; `dropped_filter` 1 / 11.
+- Hand review of 18 of the 43 SQL "wrong" answers: ~5 clear model errors,
+  ~8 defensible readings of an ambiguous question (LEFT JOIN keeps zero-count
+  rows, LIKE vs = for "republic", DISTINCT), ~5 gold or engine artifacts
+  (SQLite text/number affinity, case-insensitive LIKE, a cross-join gold query).
+  Exact-match scoring on Spider is now noisier than the errors it measures.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
