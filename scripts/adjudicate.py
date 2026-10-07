@@ -25,6 +25,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_ROOT / "src"))
 
+from secure_query.engine.env import load_dotenv
 from secure_query.evals.spider import load_spider
 
 LABELS = ("real_error", "ambiguous", "benchmark_fault")
@@ -50,8 +51,8 @@ def _rows(rows: list, limit: int = 8) -> dict:
     return {"count": len(rows), "first": [list(map(str, r)) for r in rows[:limit]]}
 
 
-def build_packets(report: Path, blocked: Path | None) -> list[dict]:
-    items = {c.case_id: (c, cat, db) for c, cat, db in load_spider("dev")}
+def build_packets(report: Path, blocked: Path | None, split: str = "dev") -> list[dict]:
+    items = {c.case_id: (c, cat, db) for c, cat, db in load_spider(split)}
     disputed = [
         (c, c["sql"], "answered_wrong")
         for c in json.loads(report.read_text())["cases"]
@@ -116,19 +117,21 @@ def rate(packets: list[dict], model: str) -> dict[str, dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     pk = sub.add_parser("packets")
     pk.add_argument("report", type=Path)
     pk.add_argument("blocked", type=Path, nargs="?")
     pk.add_argument("-o", "--output", type=Path, required=True)
+    pk.add_argument("--split", default="dev", choices=("dev", "test"))
     rt = sub.add_parser("rate")
     rt.add_argument("packets", type=Path)
     rt.add_argument("-o", "--output", type=Path, required=True)
     rt.add_argument("--model", required=True)
     args = parser.parse_args(argv)
     if args.cmd == "packets":
-        packets = build_packets(args.report, args.blocked)
+        packets = build_packets(args.report, args.blocked, args.split)
         args.output.write_text(json.dumps(packets, indent=1, ensure_ascii=False))
         print(f"{len(packets)} packets -> {args.output}")
     else:
