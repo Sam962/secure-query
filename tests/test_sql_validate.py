@@ -330,6 +330,34 @@ def test_derived_side_of_unknown_grain_is_refused() -> None:
     )
 
 
+def test_pass_through_cte_limit_is_pushed_in() -> None:
+    """WITH i AS (SELECT …) SELECT * FROM i LIMIT 10 must not scan the whole table."""
+    import sqlglot
+
+    compiled = validate_sql(
+        "WITH i AS (SELECT InvoiceId, Total FROM Invoice) SELECT * FROM i LIMIT 10",
+        CATALOG,
+    ).compiled.sql
+    tree = sqlglot.parse_one(compiled, read="duckdb")
+    cte = (tree.ctes or [])[0].this
+    assert cte.args.get("limit") is not None
+    assert int(cte.args["limit"].expression.this) == 10
+
+
+def test_joined_cte_is_not_limited() -> None:
+    """A CTE used in a join still needs all its rows; do not push the outer LIMIT."""
+    import sqlglot
+
+    out = validate_sql(
+        "WITH i AS (SELECT InvoiceId, CustomerId, Total FROM Invoice) "
+        "SELECT c.Country, SUM(i.Total) AS revenue FROM i "
+        "JOIN Customer c ON i.CustomerId = c.CustomerId GROUP BY c.Country LIMIT 10",
+        CATALOG,
+    ).compiled.sql
+    cte = (sqlglot.parse_one(out, read="duckdb").ctes or [])[0].this
+    assert cte.args.get("limit") is None
+
+
 def test_select_star_cte_bypass_is_grain_checked_without_pii() -> None:
     """The review's probe, on a catalog where SELECT * is not already stopped by PII."""
     no_pii = CATALOG.model_copy(
@@ -347,3 +375,14 @@ def test_select_star_cte_bypass_is_grain_checked_without_pii() -> None:
             no_pii,
         )
     assert {e.code for e in info.value.errors} == {"sql.fan_out"}
+
+
+def test_sql_is_prompted_and_parsed_in_the_catalog_dialect() -> None:
+    """M8: a Postgres catalog is prompted for PostgreSQL and parsed as postgres."""
+    from secure_query.planner.sql_plan import sql_system_prompt
+
+    pg = CATALOG.model_copy(update={"sql_dialect": "postgres"})
+    assert "PostgreSQL" in sql_system_prompt("postgres") and "DuckDB" not in sql_system_prompt("postgres")
+    validate_sql("SELECT Name FROM Genre WHERE Name ILIKE 'r%'", pg)  # postgres syntax parses
+    with pytest.raises(SqlValidationFailed):
+        validate_sql("SELECT strptime(Name, '%Y') FROM Genre", pg)  # duckdb-only function

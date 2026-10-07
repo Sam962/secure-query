@@ -1,4 +1,4 @@
-"""SQL planner path: the model writes DuckDB SQL; the kernel validates and regenerates it.
+"""SQL planner path: the model writes SQL in the catalog's dialect; the kernel validates and regenerates it.
 
 Experimental alternative to the LogicalPlan path (see docs/STATUS.md, Spider
 results). The model's text never runs: kernel.sql_validate parses it, resolves
@@ -26,7 +26,7 @@ from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
 
-SQL_SYSTEM_PROMPT = """You translate a question into ONE read-only DuckDB SQL query over an approved catalog.
+SQL_SYSTEM_PROMPT = """You translate a question into ONE read-only {dialect} SQL query over an approved catalog.
 Output a single JSON object and nothing else:
   {"sql": "<one SELECT statement>"}
 or, when the catalog cannot answer the question exactly:
@@ -45,6 +45,13 @@ Rules:
   return cannot_answer instead of a nearby query.
 - Never write INSERT, UPDATE, DELETE, DDL, PRAGMA, ATTACH, COPY or table functions.
 """
+
+
+_DIALECT_NAMES = {"duckdb": "DuckDB", "postgres": "PostgreSQL", "databricks": "Databricks"}
+
+
+def sql_system_prompt(dialect: str) -> str:
+    return SQL_SYSTEM_PROMPT.replace("{dialect}", _DIALECT_NAMES.get(dialect, dialect))
 
 
 def build_sql_prompt(question: str, catalog: Catalog, relevant_tables: Sequence[str] = ()) -> str:
@@ -106,7 +113,7 @@ def plan_sql_question(
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors."""
     messages = [
-        {"role": "system", "content": SQL_SYSTEM_PROMPT},
+        {"role": "system", "content": sql_system_prompt(catalog.sql_dialect)},
         {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog, relevant_tables)},
     ]
     errors: list[str] = []

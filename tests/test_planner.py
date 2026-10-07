@@ -496,3 +496,22 @@ def test_prompt_teaches_the_wrapper_and_carries_no_shape_prose() -> None:
     schema = json.dumps(plan_response_format()["json_schema"]["schema"], separators=(",", ":"))
     assert plain.startswith(structured) and schema in plain
     assert "JSON response object" in build_repair_prompt(["x"])
+
+
+def test_mock_extracts_the_sql_path_question() -> None:
+    from secure_query.planner.sql_plan import build_sql_prompt, plan_sql_question
+
+    catalog = sample_catalog()
+    prompt = build_sql_prompt("revenue by country", catalog)
+    assert MockLLMClient._extract_question(prompt) == "revenue by country"
+    result = plan_sql_question("revenue by country", catalog, MockLLMClient())
+    assert result.status == "ok" and result.compiled is not None
+    assert "Customer" in result.compiled.sql and "SUM" in result.compiled.sql.upper()
+
+
+def test_mock_sql_path_unknown_question_is_a_refusal() -> None:
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    result = plan_sql_question("payroll totals", sample_catalog(), MockLLMClient())
+    assert result.status == "clarify" and result.refused
+

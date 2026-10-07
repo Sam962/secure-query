@@ -1,8 +1,10 @@
 # Architecture
 
 The core install depends only on `pydantic` and `sqlglot`; DuckDB, FastAPI, the
-LLM client and warehouse drivers are optional extras. For the demo, follow the
-root [README](../README.md).
+LLM client and warehouse drivers are optional extras. `import secure_query`
+loads the ask pipeline (`api.service`) but not FastAPI — import
+`secure_query.api.http` for the app. For the demo, follow the root
+[README](../README.md).
 
 ## Flow
 
@@ -10,7 +12,9 @@ root [README](../README.md).
 question → LogicalPlan JSON (LLM) → validate(catalog) → AST compile → execute → audit
 ```
 
-The LLM never emits SQL.
+Default path: the LLM emits a LogicalPlan, never SQL. An experimental SQL
+planner (ADR 003) writes SQL that `kernel.sql_validate` parses, checks, and
+regenerates — the model text still never runs.
 
 ## Layers
 

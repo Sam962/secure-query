@@ -47,8 +47,13 @@ _STATEMENTS = tuple(
     )
     if hasattr(exp, name)
 )
-# Functions sqlglot does not model as typed nodes. Anything else unknown is rejected.
-_SAFE_ANONYMOUS = frozenset({"strftime", "strptime", "date_part", "datediff", "date_diff"})
+# Functions sqlglot does not model as typed nodes, per dialect (only those that exist
+# there). Any other unknown function, or any dialect not listed, is rejected.
+_SAFE_ANONYMOUS = {
+    "duckdb": frozenset({"strftime", "strptime", "date_part", "datediff", "date_diff"}),
+    "postgres": frozenset({"date_part"}),
+    "databricks": frozenset(),
+}
 
 
 @dataclass(frozen=True)
@@ -80,7 +85,7 @@ def validate_sql(
     sql: str, catalog: Catalog, *, row_filters: Sequence[Filter] = ()
 ) -> ValidatedSql:
     """Return the policy-checked query (with row filters applied) or raise SqlValidationFailed."""
-    dialect = "duckdb"  # the model is prompted for DuckDB SQL; output uses catalog.sql_dialect
+    dialect = catalog.sql_dialect  # the model is prompted for this dialect, too
     try:
         statements = [s for s in sqlglot.parse(sql, read=dialect) if s is not None]
     except SqlglotError as exc:  # ParseError, TokenError, …
@@ -113,7 +118,7 @@ def validate_sql(
     errors: list[ValidationError] = []
     used: set[tuple[str, str]] = set()
     for func in tree.find_all(exp.Anonymous):
-        if str(func.this).lower() not in _SAFE_ANONYMOUS:
+        if str(func.this).lower() not in _SAFE_ANONYMOUS.get(dialect, frozenset()):
             errors.append(_error("sql.function", f"function {func.this} is not allowed"))
 
     for scope in traverse_scope(tree):
@@ -487,14 +492,60 @@ def _join_allowed(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:
     )
 
 
+def _limit_value(query: exp.Expression) -> int | None:
+    limit = query.args.get("limit")
+    if limit is None:
+        return None
+    node = limit.expression if isinstance(limit, exp.Limit) else limit
+    if isinstance(node, exp.Literal) and node.is_int:
+        return int(node.this)
+    return None
+
+
+def _is_simple_scan(select: exp.Select) -> bool:
+    """Single-table SELECT with no filter, group, join, or aggregate — a raw scan."""
+    if select.args.get("where") or select.args.get("group") or select.args.get("having"):
+        return False
+    if select.args.get("joins") or select.find(exp.AggFunc) or select.args.get("distinct"):
+        return False
+    return True
+
+
+def _pass_through_cte_alias(query: exp.Query) -> str | None:
+    """Alias of a CTE that the outer query only projects (FROM cte, no WHERE/JOIN/GROUP)."""
+    if not isinstance(query, exp.Select) or not _is_simple_scan(query):
+        return None
+    from_ = query.args.get("from_") or query.args.get("from")
+    src = from_.this if from_ is not None else None
+    if src is None:
+        return None
+    return src.alias_or_name
+
+
 def _enforce_limit(tree: exp.Query, catalog: Catalog) -> None:
-    limit = tree.args.get("limit")
-    value = None
-    if limit is not None:
-        node = limit.expression if isinstance(limit, exp.Limit) else limit
-        if isinstance(node, exp.Literal) and node.is_int:
-            value = int(node.this)
+    """Cap the outer LIMIT and push it into a pass-through CTE so it is not a full scan.
+
+    `WITH i AS (SELECT * FROM Invoice) SELECT * FROM i LIMIT 10` would otherwise
+    materialize every Invoice row on a warehouse before the outer LIMIT. Joined or
+    aggregated CTEs are left alone — they need their full input.
+    """
+    value = _limit_value(tree)
     if value is None and not catalog.require_limit:
         return
+    cap = min(value or catalog.max_limit, catalog.max_limit)
     if value is None or value > catalog.max_limit:
-        tree.set("limit", exp.Limit(expression=exp.Literal.number(min(value or catalog.max_limit, catalog.max_limit))))
+        tree.set("limit", exp.Limit(expression=exp.Literal.number(cap)))
+    alias = _pass_through_cte_alias(tree)
+    with_ = tree.args.get("with_") or tree.args.get("with")
+    ctes = list(getattr(tree, "ctes", None) or (with_.expressions if with_ is not None else []))
+    if alias is None or not ctes:
+        return
+    for cte in ctes:
+        if cte.alias_or_name.lower() != alias.lower():
+            continue
+        inner = cte.this
+        if not isinstance(inner, exp.Select) or not _is_simple_scan(inner):
+            continue
+        if _limit_value(inner) is None:
+            inner.set("limit", exp.Limit(expression=exp.Literal.number(cap)))
+
