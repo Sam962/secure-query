@@ -4,7 +4,7 @@ Work items from the independent review. Detail and evidence live in
 [`REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md). Do not retune prompts or guards on
 holdout case ids ([EVAL.md](EVAL.md)).
 
-**Status:** Waves 1–3 done (2026-10-07); later waves open. Check a box when merged; leave the ID stable.
+**Status:** Waves 1–4 done (2026-10-07); Waves 5–6 open. Check a box when merged; leave the ID stable.
 
 | Wave | Theme | Items | Why this order |
 |------|--------|-------|----------------|
@@ -190,7 +190,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 
 ## Wave 4 — reliability / SQL path
 
-### [ ] M4. Lock or replace `_COMPILE_CACHE`
+### [x] M4. Lock or replace `_COMPILE_CACHE`
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/kernel/compile.py` (43–99)
@@ -199,7 +199,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 - **Done when:** concurrent compile from two threads does not raise
   `KeyError` on `move_to_end` / `popitem`.
 
-### [ ] M8. Prompt and parse SQL in `catalog.sql_dialect`
+### [x] M8. Prompt and parse SQL in `catalog.sql_dialect`
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/planner/sql_plan.py` (28),
@@ -209,7 +209,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
   (`strftime` / `date_part`) per dialect.
 - **Done when:** a Postgres-dialect catalog is prompted and parsed as postgres.
 
-### [ ] M9. `MockLLMClient` must serve the SQL path
+### [x] M9. `MockLLMClient` must serve the SQL path
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/planner/llm.py` (154),
@@ -218,7 +218,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
   marker). CI mock holdout must exercise `SECURE_QUERY_PLANNER=sql`.
 - **Done when:** mock SQL-path holdout runs in CI, not only LQP.
 
-### [ ] M10. Limit must apply to unbounded CTEs
+### [x] M10. Limit must apply to unbounded CTEs
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/kernel/sql_validate.py` (`_enforce_limit`, 433)
@@ -227,7 +227,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 - **Done when:** `WITH i AS (SELECT * FROM Invoice) SELECT * FROM i LIMIT 10`
   does not materialize the full table on the warehouse path. Test the rewrite.
 
-### [ ] M11. Fix the stale editable install; make CI catch it
+### [x] M11. Fix the stale editable install; make CI catch it
 
 - **Severity:** Medium
 - **Files:** `.venv` (local), `pyproject.toml`, CI workflow, Makefile if added
@@ -237,7 +237,7 @@ holdout case ids ([EVAL.md](EVAL.md)).
 - **Done when:** a clean `source .venv/bin/activate && pytest` collects without
   `PYTHONPATH=src`.
 
-### [ ] M12. `import secure_query` must not import FastAPI
+### [x] M12. `import secure_query` must not import FastAPI
 
 - **Severity:** Medium
 - **Files:** `src/secure_query/__init__.py`, `src/secure_query/api/__init__.py`
@@ -389,12 +389,12 @@ Still references `sample_catalog.py` and `auth.py`.
 | M2 | Generic client errors | 3 | done |
 | M3 | Cancel on timeout | 3 | done |
 | L13 | Header mode fail-closed | 3 | done |
-| M4 | Compile cache lock | 4 | open |
-| M8 | SQL dialect from catalog | 4 | open |
-| M9 | Mock client SQL marker | 4 | open |
-| M10 | Limit unbounded CTEs | 4 | open |
-| M11 | Fix editable install | 4 | open |
-| M12 | No FastAPI on core import | 4 | open |
+| M4 | Compile cache lock | 4 | done |
+| M8 | SQL dialect from catalog | 4 | done |
+| M9 | Mock client SQL marker | 4 | done |
+| M10 | Limit unbounded CTEs | 4 | done |
+| M11 | Fix editable install | 4 | done |
+| M12 | No FastAPI on core import | 4 | done |
 | S1–S14 | Simplify | 5 | open |
 | L1–L12 | Hygiene | 6 | open |
 

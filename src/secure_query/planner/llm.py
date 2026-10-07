@@ -169,13 +169,22 @@ class MockLLMClient:
 
     def _mock_response_for_question(self, prompt: str) -> str:
         q = self._extract_question(prompt)
+        sql_mode = "Question:\n" in prompt and "User question:\n" not in prompt
         if "revenue" in q and "country" in q and "billing" not in q:
+            if sql_mode:
+                return json.dumps({"sql": self._revenue_by_customer_country_sql()})
             return self._revenue_by_customer_country_plan()
         if q.startswith("how many invoices are there in total"):
+            if sql_mode:
+                return json.dumps({"sql": 'SELECT COUNT(*) AS n FROM "Invoice"'})
             return json.dumps({"metric_id": "invoice_count", "limit": 1})
         if q.startswith("what is the total revenue across all invoices"):
+            if sql_mode:
+                return json.dumps({"sql": 'SELECT SUM("Total") AS revenue FROM "Invoice"'})
             return json.dumps({"metric_id": "total_revenue", "limit": 1})
         if "employee" in q and ("how many" in q or "headcount" in q or "work for" in q):
+            if sql_mode:
+                return json.dumps({"sql": 'SELECT COUNT(*) AS n FROM "Employee"'})
             return json.dumps({"metric_id": "employee_count", "limit": 1})
         return json.dumps(
             {
@@ -186,9 +195,11 @@ class MockLLMClient:
 
     @staticmethod
     def _extract_question(prompt: str) -> str:
-        marker = "User question:\n"
-        if marker in prompt:
-            return prompt.split(marker, 1)[1].strip().lower()
+        """LQP prompts use 'User question:'; the SQL path uses 'Question:'."""
+        for marker in ("User question:\n", "Question:\n"):
+            if marker in prompt:
+                rest = prompt.split(marker, 1)[1]
+                return rest.split("\n\n", 1)[0].strip().lower()
         return prompt.strip().lower()
 
     @staticmethod
@@ -232,6 +243,15 @@ class MockLLMClient:
                 "order_by": [{"alias": "revenue", "direction": "desc"}],
                 "limit": 10,
             }
+        )
+
+    @staticmethod
+    def _revenue_by_customer_country_sql() -> str:
+        return (
+            'SELECT "Customer"."Country", SUM("Invoice"."Total") AS revenue '
+            'FROM "Invoice" '
+            'INNER JOIN "Customer" ON "Invoice"."CustomerId" = "Customer"."CustomerId" '
+            'GROUP BY "Customer"."Country" ORDER BY revenue DESC LIMIT 10'
         )
 
 

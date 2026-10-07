@@ -18,6 +18,8 @@ jobs:
         run: python -m secure_query.demo.load_chinook --strict
       - name: Lint
         run: ruff check .
+      - name: Package import (installed, without FastAPI)
+        run: python -c "import secure_query, sys; assert 'fastapi' not in sys.modules"
       - name: Unit tests
         run: pytest -q
       - name: Compile must not interpolate SQL
@@ -29,3 +31,5 @@ jobs:
         run: pytest -q tests/test_planner.py tests/test_adversarial.py
       - name: Holdout gate (mock — abstain is allowed, wrong is not)
         run: python -m secure_query.evals.run --split holdout --provider mock
+      - name: Holdout gate, SQL path (mock)
+        run: python -m secure_query.evals.run --split holdout --provider mock --planner sql

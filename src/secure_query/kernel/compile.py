@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -42,8 +43,10 @@ from secure_query.kernel.logical_plan import (
 
 # Default compile target. Override in compile() call sites if you fork for Postgres/etc.
 DEFAULT_DIALECT = "duckdb"
-_COMPILE_CACHE: OrderedDict[tuple[str, str, str], CompiledQuery] = OrderedDict()
+_COMPILE_CACHE: OrderedDict[tuple[str, ...], CompiledQuery] = OrderedDict()
 _COMPILE_CACHE_MAX = 256
+# compile() runs on FastAPI's thread pool; OrderedDict reordering is not thread-safe.
+_COMPILE_CACHE_LOCK = threading.Lock()
 
 
 class CompilationError(Exception):
@@ -96,10 +99,11 @@ def compile(
     proj_key = ",".join(f"{c.table_id}.{c.column_id}" for c in (projection or []))
     semi_key = repr([(sj.steps, sj.filter_indexes) for sj in semi_joins])
     cache_key = (plan_hash, dialect, proj_key, semi_key)
-    cached = _COMPILE_CACHE.get(cache_key)
-    if cached is not None:
-        _COMPILE_CACHE.move_to_end(cache_key)
-        return cached
+    with _COMPILE_CACHE_LOCK:
+        cached = _COMPILE_CACHE.get(cache_key)
+        if cached is not None:
+            _COMPILE_CACHE.move_to_end(cache_key)
+            return cached
 
     select = _build_select(plan, projection, semi_joins)
     sql = select.sql(dialect=dialect, pretty=False)
@@ -110,9 +114,10 @@ def compile(
         sql_hash=sql_hash,
         parameters=[],
     )
-    _COMPILE_CACHE[cache_key] = compiled
-    if len(_COMPILE_CACHE) > _COMPILE_CACHE_MAX:
-        _COMPILE_CACHE.popitem(last=False)
+    with _COMPILE_CACHE_LOCK:
+        _COMPILE_CACHE[cache_key] = compiled
+        while len(_COMPILE_CACHE) > _COMPILE_CACHE_MAX:
+            _COMPILE_CACHE.popitem(last=False)
     return compiled
 
 

@@ -582,3 +582,29 @@ def test_having_filters_on_aggregate_alias() -> None:
     )
     with pytest.raises(PlanValidationFailed, match="unknown_having_alias"):
         validate_and_compile(bad, sample_catalog())
+
+
+def test_compile_cache_is_safe_under_concurrent_compiles(monkeypatch) -> None:
+    """M4: many threads compiling distinct and repeated plans must not corrupt the LRU."""
+    import importlib
+    from concurrent.futures import ThreadPoolExecutor
+
+    compile_module = importlib.import_module("secure_query.kernel.compile")
+
+    monkeypatch.setattr(compile_module, "_COMPILE_CACHE_MAX", 8)  # force constant eviction
+    plans = [
+        LogicalPlan.model_validate(
+            {"plan_id": f"00000000-0000-0000-0000-{i:012d}", "source": "airports", "limit": 1 + i % 50}
+        )
+        for i in range(200)
+    ]
+
+    def work(plan: LogicalPlan) -> str:
+        for _ in range(20):
+            sql = compile_module.compile(plan).sql
+        return sql
+
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        results = list(pool.map(work, plans * 3))
+    assert len(results) == 600
+    assert len(compile_module._COMPILE_CACHE) <= 8
