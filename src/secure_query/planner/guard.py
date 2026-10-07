@@ -491,18 +491,22 @@ def unmatched_values(
     """
     haystack = " ".join(v.lower() for v in values)
     vocabulary = catalog_vocabulary(catalog)
+    identifiers = _identifier_parts(catalog)
 
     missing: list[str] = []
     for match in _VALUE_WORD_RE.finditer(question):
-        word = match.group(0)
+        word = re.sub(r"['’]s$", "", match.group(0))  # Kyle's -> Kyle
         before = question[: match.start()].rstrip()
         if not before or before[-1] in ".?!:" or len(word) < 2:
             continue  # sentence-initial capital, not a proper noun
         lower = word.lower()
         if lower in _CALENDAR_TERMS or _term_in_vocabulary(lower, vocabulary):
             continue
-        if lower not in haystack:
-            missing.append(word)
+        if _expand_term(lower) & identifiers:
+            continue  # short catalog words the vocabulary skips: "TV", "IDs"
+        if lower in haystack or _same_stem(lower, haystack):
+            continue
+        missing.append(word)
     if missing:
         shown = ", ".join(f'"{w}"' for w in dict.fromkeys(missing))
         return (
@@ -512,6 +516,7 @@ def unmatched_values(
 
     asked = question.lower()
     said = {float(n) for n in re.findall(r"\d+(?:\.\d+)?", question.replace(",", ""))}
+    said |= {float(_NUMBER_WORDS[w]) for w in re.findall(r"[a-z]+", asked) if w in _NUMBER_WORDS}
     invented = [v for v in strings if v.strip("%").lower() not in asked]
     invented += [str(n) for n in numbers if float(n) not in said]
     if invented:
@@ -521,6 +526,33 @@ def unmatched_values(
             "no filter in this plan may add conditions the user did not ask for."
         )
     return None
+
+
+_NUMBER_WORDS = {
+    "zero": 0, "one": 1, "single": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11,
+    "twelve": 12, "dozen": 12, "twenty": 20, "hundred": 100, "thousand": 1000,
+}
+
+
+def _identifier_parts(catalog: Catalog) -> set[str]:
+    """Every word part of every table and column name, however short."""
+    parts: set[str] = set()
+    for table in catalog.tables:
+        for name in (table.name, *(c.name for c in table.columns)):
+            spaced = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", name).lower()
+            parts.update(p for p in re.split(r"[^a-z0-9]+", spaced) if p)
+    return parts
+
+
+def _same_stem(word: str, haystack: str) -> bool:
+    """"asian" / "asia", "european" / "europe": a value and its adjective form."""
+    if len(word) < 5:
+        return False
+    return any(
+        len(token) >= 4 and (word.startswith(token) or token.startswith(word[:-2]))
+        for token in re.findall(r"[a-z]+", haystack)
+    )
 
 
 def _numeric_literals(filt: object) -> list[LiteralValue]:

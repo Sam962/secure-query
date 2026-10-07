@@ -288,3 +288,17 @@ def test_count_must_run_over_the_counted_noun() -> None:
     assert counted_other_entity("How many tracks have we sold?", lines, CATALOG) is None
     # The noun names no table: nothing to check.
     assert counted_other_entity("How many units in total?", lines, CATALOG) is None
+
+
+def test_unmatched_values_understands_number_words_possessives_and_stems() -> None:
+    from secure_query.planner.guard import unmatched_values
+
+    # "more than one" is the literal 1, not an invented value.
+    assert unmatched_values("Which customers bought more than one track?", [], [], [1], CATALOG) is None
+    assert unmatched_values("Albums with at least two tracks", [], [], [2], CATALOG) is None
+    # Possessive and adjective forms of a filtered value.
+    assert unmatched_values("Show Kyle's invoices", ["Kyle"], ["Kyle"], [], CATALOG) is None
+    assert unmatched_values("Customers on the Asian continent", ["Asia"], ["Asia"], [], CATALOG) is None
+    # Still refuses a named value that no filter uses, and an invented number.
+    assert unmatched_values("How many customers live in Brazil?", [], [], [], CATALOG) is not None
+    assert unmatched_values("Which customers bought tracks?", [], [], [3], CATALOG) is not None
