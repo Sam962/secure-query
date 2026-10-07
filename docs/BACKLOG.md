@@ -4,8 +4,7 @@ Work items from the independent review. Detail and evidence live in
 [`REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md). Do not retune prompts or guards on
 holdout case ids ([EVAL.md](EVAL.md)).
 
-**Status:** Waves 1–3 merged; Wave 4 on PR #3. Waves 5–6 in the working tree
-(2026-10-07); S4 and L10 open.
+**Status:** Waves 1–6 merged (2026-10-07). L10 open (revert).
 Check a box when the change is in the tree; leave the ID stable.
 
 | Wave | Theme | Items | Why this order |
@@ -267,13 +266,19 @@ stays as generic USD scale (catalog unit), not Chinook-specific.
 
 Now `scripts/consistency.py` and `scripts/adjudicate.py`.
 
-### [ ] S4. Drop guards with negative net value on the current model
+### [x] S4. Drop guards with negative net value on the current model
 
 Done: `_STOP_WORDS` deduped; `catalog_vocabulary` memoized (M7). LQP keeps
 `dropped_concepts` and `opaque_grouping_keys`: measured net-positive there
 (Chinook 12 stopped-wrong / 0 cost-right; Spider 80 / 9). Open: on the SQL path
 with gpt-4.1-mini, `dropped_concept` is 11 / 32 and `dropped_filter` 1 / 11
-(STATUS 2026-10-06). Decide by wrong rate after adjudication, not raw counts.
+(STATUS 2026-10-06).
+
+Decided 2026-10-07: keep both on the SQL path. Adjudicated, `dropped_concept`
+stopped 7 real errors on Spider (real wrong 2.75% → 4.5% without it).
+`dropped_filter` stopped none on Spider (cost 11 right), but on the curated
+suites, gpt-4.1-mini SQL path, it prevented 6 wrong answers (should-decline +
+stopped-wrong) for 4 right: Chinook dev 3/2, Northwind 2/1, Northwind dev 1/1.
 
 ### [x] S5. Drop app-level rate-limit / `response_format` fallback for OpenAI
 
@@ -395,7 +400,7 @@ Now `demo/chinook.py` and `auth/__init__.py`.
 | S1 | Builder out of kernel | 5 | done |
 | S2 | Chinook presentation | 5 | done |
 | S3 | Evals scripts moved | 5 | done |
-| S4 | Drop negative-net guards | 5 | open (SQL path) |
+| S4 | Drop negative-net guards | 5 | done (kept, measured) |
 | S5 | OpenAI fallback (via H5) | 5 | done |
 | S6 | Shared execute policy | 5 | done |
 | S7 | One join BFS | 5 | done |
