@@ -276,6 +276,23 @@ model calls:
 "playlists customers listen to" (no listening data), and non-rep employees
 counted in "customers per support rep".
 
+### Value grounding on the SQL path — 2026-10-07
+
+The model never sees row data, so it guessed stored spellings: 'Jetblue
+Airways' for 'JetBlue Airways', 'Europe' for 'europe', 'North Carolina' for
+'NorthCarolina'. The SQL planner now looks up each equality / IN string literal
+(one bounded query, row filters and PII rules applied) and replaces it only
+when exactly one stored value equals it ignoring case, spacing and
+punctuation. No values reach the model and no LLM call is added.
+
+Replayed on the saved gpt-4.1-mini outputs (deterministic; prompts unchanged):
+Spider dev 400 answered + 59 blocked queries → 7 rewritten, all 7 wrong →
+right, none right → wrong. **Adjudicated real wrong 2.75% → 1.75%** (11 → 7 of
+400); the other 3 were guard-blocked and stay blocked. Chinook dev, Northwind
+and Northwind dev: 0 rewrites. Not fixed: picking the wrong column for a value
+('volvo' in Make instead of Model) — that needs candidates in the repair
+prompt, i.e. stored values sent to the model, a per-catalog opt-in.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
