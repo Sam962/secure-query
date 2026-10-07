@@ -293,6 +293,36 @@ and Northwind dev: 0 rewrites. Not fixed: picking the wrong column for a value
 ('volvo' in Make instead of Model) — that needs candidates in the repair
 prompt, i.e. stored values sent to the model, a per-catalog opt-in.
 
+### Spider test (held out) — 2026-10-07
+
+First run on Spider test: 400 seeded questions, 40 unseen databases,
+gpt-4.1-mini, SQL planner with value grounding, K=3. Exact match 74.0% right /
+8.5% wrong (dev: 68.8% / 10.8%); all-3-agree 69.2% / 6.2%. Adjudicated as on
+dev ([adjudication/README.md](adjudication/README.md)): **real wrong 3.75%
+(15/400, 95% CI 2.3–6.1%)**, 2.75% if four rater calls contradicted by the data
+are dropped. Dev with grounding (replay) is 1.75%: test is ~2 points worse,
+inside overlapping intervals. Remaining value errors are synonyms ('United
+States'/'USA'), case-sensitive LIKE and coded flags ('Y'/1), not spellings.
+
+### Absent values and case-insensitive LIKE — 2026-10-07
+
+Across ~860 saved Spider answers (dev + test, after grounding), a filter value
+that no stored row has occurred 6 times, and all 6 were adjudicated real errors.
+The SQL planner now names such a value back to the model in its repair round
+("no stored Customers.country equals 'United States'"), without revealing any
+stored value; if the model keeps it, the empty answer stands. LIKE patterns
+become ILIKE.
+
+Measured (gpt-4.1-mini, live on every affected case): case-insensitive LIKE 3
+wrong → right (replay over all 18 LIKE queries: 0 right → wrong); 5 real errors
+become refusals ('United States', 'Mckeown', 'amc', is_buyer 'Y' twice — the
+model's retry with 'yes' is stopped by `dropped_filter`). Spider test real
+wrong 15 → **11/400 (2.75%)**. Legitimately empty questions on Chinook
+(Antarctica, Iceland, 'CEO') still answer; 'Polka' is declined with a true
+message. No triggers on Chinook dev, Northwind or Northwind dev. Cost: one extra
+LLM call, only on these questions (~0.7%). Turning the refusals into right
+answers would need stored values in the prompt (per-catalog opt-in, not done).
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).

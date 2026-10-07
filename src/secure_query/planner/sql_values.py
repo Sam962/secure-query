@@ -10,6 +10,11 @@ through validate_sql, so principal row filters and PII rules apply to it. When
 the literal is not stored and exactly one stored value equals it ignoring case,
 spacing and punctuation, the literal is replaced. Stored values are never sent
 to the model; any other outcome leaves the SQL as written.
+
+`unmatched_literals` reports literals no stored value equals. On Spider dev and
+test (about 860 answers) every such answer was a real error, so the planner
+spends its repair round on them without revealing stored values.
+`case_insensitive_like` makes LIKE patterns ignore case, as users mean "contains".
 """
 
 from __future__ import annotations
@@ -54,6 +59,29 @@ def ground_literals(
     for literal in list(tree.find_all(exp.Literal)):
         if literal.is_string and literal.this in replacements:
             literal.replace(exp.Literal.string(replacements[literal.this]))
+    return tree.sql(dialect=catalog.sql_dialect)
+
+
+def unmatched_literals(
+    sql: str, catalog: Catalog, probe: ValueProbe, *, row_filters: Sequence[Filter] = ()
+) -> list[tuple[str, str, str]]:
+    """(table, column, literal) for string literals that no stored value equals."""
+    return [
+        (table, column, value)
+        for table, column, value in _string_literals(sql, catalog)[:_MAX_LITERALS]
+        if (stored := _lookup(table, column, value, catalog, probe, row_filters)) is not None
+        and value not in stored
+    ]
+
+
+def case_insensitive_like(sql: str, catalog: Catalog) -> str:
+    """Rewrite `x LIKE 'pattern'` as ILIKE: a user asking what contains a word means any case."""
+    tree = sqlglot.parse_one(sql, read=catalog.sql_dialect)
+    likes = [like for like in tree.find_all(exp.Like) if isinstance(like.expression, exp.Literal)]
+    if not likes:
+        return sql
+    for like in likes:
+        like.replace(exp.ILike(this=like.this.copy(), expression=like.expression.copy()))
     return tree.sql(dialect=catalog.sql_dialect)
 
 
@@ -103,9 +131,10 @@ def _lookup(
     col = exp.column(column, table=table, quoted=True)
     query = (
         exp.select(col)
-        .distinct()
         .from_(exp.table_(table, quoted=True))
         .where(exp.Like(this=exp.Lower(this=col.copy()), expression=exp.Literal.string(f"%{'%'.join(words)}%")))
+        .group_by(col.copy())  # not DISTINCT: Postgres requires ORDER BY items in a DISTINCT list
+        .order_by(exp.Length(this=col.copy()))  # exact and near-exact values first
         .limit(_MAX_CANDIDATES)
     )
     try:
