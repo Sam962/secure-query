@@ -433,3 +433,48 @@ def test_limit_one_over_unordered_groups_is_rejected() -> None:
     # Ranked, or a limit that can cover every group: fine.
     assert not validate(grouped.order_by("revenue", direction="desc").limit(1).build(), catalog)
     assert not validate(grouped.limit(100).build(), catalog)
+
+
+@pytest.mark.parametrize(
+    "literal",
+    [{"type": "integer", "value": 5}, {"type": "float", "value": 5}, {"type": "float", "value": 5.0}],
+)
+def test_total_greater_than_five_validates_for_int_and_float_literals(literal: dict) -> None:
+    """A model writing `Total > 5` as an integer, or as float 5 in JSON, must not need a repair."""
+    plan = LogicalPlan.model_validate(
+        {
+            "plan_id": "00000000-0000-0000-0000-000000000001",
+            "source": "Invoice",
+            "filters": [
+                {"op": "gt", "column": {"table_id": "Invoice", "column_id": "Total"}, "value": literal}
+            ],
+            "aggregations": [{"fn": "count", "column": None, "alias": "n"}],
+            "limit": 1,
+        }
+    )
+    assert validate(plan, sample_catalog()) == []
+    assert "> 5" in validate_and_compile(plan, sample_catalog()).sql
+
+
+def test_monthly_revenue_can_be_ordered_by_its_time_bucket() -> None:
+    plan = LogicalPlan.model_validate(
+        {
+            "plan_id": "00000000-0000-0000-0000-000000000002",
+            "source": "Invoice",
+            "group_by": {
+                "columns": [],
+                "time_buckets": [
+                    {"column": {"table_id": "Invoice", "column_id": "InvoiceDate"}, "grain": "month"}
+                ],
+            },
+            "aggregations": [
+                {"fn": "sum", "column": {"table_id": "Invoice", "column_id": "Total"}, "alias": "revenue"}
+            ],
+            "order_by": [{"column": {"table_id": "Invoice", "column_id": "InvoiceDate"}, "direction": "asc"}],
+            "limit": 100,
+        }
+    )
+    assert validate(plan, sample_catalog()) == []
+    sql = validate_and_compile(plan, sample_catalog()).sql
+    order_clause = sql.split("ORDER BY", 1)[1]
+    assert order_clause.strip().startswith("DATE_TRUNC(") and "InvoiceDate" in order_clause

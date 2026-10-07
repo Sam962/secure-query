@@ -21,7 +21,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.delenv("SECURE_QUERY_ALLOWED_TABLES", raising=False)
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
     monkeypatch.delenv("SECURE_QUERY_API_TOKENS", raising=False)
-    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.get_client", lambda: MockLLMClient())
     return TestClient(app)
 
 
@@ -84,7 +84,7 @@ def test_token_mode_rejects_missing_bearer(monkeypatch: pytest.MonkeyPatch) -> N
         json.dumps({"secret": {"principal_id": "alice", "allowed_tables": ["Invoice"]}}),
     )
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
-    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.get_client", lambda: MockLLMClient())
     response = TestClient(app).post("/ask", json={"question": "hi", "confirm_only": True})
     assert response.status_code == 401
 
@@ -112,7 +112,7 @@ def test_token_mode_ok(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
-    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.get_client", lambda: MockLLMClient())
     response = TestClient(app).post(
         "/ask",
         headers={"Authorization": "Bearer secret"},
@@ -122,3 +122,122 @@ def test_token_mode_ok(monkeypatch: pytest.MonkeyPatch) -> None:
     body = response.json()
     assert body["audit"]["principal_id"] == "alice"
     assert body["status"] in {"confirm", "ok", "clarify"}
+
+
+def _plan_json(group_column: str) -> str:
+    return json.dumps(
+        {
+            "source": "Invoice",
+            "filters": [],
+            "group_by": {"columns": [{"table_id": "Invoice", "column_id": group_column}], "time_buckets": []},
+            "aggregations": [{"fn": "count", "column": None, "alias": "invoice_count"}],
+            "having": [],
+            "order_by": [{"alias": "invoice_count", "direction": "desc"}],
+            "limit": 100,
+        }
+    )
+
+
+class _NoPlanner:
+    """Run must not re-plan: any LLM call fails the test (and would return plan B)."""
+
+    provider = "mock"
+
+    def complete(self, messages):
+        raise AssertionError("/ask/execute called the planner")
+
+
+def test_run_executes_the_reviewed_plan_not_a_replan(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+    question = "How many invoices per billing country?"
+    monkeypatch.setattr(
+        "secure_query.api.http.get_client",
+        lambda: MockLLMClient([_plan_json("BillingCountry")]),
+    )
+    reviewed = client.post("/ask/confirm", json={"question": question}).json()
+    assert reviewed["status"] == "confirm", reviewed
+    review = reviewed["review"]
+    assert review["plan_hash"] == reviewed["audit"]["plan_hash"]
+
+    # A second planner call would now produce a different plan (BillingCity) —
+    # and any planner call at all fails the test.
+    monkeypatch.setattr(
+        "secure_query.api.http.get_client",
+        lambda: MockLLMClient([_plan_json("BillingCity")]),
+    )
+    monkeypatch.setattr("secure_query.api.service.plan_question", _NoPlanner().complete)
+    monkeypatch.setattr("secure_query.api.service.plan_sql_question", _NoPlanner().complete)
+    ran = client.post("/ask/execute", json={**review, "question": question})
+    assert ran.status_code == 200, ran.text
+    body = ran.json()
+    assert body["status"] == "ok"
+    assert body["audit"]["plan_hash"] == review["plan_hash"]
+    assert body["sql"] == reviewed["sql"]
+    assert "BillingCity" not in body["sql"]
+
+
+def test_execute_rejects_a_plan_that_differs_from_the_review(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "secure_query.api.http.get_client",
+        lambda: MockLLMClient([_plan_json("BillingCountry")]),
+    )
+    review = client.post(
+        "/ask/confirm", json={"question": "How many invoices per billing country?"}
+    ).json()["review"]
+    tampered = json.loads(_plan_json("BillingCity"))
+    tampered.update(plan_id=review["plan"]["plan_id"], schema_version="lqp/1")
+    response = client.post("/ask/execute", json={**review, "plan": tampered})
+    assert response.status_code == 409
+
+
+def test_sql_path_run_reuses_the_reviewed_sql(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
+    monkeypatch.setattr(
+        "secure_query.api.http.get_client",
+        lambda: MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) AS n FROM Invoice"})]),
+    )
+    reviewed = client.post("/ask/confirm", json={"question": "How many invoices are there?"}).json()
+    review = reviewed["review"]
+    assert review["sql"] and review["plan"] is None
+    monkeypatch.setattr("secure_query.api.http.get_client", lambda: _NoPlanner())
+    body = client.post("/ask/execute", json={**review, "question": "How many invoices are there?"}).json()
+    assert body["status"] == "ok" and body["audit"]["plan_hash"] == review["plan_hash"]
+
+
+def test_two_asks_share_one_llm_client_and_one_catalog(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.engine import runtime as runtime_module
+    from secure_query.planner import llm
+
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "dev")
+    monkeypatch.setenv("SECURE_QUERY_TENANT_ID", "chinook")
+    built = {"client": 0, "runtime": 0}
+    real_runtime = runtime_module.runtime_config
+
+    def count_client():
+        built["client"] += 1
+        return MockLLMClient()
+
+    def count_runtime():
+        built["runtime"] += 1
+        return real_runtime()
+
+    monkeypatch.setattr(llm, "default_client", count_client)
+    monkeypatch.setattr(runtime_module, "runtime_config", count_runtime)
+    client = TestClient(app)
+    for _ in range(2):
+        assert client.post("/ask/confirm", json={"question": "revenue by country"}).status_code == 200
+    assert built == {"client": 1, "runtime": 1}
+    assert runtime_module.get_runtime() is runtime_module.get_runtime()

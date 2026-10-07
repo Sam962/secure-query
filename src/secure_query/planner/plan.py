@@ -14,8 +14,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 from uuid import uuid4
 
 from secure_query.kernel.catalog import Catalog
@@ -42,7 +43,8 @@ from secure_query.planner.guard import (
     unrelated_metric,
 )
 from secure_query.planner.llm import LLMClient
-from secure_query.planner.prompt import SYSTEM_PROMPT, build_repair_prompt, build_user_prompt
+from secure_query.planner.prompt import build_repair_prompt, build_user_prompt, system_prompt
+from secure_query.planner.response_schema import plan_response_format, unwrap_response
 
 _SQL_LEAK_RE = re.compile(
     r"\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|WITH)\b",
@@ -95,6 +97,8 @@ class PlannerResult:
     refused_by_model: bool = False
     """The model declined. clarify_code is inferred from its wording (for the UI),
     so it must not be credited to a deterministic guard in eval scorecards."""
+    source_sql: str | None = None
+    """SQL path: the model's SQL that validated (re-validated by /ask/execute)."""
     blocked: CompiledQuery | None = None
     """A valid plan a post-plan guard refused. Never executed by the product; the
     eval harness runs it to score whether the guard blocked a right or wrong answer."""
@@ -114,13 +118,16 @@ class PlannerRefusal(Exception):
 
 
 
+def _load_json(raw: str) -> Any:
+    """Model output → JSON value: strip code fences, unwrap the structured-output wrapper."""
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    data = json.loads(text)
+    return unwrap_response(data) if isinstance(data, dict) else data
+
+
 def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
     """Parse model JSON into LogicalPlan; assign a fresh plan_id locally."""
-    text = raw.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    data = json.loads(text)
+    data = _load_json(raw)
     if not isinstance(data, dict):
         raise ValueError("Planner output must be a JSON object")
     if data.get("cannot_answer"):
@@ -161,7 +168,7 @@ def parse_plan_json(raw: str, catalog: Catalog | None = None) -> LogicalPlan:
 def _metric_id(raw: str) -> str | None:
     """The metric_id a planner response asks for, if any (no validation)."""
     try:
-        data = json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
+        data = _load_json(raw)
     except json.JSONDecodeError:
         return None
     return str(data["metric_id"]) if isinstance(data, dict) and data.get("metric_id") else None
@@ -176,11 +183,7 @@ def try_compile_metric(
     and recompile with validate_and_compile_metric. Builtin metrics have no plan.
     Anything else returns (None, None, None) and goes through parse_plan_json.
     """
-    text = raw.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    data = json.loads(text)
+    data = _load_json(raw)
     if not isinstance(data, dict) or not data.get("metric_id"):
         return None, None, None
     from secure_query.kernel.metrics import (
@@ -220,6 +223,7 @@ def plan_question(
     max_repairs: int = 1,
     guard: bool = True,
     prompt_catalog: Catalog | None = None,
+    relevant_tables: Sequence[str] = (),
 ) -> PlannerResult:
     """Ask the LLM for a LogicalPlan, validate/compile, optionally one repair.
 
@@ -248,8 +252,8 @@ def plan_question(
             )
 
     messages: list[dict[str, str]] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": build_user_prompt(question, summary_catalog)},
+        {"role": "system", "content": system_prompt(getattr(client, "structured_outputs", False))},
+        {"role": "user", "content": build_user_prompt(question, summary_catalog, relevant_tables)},
     ]
     errors: list[str] = []
     raw_responses: list[str] = []
@@ -257,7 +261,11 @@ def plan_question(
 
     while True:
         attempts += 1
-        raw = client.complete(messages)
+        raw = (
+            client.complete(messages, response_format=plan_response_format())
+            if getattr(client, "structured_outputs", False)
+            else client.complete(messages)
+        )
         raw_responses.append(raw)
         try:
             metric_id = _metric_id(raw)

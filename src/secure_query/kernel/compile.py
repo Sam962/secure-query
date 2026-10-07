@@ -9,11 +9,13 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import OrderedDict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 
 from sqlglot import exp
 
+from secure_query.kernel.catalog import JoinKey
 from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
@@ -53,6 +55,18 @@ class CompilationError(Exception):
 
 
 @dataclass(frozen=True)
+class SemiJoin:
+    """Filters on many-side tables of a list plan, compiled as one EXISTS.
+
+    Joining a one-to-many table to filter a list repeats the source rows; the
+    EXISTS keeps the list at source grain. `steps` start at plan.source.
+    """
+
+    steps: tuple[tuple[str, str, JoinKey], ...]
+    filter_indexes: tuple[int, ...]
+
+
+@dataclass(frozen=True)
 class CompiledQuery:
     """Output of the compiler: SQL text plus integrity hashes for audit/replay."""
 
@@ -67,6 +81,7 @@ def compile(
     *,
     dialect: str = DEFAULT_DIALECT,
     projection: list[ColumnRef] | None = None,
+    semi_joins: Sequence[SemiJoin] = (),
 ) -> CompiledQuery:
     """Compile a LogicalPlan to dialect SQL via sqlglot AST.
 
@@ -79,13 +94,14 @@ def compile(
     """
     plan_hash = _hash_plan(plan)
     proj_key = ",".join(f"{c.table_id}.{c.column_id}" for c in (projection or []))
-    cache_key = (plan_hash, dialect, proj_key)
+    semi_key = repr([(sj.steps, sj.filter_indexes) for sj in semi_joins])
+    cache_key = (plan_hash, dialect, proj_key, semi_key)
     cached = _COMPILE_CACHE.get(cache_key)
     if cached is not None:
         _COMPILE_CACHE.move_to_end(cache_key)
         return cached
 
-    select = _build_select(plan, projection)
+    select = _build_select(plan, projection, semi_joins)
     sql = select.sql(dialect=dialect, pretty=False)
     sql_hash = hashlib.sha256(sql.encode()).hexdigest()
     compiled = CompiledQuery(
@@ -148,18 +164,27 @@ def compile_ratio(
 
 
 def _build_select(
-    plan: LogicalPlan, projection: list[ColumnRef] | None = None
+    plan: LogicalPlan,
+    projection: list[ColumnRef] | None = None,
+    semi_joins: Sequence[SemiJoin] = (),
 ) -> exp.Select:
     """Build the full SELECT expression from a LogicalPlan."""
     select = exp.Select()
 
     select = select.from_(exp.Table(this=exp.to_identifier(plan.source, quoted=True)))
 
+    semi_tables = {to for sj in semi_joins for _, to, _ in sj.steps}
     for join in plan.joins:
-        select = _apply_join(select, join)
+        if join.right_table not in semi_tables:
+            select = _apply_join(select, join)
 
-    for filt in plan.filters:
-        select = select.where(compile_filter(filt))
+    moved = {i for sj in semi_joins for i in sj.filter_indexes}
+    for i, filt in enumerate(plan.filters):
+        if i not in moved:
+            select = select.where(compile_filter(filt))
+    for sj in semi_joins:
+        filters = [plan.filters[i] for i in sj.filter_indexes]
+        select = select.where(exists_through(sj.steps, filters, plan.source))
 
     if plan.group_by:
         select = _apply_group_by(select, plan.group_by, plan.aggregations)
@@ -182,8 +207,9 @@ def _build_select(
             )
         )
 
+    buckets = {tb.column: tb for tb in (plan.group_by.time_buckets if plan.group_by else [])}
     for ob in plan.order_by:
-        select = _apply_order_by(select, ob)
+        select = _apply_order_by(select, ob, buckets)
 
     if plan.limit is not None:
         select = select.limit(plan.limit)
@@ -246,11 +272,15 @@ def _apply_group_by(
     return select
 
 
-def _apply_order_by(select: exp.Select, ob: OrderBy) -> exp.Select:
-    """Add an ORDER BY clause."""
+def _apply_order_by(
+    select: exp.Select, ob: OrderBy, buckets: dict[ColumnRef, TimeBucket] | None = None
+) -> exp.Select:
+    """Add an ORDER BY clause. A time-bucketed column sorts by its bucket expression."""
     desc = ob.direction == "desc"
 
-    if ob.column is not None:
+    if ob.column is not None and buckets and ob.column in buckets:
+        order_expr = _compile_time_bucket(buckets[ob.column])
+    elif ob.column is not None:
         order_expr = _compile_column_ref(ob.column)
     elif ob.alias is not None:
         order_expr = exp.Column(this=exp.to_identifier(ob.alias, quoted=True))
@@ -405,3 +435,42 @@ def _hash_plan(plan: LogicalPlan) -> str:
         separators=(",", ":"),
     )
     return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def exists_through(path: Sequence, filters: Sequence[Filter], outer: str) -> exp.Expression:
+    """EXISTS (SELECT 1 FROM t1 JOIN t2 ... WHERE t1.k = outer.k AND <filters>).
+
+    `path` is (from_table, to_table, JoinKey) steps starting at `outer`'s table;
+    a semi-join never repeats the outer rows, whichever way the keys point.
+    """
+
+    def ident(name: str) -> exp.Identifier:
+        return exp.to_identifier(name, quoted=True)
+
+    first_from, first_to, first_key = path[0]
+    from_col, to_col = (
+        (first_key.left_column, first_key.right_column)
+        if first_key.left_table == first_from
+        else (first_key.right_column, first_key.left_column)
+    )
+    sub = exp.select(exp.Literal.number(1)).from_(exp.Table(this=ident(first_to)))
+    sub = sub.where(
+        exp.EQ(
+            this=exp.Column(this=ident(to_col), table=ident(first_to)),
+            expression=exp.Column(this=ident(from_col), table=ident(outer)),
+        )
+    )
+    for prev, node, key in path[1:]:
+        left_col, right_col = (
+            (key.left_column, key.right_column) if key.left_table == prev else (key.right_column, key.left_column)
+        )
+        sub = sub.join(
+            exp.Table(this=ident(node)),
+            on=exp.EQ(
+                this=exp.Column(this=ident(left_col), table=ident(prev)),
+                expression=exp.Column(this=ident(right_col), table=ident(node)),
+            ),
+        )
+    for filt in filters:
+        sub = sub.where(compile_filter(filt))
+    return exp.Exists(this=sub)

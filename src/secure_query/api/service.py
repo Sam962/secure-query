@@ -6,6 +6,7 @@ from the question payload.
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -23,25 +24,27 @@ from secure_query.auth import (
     catalog_for_principal,
     inject_row_filters,
 )
-from secure_query.engine.execute import ExecuteOptions, ExecutionError
+from secure_query.engine.execute import ExecuteOptions
 from secure_query.engine.runtime import RuntimeConfig, execute_compiled_query
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import LogicalPlan
+from secure_query.kernel.metrics import get_metric
+from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.kernel.validate import (
     PlanValidationFailed,
     validate_and_compile,
     validate_and_compile_metric,
 )
-from secure_query.planner import LLMClient, default_client, plan_question
+from secure_query.planner import LLMClient, get_client, plan_question, try_compile_metric
 from secure_query.planner.clarify import (
     ClarifyCode,
     ambiguous_metrics,
     looks_like_sql_statement,
     question_too_long,
 )
-from secure_query.planner.retrieve import catalog_for_prompt, retrieve_k_from_env, retrieve_tables
+from secure_query.planner.retrieve import prompt_catalog_and_hint, retrieve_k_from_env, retrieve_tables
 from secure_query.planner.sql_plan import plan_sql_question
 from secure_query.planner.suggest import SuggestedQuestion, suggest_questions
 
@@ -67,6 +70,16 @@ class AskOutcome:
     scale_note: str | None = None
     plan: LogicalPlan | None = None
     compiled: CompiledQuery | None = None
+    review: dict[str, Any] | None = None
+    """What /ask/execute needs to run exactly this query: plan_hash plus the
+    pre-row-filter plan, the model's source SQL, or the metric id."""
+
+
+class ReviewMismatch(Exception):
+    """The artifact sent to execute no longer compiles to the reviewed plan_hash."""
+
+
+_SQL_EXPLANATION = "Model-written SQL, validated and rewritten against the approved catalog"
 
 
 def _clarify(
@@ -143,25 +156,27 @@ def ask(
         )
 
     retrieved = retrieve_tables(question, scoped, k=retrieve_k_from_env(len(scoped.tables)))
-    prompt_catalog = catalog_for_prompt(scoped, retrieved) if retrieved else scoped
+    prompt_catalog, relevant = prompt_catalog_and_hint(scoped, retrieved)
 
     sql_mode = planner_mode() == "sql"
     if sql_mode:
         planned = plan_sql_question(
             question,
             scoped,
-            client or default_client(),
+            client or get_client(),
             max_repairs=1,
             row_filters=principal.row_filters,
             prompt_catalog=prompt_catalog,
+            relevant_tables=relevant,
         )
     else:
         planned = plan_question(
             question,
             scoped,
-            client or default_client(),
+            client or get_client(),
             max_repairs=1,
             prompt_catalog=prompt_catalog,
+            relevant_tables=relevant,
         )
 
     if planned.status != "ok" or (planned.compiled is None and planned.plan is None):
@@ -180,6 +195,7 @@ def ask(
     compiled = planned.compiled
     metric = planned.metric
     ratio = metric if metric is not None and metric.kind == "ratio" else None
+    reviewed_plan = plan  # before row filters: execute re-injects them server-side
 
     if sql_mode:
         pass  # validate_sql already applied the principal's row filters
@@ -224,13 +240,129 @@ def ask(
     assert compiled is not None
 
     if sql_mode:
-        explanation = "Model-written SQL, validated and rewritten against the approved catalog"
+        explanation = _SQL_EXPLANATION
     elif metric is not None and metric.kind != "plan":
         explanation = f"Approved metric {metric.id}: {metric.description}"
     else:
         explanation = explain_plan(plan) if plan else "Approved metric"
-    # A ratio's plan selects numerator/denominator, not the columns the answer shows.
-    answer_plan = None if ratio is not None else plan
+    review = {
+        "plan_hash": compiled.plan_hash,
+        "plan": reviewed_plan.model_dump(mode="json") if reviewed_plan is not None and not sql_mode else None,
+        "sql": planned.source_sql if sql_mode else None,
+        "metric_id": metric.id if metric is not None and metric.kind != "plan" else None,
+    }
+    return _finish(
+        question,
+        principal=principal,
+        config=config,
+        scoped=scoped,
+        plan=plan,
+        compiled=compiled,
+        explanation=explanation,
+        # A ratio's plan selects numerator/denominator, not the columns the answer shows.
+        answer_plan=None if ratio is not None else plan,
+        retrieved=retrieved,
+        confirm=confirm_only or not execute,
+        options=options,
+        review=review,
+    )
+
+
+def execute_reviewed(
+    question: str,
+    *,
+    principal: Principal,
+    config: RuntimeConfig,
+    catalog: Catalog,
+    plan_hash: str,
+    plan: dict[str, Any] | None = None,
+    sql: str | None = None,
+    metric_id: str | None = None,
+    options: ExecuteOptions | None = None,
+) -> AskOutcome:
+    """Run the artifact a user reviewed via confirm: no LLM call.
+
+    The plan (or SQL, or metric) is re-validated against the principal's catalog
+    and row filters, re-compiled, and must hash to `plan_hash`. Raises
+    ReviewMismatch otherwise, so a re-plan can never run in place of the review.
+    """
+    try:
+        scoped = catalog_for_principal(catalog, principal)
+    except PermissionError as exc:
+        return _clarify(question, str(exc), principal=principal, code="auth")
+    try:
+        compiled, run_plan, explanation, answer_plan = _recompile(
+            scoped, principal, plan=plan, sql=sql, metric_id=metric_id
+        )
+    except (PlanValidationFailed, SqlValidationFailed, PermissionError, ValueError) as exc:
+        raise ReviewMismatch(f"reviewed plan no longer validates: {exc}") from exc
+    if compiled.plan_hash != plan_hash:
+        raise ReviewMismatch("reviewed plan no longer matches plan_hash")
+    review = {"plan_hash": plan_hash, "plan": plan, "sql": sql, "metric_id": metric_id}
+    return _finish(
+        question,
+        principal=principal,
+        config=config,
+        scoped=scoped,
+        plan=run_plan,
+        compiled=compiled,
+        explanation=explanation,
+        answer_plan=answer_plan,
+        retrieved=[],
+        confirm=False,
+        options=options,
+        review=review,
+    )
+
+
+def _recompile(
+    scoped: Catalog,
+    principal: Principal,
+    *,
+    plan: dict[str, Any] | None,
+    sql: str | None,
+    metric_id: str | None,
+) -> tuple[CompiledQuery, LogicalPlan | None, str, LogicalPlan | None]:
+    """(compiled, executed plan, explanation, plan for answer formatting)."""
+    if sql is not None:
+        validated = validate_sql(sql, scoped, row_filters=principal.row_filters)
+        return validated.compiled, None, _SQL_EXPLANATION, None
+    if metric_id is not None:
+        metric = get_metric(metric_id, scoped)
+        if metric is None or metric.kind == "plan":
+            raise ValueError(f"unknown metric {metric_id!r}")
+        explanation = f"Approved metric {metric.id}: {metric.description}"
+        if metric.kind == "builtin":
+            assert_builtin_metric_allowed(principal)
+            _, compiled, _ = try_compile_metric(json.dumps({"metric_id": metric_id}), scoped)
+            assert compiled is not None
+            return compiled, None, explanation, None
+        if plan is None:
+            raise ValueError("ratio metric review needs its plan")
+        run_plan = inject_row_filters(LogicalPlan.model_validate(plan), principal)
+        return validate_and_compile_metric(metric, run_plan, scoped), run_plan, explanation, None
+    if plan is None:
+        raise ValueError("execute needs plan, sql or metric_id")
+    run_plan = inject_row_filters(LogicalPlan.model_validate(plan), principal)
+    return validate_and_compile(run_plan, scoped), run_plan, explain_plan(run_plan), run_plan
+
+
+def _finish(
+    question: str,
+    *,
+    principal: Principal,
+    config: RuntimeConfig,
+    scoped: Catalog,
+    plan: LogicalPlan | None,
+    compiled: CompiledQuery,
+    explanation: str,
+    answer_plan: LogicalPlan | None,
+    retrieved: list[str],
+    confirm: bool,
+    options: ExecuteOptions | None,
+    review: dict[str, Any],
+) -> AskOutcome:
+    """Return the confirm view, or execute and format the answer."""
     audit_base = {
         **audit_principal_fields(principal),
         "backend": config.backend,
@@ -238,7 +370,7 @@ def ask(
         "retrieved_tables": retrieved,
     }
 
-    if confirm_only or not execute:
+    if confirm:
         return AskOutcome(
             status="confirm",
             question=question,
@@ -248,22 +380,17 @@ def ask(
             retrieved_tables=retrieved,
             plan=plan,
             compiled=compiled,
+            review=review,
         )
 
-    try:
-        result = execute_compiled_query(
-            compiled,
-            config,
-            plan=plan,
-            question=question,
-            principal=principal,
-            options=options
-            or ExecuteOptions(
-                audit_path=config.audit_path,
-            ),
-        )
-    except ExecutionError:
-        raise
+    result = execute_compiled_query(
+        compiled,
+        config,
+        plan=plan,
+        question=question,
+        principal=principal,
+        options=options or ExecuteOptions(audit_path=config.audit_path),
+    )
 
     answer = format_template_answer(
         question, answer_plan, result, catalog=scoped, compiled=compiled
@@ -290,6 +417,7 @@ def ask(
         scale_note=money_scale_note(result.columns, rows, column_units),
         plan=plan,
         compiled=compiled,
+        review=review,
     )
 
 

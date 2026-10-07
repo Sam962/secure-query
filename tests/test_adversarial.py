@@ -57,7 +57,7 @@ def test_model_sql_payload_does_not_execute() -> None:
 def test_api_rejects_unknown_body_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "dev")
     monkeypatch.setenv("SECURE_QUERY_PRINCIPAL_ID", "demo-user")
-    monkeypatch.setattr("secure_query.api.http.default_client", lambda: MockLLMClient())
+    monkeypatch.setattr("secure_query.api.http.get_client", lambda: MockLLMClient())
     response = TestClient(app).post(
         "/ask",
         json={"question": "hi", "sql": "SELECT 1", "confirm_only": True},

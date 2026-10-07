@@ -6,15 +6,26 @@ import json
 import os
 import re
 import time
+from functools import lru_cache
 from typing import Any, Protocol
 
 _RETRY_AFTER_RE = re.compile(r"try again in ([\d.]+)s", re.IGNORECASE)
 _RATE_LIMIT_MAX_RETRIES = 5
 _RATE_LIMIT_DEFAULT_WAIT_S = 15.0
+# Bounded calls: the SDK retries 429/5xx/connection errors itself (never 400/401).
+_TIMEOUT_S = 30.0
+_LOCAL_TIMEOUT_S = 120.0  # a local 7B model can take longer than a hosted API
+_MAX_RETRIES = 2
+_MAX_TOKENS = 1200
+_SEED = 7
 
 
 class LLMClient(Protocol):
-    """Minimal chat client: messages in, text out."""
+    """Minimal chat client: messages in, text out.
+
+    A client whose `structured_outputs` attribute is true also accepts
+    `complete(messages, response_format=...)` (a json_schema the API enforces).
+    """
 
     def complete(self, messages: list[dict[str, str]]) -> str: ...
 
@@ -50,33 +61,53 @@ class OpenAIClient:
 
         self.provider = provider
         self.temperature = temperature
+        # OpenAI enforces json_schema response formats; local/compat servers may not.
+        self.structured_outputs = provider == "openai"
         self._model = model or "gpt-4o-mini"
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
         )
-        kwargs: dict[str, Any] = {"api_key": api_key or "unused"}
+        kwargs: dict[str, Any] = {
+            "api_key": api_key or "unused",
+            "timeout": _LOCAL_TIMEOUT_S if provider == "ollama" else _TIMEOUT_S,
+            "max_retries": _MAX_RETRIES,
+        }
         if base_url:
             kwargs["base_url"] = base_url
         self._client = OpenAI(**kwargs)
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
-        from openai import APIConnectionError, APITimeoutError
+    def complete(
+        self, messages: list[dict[str, str]], response_format: dict[str, Any] | None = None
+    ) -> str:
+        from openai import APIConnectionError, APIError, APITimeoutError
 
         try:
-            return self._complete(messages)
+            return self._complete(messages, response_format)
         except (APIConnectionError, APITimeoutError) as exc:
             raise PlannerError(f"LLM unreachable ({self.provider} {self._model}): {exc}") from exc
+        except APIError as exc:
+            raise PlannerError(f"LLM request failed ({self.provider} {self._model}): {exc}") from exc
 
-    def _complete(self, messages: list[dict[str, str]]) -> str:
+    def _complete(
+        self, messages: list[dict[str, str]], response_format: dict[str, Any] | None = None
+    ) -> str:
         from openai import RateLimitError
 
         create_kwargs: dict[str, Any] = {
             "model": self._model,
             "messages": messages,
             "temperature": self.temperature,
+            "max_tokens": _MAX_TOKENS,
+            "seed": _SEED,
         }
-        if self._json_mode:
+        if response_format is not None and self.structured_outputs:
+            create_kwargs["response_format"] = response_format
+        elif self._json_mode:
             create_kwargs["response_format"] = {"type": "json_object"}
+
+        if self.provider == "openai":
+            # One request; the SDK's bounded retries are the only retries.
+            return self._content(self._client.chat.completions.create(**create_kwargs))
 
         for attempt in range(_RATE_LIMIT_MAX_RETRIES):
             try:
@@ -101,12 +132,16 @@ class OpenAIClient:
                 time.sleep(wait_s)
                 continue
 
-            content = resp.choices[0].message.content
-            if not content:
-                raise PlannerError("LLM returned empty content")
-            return content
+            return self._content(resp)
 
         raise PlannerError("LLM rate limit retries exhausted")
+
+    @staticmethod
+    def _content(resp: Any) -> str:
+        content = resp.choices[0].message.content
+        if not content:
+            raise PlannerError("LLM returned empty content")
+        return content
 
 
 class MockLLMClient:
@@ -362,3 +397,9 @@ def default_client() -> LLMClient:
     if settings is None:
         return MockLLMClient()
     return OpenAIClient(**settings)
+
+
+@lru_cache(maxsize=1)
+def get_client() -> LLMClient:
+    """Process-wide LLM client, so the SDK connection pool is reused. cache_clear() to reset."""
+    return default_client()

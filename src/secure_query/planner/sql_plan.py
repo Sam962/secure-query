@@ -24,6 +24,7 @@ from secure_query.planner.guard import (
 )
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
+from secure_query.planner.prompt import relevant_tables_line
 
 SQL_SYSTEM_PROMPT = """You translate a question into ONE read-only DuckDB SQL query over an approved catalog.
 Output a single JSON object and nothing else:
@@ -46,10 +47,11 @@ Rules:
 """
 
 
-def build_sql_prompt(question: str, catalog: Catalog) -> str:
+def build_sql_prompt(question: str, catalog: Catalog, relevant_tables: Sequence[str] = ()) -> str:
     return (
         "Approved catalog (tables/columns/joins only — no row data):\n"
         f"{catalog.planner_summary()}\n\n"
+        f"{relevant_tables_line(relevant_tables)}"
         f"Question:\n{question}\n\n"
         'Return only the JSON object: {"sql": ...} or {"cannot_answer": true, ...}.'
     )
@@ -100,11 +102,12 @@ def plan_sql_question(
     row_filters: Sequence[Filter] = (),
     guard: bool = True,
     prompt_catalog: Catalog | None = None,
+    relevant_tables: Sequence[str] = (),
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors."""
     messages = [
         {"role": "system", "content": SQL_SYSTEM_PROMPT},
-        {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog)},
+        {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog, relevant_tables)},
     ]
     errors: list[str] = []
     raw_responses: list[str] = []
@@ -144,6 +147,7 @@ def plan_sql_question(
                 status="ok",
                 question=question,
                 compiled=validated.compiled,
+                source_sql=str(data["sql"]),
                 attempts=attempt,
                 raw_responses=raw_responses,
             )

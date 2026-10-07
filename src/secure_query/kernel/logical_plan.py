@@ -56,14 +56,37 @@ class LiteralValue(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def parse_iso_dates(cls, data: object) -> object:
-        """JSON has no date type: accept ISO strings for type=date/datetime.
+        """JSON has no date type, and `5` parses as int: coerce by `type`.
 
         Without this, {"type": "date", "value": "2011-01-01"} from the planner can
-        never validate, so every date-range question is unanswerable.
+        never validate, so every date-range question is unanswerable; and
+        {"type": "float", "value": 5} is rejected though it means 5.0. Structured
+        outputs send every value as a string, coerced here by `type`.
         """
-        if not isinstance(data, dict) or not isinstance(data.get("value"), str):
+        if not isinstance(data, dict):
             return data
         kind = data.get("type")
+        value = data.get("value")
+        if kind == "float" and isinstance(value, int) and not isinstance(value, bool):
+            return {**data, "value": float(value)}
+        if not isinstance(value, str):
+            return data
+        # Structured outputs send every literal as a string; coerce by `type`.
+        raw = value.strip()
+        if kind == "integer":
+            try:
+                return {**data, "value": int(raw)}
+            except ValueError as exc:
+                raise ValueError(f"LiteralValue {raw!r} is not an integer") from exc
+        if kind == "float":
+            try:
+                return {**data, "value": float(raw)}
+            except ValueError as exc:
+                raise ValueError(f"LiteralValue {raw!r} is not a number") from exc
+        if kind == "boolean":
+            if raw.lower() not in ("true", "false"):
+                raise ValueError(f"LiteralValue {raw!r} is not a boolean")
+            return {**data, "value": raw.lower() == "true"}
         if kind not in ("date", "datetime"):
             return data
         raw = data["value"].strip()

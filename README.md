@@ -179,6 +179,8 @@ Dependencies point one way: `api → engine/planner → kernel`. See [docs/ARCHI
 | [docs/SECURITY.md](docs/SECURITY.md) | Threat model, identity, Databricks/Postgres |
 | [docs/OWNERSHIP.md](docs/OWNERSHIP.md) | Named owner before a real domain |
 | [docs/STATUS.md](docs/STATUS.md) | What is done; what to do next |
+| [docs/REVIEW-2026-10-06.md](docs/REVIEW-2026-10-06.md) | Independent review (scores, findings) |
+| [docs/BACKLOG.md](docs/BACKLOG.md) | Checklist to close every review finding |
 | [docs/adr/001-result-policy.md](docs/adr/001-result-policy.md) | No LLM on result cells |
 | [docs/adr/002-ir-boundary.md](docs/adr/002-ir-boundary.md) | LQP will not become a SQL AST |
 

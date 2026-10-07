@@ -116,3 +116,49 @@ def test_sql_planner_mode_applies_row_filters(monkeypatch: pytest.MonkeyPatch) -
     )
     assert outcome.status == "confirm"
     assert "EXISTS" in outcome.sql and "'USA'" in outcome.sql
+
+
+def test_reviewed_plan_gets_row_filters_from_the_server() -> None:
+    """The review payload carries the plan before row filters; execute re-injects them,
+    so a client cannot drop the principal's filter and keep the hash."""
+    import json
+
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    usa_only = Eq(
+        column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
+        value=LiteralValue(type="string", value="USA"),
+    )
+    principal = Principal(principal_id="us-team", tenant_id="chinook", row_filters=(usa_only,))
+    plan = {
+        "source": "Invoice",
+        "filters": [],
+        "group_by": None,
+        "aggregations": [{"fn": "count", "column": None, "alias": "invoice_count"}],
+        "having": [],
+        "order_by": [],
+        "limit": 1,
+    }
+    reviewed = ask(
+        "How many invoices are there?",
+        principal=principal,
+        config=runtime_config(),
+        catalog=sample_catalog(),
+        client=MockLLMClient([json.dumps(plan)]),
+        confirm_only=True,
+    )
+    assert reviewed.status == "confirm", reviewed.clarify_message
+    assert reviewed.review["plan"]["filters"] == []  # model plan, before injection
+    assert "'USA'" in reviewed.sql
+
+    from secure_query.api.service import _recompile, catalog_for_principal
+
+    compiled, _, _, _ = _recompile(
+        catalog_for_principal(sample_catalog(), principal),
+        principal,
+        plan=reviewed.review["plan"],
+        sql=None,
+        metric_id=None,
+    )
+    assert compiled.plan_hash == reviewed.review["plan_hash"]
+    assert "'USA'" in compiled.sql

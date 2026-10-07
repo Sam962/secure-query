@@ -6,6 +6,7 @@ from secure_query.planner.llm import (
     OpenAIClient,
     PlannerError,
     default_client,
+    get_client,
     ollama_model_digest,
     resolve_llm_settings,
 )
@@ -31,6 +32,7 @@ __all__ = [
     "build_repair_prompt",
     "build_user_prompt",
     "default_client",
+    "get_client",
     "ollama_model_digest",
     "parse_plan_json",
     "plan_question",

@@ -236,8 +236,33 @@ def fan_out_errors(plan: LogicalPlan, catalog: Catalog) -> list[ValidationError]
                     stage="policy",
                 )
             )
-    if not plan.aggregations and plan.group_by is None and not any(is_grain(t) for t in to_one):
-        errors.append(
-            _error("plan.fan_out", "These joins repeat rows in more than one direction")
-        )
+    # List plans need no check: many-side tables are compiled as EXISTS
+    # (many_side_paths), so a list stays at source grain.
     return errors
+
+
+def many_side_paths(plan: LogicalPlan, catalog: Catalog) -> dict[str, list[tuple[str, str, JoinKey]]]:
+    """Tables a join from plan.source reaches through a one-to-many step, with their path.
+
+    Joining such a table repeats source rows. Steps are (from, to, JoinKey) along
+    the resolved join tree, starting at plan.source.
+    """
+    path_to: dict[str, list[tuple[str, str, JoinKey]]] = {plan.source: []}
+    many: set[str] = set()
+    for join in plan.joins:
+        for cond in join.conditions:
+            prev, node = cond.left.table_id, cond.right.table_id
+            if prev not in path_to:
+                continue
+            key = next(
+                (jk for jk in catalog.join_keys
+                 if jk.matches(prev, cond.left.column_id, node, cond.right.column_id)),
+                None,
+            )
+            if key is None:
+                continue
+            to_one = key.left_table == prev and key.left_column == cond.left.column_id
+            path_to[node] = [*path_to[prev], (prev, node, key)]
+            if prev in many or not to_one:
+                many.add(node)
+    return {t: path_to[t] for t in many}

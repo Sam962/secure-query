@@ -32,7 +32,7 @@ from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import traverse_scope
 
 from secure_query.kernel.catalog import Catalog
-from secure_query.kernel.compile import CompiledQuery, compile_filter
+from secure_query.kernel.compile import CompiledQuery, compile_filter, exists_through
 from secure_query.kernel.errors import ValidationError
 from secure_query.kernel.joins import approved_path
 from secure_query.kernel.logical_plan import Filter
@@ -235,7 +235,7 @@ def _inject_row_filters(
                     )
                 )
                 continue
-            inner = inner.where(_exists_through(path, filters, outer))
+            inner = inner.where(exists_through(path, filters, outer))
         alias = table.alias or spec.name
         table.replace(
             exp.Subquery(this=inner, alias=exp.TableAlias(this=exp.to_identifier(alias, quoted=True)))
@@ -249,41 +249,6 @@ def _requalify(node: exp.Expression, table: str, alias: str) -> exp.Expression:
         if col.table == table:
             col.set("table", exp.to_identifier(alias, quoted=True))
     return node
-
-
-def _exists_through(path: list, filters: list[Filter], outer: str) -> exp.Expression:
-    """EXISTS (SELECT 1 FROM t1 JOIN t2 ... WHERE t1.k = outer.k AND <filters>)."""
-
-    def ident(name: str) -> exp.Identifier:
-        return exp.to_identifier(name, quoted=True)
-
-    first_from, first_to, first_key = path[0]
-    from_col, to_col = (
-        (first_key.left_column, first_key.right_column)
-        if first_key.left_table == first_from
-        else (first_key.right_column, first_key.left_column)
-    )
-    sub = exp.select(exp.Literal.number(1)).from_(exp.Table(this=ident(first_to)))
-    sub = sub.where(
-        exp.EQ(
-            this=exp.Column(this=ident(to_col), table=ident(first_to)),
-            expression=exp.Column(this=ident(from_col), table=ident(outer)),
-        )
-    )
-    for prev, node, key in path[1:]:
-        left_col, right_col = (
-            (key.left_column, key.right_column) if key.left_table == prev else (key.right_column, key.left_column)
-        )
-        sub = sub.join(
-            exp.Table(this=ident(node)),
-            on=exp.EQ(
-                this=exp.Column(this=ident(left_col), table=ident(prev)),
-                expression=exp.Column(this=ident(right_col), table=ident(node)),
-            ),
-        )
-    for filt in filters:
-        sub = sub.where(compile_filter(filt))
-    return exp.Exists(this=sub)
 
 
 def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
@@ -362,7 +327,12 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
     when the ON equality follows a join key from its many side to its one side.
     An aggregate over alias T is exact only if every step outward from T is
     to-one; COUNT(*) needs some alias to be that grain. COUNT(DISTINCT), MIN
-    and MAX are unaffected. Joins with a CTE / derived side are not checked.
+    and MAX are unaffected.
+
+    A CTE / derived side is resolved to its grain (_derived_grain): a plain
+    single-table SELECT keeps its base table's grain and join keys; a grouped or
+    single-row subquery is unique on its group keys. Anything else has unknown
+    grain and the aggregate is refused (unless the catalog allows any join).
     """
     select = scope.expression
     if not isinstance(select, exp.Select) or not select.args.get("joins"):
@@ -370,6 +340,28 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
     aggs = [a for a in select.find_all(exp.AggFunc) if a.find_ancestor(exp.Select) is select]
     if not aggs:
         return []
+    tables = {t.name.lower(): t for t in catalog.tables}
+    derived = {
+        alias: _derived_grain(src, tables)
+        for alias, src in scope.sources.items()
+        if alias not in base
+    }
+
+    def resolve(col: exp.Column) -> tuple[str, str] | str | None:
+        """(base table, column) for base or pass-through sides; "unique" when the
+        column is a unique key of a grouped derived side; None when unknown."""
+        if col.table in base:
+            return base[col.table].name, col.name
+        grain = derived.get(col.table)
+        if grain is None:
+            return None
+        kind, info = grain
+        if kind == "table":
+            table, columns = info
+            column = columns.get(col.name.lower())
+            return (table, column) if column else None
+        return "unique" if info is None or col.name.lower() in info else None
+
     to_one: dict[str, dict[str, bool]] = {}
     for join in select.args["joins"]:
         on = join.args.get("on")
@@ -377,16 +369,37 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
             left, right = eq.this, eq.expression
             if not (isinstance(left, exp.Column) and isinstance(right, exp.Column)):
                 continue
-            lt, rt = base.get(left.table), base.get(right.table)
-            if lt is None or rt is None:
-                return []  # derived side: cardinality unknown, not checked
-            forward = any(
-                jk.left_table.lower() == lt.name.lower()
-                and jk.left_column.lower() == left.name.lower()
-                and jk.right_table.lower() == rt.name.lower()
-                and jk.right_column.lower() == right.name.lower()
-                for jk in catalog.join_keys
-            )
+            ls, rs = resolve(left), resolve(right)
+            if ls is None or rs is None or (ls == "unique" and rs == "unique"):
+                if catalog.allow_any_join:
+                    return []
+                return [
+                    _error(
+                        "sql.fan_out_unknown_grain",
+                        f"cannot tell how many rows {eq.sql()} repeats (derived table of "
+                        "unknown grain); aggregate the base tables or pre-aggregate on the join key",
+                    )
+                ]
+            if rs == "unique":
+                # Every left row meets at most one derived row; the reverse holds too
+                # when the left column is itself a key (the one side of a join key).
+                forward = True
+                to_one.setdefault(right.table, {})[left.table] = _is_key(catalog, ls)
+                to_one.setdefault(left.table, {})[right.table] = True
+                continue
+            elif ls == "unique":
+                to_one.setdefault(left.table, {})[right.table] = _is_key(catalog, rs)
+                to_one.setdefault(right.table, {})[left.table] = True
+                continue
+            else:
+                (lt, lc), (rt, rc) = ls, rs
+                forward = any(
+                    jk.left_table.lower() == lt.lower()
+                    and jk.left_column.lower() == lc.lower()
+                    and jk.right_table.lower() == rt.lower()
+                    and jk.right_column.lower() == rc.lower()
+                    for jk in catalog.join_keys
+                )
             to_one.setdefault(left.table, {})[right.table] = forward
             to_one.setdefault(right.table, {})[left.table] = not forward
 
@@ -419,6 +432,50 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
                 )
             )
     return errors
+
+
+def _is_key(catalog: Catalog, side: tuple[str, str] | str) -> bool:
+    """A base column is unique when it is the one side of an approved join key."""
+    if not isinstance(side, tuple):
+        return False
+    table, column = side
+    return any(
+        jk.right_table.lower() == table.lower() and jk.right_column.lower() == column.lower()
+        for jk in catalog.join_keys
+    )
+
+
+def _derived_grain(source, tables: dict) -> tuple[str, object] | None:
+    """Grain of a CTE / derived source, or None when it cannot be told.
+
+    ("table", (base table, {output column: base column})) for a plain
+    single-table SELECT; ("unique", group-key output columns, or None for a
+    single-row aggregate) for a grouped subquery.
+    """
+    select = getattr(source, "expression", None)
+    if not isinstance(select, exp.Select) or select.args.get("joins"):
+        return None
+    if select.args.get("group"):
+        keys = {e.sql().lower() for e in select.args["group"].expressions}
+        return "unique", {
+            p.alias_or_name.lower()
+            for p in select.expressions
+            if (p.this if isinstance(p, exp.Alias) else p).sql().lower() in keys
+        }
+    if select.find(exp.AggFunc):
+        return "unique", None
+    if select.args.get("distinct"):
+        return None
+    from_ = select.args.get("from_") or select.args.get("from")
+    table = from_.this if from_ is not None else None
+    if not isinstance(table, exp.Table) or table.name.lower() not in tables:
+        return None
+    columns = {}
+    for p in select.expressions:
+        inner = p.this if isinstance(p, exp.Alias) else p
+        if isinstance(inner, exp.Column):
+            columns[p.alias_or_name.lower()] = inner.name
+    return "table", (tables[table.name.lower()].name, columns)
 
 
 def _join_allowed(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:

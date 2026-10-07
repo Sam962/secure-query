@@ -345,6 +345,7 @@
     const stage = document.getElementById("stage");
     const examples = document.getElementById("examples");
     let pendingQuestion = "";
+    let pendingReview = null;
 
     EXAMPLES.forEach((text) => {
       const b = document.createElement("button");
@@ -452,7 +453,7 @@
       }
 
       const canRun = data.status === "confirm" || data.status === "ok";
-      runBtn.disabled = !canRun || !pendingQuestion;
+      runBtn.disabled = !canRun || !pendingReview;
       const badge = data.status === "ok"
         ? `<span class="badge ok">Executed</span>`
         : `<span class="badge plan">Plan ready — not executed</span>`;
@@ -542,21 +543,28 @@
       const question = q.value.trim();
       if (!question) return;
       pendingQuestion = question;
+      pendingReview = null;
       runBtn.disabled = true;
       showLoading("Planning — validating against the catalog, then compiling SQL…");
       try {
-        render(await call("/ask/confirm", { question }));
+        const data = await call("/ask/confirm", { question });
+        pendingReview = data.review || null;
+        render(data);
       } catch (err) {
         showError(err);
       }
     });
 
     runBtn.addEventListener("click", async () => {
-      if (!pendingQuestion) return;
+      // Run executes the reviewed query itself (no re-plan); the server answers 409
+      // if it no longer compiles to the reviewed plan hash.
+      if (!pendingReview) return;
       runBtn.disabled = true;
       showLoading("Executing read-only query…");
       try {
-        render(await call("/ask", { question: pendingQuestion, execute: true }));
+        const data = await call("/ask/execute", { ...pendingReview, question: pendingQuestion });
+        pendingReview = data.review || pendingReview;
+        render(data);
       } catch (err) {
         showError(err);
       }

@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
@@ -110,7 +111,7 @@ def resolve_principal(
 ) -> Principal:
     """Resolve the caller. Never reads identity from a JSON body."""
     mode = auth_mode()
-    registry = settings if settings is not None else load_principal_registry()
+    registry = settings if settings is not None else principal_registry()
     tenant_id = str(registry.get("tenant_id") or os.environ.get("SECURE_QUERY_TENANT_ID") or "chinook")
     principals: dict[str, Any] = registry.get("principals") or {}
 
@@ -217,3 +218,9 @@ def load_principal_registry(path: str | Path | None = None) -> dict[str, Any]:
         registry["tokens"] = tokens
         registry["principals"] = principals
     return registry
+
+
+@lru_cache(maxsize=1)
+def principal_registry() -> dict[str, Any]:
+    """Process-wide principal registry, read once. cache_clear() after changing it."""
+    return load_principal_registry()

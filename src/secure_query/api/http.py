@@ -17,11 +17,11 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from secure_query.api.service import ask, production_auth_blocked
+from secure_query.api.service import ReviewMismatch, ask, execute_reviewed, production_auth_blocked
 from secure_query.auth import AuthError, resolve_principal
 from secure_query.engine.execute import ExecuteOptions, ExecutionError
-from secure_query.engine.runtime import load_active_catalog, runtime_config
-from secure_query.planner import default_client
+from secure_query.engine.runtime import get_runtime, load_active_catalog
+from secure_query.planner import get_client
 from secure_query.planner.suggest import SuggestedQuestion
 
 
@@ -67,6 +67,23 @@ class AskResponse(BaseModel):
     suggestions: list[SuggestedQuestion] = Field(default_factory=list)
     column_units: list[str | None] = Field(default_factory=list)
     scale_note: str | None = None
+    review: dict[str, Any] | None = Field(
+        default=None,
+        description="Send back to /ask/execute to run exactly this reviewed query",
+    )
+
+
+class ExecuteRequest(BaseModel):
+    """The `review` payload from /ask/confirm. Re-validated server-side; no LLM call."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    plan_hash: str
+    plan: dict[str, Any] | None = None
+    sql: str | None = None
+    metric_id: str | None = None
+    question: str = ""
+    domain: str | None = None
 
 
 def _outcome_to_response(outcome) -> AskResponse:
@@ -86,6 +103,7 @@ def _outcome_to_response(outcome) -> AskResponse:
         suggestions=list(outcome.suggestions),
         column_units=list(outcome.column_units),
         scale_note=outcome.scale_note,
+        review=outcome.review,
     )
 
 
@@ -96,7 +114,7 @@ def index() -> FileResponse:
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    config = runtime_config()
+    config = get_runtime()
     return {"status": "ok", "backend": config.backend}
 
 
@@ -105,7 +123,7 @@ def ready() -> dict[str, str | bool]:
     blocked = production_auth_blocked()
     if blocked:
         raise HTTPException(status_code=503, detail=blocked)
-    config = runtime_config()
+    config = get_runtime()
     duckdb_ok = config.backend != "duckdb" or config.duckdb_path.exists()
     if not duckdb_ok:
         raise HTTPException(
@@ -115,12 +133,12 @@ def ready() -> dict[str, str | bool]:
     return {"status": "ready", "backend": config.backend, "catalog_tenant": config.catalog.tenant_id}
 
 
-def _run_ask(
-    req: AskRequest,
+def _principal_and_catalog(
+    domain: str | None,
     authorization: str | None,
     x_forwarded_user: str | None,
     x_databricks_user: str | None,
-) -> AskResponse:
+):
     blocked = production_auth_blocked()
     if blocked:
         raise HTTPException(status_code=503, detail=blocked)
@@ -132,21 +150,32 @@ def _run_ask(
     except AuthError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
-    config = runtime_config()
+    config = get_runtime()
     catalog = config.catalog
-    if req.domain:
+    if domain:
         try:
-            catalog = load_active_catalog(req.domain)
+            catalog = load_active_catalog(domain)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return principal, config, catalog
 
+
+def _run_ask(
+    req: AskRequest,
+    authorization: str | None,
+    x_forwarded_user: str | None,
+    x_databricks_user: str | None,
+) -> AskResponse:
+    principal, config, catalog = _principal_and_catalog(
+        req.domain, authorization, x_forwarded_user, x_databricks_user
+    )
     try:
         outcome = ask(
             req.question,
             principal=principal,
             config=config,
             catalog=catalog,
-            client=default_client(),
+            client=get_client(),
             confirm_only=req.confirm_only,
             execute=req.execute,
             options=ExecuteOptions(audit_path=config.audit_path),
@@ -175,3 +204,33 @@ def ask_confirm(
 ) -> AskResponse:
     req = req.model_copy(update={"confirm_only": True, "execute": False})
     return _run_ask(req, authorization, x_forwarded_user, x_databricks_user)
+
+
+@app.post("/ask/execute", response_model=AskResponse)
+def ask_execute(
+    req: ExecuteRequest,
+    authorization: str | None = Header(default=None),
+    x_forwarded_user: str | None = Header(default=None),
+    x_databricks_user: str | None = Header(default=None),
+) -> AskResponse:
+    """Run the query reviewed via /ask/confirm. 409 if it no longer compiles to plan_hash."""
+    principal, config, catalog = _principal_and_catalog(
+        req.domain, authorization, x_forwarded_user, x_databricks_user
+    )
+    try:
+        outcome = execute_reviewed(
+            req.question,
+            principal=principal,
+            config=config,
+            catalog=catalog,
+            plan_hash=req.plan_hash,
+            plan=req.plan,
+            sql=req.sql,
+            metric_id=req.metric_id,
+            options=ExecuteOptions(audit_path=config.audit_path),
+        )
+    except ReviewMismatch as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ExecutionError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return _outcome_to_response(outcome)

@@ -4,6 +4,7 @@ import duckdb
 import pytest
 
 from secure_query.demo.chinook import sample_catalog
+from secure_query.demo.load_chinook import DUCKDB_PATH
 from secure_query.kernel.catalog import Catalog, JoinKey
 from secure_query.kernel.logical_plan import (
     Aggregation,
@@ -18,6 +19,7 @@ from secure_query.kernel.logical_plan import (
 from secure_query.kernel.validate import PlanValidationFailed, normalize_plan, validate_and_compile
 
 _DB = "data/chinook.duckdb"
+CATALOG = sample_catalog()
 
 
 def col(t: str, c: str) -> ColumnRef:
@@ -137,3 +139,70 @@ def test_count_distinct_across_fan_out_is_allowed() -> None:
     got = duckdb.connect(_DB, read_only=True).execute(compiled.sql).fetchone()[0]
     assert got > 0
 
+
+
+def _list_plan(source: str, filters: list[dict], order_by: list[dict] | None = None) -> LogicalPlan:
+    return LogicalPlan.model_validate(
+        {
+            "plan_id": "00000000-0000-0000-0000-0000000000a1",
+            "source": source,
+            "filters": filters,
+            "order_by": order_by or [],
+            "limit": 500,
+        }
+    )
+
+
+USA_BILLING = {
+    "op": "eq",
+    "column": {"table_id": "Invoice", "column_id": "BillingCountry"},
+    "value": {"type": "string", "value": "USA"},
+}
+
+
+def test_list_filtered_by_child_table_keeps_parent_grain() -> None:
+    """Customers with a USA invoice: one row per customer, Customer columns only."""
+    sql = validate_and_compile(_list_plan("Customer", [USA_BILLING]), CATALOG).sql
+    assert "EXISTS" in sql and "JOIN" not in sql.split("EXISTS")[0]
+    assert '"Invoice"."Total"' not in sql
+    if DUCKDB_PATH.exists():
+        con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
+        try:
+            rows = con.execute(sql).fetchall()
+            expected = con.execute(
+                "SELECT COUNT(DISTINCT CustomerId) FROM Invoice WHERE BillingCountry = 'USA'"
+            ).fetchone()[0]
+        finally:
+            con.close()
+        assert len(rows) == len({r[0] for r in rows}) == expected == 13
+
+
+def test_list_filter_through_several_child_hops_is_one_exists() -> None:
+    rock = {
+        "op": "eq",
+        "column": {"table_id": "Genre", "column_id": "Name"},
+        "value": {"type": "string", "value": "Rock"},
+    }
+    sql = validate_and_compile(_list_plan("Customer", [rock, USA_BILLING]), CATALOG).sql
+    assert sql.count("EXISTS") == 1  # same invoice line, same invoice
+    assert '"Genre"."Name" = \'Rock\'' in sql and "'USA'" in sql
+
+
+def test_list_filtered_by_one_side_table_stays_a_join() -> None:
+    usa_customer = {
+        "op": "eq",
+        "column": {"table_id": "Customer", "column_id": "Country"},
+        "value": {"type": "string", "value": "USA"},
+    }
+    sql = validate_and_compile(_list_plan("Invoice", [usa_customer]), CATALOG).sql
+    assert "EXISTS" not in sql and "JOIN" in sql
+
+
+def test_list_sorted_by_child_column_is_rejected() -> None:
+    plan = _list_plan(
+        "Customer",
+        [USA_BILLING],
+        [{"column": {"table_id": "Invoice", "column_id": "Total"}, "direction": "desc"}],
+    )
+    with pytest.raises(PlanValidationFailed, match="plan.list_order_many_side"):
+        validate_and_compile(plan, CATALOG)

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
@@ -76,6 +77,12 @@ def runtime_config() -> RuntimeConfig:
         duckdb_path=Path(DUCKDB_PATH),
         postgres_dsn=postgres_dsn() if backend == "postgres" else None,
     )
+
+
+@lru_cache(maxsize=1)
+def get_runtime() -> RuntimeConfig:
+    """Process-wide runtime (catalog loaded and validated once). cache_clear() to reload."""
+    return runtime_config()
 
 
 def ensure_execute_ready(config: RuntimeConfig) -> None:

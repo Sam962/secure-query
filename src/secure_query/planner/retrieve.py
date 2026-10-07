@@ -90,6 +90,25 @@ def retrieve_tables(question: str, catalog: Catalog, *, k: int = 8) -> list[str]
     return _expand_join_neighbors(catalog, chosen)
 
 
+def prompt_token_budget() -> int:
+    """Catalog summary size (approx. tokens) above which the prompt is cut to the retrieval slice."""
+    raw = (os.environ.get("SECURE_QUERY_PROMPT_CATALOG_TOKENS") or "").strip()
+    return int(raw) if raw else 24_000
+
+
+def prompt_catalog_and_hint(catalog: Catalog, retrieved: list[str]) -> tuple[Catalog, list[str]]:
+    """The catalog to put in the prompt, and the "likely relevant tables" hint.
+
+    The full catalog is the stable prompt block, identical for every question, so
+    the provider's prompt cache covers it; retrieval only adds a hint after it.
+    The catalog is cut to the retrieval slice only when it exceeds the budget.
+    """
+    narrowed = retrieved if retrieved and len(set(retrieved)) < len(catalog.tables) else []
+    if len(catalog.planner_summary()) / 4 <= prompt_token_budget():
+        return catalog, narrowed
+    return (catalog_for_prompt(catalog, narrowed) if narrowed else catalog), []
+
+
 def catalog_for_prompt(catalog: Catalog, table_ids: list[str]) -> Catalog:
     """Prompt-only slice. Caller must still validate against `catalog`."""
     allowed = frozenset(table_ids)

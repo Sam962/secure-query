@@ -291,3 +291,59 @@ def test_sql_path_runs_semantic_guards_and_row_filters(monkeypatch: pytest.Monke
         row_filters=[usa],
     )
     assert filtered.status == "ok" and "EXISTS" in filtered.compiled.sql
+
+
+def test_fan_out_through_a_cte_is_still_checked() -> None:
+    """A pass-through CTE has its base table's grain: the bypass is closed."""
+    bypass = (
+        "WITH i AS (SELECT InvoiceId, CustomerId, Total FROM Invoice) "
+        "SELECT c.Country, SUM(c.SupportRepId) FROM Customer c JOIN i ON i.CustomerId = c.CustomerId "
+        "GROUP BY c.Country"
+    )
+    assert "sql.fan_out" in codes(bypass)
+    derived = (
+        "SELECT c.Country, SUM(c.SupportRepId) FROM Customer c "
+        "JOIN (SELECT CustomerId FROM Invoice) i ON i.CustomerId = c.CustomerId GROUP BY c.Country"
+    )
+    assert "sql.fan_out" in codes(derived)
+    # Many-side measure through a pass-through CTE: exact, allowed.
+    validate_sql(
+        "WITH i AS (SELECT InvoiceId, CustomerId, Total FROM Invoice) SELECT c.Country, SUM(i.Total) "
+        "FROM i JOIN Customer c ON i.CustomerId = c.CustomerId GROUP BY c.Country",
+        CATALOG,
+    )
+
+
+def test_pre_aggregated_subquery_joined_on_its_key_is_allowed() -> None:
+    validate_sql(
+        "SELECT c.Country, SUM(t.spend) FROM Customer c JOIN "
+        "(SELECT CustomerId, SUM(Total) AS spend FROM Invoice GROUP BY CustomerId) t "
+        "ON t.CustomerId = c.CustomerId GROUP BY c.Country",
+        CATALOG,
+    )
+
+
+def test_derived_side_of_unknown_grain_is_refused() -> None:
+    assert "sql.fan_out_unknown_grain" in codes(
+        "SELECT c.Country, SUM(c.SupportRepId) FROM Customer c JOIN "
+        "(SELECT DISTINCT CustomerId FROM Invoice) i ON i.CustomerId = c.CustomerId GROUP BY c.Country"
+    )
+
+
+def test_select_star_cte_bypass_is_grain_checked_without_pii() -> None:
+    """The review's probe, on a catalog where SELECT * is not already stopped by PII."""
+    no_pii = CATALOG.model_copy(
+        update={
+            "tables": [
+                t.model_copy(update={"columns": [c.model_copy(update={"pii_risk": "none"}) for c in t.columns]})
+                for t in CATALOG.tables
+            ]
+        }
+    )
+    with pytest.raises(SqlValidationFailed) as info:
+        validate_sql(
+            "WITH i AS (SELECT * FROM Invoice) SELECT c.Country, SUM(c.SupportRepId) "
+            "FROM Customer c JOIN i ON i.CustomerId = c.CustomerId GROUP BY c.Country",
+            no_pii,
+        )
+    assert {e.code for e in info.value.errors} == {"sql.fan_out"}

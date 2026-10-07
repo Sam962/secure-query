@@ -21,8 +21,12 @@ from secure_query.kernel.logical_plan import (
 
 
 def test_literal_value_type_mismatch_rejected() -> None:
-    with pytest.raises(ValidationError):
-        LiteralValue(type="integer", value="2024")
+    # Structured outputs send literals as strings: a numeric string is coerced by
+    # `type`, anything else is still rejected.
+    assert LiteralValue(type="integer", value="2024").value == 2024
+    for kind, bad in (("integer", "abc"), ("float", "x1"), ("boolean", "yes"), ("integer", "1.5")):
+        with pytest.raises(ValidationError):
+            LiteralValue(type=kind, value=bad)
 
 
 def test_literal_value_correct_type_accepted() -> None:

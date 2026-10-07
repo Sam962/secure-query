@@ -10,9 +10,9 @@ import re
 from dataclasses import replace
 
 from secure_query.kernel.catalog import Catalog, ColumnSpec
-from secure_query.kernel.compile import CompilationError, CompiledQuery, compile, compile_ratio
+from secure_query.kernel.compile import CompilationError, CompiledQuery, SemiJoin, compile, compile_ratio
 from secure_query.kernel.errors import ValidationError
-from secure_query.kernel.joins import fan_out_errors, resolve_joins
+from secure_query.kernel.joins import fan_out_errors, many_side_paths, resolve_joins
 from secure_query.kernel.logical_plan import (
     Aggregation,
     Between,
@@ -49,7 +49,7 @@ class PlanValidationFailed(Exception):
 
 _LITERAL_TO_DTYPE = {
     "string": {"str"},
-    "integer": {"int"},
+    "integer": {"int", "float"},
     "float": {"float", "int"},
     "boolean": {"bool"},
     "date": {"datetime"},
@@ -201,7 +201,12 @@ def _check_dead_order_keys(plan: LogicalPlan) -> list[ValidationError]:
     """
     group_by = plan.group_by
     if plan.aggregations:
-        keys = set(group_by.columns) if group_by is not None else set()
+        # A time-bucketed column is grouped too (ORDER BY compiles to its bucket).
+        keys = (
+            set(group_by.columns) | {tb.column for tb in group_by.time_buckets}
+            if group_by is not None
+            else set()
+        )
         for i, ob in enumerate(plan.order_by):
             if ob.column is not None and ob.column not in keys:
                 return [
@@ -633,13 +638,77 @@ def validate_and_compile(plan: LogicalPlan, catalog: Catalog) -> CompiledQuery:
     """
     plan = normalize_plan(plan, catalog)
     errors = validate(plan, catalog)
+    semi_joins, semi_tables = _list_semi_joins(plan, catalog, errors)
     if errors:
         raise PlanValidationFailed(errors)
-    projection = safe_projection(plan, catalog) if is_list_intent(plan) else None
+    projection = (
+        [c for c in safe_projection(plan, catalog) if c.table_id not in semi_tables]
+        if is_list_intent(plan)
+        else None
+    )
     try:
-        return compile(plan, dialect=catalog.sql_dialect, projection=projection)
+        return compile(
+            plan, dialect=catalog.sql_dialect, projection=projection, semi_joins=semi_joins
+        )
     except CompilationError:
         raise
+
+
+def _list_semi_joins(
+    plan: LogicalPlan, catalog: Catalog, errors: list[ValidationError]
+) -> tuple[list[SemiJoin], set[str]]:
+    """List plans filter many-side tables with EXISTS instead of joining them.
+
+    Without this, "customers with a USA invoice" returns one row per invoice.
+    Filters reached through the same first hop share one EXISTS, so conditions
+    on one child row stay on the same row. Appends to `errors` when a list is
+    sorted by a many-side column or one filter spans two first hops.
+    """
+    if not is_list_intent(plan) or not plan.joins:
+        return [], set()
+    paths = many_side_paths(plan, catalog)
+    if not paths:
+        return [], set()
+    for i, ob in enumerate(plan.order_by):
+        if ob.column is not None and ob.column.table_id in paths:
+            errors.append(
+                ValidationError(
+                    code="plan.list_order_many_side",
+                    path=f"$.order_by[{i}]",
+                    message=(
+                        f"{ob.column.table_id} has many rows per {plan.source}; a list of "
+                        f"{plan.source} cannot be sorted by it. Aggregate instead"
+                    ),
+                    stage="policy",
+                )
+            )
+    groups: dict[tuple, tuple[list, list[int]]] = {}
+    for i, filt in enumerate(plan.filters):
+        tables = {filt.column.table_id}
+        value = getattr(filt, "value", None)
+        if isinstance(value, ColumnRef):
+            tables.add(value.table_id)
+        hops = {paths[t][0] for t in tables if t in paths}
+        if not hops:
+            continue
+        if len(hops) > 1:
+            errors.append(
+                ValidationError(
+                    code="plan.list_filter_spans_children",
+                    path=f"$.filters[{i}]",
+                    message="This filter compares two unrelated child tables of a list",
+                    stage="policy",
+                )
+            )
+            continue
+        steps, indexes = groups.setdefault(hops.pop(), ([], []))
+        for t in sorted(tables & set(paths)):
+            for step in paths[t]:
+                if step not in steps:
+                    steps.append(step)
+        indexes.append(i)
+    semi = [SemiJoin(steps=tuple(st), filter_indexes=tuple(ix)) for st, ix in groups.values()]
+    return semi, set(paths)
 
 
 def validate_and_compile_metric(
