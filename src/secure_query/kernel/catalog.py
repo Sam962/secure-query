@@ -56,7 +56,11 @@ class TableSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     def column_map(self) -> dict[str, ColumnSpec]:
-        return {c.name: c for c in self.columns}
+        cached = getattr(self, "_column_map_cache", None)
+        if cached is None:
+            cached = {c.name: c for c in self.columns}
+            object.__setattr__(self, "_column_map_cache", cached)
+        return cached
 
 
 class JoinKey(BaseModel):
@@ -179,7 +183,11 @@ class Catalog(BaseModel):
         return [m.id for m in self.metrics]
 
     def table_map(self) -> dict[str, TableSpec]:
-        return {t.name: t for t in self.tables}
+        cached = getattr(self, "_table_map_cache", None)
+        if cached is None:
+            cached = {t.name: t for t in self.tables}
+            object.__setattr__(self, "_table_map_cache", cached)
+        return cached
 
     def get_column(self, table_id: str, column_id: str) -> ColumnSpec | None:
         table = self.table_map().get(table_id)

@@ -355,6 +355,7 @@ def extra_dev_cases() -> list[dict]:
                     "SELECT Genre.Name, COUNT(*) AS n FROM Track JOIN Genre "
                     "ON Track.GenreId = Genre.GenreId GROUP BY 1 ORDER BY n ASC LIMIT 1"
                 ),
+                "subset_columns_ok": True,
                 "tags": ["unordered-limit", "topn", "dev-generated"],
             },
             {
@@ -365,6 +366,7 @@ def extra_dev_cases() -> list[dict]:
                     "SELECT MediaType.Name, COUNT(*) AS n FROM Track JOIN MediaType "
                     "ON Track.MediaTypeId = MediaType.MediaTypeId GROUP BY 1 ORDER BY n DESC LIMIT 1"
                 ),
+                "subset_columns_ok": True,
                 "tags": ["unordered-limit", "topn", "dev-generated"],
             },
             {
@@ -428,6 +430,7 @@ def extra_dev_cases() -> list[dict]:
                 "question": "What is the average spend per customer?",
                 "expect": "abstain",
                 "reason": "SUM(Total) / COUNT(DISTINCT CustomerId); AVG(Total) is per invoice",
+                "sql_reference": "SELECT SUM(Total) / COUNT(DISTINCT CustomerId) FROM Invoice",
                 "tags": ["avg-per", "inexpressible", "dev-generated"],
             },
             {
@@ -435,6 +438,7 @@ def extra_dev_cases() -> list[dict]:
                 "question": "What are the mean sales per employee?",
                 "expect": "abstain",
                 "reason": "total sales divided by employees; AVG(Total) is per invoice",
+                "sql_reference": "SELECT SUM(Total) / (SELECT COUNT(*) FROM Employee) FROM Invoice",
                 "tags": ["avg-per", "inexpressible", "dev-generated"],
             },
             {
@@ -442,6 +446,7 @@ def extra_dev_cases() -> list[dict]:
                 "question": "What is the average number of tracks per album?",
                 "expect": "abstain",
                 "reason": "COUNT(tracks) / COUNT(albums) needs division",
+                "sql_reference": "SELECT COUNT(*) / (SELECT COUNT(*) FROM Album) FROM Track",
                 "tags": ["avg-per", "inexpressible", "dev-generated"],
             },
         ]
@@ -464,21 +469,23 @@ def complex_dev_cases() -> list[dict]:
     top-N LIMIT cuts through a tie. Revenue uses UnitPrice * Quantity; every
     Quantity in this Chinook build is 1, so SUM(UnitPrice) gives the same number.
     """
-    def case(cid: str, question: str, sql: str, *tags: str) -> dict:
+    def case(cid: str, question: str, sql: str, *tags: str, subset_columns_ok: bool = False) -> dict:
         return {
             "id": f"dev_complex_{cid}",
             "question": question,
             "expect": "answer",
             "reference_sql": sql,
+            "subset_columns_ok": subset_columns_ok,
             "tags": ["complex", "dev-generated", *tags],
         }
 
-    def decline(cid: str, question: str, reason: str) -> dict:
+    def decline(cid: str, question: str, reason: str, sql_reference: str | None = None) -> dict:
         return {
             "id": f"dev_complex_{cid}",
             "question": question,
             "expect": "abstain",
             "reason": reason,
+            "sql_reference": sql_reference,
             "tags": ["complex", "dev-generated", "known-gap"],
         }
 
@@ -562,7 +569,7 @@ def complex_dev_cases() -> list[dict]:
             "JOIN Customer ON Invoice.CustomerId = Customer.CustomerId "
             "JOIN Employee ON Customer.SupportRepId = Employee.EmployeeId "
             "GROUP BY Employee.LastName ORDER BY 2 DESC LIMIT 1",
-            "multihop", "topn",
+            "multihop", "topn", subset_columns_ok=True,
         ),
         case(
             "avg_length_per_media_type",
@@ -600,7 +607,7 @@ def complex_dev_cases() -> list[dict]:
             "SELECT Album.Title, COUNT(*) FROM Track JOIN Album ON Track.AlbumId = Album.AlbumId "
             "JOIN Artist ON Album.ArtistId = Artist.ArtistId WHERE Artist.Name = 'AC/DC' "
             "GROUP BY Album.Title ORDER BY 2 DESC LIMIT 1",
-            "multihop", "topn",
+            "multihop", "topn", subset_columns_ok=True,
         ),
         case(
             "avg_invoice_three_countries",
@@ -623,5 +630,7 @@ def complex_dev_cases() -> list[dict]:
             "above_average_customers",
             "Which customers spent more than the average customer?",
             "comparison against an aggregate needs a subquery",
+            "SELECT CustomerId FROM Invoice GROUP BY CustomerId HAVING SUM(Total) > "
+            "(SELECT AVG(s) FROM (SELECT SUM(Total) AS s FROM Invoice GROUP BY CustomerId))",
         ),
     ]
