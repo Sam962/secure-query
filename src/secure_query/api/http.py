@@ -21,7 +21,13 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from secure_query.api.service import ReviewMismatch, ask, execute_reviewed, production_auth_blocked
+from secure_query.api.service import (
+    ReviewForbidden,
+    ReviewMismatch,
+    ask,
+    execute_reviewed,
+    production_auth_blocked,
+)
 from secure_query.auth import AuthError, check_auth_config, resolve_principal
 from secure_query.engine.databricks import databricks_grant_check
 from secure_query.engine.env import load_dotenv
@@ -106,6 +112,7 @@ class ExecuteRequest(BaseModel):
     plan: dict[str, Any] | None = None
     sql: str | None = None
     metric_id: str | None = None
+    signature: str = ""
     question: str = ""
     domain: str | None = None
 
@@ -285,8 +292,11 @@ def ask_execute(
             plan=req.plan,
             sql=req.sql,
             metric_id=req.metric_id,
+            signature=req.signature,
             options=ExecuteOptions(audit_path=config.audit_path),
         )
+    except ReviewForbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ReviewMismatch as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return _outcome_to_response(outcome)

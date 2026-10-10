@@ -51,6 +51,7 @@ def test_execute_compiled_query_uses_databricks_when_configured(
     monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example.com")
     monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
     monkeypatch.setenv("DATABRICKS_TOKEN", "pat")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
 
     called: dict[str, object] = {}
 
@@ -94,7 +95,7 @@ def test_execute_compiled_query_uses_databricks_when_configured(
     )
     assert result.audit.backend == "databricks"
     assert result.audit.principal_id == "alice"
-    assert called["kwargs"]["access_token"] == "pat"
+    assert called["kwargs"]["principal"] is principal  # routed with the caller, settings read inside
 
 
 def test_named_domain_gets_backend_dialect_and_file_domain_is_default(

@@ -416,3 +416,56 @@ def test_sql_is_prompted_and_parsed_in_the_catalog_dialect() -> None:
     validate_sql("SELECT Name FROM Genre WHERE Name ILIKE 'r%'", pg)  # postgres syntax parses
     with pytest.raises(SqlValidationFailed):
         validate_sql("SELECT strptime(Name, '%Y') FROM Genre", pg)  # duckdb-only function
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT c.Country, COUNT(*) FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId OR TRUE GROUP BY 1",
+        "SELECT g.Name, t.Name FROM Genre g JOIN Track t ON g.GenreId = t.GenreId OR t.Milliseconds > 0",
+        "SELECT g.Name FROM Genre g JOIN Track t ON NOT (g.GenreId = t.GenreId)",
+    ],
+)
+def test_join_on_must_be_anded_equalities(sql: str) -> None:
+    """Review probe: an approved key inside OR / NOT is a cross join, and inflates aggregates."""
+    with pytest.raises(SqlValidationFailed) as info:
+        validate_sql(sql, CATALOG)
+    assert "sql.join" in {e.code for e in info.value.errors}
+
+
+def test_join_on_may_add_conditions_with_and() -> None:
+    validate_sql(
+        "SELECT g.Name, t.Name FROM Genre g JOIN Track t ON g.GenreId = t.GenreId AND t.Milliseconds > 0",
+        CATALOG,
+    )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT repeat(Name, 2000000000) FROM Genre",
+        "SELECT lpad(Name, 2000000000, 'x') FROM Genre",
+        "SELECT generate_series(1, 2000000000) FROM Genre",
+        "SELECT range(2000000000) FROM Genre",
+        "WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM r) SELECT n FROM r",
+    ],
+)
+def test_unbounded_memory_queries_are_refused(sql: str) -> None:
+    """Review probe: a statement timeout bounds time, not memory, in an in-process DuckDB."""
+    with pytest.raises(SqlValidationFailed) as info:
+        validate_sql(sql, CATALOG)
+    assert {e.code for e in info.value.errors} & {"sql.function", "sql.recursive"}
+
+
+def test_databricks_double_quoted_identifier_is_refused() -> None:
+    """Review probe: in Databricks "Name" is the string 'Name', so this filter is never true."""
+    from secure_query.planner.sql_plan import sql_system_prompt
+
+    dbx = CATALOG.model_copy(update={"sql_dialect": "databricks"})
+    with pytest.raises(SqlValidationFailed) as info:
+        validate_sql('SELECT "Name" FROM "Genre" WHERE "Name" = \'Rock\'', dbx)
+    assert "sql.quoted_identifier" in {e.code for e in info.value.errors}
+    assert "Rock" in validate_sql("SELECT `Name` FROM `Genre` WHERE `Name` = 'Rock'", dbx).compiled.sql
+    assert "backticks" in sql_system_prompt("databricks")
+    assert "Double-quote identifiers" in sql_system_prompt("postgres")
+    validate_sql('SELECT "Name" FROM "Genre" WHERE "Name" = \'Rock\'', CATALOG)  # duckdb: identifiers

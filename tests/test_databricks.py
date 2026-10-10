@@ -211,3 +211,27 @@ def test_grant_check_reports_select_only_write_and_unchecked(monkeypatch) -> Non
     assert ok["status"] == "select_only"  # another principal's MODIFY is not ours
     bad = databricks_grant_check(_grant_connection([("svc-reader@corp", "MODIFY")]))
     assert bad["status"] == "write_privileges" and "MODIFY" in bad["detail"]
+
+
+def test_connection_pins_the_catalog_and_schema(monkeypatch) -> None:
+    """Unqualified table names must resolve in the approved schema, not the session default."""
+    import pytest
+
+    from secure_query.engine import databricks
+    from secure_query.engine.execute import ExecutionError
+    from secure_query.kernel.compile import CompiledQuery
+
+    for key, value in {
+        "DATABRICKS_HOST": "https://dbc.example.com",
+        "DATABRICKS_HTTP_PATH": "/sql/1.0/warehouses/abc",
+        "DATABRICKS_TOKEN": "pat",
+    }.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.delenv("SECURE_QUERY_DATABRICKS_SCHEMA", raising=False)
+    with pytest.raises(ExecutionError, match="SECURE_QUERY_DATABRICKS_SCHEMA"):
+        databricks.databricks_settings_from_env()
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    seen: dict = {}
+    monkeypatch.setattr(databricks, "_connect", lambda **kw: seen.update(kw) or _FakeConnection(rows=[], columns=[]))
+    databricks.execute_databricks(CompiledQuery(sql="SELECT 1", plan_hash="h", sql_hash="h", parameters=[]))
+    assert seen["catalog"] == "main" and seen["schema"] == "sales"
