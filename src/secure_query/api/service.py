@@ -6,9 +6,13 @@ from the question payload.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
+import secrets
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Literal
 
 from secure_query.api.respond import (
@@ -77,6 +81,31 @@ class AskOutcome:
 
 class ReviewMismatch(Exception):
     """The artifact sent to execute no longer compiles to the reviewed plan_hash."""
+
+
+class ReviewForbidden(Exception):
+    """The review was not issued by this server for this principal (bad or missing signature)."""
+
+
+@lru_cache(maxsize=1)
+def _review_secret() -> bytes:
+    """SECURE_QUERY_REVIEW_SECRET; without it a per-process key (one worker only)."""
+    return (os.environ.get("SECURE_QUERY_REVIEW_SECRET") or "").encode() or secrets.token_bytes(32)
+
+
+def sign_review(review: dict[str, Any], principal: Principal) -> str:
+    """HMAC binding a review to the principal it was issued to.
+
+    /ask/execute recomputes plan_hash from the artifact it is sent, so the hash alone
+    cannot tell a reviewed query from one the caller wrote; the signature can.
+    """
+    payload = json.dumps(
+        [principal.principal_id, principal.tenant_id, {k: v for k, v in review.items() if k != "signature"}],
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    return hmac.new(_review_secret(), payload.encode(), hashlib.sha256).hexdigest()
 
 
 # Value lookups that ground the SQL planner's string literals: small and fast.
@@ -256,6 +285,7 @@ def ask(
         "sql": planned.source_sql if sql_mode else None,
         "metric_id": metric.id if metric is not None and metric.kind != "plan" else None,
     }
+    review["signature"] = sign_review(review, principal)
     return _finish(
         question,
         principal=principal,
@@ -283,6 +313,7 @@ def execute_reviewed(
     plan: dict[str, Any] | None = None,
     sql: str | None = None,
     metric_id: str | None = None,
+    signature: str = "",
     options: ExecuteOptions | None = None,
 ) -> AskOutcome:
     """Run the artifact a user reviewed via confirm: no LLM call.
@@ -290,7 +321,12 @@ def execute_reviewed(
     The plan (or SQL, or metric) is re-validated against the principal's catalog
     and row filters, re-compiled, and must hash to `plan_hash`. Raises
     ReviewMismatch otherwise, so a re-plan can never run in place of the review.
+    Raises ReviewForbidden unless `signature` is the one this server issued.
     """
+    review = {"plan_hash": plan_hash, "plan": plan, "sql": sql, "metric_id": metric_id}
+    if not hmac.compare_digest(sign_review(review, principal), signature or ""):
+        raise ReviewForbidden("review was not issued by this server for this principal")
+    review["signature"] = signature
     try:
         scoped = catalog_for_principal(catalog, principal)
     except PermissionError as exc:
@@ -303,7 +339,6 @@ def execute_reviewed(
         raise ReviewMismatch(f"reviewed plan no longer validates: {exc}") from exc
     if compiled.plan_hash != plan_hash:
         raise ReviewMismatch("reviewed plan no longer matches plan_hash")
-    review = {"plan_hash": plan_hash, "plan": plan, "sql": sql, "metric_id": metric_id}
     return _finish(
         question,
         principal=principal,

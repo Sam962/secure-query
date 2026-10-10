@@ -4,21 +4,25 @@
 
 | Threat | Control |
 |--------|---------|
-| LLM writes SQL (injection) | Planner emits LogicalPlan JSON only; compile is AST-only |
+| LLM writes SQL (injection) | LQP planner emits LogicalPlan JSON, compiled from the AST. SQL planner: the model's SQL is parsed, checked against the catalog and regenerated (`kernel/sql_validate.py`); its text never runs |
 | LLM invents columns/tables | `validate(plan, catalog)` against approved catalog |
 | PII exfiltration | Column policy; high-PII blocked in filters/projections |
 | Wrong confident answers | Guards + refusal; holdout wrong-rate = 0 gate |
 | Over-broad queries | Required `limit`; execute timeout + row cap |
 | Caller claims another identity | Identity from env / Bearer token / SSO header — never from JSON body |
 | Restricted user runs a privileged metric | `catalog_for_principal` drops metrics whose tables are not visible |
-| Cartesian product via CROSS JOIN | `policy.cross_join_not_allowed` + compiler refusal |
-| Warehouse over-read | Databricks: Unity Catalog grants / RLS / masks on a SELECT-only identity |
+| Cartesian product via CROSS JOIN | `policy.cross_join_not_allowed` + compiler refusal; SQL path: `JOIN … ON` must be AND-ed equalities with an approved key (no OR / NOT) |
+| Memory exhaustion by one query | SQL path refuses recursive CTEs and value generators (`repeat`, `lpad`, `generate_series`, `range`); a timeout bounds time, not memory |
+| Caller runs their own SQL via `/ask/execute` | Reviews are HMAC-signed for the principal (`SECURE_QUERY_REVIEW_SECRET`); unsigned or foreign reviews get 403 |
+| Warehouse over-read | Databricks: Unity Catalog grants / RLS / masks on a SELECT-only identity; the session is pinned to `SECURE_QUERY_DATABRICKS_SCHEMA` so unqualified names resolve in the approved schema |
 
 ## Checklist (evidence)
 
 | Control | Implementation | Verified by |
 |---------|----------------|-------------|
-| LLM never outputs SQL | `planner.plan.parse_plan_json` + `_SQL_LEAK_RE` | `test_planner.py`, CI grep |
+| LQP planner never outputs SQL | `planner.plan.parse_plan_json` + `_SQL_LEAK_RE` | `test_planner.py`, CI grep |
+| Model SQL is validated and regenerated | `kernel/sql_validate.py`: one read-only query, catalog columns only, no PII, approved joins, fan-out, row filters, LIMIT; dialect-correct identifier quoting | `test_sql_validate.py` |
+| Only server-issued reviews execute | `api/service.py` `sign_review` / `execute_reviewed` | `test_api.py` |
 | validate before compile | `validate_and_compile()` | unit tests |
 | AST-only compile | `kernel/compile.py` sqlglot nodes | CI grep (no f-string SQL) |
 | Execute RO + timeout + limit | `engine/execute.py`; Postgres session `default_transaction_read_only`; timeouts cancel the query | `test_execute.py`, `test_postgres.py`, `test_databricks.py` |
@@ -28,7 +32,7 @@
 | Server-side identity | `resolve_principal()` | `test_auth.py`, `test_api.py` |
 | Header identity only via a trusted proxy | `SECURE_QUERY_TRUSTED_PROXIES`; startup refuses `header` mode without it | `test_auth.py` |
 | No DB error text to clients | `api/http.py` handlers: generic 503 + audit id, 502 for planner failures; `/ready` names no tenant or path | `test_api.py` |
-| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM | `test_sql_values.py` |
+| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM, only whether a literal the model wrote exists | `test_sql_values.py` |
 | No CROSS JOIN | validate + compile | `test_validate.py`, `test_auth.py` |
 
 ## Identity

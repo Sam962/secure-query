@@ -46,3 +46,33 @@ read as either, NOT IN at the wrong grain, grouping by a non-unique name.
   conservative merge are the check on that. A second human rater is better.
 - Answers that matched gold were not re-examined; some may share a gold fault.
 - 400 questions from one benchmark; the held-out Spider test split is the next check.
+
+---
+
+# Spider test (held out), validated SQL, gpt-4.1-mini (2026-10-07)
+
+Same method, rubric and merge as dev above. 400 seeded test questions (seed 0,
+K=3) over 40 databases never used for development; SQL planner with value
+grounding. Exact match: 296 right, 34 wrong (8.5%). Disputed: the 34
+answered-wrong cases and 6 guard-blocked mismatches (40). Agreement 26/40
+exact, 30/40 error vs not-error.
+
+| Count | Share | 95% CI | What it is |
+|-------|-------|--------|------------|
+| 15 | 3.75% | 2.3–6.1% | real errors (conservative merge) |
+| 11 | 2.75% | — | ambiguous question, defensible reading |
+| 8 | 2.0% | — | benchmark faults (system right) |
+
+Four of the 15 are gpt-5 calls the data contradicts (a tie for "most orders",
+two SQLite text-vs-number comparisons in the gold, the 10 000-row cap); without
+them 11/400 (2.75%). The conservative figure is the headline.
+
+Real errors by kind: value matching 3 ('United States' for stored 'USA',
+case-sensitive LIKE '%unsatisfied%', is_buyer = 'Y' for stored 1) plus 1
+blocked ('Mckeown' for 'Mckeown, Kathleen'); logic: HAVING vs WHERE, LIMIT 1
+dropping a tie, counting non-owners as owners, a nonsensical RIGHT JOIN,
+DISTINCT merging rows. None of the value cases is a spelling variant, so
+grounding (which fixed 7 on dev) did not apply.
+
+Files: `spider-test-gpt41mini-*.json`; run:
+`../baselines/spider-test400-sql-gpt41mini-sc3-2026-10-07.json`.
