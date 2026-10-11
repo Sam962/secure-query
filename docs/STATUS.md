@@ -293,6 +293,17 @@ and Northwind dev: 0 rewrites. Not fixed: picking the wrong column for a value
 ('volvo' in Make instead of Model) — that needs candidates in the repair
 prompt, i.e. stored values sent to the model, a per-catalog opt-in.
 
+### Spider test (held out) — 2026-10-07
+
+First run on Spider test: 400 seeded questions, 40 unseen databases,
+gpt-4.1-mini, SQL planner with value grounding, K=3. Exact match 74.0% right /
+8.5% wrong (dev: 68.8% / 10.8%); all-3-agree 69.2% / 6.2%. Adjudicated as on
+dev ([adjudication/README.md](adjudication/README.md)): **real wrong 3.75%
+(15/400, 95% CI 2.3–6.1%)**, 2.75% if four rater calls contradicted by the data
+are dropped. Dev with grounding (replay) is 1.75%: test is ~2 points worse,
+inside overlapping intervals. Remaining value errors are synonyms ('United
+States'/'USA'), case-sensitive LIKE and coded flags ('Y'/1), not spellings.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).

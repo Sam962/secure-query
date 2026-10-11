@@ -1,0 +1,442 @@
+{
+ "test_0064_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN keeps unshipped invoices; DISTINCT; defensible"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system used LEFT JOIN and DISTINCT, including invoices with no shipment date and altering multiplicities, while the question (and gold) expect only shipped invoices via an inner join without de-duplication."
+  }
+ },
+ "test_0074_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "RIGHT JOIN nonsense; returns NULL instead of unshipped invoices' status"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query returns NULL by joining invoices through shipments and then right-joining orders, failing to list invoice statuses, while the question (and gold) requires invoice statuses for invoices not in any shipment."
+  }
+ },
+ "test_0097_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "'United States' vs stored 'USA'; empty"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system filtered by country = 'United States' instead of the dataset’s 'USA', yielding no rows for a question asking for all U.S. customers, so a user would be misled."
+  }
+ },
+ "test_0104_e_commerce:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "average over distinct ordered products vs per order item"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn’t specify whether to average over all ordered line items (counting duplicates) or over distinct products that have been ordered; the system uses DISTINCT while the gold counts duplicates, both reasonable readings."
+  }
+ },
+ "test_0129_bbc_channels:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN includes zero-program channels"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "“For each channel” can reasonably include channels with zero programs (LEFT JOIN) while the gold only counts channels that have programs (INNER JOIN)."
+  }
+ },
+ "test_0173_vehicle_driver:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold compares text Total_Production; system casts"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "By casting Total_Production to INT, the system changed the intended numeric comparison on a text column and excluded valid models (e.g., DJ1, HXD1.1) that meet the >100 or >150 criteria."
+  }
+ },
+ "test_0296_customers_and_orders:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "tie: several customers have 2 orders"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The question unambiguously asks for the single customer with the most orders, and the system returned a different customer than the gold result without any tie-breaking rationale."
+  }
+ },
+ "test_0394_government_shift:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "LIKE '%unsatisfied%' is case-sensitive; stored 'Unsatisfied'; empty"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system used a lowercase LIKE filter that produced no matches, while the question expects services with Customers_and_Services_Details equal to \"Unsatisfied,\" which yields six results as in the gold."
+  }
+ },
+ "test_0456_cre_Students_Information_Systems:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "DISTINCT merges two students' identical rows"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system adds DISTINCT, deduplicating repeated student–address pairs, and the question does not specify whether duplicates from multiple links (e.g., date ranges or types) should be included."
+  }
+ },
+ "test_0504_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN includes students with 0 courses"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question says “for each student,” which implies including students with zero courses; the system’s LEFT JOIN correctly returns zero counts, while the gold INNER JOIN wrongly excludes such students."
+  }
+ },
+ "test_0655_club_leader:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold adds club name the question does not ask for"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question asks only for the names of club leaders before 2018, so returning just distinct member names (without club names) is a reasonable interpretation, whereas the gold adds an extra club column not explicitly requested."
+  }
+ },
+ "test_0708_cre_Doc_and_collections:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "defensible reading of 'related to ones owned by'"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query filters the related documents to those owned by Braeden and returns Braeden, whereas the question asks for owners of documents related to Braeden-owned ones (i.e., the related documents’ owners), which the system query correctly returns."
+  }
+ },
+ "test_0711_cre_Doc_and_collections:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN includes empty subsets"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn’t specify whether to include subsets with zero documents; the system reasonably includes all subsets (LEFT JOIN, zero counts) while the gold only includes non-empty subsets."
+  }
+ },
+ "test_0726_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "question asks the number; gold lists ids"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for the count of document object IDs, but the gold query returns the list of IDs; the system correctly returns the number (using COUNT DISTINCT) for collection 'Best'."
+  }
+ },
+ "test_0759_sing_contest:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "SQLite LIKE is case-insensitive; system is literal"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold relies on SQLite’s case-insensitive LIKE to match lowercase 'is', while the question didn’t specify case-insensitivity; the system’s case-sensitive result is valid, making the discrepancy an engine artifact."
+  }
+ },
+ "test_0996_aan_1:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "system hit the 10000-row cap"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system added a LIMIT 10000 and returned only a subset of qualifying authors, so it does not answer the request for all authors with exactly one paper."
+  }
+ },
+ "test_1047_aan_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold subquery returns one arbitrary author per paper"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query groups by cited_paper_id but selects author_id without aggregation, so it excludes only one arbitrary author per highly cited paper, while the system correctly excludes all coauthors of papers cited more than 50 times."
+  }
+ },
+ "test_1073_conference:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN includes institutions with no staff"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn’t specify whether to include institutions with zero staff; the system includes them via LEFT JOIN while the gold excludes them, making this a zero-count groups ambiguity."
+  }
+ },
+ "test_1129_pilot_1:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "distinct planes vs plane rows"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question is unclear whether to count unique planes or all pilot–plane assignments; the system used DISTINCT while the gold did not, both defensible readings."
+  }
+ },
+ "test_1159_pilot_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold bare column; system keeps ties"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The system correctly returns all oldest pilots per plane (including ties), while the gold query is flawed (non-aggregated pilot_name with GROUP BY) and omits tied oldest pilots."
+  }
+ },
+ "test_1291_art_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "same 5 groups; gold reports painterID, system names"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query orders by painting title (and not by painter name) while grouping by painter, contrary to the question; the system correctly joins Artists, groups by painter, and orders by painter name."
+  }
+ },
+ "test_1305_art_1:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "'artists' plural: top 3 vs top 1"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for the artist(s) with the maximum number of oil paintings, not the top 3; the gold query’s LIMIT 3 is unjustified, while the system’s top-1 result aligns with the question."
+  }
+ },
+ "test_1401_real_estate_rentals:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "per property vs distinct states"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The request could mean a distinct list of states or a per-property mapping; the system’s query returns a valid per-property state (with property_id), while the gold uses DISTINCT."
+  }
+ },
+ "test_1438_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "is_buyer = 'Y' but stored 1; returns 0"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It uses 'Y' for the is_buyer flag instead of the dataset’s buyer indicator (1), eliminating valid rows and yielding an incorrect total."
+  }
+ },
+ "test_1439_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "is_buyer = 'Y' but stored 1; returns 0"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query filters buyers with is_buyer = 'Y' instead of the dataset’s buyer flag (is_buyer = 1), leading to an incorrect count of searches."
+  }
+ },
+ "test_1450_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "counts every user, not only owners"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system counts photos for all users (including non-owners and zero-photo users) via LEFT JOIN from Users, while the question asks for photo counts per owner of properties only."
+  }
+ },
+ "test_1486_bike_racing:answered_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN includes cyclist with no bikes"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question can reasonably include cyclists with zero bikes (“each cyclist”), which the system’s LEFT JOIN returns, while the gold only lists cyclists owning at least one bike."
+  }
+ },
+ "test_1605_car_racing:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "185.0 vs 185 type artifact"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The system correctly computes numeric max/min by casting the text Points; the difference from the gold is only formatting/type (185.0 vs 185)."
+  }
+ },
+ "test_1732_warehouse_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold sums every box; system correct"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query limits to one joined row before summing, returning a single box’s value rather than the total for the max-capacity warehouse, while the system correctly sums boxes in the warehouse(s) with the greatest capacity."
+  }
+ },
+ "test_1773_university_rank:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "filters rows > 2000 instead of HAVING AVG > 2000"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system incorrectly filters out universities with enrollment ≤ 2000 before averaging, whereas the question (and gold) require averaging over all universities per conference and then selecting conferences with average > 2000."
+  }
+ },
+ "test_1782_university_rank:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "LIMIT 1 drops a tied rank-1 university"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query incorrectly adds LIMIT 1, returning only one university, whereas all universities with rank 1 in Accounting should be returned per the question."
+  }
+ },
+ "test_1842_movie_2:answered_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold counts theaters with NULL movie"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query returns all theater names regardless of any movie, while the system correctly filters to theaters with a non-null Movie (i.e., at least one movie playing)."
+  }
+ },
+ "test_2008_book_press:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "gold compares text Sale_Amount; system numeric"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system undercounts books for multiple presses compared to the straightforward > 1000 filter in the gold, so its per-press counts are wrong and would mislead a user."
+  }
+ },
+ "test_2100_advertising_agencies:answered_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "ambiguous",
+   "reason": "DISTINCT on meeting type/details"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system added DISTINCT and returned only unique (meeting_type, other_details) pairs instead of all rows, contrary to the request for all meeting types and other details."
+  }
+ },
+ "test_0464_cre_Students_Information_Systems:blocked_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "ambiguous",
+   "reason": "at least once vs only the most common result"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query returns duplicate students and includes those who also have other behaviour results, whereas the question implies distinct students whose behaviour monitoring details match the most common result."
+  }
+ },
+ "test_0820_address_1:blocked_wrong": {
+  "label": "ambiguous",
+  "human": {
+   "label": "ambiguous",
+   "reason": "distinct codes vs pairs"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The wording does not specify city pairs; listing unique city codes that appear in any above-average distance row is a reasonable interpretation, while the gold returns pairs."
+  }
+ },
+ "test_0985_aan_1:blocked_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "name = 'Mckeown' but stored 'Mckeown, Kathleen'; empty"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The query refers loosely to author surnames; using LIKE '%name%' (gold) vs exact equality on Author.name (system) reflects two plausible interpretations of how names are stored/matched."
+  }
+ },
+ "test_1006_aan_1:blocked_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "groups by citing paper, not cited paper"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query groups by Citation.paper_id (most citing papers) instead of cited_paper_id to find the most cited paper, so it answers a different question."
+  }
+ },
+ "test_1411_real_estate_rentals:blocked_wrong": {
+  "label": "real_error",
+  "human": {
+   "label": "real_error",
+   "reason": "wrong column (other_user_details) for category description"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The phrase 'users whose description contains Mother' could refer to the user’s own details (Users.other_user_details) or to the user category description (Ref_User_Categories.user_category_description), and the system used the former while the gold used the latter."
+  }
+ },
+ "test_2127_advertising_agencies:blocked_wrong": {
+  "label": "benchmark_fault",
+  "human": {
+   "label": "benchmark_fault",
+   "reason": "question says per client; gold ignores client"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for counts of meeting types per client, but the gold query aggregates only by meeting_type; the system correctly groups by client_id and meeting_type."
+  }
+ }
+}

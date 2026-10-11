@@ -1,0 +1,162 @@
+{
+ "test_0064_e_commerce:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps unshipped invoices; DISTINCT; defensible"
+ },
+ "test_0074_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "reason": "RIGHT JOIN nonsense; returns NULL instead of unshipped invoices' status"
+ },
+ "test_0097_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "reason": "'United States' vs stored 'USA'; empty"
+ },
+ "test_0104_e_commerce:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "average over distinct ordered products vs per order item"
+ },
+ "test_0129_bbc_channels:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN includes zero-program channels"
+ },
+ "test_0173_vehicle_driver:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold compares text Total_Production; system casts"
+ },
+ "test_0296_customers_and_orders:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "tie: several customers have 2 orders"
+ },
+ "test_0394_government_shift:answered_wrong": {
+  "label": "real_error",
+  "reason": "LIKE '%unsatisfied%' is case-sensitive; stored 'Unsatisfied'; empty"
+ },
+ "test_0456_cre_Students_Information_Systems:answered_wrong": {
+  "label": "real_error",
+  "reason": "DISTINCT merges two students' identical rows"
+ },
+ "test_0504_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN includes students with 0 courses"
+ },
+ "test_0655_club_leader:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold adds club name the question does not ask for"
+ },
+ "test_0708_cre_Doc_and_collections:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "defensible reading of 'related to ones owned by'"
+ },
+ "test_0711_cre_Doc_and_collections:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN includes empty subsets"
+ },
+ "test_0726_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "question asks the number; gold lists ids"
+ },
+ "test_0759_sing_contest:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "SQLite LIKE is case-insensitive; system is literal"
+ },
+ "test_0996_aan_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "system hit the 10000-row cap"
+ },
+ "test_1047_aan_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold subquery returns one arbitrary author per paper"
+ },
+ "test_1073_conference:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN includes institutions with no staff"
+ },
+ "test_1129_pilot_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "distinct planes vs plane rows"
+ },
+ "test_1159_pilot_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold bare column; system keeps ties"
+ },
+ "test_1291_art_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "same 5 groups; gold reports painterID, system names"
+ },
+ "test_1305_art_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'artists' plural: top 3 vs top 1"
+ },
+ "test_1401_real_estate_rentals:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "per property vs distinct states"
+ },
+ "test_1438_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reason": "is_buyer = 'Y' but stored 1; returns 0"
+ },
+ "test_1439_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reason": "is_buyer = 'Y' but stored 1; returns 0"
+ },
+ "test_1450_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reason": "counts every user, not only owners"
+ },
+ "test_1486_bike_racing:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN includes cyclist with no bikes"
+ },
+ "test_1605_car_racing:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "185.0 vs 185 type artifact"
+ },
+ "test_1732_warehouse_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold sums every box; system correct"
+ },
+ "test_1773_university_rank:answered_wrong": {
+  "label": "real_error",
+  "reason": "filters rows > 2000 instead of HAVING AVG > 2000"
+ },
+ "test_1782_university_rank:answered_wrong": {
+  "label": "real_error",
+  "reason": "LIMIT 1 drops a tied rank-1 university"
+ },
+ "test_1842_movie_2:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold counts theaters with NULL movie"
+ },
+ "test_2008_book_press:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold compares text Sale_Amount; system numeric"
+ },
+ "test_2100_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "DISTINCT on meeting type/details"
+ },
+ "test_0464_cre_Students_Information_Systems:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "at least once vs only the most common result"
+ },
+ "test_0820_address_1:blocked_wrong": {
+  "label": "ambiguous",
+  "reason": "distinct codes vs pairs"
+ },
+ "test_0985_aan_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "name = 'Mckeown' but stored 'Mckeown, Kathleen'; empty"
+ },
+ "test_1006_aan_1:blocked_wrong": {
+  "label": "real_error",
+  "reason": "groups by citing paper, not cited paper"
+ },
+ "test_1411_real_estate_rentals:blocked_wrong": {
+  "label": "real_error",
+  "reason": "wrong column (other_user_details) for category description"
+ },
+ "test_2127_advertising_agencies:blocked_wrong": {
+  "label": "benchmark_fault",
+  "reason": "question says per client; gold ignores client"
+ }
+}
