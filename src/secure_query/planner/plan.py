@@ -39,6 +39,7 @@ from secure_query.planner.guard import (
     dropped_literals,
     inexpressible_request,
     opaque_grouping_keys,
+    ranked_list_for_singular_question,
     restricted_request,
     unrelated_metric,
 )
@@ -62,6 +63,7 @@ _POST_PLAN_GUARDS: tuple[_PostPlanGuard, ...] = (
     averaged_per_other_entity,
     lambda q, plan, catalog: dropped_count(q, plan),
     counted_other_entity,
+    lambda q, plan, catalog: ranked_list_for_singular_question(q, plan.limit),
     dropped_literals,
 )
 

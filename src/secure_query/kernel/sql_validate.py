@@ -78,6 +78,8 @@ class ValidatedSql:
     filter_numbers: tuple[float, ...]
     aggregates: frozenset[str]
     """Lower-case aggregate names used (count, sum, avg, min, max)."""
+    limit: int | None = None
+    """Outer LIMIT value after enforcement (None = no LIMIT in original SQL)."""
 
 
 class SqlValidationFailed(Exception):
@@ -182,6 +184,7 @@ def validate_sql(
         tables[t.name.lower()].name for t in tree.find_all(exp.Table) if t.name.lower() in tables
     )
     _inject_row_filters(tree, tables, row_filters, catalog)
+    original_limit = _limit_value(tree)
     _enforce_limit(tree, catalog)
     out = tree.sql(dialect=catalog.sql_dialect)
     digest = hashlib.sha256(out.encode()).hexdigest()
@@ -192,6 +195,7 @@ def validate_sql(
         filter_strings=strings,
         filter_numbers=numbers,
         aggregates=aggregates,
+        limit=original_limit,
     )
 
 

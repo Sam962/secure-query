@@ -421,6 +421,36 @@ _COUNT_NOUN_RE = re.compile(
 )
 
 
+_SINGULAR_SUPERLATIVE_RE = re.compile(
+    r"\bwhich\b.*?\b(most|fewest|least|highest|lowest|best|worst|largest|smallest|biggest)\b",
+    re.IGNORECASE,
+)
+_EXPLICIT_N_RE = re.compile(
+    r"\b([2-9]|\d{2,}|two|three|four|five|six|seven|eight|nine|ten)\b",
+    re.IGNORECASE,
+)
+
+
+def ranked_list_for_singular_question(question: str, limit: int | None) -> GuardHit | None:
+    """Refuse when 'which X has the most/fewest Y' returns more than one row.
+
+    'Which artist has the most albums?' asks for one entity; a plan with
+    LIMIT 10 answers a different question (ranked list). An explicit count
+    in the question ('which 3 countries…') opts out of this check.
+    """
+    if limit is None or limit <= 1:
+        return None
+    if not _SINGULAR_SUPERLATIVE_RE.search(question):
+        return None
+    if _EXPLICIT_N_RE.search(question):
+        return None
+    return (
+        "dropped_concept",
+        f"The question asks which single entity has the most/fewest …, but this plan returns "
+        f"{limit} rows. Refusing rather than returning a ranked list.",
+    )
+
+
 def counted_other_entity(question: str, plan: LogicalPlan, catalog: Catalog) -> GuardHit | None:
     """Reason to refuse when "how many X" counts rows of a table that is not X.
 
