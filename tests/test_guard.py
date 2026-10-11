@@ -303,3 +303,23 @@ def test_unmatched_values_understands_number_words_possessives_and_stems() -> No
     # Still refuses a named value that no filter uses, and an invented number.
     assert unmatched_values("How many customers live in Brazil?", [], [], [], CATALOG) is not None
     assert unmatched_values("Which customers bought tracks?", [], [], [3], CATALOG) is not None
+
+
+def test_ranked_list_for_singular_question() -> None:
+    from secure_query.planner.guard import ranked_list_for_singular_question
+
+    # Fires: singular superlative, no explicit count, limit > 1.
+    assert ranked_list_for_singular_question("Which artist has the most albums?", 10) is not None
+    assert ranked_list_for_singular_question("Which genre has the fewest tracks?", 5) is not None
+    assert ranked_list_for_singular_question("Which employee handled the most orders?", 10) is not None
+    assert ranked_list_for_singular_question("Which country has the highest revenue?", 10) is not None
+
+    # Does not fire: limit is 1 (correct).
+    assert ranked_list_for_singular_question("Which artist has the most albums?", 1) is None
+    # Does not fire: no superlative pattern.
+    assert ranked_list_for_singular_question("What are the top 5 products by revenue?", 5) is None
+    # Does not fire: explicit count in the question.
+    assert ranked_list_for_singular_question("Which 3 countries have the most invoices?", 10) is None
+    assert ranked_list_for_singular_question("Which two genres have the fewest tracks?", 10) is None
+    # Does not fire: no limit.
+    assert ranked_list_for_singular_question("Which artist has the most albums?", None) is None

@@ -20,6 +20,7 @@ from secure_query.planner.guard import (
     lists_instead_of_count,
     missing_average,
     missing_concepts,
+    ranked_list_for_singular_question,
     unmatched_values,
 )
 from secure_query.planner.llm import LLMClient
@@ -92,7 +93,9 @@ def sql_refusal(
     used = {Concept(table=t) for t in validated.tables}
     used |= {Concept(table=t, column=c) for t, c in validated.columns}
     numbers = list(validated.filter_numbers)
+    singular_hit = ranked_list_for_singular_question(question, validated.limit)
     checks: tuple[tuple[ClarifyCode, str | None], ...] = (
+        singular_hit or ("dropped_concept", None),
         ("dropped_concept", missing_concepts(question, used, catalog)),
         ("dropped_concept", missing_average(question, averaged="avg" in validated.aggregates)),
         ("dropped_concept", lists_instead_of_count(question, aggregated=bool(validated.aggregates))),
