@@ -56,6 +56,15 @@ _SAFE_ANONYMOUS = {
 }
 
 
+# Functions that build values or rows from a number: one call can allocate gigabytes
+# (repeat('x', 2e9), generate_series(1, 2e9)), and a statement timeout does not bound memory.
+_UNBOUNDED_FUNCTIONS = tuple(
+    getattr(exp, name)
+    for name in ("Repeat", "Pad", "GenerateSeries", "ExplodingGenerateSeries", "GenerateDateArray")
+    if hasattr(exp, name)
+)
+
+
 @dataclass(frozen=True)
 class ValidatedSql:
     """A policy-checked query plus what it reads, for semantic guards and audit."""
@@ -95,6 +104,24 @@ def validate_sql(
     tree = statements[0]
     if not isinstance(tree, exp.Query) or any(isinstance(n, _STATEMENTS) for n in tree.walk()):
         raise SqlValidationFailed([_error("sql.read_only", "only a read-only SELECT is allowed")])
+    if any(w.args.get("recursive") for w in tree.find_all(exp.With)):
+        raise SqlValidationFailed([_error("sql.recursive", "recursive CTEs are not allowed (unbounded)")])
+    unbounded = sorted({type(f).__name__ for f in tree.find_all(*_UNBOUNDED_FUNCTIONS)})
+    if unbounded:
+        raise SqlValidationFailed(
+            [_error("sql.function", f"{', '.join(unbounded)} can allocate unbounded memory; not allowed")]
+        )
+    misquoted = _misquoted_identifiers(tree, catalog, dialect)
+    if misquoted:
+        raise SqlValidationFailed(
+            [
+                _error(
+                    "sql.quoted_identifier",
+                    f"{', '.join(misquoted)} is a string literal in {dialect} SQL, not a column; "
+                    "quote identifiers with backticks",
+                )
+            ]
+        )
 
     tables = {t.name.lower(): t for t in catalog.tables}
     schema = {t.name: {c.name: c.dtype for c in t.columns} for t in catalog.tables}
@@ -166,6 +193,29 @@ def validate_sql(
         filter_numbers=numbers,
         aggregates=aggregates,
     )
+
+
+def _misquoted_identifiers(tree: exp.Expression, catalog: Catalog, dialect: str) -> list[str]:
+    """String literals that spell a catalog column, in dialects where "x" is a string.
+
+    In Databricks/Spark SQL `SELECT "Name" FROM Genre WHERE "Name" = 'Rock'` is valid and
+    returns the text 'Name' on every row with a filter that is never true: a silent wrong
+    answer. Such a literal is almost always an identifier quoted the wrong way.
+    """
+    if '"' not in sqlglot.Dialect.get_or_raise(dialect).tokenizer_class.QUOTES:
+        return []
+    columns = {c.name.lower() for t in catalog.tables for c in t.columns}
+    return sorted(
+        {f'"{lit.this}"' for lit in tree.find_all(exp.Literal) if lit.is_string and lit.this.lower() in columns}
+    )
+
+
+def _conjuncts(node: exp.Expression) -> list[exp.Expression]:
+    if isinstance(node, exp.And):
+        return _conjuncts(node.this) + _conjuncts(node.expression)
+    if isinstance(node, exp.Paren):
+        return _conjuncts(node.this)
+    return [node]
 
 
 def _restore_case(tree: exp.Expression, tables: dict) -> None:
@@ -269,8 +319,13 @@ def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
             else:
                 errors.append(_error("sql.cross_join", "cross joins are not allowed"))
             continue
+        conjuncts = _conjuncts(on)
+        if any(c.find(exp.Or, exp.Not) for c in conjuncts):
+            # `ON a.k = b.k OR TRUE` contains an approved equality but joins every row.
+            errors.append(_error("sql.join", "JOIN ... ON must be equalities combined with AND (no OR / NOT)"))
+            continue
         approved = False
-        for eq in on.find_all(exp.EQ):
+        for eq in (c for c in conjuncts if isinstance(c, exp.EQ)):
             left, right = eq.this, eq.expression
             if not (isinstance(left, exp.Column) and isinstance(right, exp.Column)):
                 continue
@@ -370,7 +425,7 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
     to_one: dict[str, dict[str, bool]] = {}
     for join in select.args["joins"]:
         on = join.args.get("on")
-        for eq in on.find_all(exp.EQ) if on is not None else []:
+        for eq in (c for c in _conjuncts(on) if isinstance(c, exp.EQ)) if on is not None else []:
             left, right = eq.this, eq.expression
             if not (isinstance(left, exp.Column) and isinstance(right, exp.Column)):
                 continue

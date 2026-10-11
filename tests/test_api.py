@@ -194,7 +194,35 @@ def test_execute_rejects_a_plan_that_differs_from_the_review(
     tampered = json.loads(_plan_json("BillingCity"))
     tampered.update(plan_id=review["plan"]["plan_id"], schema_version="lqp/1")
     response = client.post("/ask/execute", json={**review, "plan": tampered})
-    assert response.status_code == 409
+    assert response.status_code == 403  # the signature covers the reviewed plan
+
+
+def test_execute_refuses_sql_the_server_did_not_review(client: TestClient) -> None:
+    """Review probe: caller-written SQL with its own plan_hash must not run."""
+    from secure_query.engine.runtime import get_runtime
+    from secure_query.kernel.sql_validate import validate_sql
+
+    sql = "SELECT BillingCity, SUM(Total) AS t FROM Invoice GROUP BY BillingCity ORDER BY t DESC LIMIT 3"
+    plan_hash = validate_sql(sql, get_runtime().catalog).compiled.plan_hash
+    for signature in ("", "0" * 64):
+        response = client.post("/ask/execute", json={"plan_hash": plan_hash, "sql": sql, "signature": signature})
+        assert response.status_code == 403
+
+
+def test_review_is_bound_to_the_principal_it_was_issued_to(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.api.service import ReviewForbidden, execute_reviewed, sign_review
+    from secure_query.auth import Principal
+    from secure_query.engine.runtime import get_runtime
+
+    alice = Principal(principal_id="alice", tenant_id="chinook")
+    bob = Principal(principal_id="bob", tenant_id="chinook")
+    review = {"plan_hash": "sql:x", "plan": None, "sql": "SELECT 1", "metric_id": None}
+    config = get_runtime()
+    with pytest.raises(ReviewForbidden):
+        execute_reviewed(
+            "q", principal=bob, config=config, catalog=config.catalog, signature=sign_review(review, alice),
+            plan_hash="sql:x", sql="SELECT 1",
+        )
 
 
 def test_sql_path_run_reuses_the_reviewed_sql(

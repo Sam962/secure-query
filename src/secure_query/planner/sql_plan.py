@@ -39,7 +39,7 @@ or, when the catalog cannot answer the question exactly:
   {"cannot_answer": true, "reason": "<one short sentence>"}
 
 Rules:
-- Use only the tables and columns listed in the catalog. Double-quote identifiers.
+- Use only the tables and columns listed in the catalog. {quoting}
 - Join only along the listed relationships, with explicit JOIN ... ON a.key = b.key.
 - Never read columns marked [pii=high], not even in WHERE or ORDER BY. If the question
   needs one, refuse.
@@ -54,10 +54,14 @@ Rules:
 
 
 _DIALECT_NAMES = {"duckdb": "DuckDB", "postgres": "PostgreSQL", "databricks": "Databricks"}
+# In Databricks/Spark SQL "x" is a string literal, so identifiers take backticks.
+_QUOTING = {"databricks": 'Quote identifiers with backticks (`Name`); "..." is a string.'}
 
 
 def sql_system_prompt(dialect: str) -> str:
-    return SQL_SYSTEM_PROMPT.replace("{dialect}", _DIALECT_NAMES.get(dialect, dialect))
+    return SQL_SYSTEM_PROMPT.replace("{dialect}", _DIALECT_NAMES.get(dialect, dialect)).replace(
+        "{quoting}", _QUOTING.get(dialect, "Double-quote identifiers.")
+    )
 
 
 def build_sql_prompt(question: str, catalog: Catalog, relevant_tables: Sequence[str] = ()) -> str:

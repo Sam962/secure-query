@@ -202,29 +202,39 @@ def fetch_unity_catalog_draft(
 
 
 def databricks_settings_from_env() -> dict[str, str]:
+    """Connection settings, including the catalog and schema the approved tables live in.
+
+    The validator only accepts unqualified table names, so the session's default
+    catalog/schema decides which `Invoice` a query reads; it must be set explicitly.
+    """
     host = os.environ.get("DATABRICKS_HOST") or os.environ.get("DATABRICKS_SERVER_HOSTNAME")
     http_path = os.environ.get("DATABRICKS_HTTP_PATH")
     token = os.environ.get("DATABRICKS_TOKEN") or os.environ.get("DATABRICKS_ACCESS_TOKEN")
+    catalog, _, schema = (os.environ.get("SECURE_QUERY_DATABRICKS_SCHEMA") or "").strip().partition(".")
     missing = [
         name
         for name, val in (
             ("DATABRICKS_HOST", host),
             ("DATABRICKS_HTTP_PATH", http_path),
             ("DATABRICKS_TOKEN", token),
+            ("SECURE_QUERY_DATABRICKS_SCHEMA (catalog.schema)", catalog and schema),
         )
         if not val
     ]
     if missing:
         raise ExecutionError("missing Databricks settings: " + ", ".join(missing))
-    return {"host": host.rstrip("/"), "http_path": http_path, "access_token": token}  # type: ignore[union-attr]
+    return {
+        "host": host.rstrip("/"),  # type: ignore[union-attr]
+        "http_path": http_path,  # type: ignore[dict-item]
+        "access_token": token,  # type: ignore[dict-item]
+        "catalog": catalog,
+        "schema": schema,
+    }
 
 
 def execute_databricks(
     compiled: CompiledQuery,
     *,
-    host: str | None = None,
-    http_path: str | None = None,
-    access_token: str | None = None,
     plan: LogicalPlan | None = None,
     question: str | None = None,
     principal: Principal | None = None,
@@ -245,18 +255,7 @@ def execute_databricks(
 
     owns_connection = connection is None
     if connection is None:
-        settings = {
-            "host": host,
-            "http_path": http_path,
-            "access_token": access_token,
-        }
-        if not all(settings.values()):
-            settings = databricks_settings_from_env()
-        connection = _connect(
-            host=str(settings["host"]),
-            http_path=str(settings["http_path"]),
-            access_token=str(settings["access_token"]),
-        )
+        connection = _connect(**databricks_settings_from_env())
 
     def _runner() -> tuple[list[str], list[tuple[Any, ...]], bool]:
         cursor = connection.cursor()
@@ -291,7 +290,7 @@ def execute_databricks(
     )
 
 
-def _connect(*, host: str, http_path: str, access_token: str) -> Any:
+def _connect(*, host: str, http_path: str, access_token: str, catalog: str, schema: str) -> Any:
     try:
         from databricks import sql as dbsql
     except ImportError as exc:
@@ -303,6 +302,8 @@ def _connect(*, host: str, http_path: str, access_token: str) -> Any:
         server_hostname=hostname,
         http_path=http_path,
         access_token=access_token,
+        catalog=catalog,
+        schema=schema,
     )
 
 
@@ -341,12 +342,7 @@ def databricks_grant_check(connection: Any | None = None) -> dict[str, str]:
         return {"status": "unchecked", "detail": "SECURE_QUERY_DATABRICKS_SCHEMA not set"}
     owns = connection is None
     if connection is None:
-        settings = databricks_settings_from_env()
-        connection = _connect(
-            host=settings["host"],
-            http_path=settings["http_path"],
-            access_token=settings["access_token"],
-        )
+        connection = _connect(**databricks_settings_from_env())
     cursor = connection.cursor()
     try:
         cursor.execute("SELECT current_user()")

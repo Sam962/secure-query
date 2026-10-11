@@ -117,12 +117,8 @@ def execute_compiled_query(
         )
     ensure_execute_ready(config)
     if config.backend == "databricks":
-        settings = databricks_settings_from_env()
         return execute_databricks(
             compiled,
-            host=settings["host"],
-            http_path=settings["http_path"],
-            access_token=settings["access_token"],
             plan=plan,
             question=question,
             principal=principal,
