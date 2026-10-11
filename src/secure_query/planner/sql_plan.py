@@ -25,7 +25,12 @@ from secure_query.planner.guard import (
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
-from secure_query.planner.sql_values import ValueProbe, ground_literals
+from secure_query.planner.sql_values import (
+    ValueProbe,
+    case_insensitive_like,
+    ground_literals,
+    unmatched_literals,
+)
 
 SQL_SYSTEM_PROMPT = """You translate a question into ONE read-only {dialect} SQL query over an approved catalog.
 Output a single JSON object and nothing else:
@@ -101,6 +106,12 @@ def sql_refusal(
     return next(((code, msg) for code, msg in checks if msg is not None), None)
 
 
+class _NoStoredValue(Exception):
+    def __init__(self, messages: list[str]) -> None:
+        super().__init__("; ".join(messages))
+        self.messages = messages
+
+
 def plan_sql_question(
     question: str,
     catalog: Catalog,
@@ -115,7 +126,9 @@ def plan_sql_question(
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
 
-    With `value_probe`, string literals are grounded against stored values first.
+    With `value_probe`, string literals are grounded against stored values first, and a
+    literal no stored value equals costs the repair round (the value is named, stored
+    values are not). If the model keeps it, the empty answer stands.
     """
     messages = [
         {"role": "system", "content": sql_system_prompt(catalog.sql_dialect)},
@@ -123,6 +136,7 @@ def plan_sql_question(
     ]
     errors: list[str] = []
     raw_responses: list[str] = []
+    value_checked = False
     for attempt in range(1, max_repairs + 2):
         raw = client.complete(messages)
         raw_responses.append(raw)
@@ -141,11 +155,25 @@ def plan_sql_question(
                     clarify_code="planner_refusal",
                 )
             sql = str(data["sql"])
-            validated = validate_sql(sql, catalog, row_filters=row_filters)
+            validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
+            sql = case_insensitive_like(sql, catalog)
             if value_probe is not None:
-                grounded = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
-                if grounded != sql:
-                    sql, validated = grounded, validate_sql(grounded, catalog, row_filters=row_filters)
+                sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
+            validated = validate_sql(sql, catalog, row_filters=row_filters)
+            missing = (
+                unmatched_literals(sql, catalog, value_probe, row_filters=row_filters)
+                if value_probe is not None and not value_checked and attempt <= max_repairs
+                else []
+            )
+            if missing:
+                value_checked = True
+                raise _NoStoredValue(
+                    [
+                        f"value: no stored {table}.{column} equals {value!r}. Check the column, "
+                        "the spelling and how values are coded; keep it only if it is meant to be absent."
+                        for table, column, value in missing
+                    ]
+                )
             refusal = sql_refusal(question, validated, catalog) if guard else None
             if refusal is not None:
                 code, message = refusal
@@ -170,6 +198,8 @@ def plan_sql_question(
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]
+        except _NoStoredValue as exc:
+            batch = exc.messages
         except (json.JSONDecodeError, KeyError, ValueError) as exc:
             batch = [f"output: {exc}"]
         errors.extend(batch)

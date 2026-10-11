@@ -98,3 +98,58 @@ def test_sql_planner_grounds_against_the_database() -> None:
         "How many customers are in the usa?", CATALOG, client, value_probe=partial(_probe, CHINOOK_DB)
     )
     assert result.status == "ok" and "'USA'" in result.compiled.sql and "'USA'" in result.source_sql
+
+
+def test_like_ignores_case() -> None:
+    from secure_query.planner.sql_values import case_insensitive_like
+
+    out = case_insensitive_like("SELECT Name FROM Genre WHERE Name LIKE '%rock%'", CATALOG)
+    assert "ILIKE '%rock%'" in out
+    plain = "SELECT Name FROM Genre WHERE Name = 'Rock'"
+    assert case_insensitive_like(plain, CATALOG) == plain
+
+
+def test_unmatched_literals_names_values_no_row_has() -> None:
+    from secure_query.planner.sql_values import unmatched_literals
+
+    sql = "SELECT Name FROM Genre WHERE Name IN ('Rock', 'Polka')"
+    assert unmatched_literals(sql, CATALOG, probe_returning("Rock", "Rock And Roll")) == [("Genre", "Name", "Polka")]
+
+
+class RecordingClient:
+    """Returns canned SQL responses and keeps every message the planner sent."""
+
+    def __init__(self, *sql: str) -> None:
+        self.responses = list(sql)
+        self.sent: list[str] = []
+
+    def complete(self, messages, response_format=None) -> str:
+        import json
+
+        self.sent += [m["content"] for m in messages]
+        return json.dumps({"sql": self.responses.pop(0)})
+
+
+def _plan(question: str, client: RecordingClient, *values: str):
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    return plan_sql_question(question, CATALOG, client, value_probe=probe_returning(*values))
+
+
+def test_missing_value_spends_the_repair_round_without_revealing_values() -> None:
+    sql = "SELECT COUNT(*) AS n FROM Genre WHERE Name = 'Polka'"
+    client = RecordingClient(sql, sql)
+    result = _plan("How many genres are called Polka?", client, "Pop", "Rock")
+    assert result.status == "ok" and result.attempts == 2  # kept: an absent value is a valid answer
+    feedback = client.sent[-1]
+    assert "no stored Genre.Name equals 'Polka'" in feedback
+    assert "Rock" not in feedback and "'Pop'" not in feedback
+
+
+def test_corrected_value_after_feedback_is_used() -> None:
+    client = RecordingClient(
+        "SELECT COUNT(*) AS n FROM Genre WHERE Name = 'Pop music'",
+        "SELECT COUNT(*) AS n FROM Genre WHERE Name = 'Pop'",
+    )
+    result = _plan("How many pop genres are there?", client, "Pop")
+    assert result.status == "ok" and "'Pop'" in result.compiled.sql
