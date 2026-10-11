@@ -160,6 +160,14 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         from secure_query.evals.spider import load_spider
 
         items = load_spider(args.suite.removeprefix("spider-"))
+    elif args.suite == "bird-mini-dev":
+        from secure_query.evals.bird import load_bird_mini_dev
+
+        items = load_bird_mini_dev()
+    elif args.suite and args.suite.startswith("bird-mini-dev-"):
+        from secure_query.evals.bird import load_bird_mini_dev
+
+        items = load_bird_mini_dev(difficulty=args.suite.removeprefix("bird-mini-dev-"))
     elif args.suite:
         catalog, db_path, suite = _load_domain_suite(args.suite)
         items = [(case, catalog, db_path) for case in suite]
