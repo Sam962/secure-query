@@ -391,12 +391,13 @@ users. Same day, SQL path, gpt-4.1-mini, guards (old code) vs gate + tie-break:
 | Northwind dev (10) | 5 / 2 / 3 | 6 / 3 / 1 |
 | Spider dev 400 | 275 / 43 / 69 (2026-10-06) | 312 / 42 / 46 |
 
-Adjudicated by hand:
-- Holdout: all 3 "wrong" are right answers on the SQL path — "Rock" and "Iron
-  Maiden" without a count the question does not ask for ("just the top one"),
-  and average revenue per customer = 39.47, exact (the holdout expects a
-  decline because the LQP cannot compute it). **0 real wrong.** Holdout left
-  frozen; this is a known scoring gap for the SQL path.
+Inspected (one rater, Claude; not a two-rater adjudication):
+- Holdout: the SQL path scores 3/12 wrong under both versions. The 3 answers
+  look right on inspection — "Rock" and "Iron Maiden" without a count the
+  question does not ask for ("just the top one"), and average revenue per
+  customer = 39.47, exact (the holdout expects a decline because the LQP
+  cannot compute it). That is not an adjudicated zero: as scored, the SQL path
+  does not meet the holdout gate. Holdout left frozen.
 - Gate vs guards on the other suites: new wrongs are `mom_revenue_change_2024`
   (real: lists monthly revenue, does not compute the change), `product_count`
   (ambiguous: 69 active vs 77 including discontinued) and
@@ -404,6 +405,33 @@ Adjudicated by hand:
   fixed one real wrong the guards let through (`top_category_by_revenue`, now
   declined). **Real wrongs equal; +9 right; Spider unchanged.** The gate still
   costs 2 right answers on Chinook dev (COUNT vs COUNT DISTINCT readings).
+
+**Step 2 baseline — Spider test 400, adjudicated (PLAN.md).** Same 400 seeded
+test questions as 2026-10-07, SQL path with gate + tie-break, gpt-4.1-mini,
+3 repeats (verdict = worst repeat). **78.8% right (315), 8.25% wrong (33),
+13.0% abstained (52).** Flip rate **5.5%** (22 of 400 questions where the
+answer's rows, a refusal or an error changed across the 3 repeats).
+
+All 33 wrong answers adjudicated ([method and files](adjudication/README.md)):
+14 reuse a 2026-10-07 label (same rows), 19 rated by gpt-5 (blind) and a
+second rater — Claude, not a human; a human pass on those 19 is open.
+Conservative merge, nothing dropped:
+
+| | Count | Share | 95% CI |
+|--|-------|-------|--------|
+| **Real errors** | **11** | **2.75%** | **1.5–4.9%** |
+| Ambiguous, defensible reading | 15 | 3.75% | — |
+| Benchmark faults (system right) | 7 | 1.75% | — |
+
+On 2026-10-07 (keyword guards) the same set was 296 right and 15 real errors
+(3.75%, CI 2.3–6.1%); the tie rule was not then in the rubric, so the two are
+close but not identical measurements.
+
+**'yes' retry:** both questions (`test_1438`, `test_1439`, real_estate_rentals)
+now return a wrong answer on all 3 repeats — `is_buyer = 'yes'` against stored
+1, count 0 instead of 11. Both are among the 11 real errors. `dropped_filter`
+used to refuse them; the gate cannot, because both readings make the same
+mistake.
 
 Results: `baselines/sqlpath-*-2026-10-11.json`,
 [Spider gate + tie-break](baselines/spider-dev400-gpt41mini-gate-tiebreak-2026-10-11.json). Results:

@@ -51,18 +51,23 @@ publishes both); they are claims to earn, not to make.
 
 ### Step 1 — Smoke-test what we shipped ✅ 2026-10-11
 - [x] Regression set on the SQL path, gate vs old guards. Found and fixed ties
-  at the LIMIT boundary (kernel tie-break). Adjudicated: holdout 0 real wrong,
-  real wrongs equal elsewhere, +9 right. Spider test (and its 'yes' retry case)
-  not covered — that is Step 2.
+  at the LIMIT boundary (kernel tie-break). Holdout 3/12 wrong as scored under
+  both versions (not adjudicated; the 3 look right on one rater's inspection);
+  elsewhere real wrongs about equal on inspection, +9 right. Spider test (and
+  its 'yes' retry case) not covered — that is Step 2.
 
 ### Step 2 — Real wrong-rate, once, on Spider test
-- [ ] Run Spider test 400 on the current system, 3 repeats.
-- [ ] Adjudicate every wrong answer → real wrong-rate with 95% CI.
-- [ ] Flip rate across the 3 repeats (our own stability number; not a Genie
+- [x] Run Spider test 400 on the current system, 3 repeats.
+- [x] Adjudicate every wrong answer → real wrong-rate with 95% CI.
+- [x] Flip rate across the 3 repeats (our own stability number; not a Genie
   comparison — that needs the same harness, Step 3).
-- [ ] Check the 'yes' retry case that `dropped_filter` used to stop.
+- [x] Check the 'yes' retry case that `dropped_filter` used to stop.
 - Done when: STATUS.md has the adjudicated wrong-rate, CI, flip rate and the
   'yes' case outcome. This result is the baseline Step 5 must beat.
+- **Done 2026-10-11:** 78.8% right, 33 wrong; adjudicated **11/400 = 2.75%
+  real wrong (95% CI 1.5–4.9%)**; flip rate 5.5%; both 'yes' questions now
+  answered wrong (real errors). Open: a human pass on the 19 newly rated cases
+  (second rater was Claude).
 
 ### Step 3 — Genie harness test on Databricks (not the comparison)
 - [ ] Get a Databricks workspace with a SQL warehouse and a Genie space.

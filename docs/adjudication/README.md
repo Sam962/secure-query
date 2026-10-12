@@ -76,3 +76,30 @@ grounding (which fixed 7 on dev) did not apply.
 
 Files: `spider-test-gpt41mini-*.json`; run:
 `../baselines/spider-test400-sql-gpt41mini-sc3-2026-10-07.json`.
+
+---
+
+# Spider test, SQL path with self-consistency gate (2026-10-11)
+
+Same 400 questions (seed 0), gpt-4.1-mini, 3 repeats; a question's verdict is
+its worst repeat and the packet holds that repeat's rows. 315 right, 33 wrong.
+
+- **Reused:** 14 of the 33 return the same rows as an answer labelled on
+  2026-10-07 (checked on full rows, not SQL text); that merged label is kept.
+- **Rated:** the other 19 by two raters: gpt-5-2025-08-07, blind, and a second
+  rater written before gpt-5's labels were seen. **The second rater is Claude
+  (claude-opus-5-5), not a human**; a human pass on these 19 is still open.
+- **Rubric change:** the tie rule is now written into the rubric: a single row
+  is ambiguous only when the question asks for one and the row is truly tied
+  for the maximum; dropping one side of a tie at a "top N" cutoff is a real error.
+- **Merge:** real_error if either rater says so; no case dropped afterwards.
+  Raters disagreed on 6 of 19; 2 of those became real errors through gpt-5.
+
+| Count | Share | 95% CI | What it is |
+|-------|-------|--------|------------|
+| 11 | 2.75% | 1.5–4.9% | real errors (conservative merge) |
+| 15 | 3.75% | — | ambiguous question, defensible reading |
+| 7 | 1.75% | — | benchmark faults (system right) |
+
+Files: `spider-test-gpt41mini-gate-2026-10-11-*.json`; run:
+`../baselines/spider-test400-gpt41mini-gate-r3-2026-10-11.json`.

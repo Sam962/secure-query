@@ -107,6 +107,15 @@ class LiveCaseResult:
         return CORRECT
 
     @property
+    def outcomes(self) -> list[str]:
+        """What each repeat showed the user: the answer's rows (fingerprint), a refusal or an error."""
+        return [a.fingerprint or a.verdict for a in self.attempts]
+
+    @property
+    def flipped(self) -> bool:
+        return len(set(self.outcomes)) > 1
+
+    @property
     def consistency(self) -> float:
         """Share of repeats that produced the most common plan shape."""
         shapes = [a.shape for a in self.attempts if a.shape]
@@ -574,6 +583,7 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
     verdicts = Counter(r.verdict for r in results)
     total = len(results) or 1
     consistencies = [r.consistency for r in results if r.consistency]
+    repeated = [r for r in results if len(r.attempts) > 1]
     wrong_total = verdicts[WRONG] + verdicts[UNSAFE]
     wrong_low, wrong_high = wilson_interval(wrong_total, len(results))
 
@@ -615,4 +625,5 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
         "by_tag": {tag: dict(counts) for tag, counts in sorted(by_tag.items())},
         "by_refusal_code": {code: dict(c) for code, c in sorted(by_code.items())},
         "consistency": sum(consistencies) / len(consistencies) if consistencies else 0.0,
+        "flip_rate": sum(r.flipped for r in repeated) / len(repeated) if repeated else None,
     }

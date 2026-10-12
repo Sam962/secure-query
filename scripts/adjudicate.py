@@ -42,6 +42,11 @@ its result differs from the benchmark's gold result. Decide which label applies:
   artifact (engine type coercion, case-insensitive LIKE in the gold engine,
   formatting), and the system's answer is right.
 
+Ties: a single returned row is ambiguous only when the question asks for one and
+that row is truly tied for the maximum (or minimum). When the question asks for
+every row up to a cutoff (e.g. "top 3") and the answer drops one side of a tie at
+the cutoff, label real_error.
+
 Judge only against the question and schema. When unsure between real_error and
 another label, choose real_error. Reply with JSON only:
 {"label": "real_error" | "ambiguous" | "benchmark_fault", "reason": "<one sentence>"}"""
