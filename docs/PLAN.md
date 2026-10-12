@@ -13,93 +13,105 @@ measurably less often than Databricks Genie, at an answer-rate users accept.
 | Answer-rate on answerable questions | ≥ 70% |
 | Holdout | ≥ 200 real questions, 5 repeats |
 
-What we claim that others don't: **the model's SQL never runs** (the kernel
-regenerates it from a validated tree and enforces policy there), and **our
-wrong-rate is published, independently graded and stable** — same question,
-same answer.
+What we can claim today: **the model's SQL never runs.** The kernel regenerates
+it from a validated tree and enforces policy there. An independently graded
+wrong-rate and a flip rate are things we have not published yet (mnemiq already
+publishes both); they are claims to earn, not to make.
 
 ## Rules (read before starting any work)
 
 1. **One step in progress at a time.** Work the steps below in order. A step is
    done only when its "done when" line is true and recorded in STATUS.md.
 2. **Every change names the bar metric it moves** and is measured on the
-   regression set before merge: Chinook holdout (must stay 0 wrong), Chinook
-   dev, Northwind, Northwind dev, Spider dev 400.
+   regression set before merge: Chinook holdout, Chinook dev, Northwind,
+   Northwind dev, Spider dev 400. The regression set is a smoke test; a green
+   run is not permission to skip a step.
 3. **BIRD is a stress test, not a target.** Run it at milestones to find
-   failure modes; never tune against it. Nobody is near 2% wrong on BIRD.
-4. **New ideas go to the parking lot**, not into the current step. An idea
-   leaves the parking lot only when the current step is done and evidence says
-   it moves the bar.
+   failure modes; never tune against it and never put it in a "done when".
+4. **New ideas go to the parking lot**, not into the current step.
 5. **Wrong-rate claims are adjudicated** (see [adjudication/](adjudication/README.md)),
-   not raw grader output.
-6. Dataset-agnostic only: domain knowledge goes in catalog data, never in code.
+   on a set we have not iterated on. Spider dev is contaminated; Spider test is
+   used once per milestone.
+6. **Execution errors are safe failures.** Do not feed them back to the model
+   to make a query run; fix dialect bugs deterministically in the compiler.
+7. **No threshold search.** An operating point is chosen once, before the run
+   that measures it.
+8. Dataset-agnostic only: domain knowledge goes in catalog data, never in code.
+9. Every number in this file or a commit message is written down in STATUS.md.
 
-## Critical path (owner: Sam, starts now, runs in parallel)
+## Critical path (owner: Sam)
 
-- [ ] **Design partner and real domain (Phase B).** Longest lead time; nothing
-  below substitutes for it. Done when: named owner in OWNERSHIP.md, an approved
-  catalog for one slice of their warehouse, and ≥ 200 real questions frozen
-  before any tuning, with Genie access on the same data.
+- [ ] **Partner date — set before Step 3 starts.** First milestone: ________
+  (e.g. outreach list sent to N candidate design partners).
+- [ ] **Design partner and real domain (Phase B).** Done when: named owner in
+  OWNERSHIP.md, an approved catalog for one slice of their warehouse, ≥ 200 real
+  questions frozen before any tuning, and Genie available on the same data.
 
 ## Engineering steps (in order)
 
-### Step 1 — Validate what we just shipped
-- [x] Run the regression set on the SQL path, self-consistency gate vs the old
-  guards. Found and fixed: ties at the LIMIT boundary (kernel tie-break).
-- Done when: holdout still 0 wrong and no suite's wrong-rate is worse. If the
-  holdout regresses, fix or revert the gate before Step 2.
-- **Done 2026-10-11 (adjudicated):** holdout 0 real wrong (3 scoring artifacts,
-  same under both versions); real wrongs equal elsewhere, +9 right. Open
-  consequence for Step 2: the suites were written for the LQP path and
-  mis-score SQL-path answers (missing count columns, ratios it can compute).
+### Step 1 — Smoke-test what we shipped ✅ 2026-10-11
+- [x] Regression set on the SQL path, gate vs old guards. Found and fixed ties
+  at the LIMIT boundary (kernel tie-break). Adjudicated: holdout 0 real wrong,
+  real wrongs equal elsewhere, +9 right. Spider test (and its 'yes' retry case)
+  not covered — that is Step 2.
 
-### Step 2 — Make the numbers trustworthy
-- [ ] Adjudicate the wrong answers of the gate run on Spider dev 400 and Spider
-  test 400 → real wrong-rate with CI.
-- [ ] Add a **stability** column to the eval report: answer flip rate across
-  repeats (Genie: 9–17% on public benchmarks; this is a trust claim we can
-  measure cheaply).
-- Done when: STATUS.md has the adjudicated wrong-rate and flip rate for the
-  current system.
+### Step 2 — Real wrong-rate, once, on Spider test
+- [ ] Run Spider test 400 on the current system, 3 repeats.
+- [ ] Adjudicate every wrong answer → real wrong-rate with 95% CI.
+- [ ] Flip rate across the 3 repeats (our own stability number; not a Genie
+  comparison — that needs the same harness, Step 3).
+- [ ] Check the 'yes' retry case that `dropped_filter` used to stop.
+- Done when: STATUS.md has the adjudicated wrong-rate, CI, flip rate and the
+  'yes' case outcome. This result is the baseline Step 5 must beat.
 
-### Step 3 — Stop avoidable failures
-- [ ] Feed execution errors (dialect mismatches such as SQLite `strftime` on
-  DuckDB) back into the existing repair round. Evidence: mnemiq measured ~7
-  points from a dialect fix; we lose 25–50 BIRD questions per run to errors.
-- Done when: execution errors roughly halved on Spider and BIRD with no
-  wrong-rate increase on the regression set.
+### Step 3 — Genie harness test on Databricks (not the comparison)
+- [ ] Get a Databricks workspace with a SQL warehouse and a Genie space.
+- [ ] **Gate:** one question answered by Genie through the Conversation API,
+  by hand. Do not start the client before this works.
+- [ ] Client: ask Genie and Secure Query the same questions on the same
+  Databricks data; grade both with our grader; record right / refused / wrong
+  and flip rate.
+- Done when: one end-to-end run on a small dataset we fix in advance (fixed
+  curation budget for both). **This is a harness test. It becomes the real
+  comparison only on a partner's data (Step 7).**
 
-### Step 4 — Precision: an independent second reading
-- [ ] Make the gate's second reading come from a **different provider**
-  (e.g. Claude). Evidence: same-model self-consistency plateaus at 0.61–0.68
-  AUROC with no low-risk subset; a cross-provider pair reaches 0.82
-  (arXiv 2607.06799). Needs a second API key.
-- [ ] Measure risk vs coverage; pick the operating point against the bar.
-- Done when: adjudicated wrong-rate on Spider test is lower at ≥ 70% answer-rate.
+### Step 4 — Dialect fixes in the compiler (only if Step 2 says so)
+- [ ] If the Step 2 adjudication shows execution errors cost real answers,
+  add deterministic rewrites in the kernel (e.g. SQLite-style
+  `strftime(fmt, col)` to the target dialect). No model repair of execution
+  errors.
+- Done when: execution errors lower on the regression set, wrong-rate not
+  higher.
 
-### Step 5 — First external comparison with Genie (proxy for Phase C)
-- [ ] Check that beacon (independent grader, github.com/agenticfabriq/beacon)
-  exposes Genie's per-question BIRD / Spider results. If yes, grade our runs
-  there for a like-for-like comparison including flip rate.
-- Done when: one table, same grader, Secure Query vs Genie vs mnemiq — right,
-  refused, wrong and stability.
+### Step 5 — Precision experiment: second reading from another provider
+- [ ] Experiment, not a promise: the gate's second reading from Claude, and
+  separately an LLM judge on the first query. (arXiv 2607.06799 measured judge
+  ensembles on one query at 0.82 AUROC; it did not measure a second generator,
+  and its usable point was 27% answered at 24% risk.)
+- [ ] Report a risk–coverage curve on Spider test.
+- Done when: the curve is in STATUS.md. **Stop if it does not beat the Step 2
+  result.** No threshold search.
 
-### Step 6 — Real domain (Phase B, needs the critical path)
+### Step 6 — Real domain (needs the critical path)
 - [ ] Certified definitions: metrics and glossary entries with a named owner
-  in catalog data (evidence: mnemiq 69–72% with vs 52–59% without).
+  in catalog data.
 - [ ] Freeze the partner's ≥ 200 questions as the holdout; tune only on dev.
 
-### Step 7 — Head-to-head (Phase C)
-- [ ] Same questions, same curation effort, Secure Query vs Genie on the
-  partner domain, graded independently. This is the goal.
+### Step 7 — Head-to-head (Phase C, the goal)
+- [ ] The Step 3 harness on the partner's data: same questions, same curation
+  effort, Secure Query vs Genie, graded independently.
 
 ## Parking lot (not now — needs evidence and a finished step)
 
+- Comparison through mnemiq's grader (beacon): same grader, different
+  conditions; context only.
 - Bigger model of the same family (tested: gpt-4.1 ≈ gpt-4.1-mini, ~5× cost).
 - Pairwise selection among samples (tested: ≤ 2 points of headroom).
 - More samples in the gate (3 or 5 agree ≈ 2 agree on precision).
-- LLM-generated schema descriptions (mnemiq: +1.4 BIRD, ~0 on Spider).
-- Retrieval depth, few-shot examples, fine-tuned verifier.
+- Model repair of execution errors (turns safe failures into unverified answers).
+- LLM-generated schema descriptions, retrieval depth, few-shot examples,
+  fine-tuned verifier.
+- Re-scoring the LQP-era suites for the SQL path (count columns, ratios).
 - Any BIRD-specific tuning; any LQP-path change.
 
 ## Decision log
@@ -110,3 +122,4 @@ same answer.
 | 2026-10-11 | Keep gpt-4.1-mini | gpt-4.1 within noise at ~5× cost |
 | 2026-10-11 | This plan; BIRD demoted to stress test | Distraction review: work had drifted from the bar |
 | 2026-10-11 | Kernel breaks ties under ORDER BY … LIMIT | Gate false-blocked 11 Chinook answers; fixed to 2 |
+| 2026-10-11 | Plan revised after advisor review | Overclaim removed; paper citation corrected; Genie harness moved ahead of precision work; partner date gates Step 3 |
