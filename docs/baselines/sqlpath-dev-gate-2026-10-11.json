@@ -1,0 +1,2361 @@
+{
+  "generated_at": "2026-10-12T02:44:47+00:00",
+  "provider": "openai",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "model_digest": null,
+  "summary": {
+    "total": 134,
+    "correct": 125,
+    "wrong": 6,
+    "unsafe": 0,
+    "abstained": 3,
+    "error": 0,
+    "accuracy": 0.9328358208955224,
+    "wrong_rate": 0.04477611940298507,
+    "wrong_rate_ci95": [
+      0.020680206883838287,
+      0.0942459112111345
+    ],
+    "abstain_rate": 0.022388059701492536,
+    "answerable": 121,
+    "answer_rate": 0.9338842975206612,
+    "over_refusal_rate": 0.024793388429752067,
+    "by_tag": {
+      "avg-per": {
+        "correct": 7
+      },
+      "comparison": {
+        "correct": 7
+      },
+      "complex": {
+        "correct": 16,
+        "wrong": 2,
+        "abstained": 2
+      },
+      "count-entity": {
+        "wrong": 2
+      },
+      "date-filter": {
+        "correct": 4,
+        "abstained": 1
+      },
+      "dev-generated": {
+        "correct": 105,
+        "abstained": 3,
+        "wrong": 4
+      },
+      "distinct": {
+        "correct": 2
+      },
+      "filter": {
+        "correct": 54
+      },
+      "group": {
+        "correct": 23,
+        "abstained": 1,
+        "wrong": 1
+      },
+      "having": {
+        "correct": 2
+      },
+      "in": {
+        "correct": 3
+      },
+      "inexpressible": {
+        "correct": 3
+      },
+      "join": {
+        "wrong": 3,
+        "correct": 7,
+        "abstained": 1
+      },
+      "known-gap": {
+        "correct": 2,
+        "wrong": 1,
+        "abstained": 1
+      },
+      "list": {
+        "correct": 1
+      },
+      "multihop": {
+        "correct": 7
+      },
+      "out-of-scope": {
+        "correct": 5
+      },
+      "pii": {
+        "correct": 5
+      },
+      "ratio": {
+        "correct": 1
+      },
+      "scalar": {
+        "correct": 43,
+        "wrong": 2
+      },
+      "singular-top": {
+        "wrong": 2
+      },
+      "table-selection": {
+        "correct": 1
+      },
+      "timebucket": {
+        "correct": 2,
+        "abstained": 1
+      },
+      "topn": {
+        "correct": 16,
+        "wrong": 2
+      },
+      "trend": {
+        "correct": 2,
+        "abstained": 1
+      },
+      "unordered-limit": {
+        "correct": 2
+      }
+    },
+    "by_refusal_code": {
+      "planner_refusal": {
+        "correct": 10
+      },
+      "unstable_answer": {
+        "blocked_right": 2,
+        "false": 1,
+        "correct": 1
+      },
+      "validation_failed": {
+        "correct": 1
+      }
+    },
+    "consistency": 1.0
+  },
+  "cases": [
+    {
+      "id": "invoice_count",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "b5f890f2ada13d88",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" LIMIT 1000"
+    },
+    {
+      "id": "customer_count",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "2ff3a15f878f0475",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" LIMIT 1000"
+    },
+    {
+      "id": "avg_invoice_total",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "b19307332bb4be02",
+      "samples": [],
+      "sql": "SELECT AVG(\"invoice\".\"Total\") AS \"average_invoice_total\" FROM \"Invoice\" AS \"invoice\" LIMIT 1000"
+    },
+    {
+      "id": "largest_invoice",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "756e4a0e052808c2",
+      "samples": [],
+      "sql": "SELECT MAX(\"invoice\".\"Total\") AS \"largestinvoicetotal\" FROM \"Invoice\" AS \"invoice\" LIMIT 1000"
+    },
+    {
+      "id": "smallest_invoice",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "1532f735ba8e7add",
+      "samples": [],
+      "sql": "SELECT MIN(\"invoice\".\"Total\") AS \"smallestinvoicetotal\" FROM \"Invoice\" AS \"invoice\" LIMIT 1000"
+    },
+    {
+      "id": "distinct_billing_countries",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "distinct"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "826b9690fe635cdd",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"invoice\".\"BillingCountry\") AS \"distinct_billing_countries\" FROM \"Invoice\" AS \"invoice\" LIMIT 1000"
+    },
+    {
+      "id": "brazil_customer_count",
+      "expect": "answer",
+      "tags": [
+        "filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "0be3a388295139ad",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'Brazil' LIMIT 1000"
+    },
+    {
+      "id": "usa_billed_revenue",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "00165f5dda74857a",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'USA' LIMIT 1000"
+    },
+    {
+      "id": "invoices_over_ten",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "9c9b3de0df694fa3",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"Total\" > 10 LIMIT 1000"
+    },
+    {
+      "id": "canada_or_france_invoice_count",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "in"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "a7797adfa89065a2",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" IN ('Canada', 'France') LIMIT 1000"
+    },
+    {
+      "id": "top2_billing_countries_by_invoice_count",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "9c945513d53451a7",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(*) AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"invoicecount\" DESC, 1, 2 LIMIT 2"
+    },
+    {
+      "id": "revenue_by_billing_country_all",
+      "expect": "answer",
+      "tags": [
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "3a0b698eafdc5812",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", SUM(\"invoice\".\"Total\") AS \"totalrevenue\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"totalrevenue\" DESC, 1, 2 LIMIT 24"
+    },
+    {
+      "id": "customers_in_brazil_list",
+      "expect": "answer",
+      "tags": [
+        "list"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "e7a606122b4f2ab2",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"CustomerId\" AS \"customerid\", \"customer\".\"FirstName\" AS \"firstname\", \"customer\".\"LastName\" AS \"lastname\", \"customer\".\"Company\" AS \"company\", \"customer\".\"City\" AS \"city\", \"customer\".\"State\" AS \"state\", \"customer\".\"Country\" AS \"country\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'Brazil' LIMIT 1000"
+    },
+    {
+      "id": "tracks_sold_total",
+      "expect": "answer",
+      "tags": [
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "412b9b71c11376e5",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoiceline\".\"Quantity\") AS \"total_tracks_sold\" FROM \"InvoiceLine\" AS \"invoiceline\" LIMIT 1000"
+    },
+    {
+      "id": "top_artist_by_albums_singular",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "topn",
+        "singular-top"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Iron Maiden', 21)], got [('Iron Maiden',)]",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "c6c2591d6e93ccd5",
+      "samples": [],
+      "sql": "SELECT \"artist\".\"Name\" AS \"artist\" FROM \"Album\" AS \"album\" JOIN \"Artist\" AS \"artist\" ON \"album\".\"ArtistId\" = \"artist\".\"ArtistId\" GROUP BY \"artist\".\"Name\" ORDER BY COUNT(\"album\".\"AlbumId\") DESC, 1 LIMIT 1"
+    },
+    {
+      "id": "top_genre_fewest_tracks",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "topn",
+        "singular-top"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Opera', 1)], got [('Opera',)]",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f2800885776acb56",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\" FROM \"Track\" AS \"track\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" GROUP BY \"genre\".\"Name\" ORDER BY COUNT(\"track\".\"TrackId\") ASC, 1 LIMIT 1"
+    },
+    {
+      "id": "customers_per_support_rep",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "table-selection"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "67f51678400b89f4",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"SupportRepId\" AS \"repid\", COUNT(\"customer\".\"CustomerId\") AS \"customercount\" FROM \"Customer\" AS \"customer\" WHERE NOT \"customer\".\"SupportRepId\" IS NULL GROUP BY \"customer\".\"SupportRepId\" ORDER BY \"repid\" LIMIT 1000"
+    },
+    {
+      "id": "website_visits",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "lookup_email_by_name",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "count_by_email_domain",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "employee_phone_lookup",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "customer_addresses",
+      "expect": "abstain",
+      "tags": [
+        "pii"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_customers_in_usa",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f9399c01124dd25e",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'USA' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_usa",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "a7797adfa89065a2",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'USA' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_usa",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "00165f5dda74857a",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'USA' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_canada",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "594bca8d39776c12",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'Canada' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_canada",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f6271da1cda7df71",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Canada' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_canada",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "ef14f78f4d435340",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Canada' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_brazil",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "0be3a388295139ad",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'Brazil' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_brazil",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5b25d6246c72cdd6",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Brazil' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_brazil",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "c6f4c0c0c550a688",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Brazil' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_france",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "0be3a388295139ad",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'France' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_france",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5b25d6246c72cdd6",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'France' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_france",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "0e696f77636e3adf",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'France' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_germany",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7eee9525c86f546d",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'Germany' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_germany",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5ee1c479f7c550d4",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Germany' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_germany",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "8a849dba0ddc1757",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_invoice_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Germany' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_united_kingdom",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "207cd6d1a9c38f22",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'United Kingdom' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_united_kingdom",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "d836f3739f4551b4",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'United Kingdom' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_united_kingdom",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "cb2246147f08a36e",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'United Kingdom' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_australia",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"Country\" = 'Australia' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_billed_australia",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "c0202b3216896b04",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Australia' LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_billed_australia",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "8ab1e961965016d7",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" = 'Australia' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_over_1",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "317e345d6e418281",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"Total\" > 1 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_over_5",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "124e285c37ea90af",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"Total\" > 5 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_over_10",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "9c9b3de0df694fa3",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"Total\" > 10 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_over_15",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "4e8d15c2fb61e335",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"Total\" > 15 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_over_20",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "comparison",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7eee9525c86f546d",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"Total\" > 20 LIMIT 1000"
+    },
+    {
+      "id": "dev_track_count",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "4326e89aebf82763",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"track_count\" FROM \"Track\" AS \"track\" LIMIT 1000"
+    },
+    {
+      "id": "dev_album_count",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "598c7daea88e3542",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"album_count\" FROM \"Album\" AS \"album\" LIMIT 1000"
+    },
+    {
+      "id": "dev_artist_count",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "1cd372a37d47ac91",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"artist_count\" FROM \"Artist\" AS \"artist\" LIMIT 1000"
+    },
+    {
+      "id": "dev_genre_count",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "be5150467b60583a",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"genre\".\"Name\") AS \"genre_count\" FROM \"Genre\" AS \"genre\" LIMIT 1000"
+    },
+    {
+      "id": "dev_playlist_count",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7ba572904d64f55e",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"playlist_count\" FROM \"Playlist\" AS \"playlist\" LIMIT 1000"
+    },
+    {
+      "id": "dev_media_type_count",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "0be3a388295139ad",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"media type count\" FROM \"MediaType\" AS \"mediatype\" LIMIT 1000"
+    },
+    {
+      "id": "dev_avg_track_price",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5586ec7eb87ef473",
+      "samples": [],
+      "sql": "SELECT AVG(\"track\".\"UnitPrice\") AS \"average_unit_price\" FROM \"Track\" AS \"track\" LIMIT 1000"
+    },
+    {
+      "id": "dev_max_track_price",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f08e7b4cc5aa026a",
+      "samples": [],
+      "sql": "SELECT MAX(\"track\".\"UnitPrice\") AS \"highestunitprice\" FROM \"Track\" AS \"track\" LIMIT 1000"
+    },
+    {
+      "id": "dev_total_tracks_sold",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "412b9b71c11376e5",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_line_item_count\" FROM \"InvoiceLine\" AS \"invoiceline\" LIMIT 1000"
+    },
+    {
+      "id": "dev_revenue_by_customer_country_top3",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "d89c625a8433d5b5",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"Country\" AS \"customer country\", SUM(\"invoice\".\"Total\") AS \"total_revenue\" FROM \"Invoice\" AS \"invoice\" JOIN \"Customer\" AS \"customer\" ON \"invoice\".\"CustomerId\" = \"customer\".\"CustomerId\" GROUP BY \"customer\".\"Country\" ORDER BY \"total_revenue\" DESC, 1, 2 LIMIT 3"
+    },
+    {
+      "id": "dev_albums_per_artist_top5",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "141e14cffdf31293",
+      "samples": [],
+      "sql": "SELECT \"artist\".\"Name\" AS \"artist\", COUNT(\"album\".\"AlbumId\") AS \"album_count\" FROM \"Album\" AS \"album\" JOIN \"Artist\" AS \"artist\" ON \"album\".\"ArtistId\" = \"artist\".\"ArtistId\" GROUP BY \"artist\".\"Name\" ORDER BY \"album_count\" DESC, 1, 2 LIMIT 5"
+    },
+    {
+      "id": "dev_tracks_per_album_top5",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5506b9b4da233475",
+      "samples": [],
+      "sql": "SELECT \"album\".\"Title\" AS \"album\", COUNT(\"track\".\"TrackId\") AS \"track_count\" FROM \"Album\" AS \"album\" JOIN \"Track\" AS \"track\" ON \"album\".\"AlbumId\" = \"track\".\"AlbumId\" GROUP BY \"album\".\"AlbumId\", \"album\".\"Title\" ORDER BY \"track_count\" DESC, 1, 2 LIMIT 5"
+    },
+    {
+      "id": "dev_genre_track_count",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5c025e6295e1dfbf",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\", COUNT(\"track\".\"TrackId\") AS \"track_count\" FROM \"Track\" AS \"track\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" GROUP BY \"genre\".\"Name\" ORDER BY \"genre\" LIMIT 1000"
+    },
+    {
+      "id": "dev_playlist_track_count",
+      "expect": "answer",
+      "tags": [
+        "join",
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "unstable_answer",
+      "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+      "blocked": "right",
+      "blocked_sql": "SELECT \"playlist\".\"Name\" AS \"playlist\", COUNT(\"playlisttrack\".\"TrackId\") AS \"track_count\" FROM \"Playlist\" AS \"playlist\" JOIN \"PlaylistTrack\" AS \"playlisttrack\" ON \"playlist\".\"PlaylistId\" = \"playlisttrack\".\"PlaylistId\" GROUP BY \"playlist\".\"Name\" ORDER BY \"playlist\" LIMIT 1000",
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_customers_in_california",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "207cd6d1a9c38f22",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'CA' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_first_half_2023",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "17617422d06aea4a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"InvoiceDate\" >= '2023-01-01' AND \"invoice\".\"InvoiceDate\" < '2023-07-01' LIMIT 1000"
+    },
+    {
+      "id": "dev_abstain_payroll",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_abstain_inventory",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_abstain_phone_list",
+      "expect": "abstain",
+      "tags": [
+        "pii",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_abstain_share_of_total",
+      "expect": "abstain",
+      "tags": [
+        "known-gap",
+        "ratio",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": "validation_failed",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_customers_in_london",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7a284f128e61ae54",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'London' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_paris",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7a284f128e61ae54",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'Paris' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_berlin",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7a284f128e61ae54",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'Berlin' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_sao_paulo",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7a284f128e61ae54",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'S\u00e3o Paulo' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_prague",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7a284f128e61ae54",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'Prague' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_dublin",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'Dublin' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_in_amsterdam",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"City\" = 'Amsterdam' LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_year_2021",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "746c2c9c8712ffb5",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2021 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_year_2022",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "746c2c9c8712ffb5",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2022 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_year_2023",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "746c2c9c8712ffb5",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2023 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_year_2024",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "746c2c9c8712ffb5",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2024 LIMIT 1000"
+    },
+    {
+      "id": "dev_invoices_year_2025",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "4606b03b5d6ffc48",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2025 LIMIT 1000"
+    },
+    {
+      "id": "dev_top_3_billing_countries",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "008828ece5c1fc09",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(*) AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"invoicecount\" DESC, 1, 2 LIMIT 3"
+    },
+    {
+      "id": "dev_top_7_billing_countries",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "0e42c76ec33103b9",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(*) AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"invoicecount\" DESC, 1, 2 LIMIT 7"
+    },
+    {
+      "id": "dev_top_15_billing_countries",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "430bc29c87792114",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(\"invoice\".\"InvoiceId\") AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"invoicecount\" DESC, 1, 2 LIMIT 15"
+    },
+    {
+      "id": "dev_top_20_billing_countries",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "ffa72ba2dd3b5ee3",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(*) AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"invoicecount\" DESC, 1, 2 LIMIT 20"
+    },
+    {
+      "id": "dev_top_25_billing_countries",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "9b835a4caf031f60",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(*) AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"invoicecount\" DESC, 1, 2 LIMIT 25"
+    },
+    {
+      "id": "dev_customers_state_ca",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "207cd6d1a9c38f22",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'CA' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_ny",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'NY' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_tx",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'TX' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_fl",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'FL' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_wa",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'WA' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_wi",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'WI' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_nv",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'NV' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_az",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'AZ' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_ut",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'UT' LIMIT 1000"
+    },
+    {
+      "id": "dev_customers_state_ma",
+      "expect": "answer",
+      "tags": [
+        "filter",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "64e4b892473fb47a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"customer_count\" FROM \"Customer\" AS \"customer\" WHERE \"customer\".\"State\" = 'MA' LIMIT 1000"
+    },
+    {
+      "id": "dev_top_5_customers_by_country",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "1ed6b734ac73854f",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"Country\" AS \"country\", COUNT(*) AS \"customercount\" FROM \"Customer\" AS \"customer\" GROUP BY \"customer\".\"Country\" ORDER BY \"customercount\" DESC, 1, 2 LIMIT 5"
+    },
+    {
+      "id": "dev_top_10_customers_by_country",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "84b6684c4f82dc10",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"Country\" AS \"country\", COUNT(*) AS \"customercount\" FROM \"Customer\" AS \"customer\" GROUP BY \"customer\".\"Country\" ORDER BY \"customercount\" DESC, 1, 2 LIMIT 10"
+    },
+    {
+      "id": "dev_top_15_customers_by_country",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "ce80ee763f7179e8",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"Country\" AS \"country\", COUNT(*) AS \"customercount\" FROM \"Customer\" AS \"customer\" GROUP BY \"customer\".\"Country\" ORDER BY \"customercount\" DESC, 1, 2 LIMIT 15"
+    },
+    {
+      "id": "dev_top_20_customers_by_country",
+      "expect": "answer",
+      "tags": [
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7746c553ca3b8e84",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"Country\" AS \"country\", COUNT(*) AS \"customercount\" FROM \"Customer\" AS \"customer\" GROUP BY \"customer\".\"Country\" ORDER BY \"customercount\" DESC, 1, 2 LIMIT 20"
+    },
+    {
+      "id": "dev_playlist_track_total",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "674001402a36419a",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"playlist_track_links\" FROM \"PlaylistTrack\" AS \"playlisttrack\" LIMIT 1000"
+    },
+    {
+      "id": "dev_sum_invoice_line_quantity",
+      "expect": "answer",
+      "tags": [
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "412b9b71c11376e5",
+      "samples": [],
+      "sql": "SELECT SUM(\"invoiceline\".\"Quantity\") AS \"sum_of_invoice_line_quantities\" FROM \"InvoiceLine\" AS \"invoiceline\" LIMIT 1000"
+    },
+    {
+      "id": "dev_abstain_marketing",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_abstain_shipping",
+      "expect": "abstain",
+      "tags": [
+        "out-of-scope",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": "planner_refusal",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_genre_fewest_tracks",
+      "expect": "answer",
+      "tags": [
+        "unordered-limit",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f2800885776acb56",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\" FROM \"Track\" AS \"track\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" GROUP BY \"genre\".\"Name\" ORDER BY COUNT(\"track\".\"TrackId\") ASC, 1 LIMIT 1"
+    },
+    {
+      "id": "dev_top_media_type_by_tracks",
+      "expect": "answer",
+      "tags": [
+        "unordered-limit",
+        "topn",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "beb96d010b27b1f8",
+      "samples": [],
+      "sql": "SELECT \"mediatype\".\"Name\" AS \"media type\" FROM \"Track\" AS \"track\" JOIN \"MediaType\" AS \"mediatype\" ON \"track\".\"MediaTypeId\" = \"mediatype\".\"MediaTypeId\" GROUP BY \"mediatype\".\"Name\" ORDER BY COUNT(\"track\".\"TrackId\") DESC, 1 LIMIT 1"
+    },
+    {
+      "id": "dev_album_count_for_sale",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(347,)], got [(304,)]",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "251b495fe29142e5",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"album\".\"AlbumId\") AS \"album_count\" FROM \"InvoiceLine\" AS \"invoiceline\" JOIN \"Track\" AS \"track\" ON \"invoiceline\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"Album\" AS \"album\" ON \"track\".\"AlbumId\" = \"album\".\"AlbumId\" LIMIT 1000"
+    },
+    {
+      "id": "dev_playlist_count_listened",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(18,)], got [(12,)]",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f4c7883e5f02481c",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"playlist\".\"PlaylistId\") AS \"playlist_count\" FROM \"Playlist\" AS \"playlist\" JOIN \"PlaylistTrack\" AS \"playlisttrack\" ON \"playlist\".\"PlaylistId\" = \"playlisttrack\".\"PlaylistId\" JOIN \"Track\" AS \"track\" ON \"playlisttrack\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"InvoiceLine\" AS \"invoiceline\" ON \"track\".\"TrackId\" = \"invoiceline\".\"TrackId\" JOIN \"Invoice\" AS \"invoice\" ON \"invoiceline\".\"InvoiceId\" = \"invoice\".\"InvoiceId\" WHERE NOT \"invoice\".\"CustomerId\" IS NULL LIMIT 1000"
+    },
+    {
+      "id": "dev_avg_total_per_invoice",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "b19307332bb4be02",
+      "samples": [],
+      "sql": "SELECT AVG(\"invoice\".\"Total\") AS \"average_total_per_invoice\" FROM \"Invoice\" AS \"invoice\" LIMIT 1000"
+    },
+    {
+      "id": "dev_avg_price_per_track",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "scalar",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "5586ec7eb87ef473",
+      "samples": [],
+      "sql": "SELECT AVG(\"track\".\"UnitPrice\") AS \"average_price_per_track\" FROM \"Track\" AS \"track\" LIMIT 1000"
+    },
+    {
+      "id": "dev_avg_length_for_each_genre",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "458faa83b744d008",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\", AVG(\"track\".\"Milliseconds\") AS \"average_track_length\" FROM \"Track\" AS \"track\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" GROUP BY \"genre\".\"Name\" ORDER BY \"genre\" LIMIT 1000"
+    },
+    {
+      "id": "dev_avg_length_per_genre",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "group",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "458faa83b744d008",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\", AVG(\"track\".\"Milliseconds\") AS \"average_track_length\" FROM \"Track\" AS \"track\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" GROUP BY \"genre\".\"Name\" ORDER BY \"genre\" LIMIT 1000"
+    },
+    {
+      "id": "dev_abstain_avg_spend_per_customer",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "inexpressible",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "c46d818cc9eefbe6",
+      "samples": [],
+      "sql": "SELECT AVG(\"_0\".\"Total\") AS \"average_spend_per_customer\" FROM (SELECT \"invoice\".\"CustomerId\" AS \"customerid\", SUM(\"invoice\".\"Total\") AS \"total\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"CustomerId\") AS \"_0\" LIMIT 1000"
+    },
+    {
+      "id": "dev_abstain_avg_sales_per_employee",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "inexpressible",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "08b40d538ee9d598",
+      "samples": [],
+      "sql": "SELECT AVG(\"_0\".\"employee_sales\") AS \"mean_sales_per_employee\" FROM (SELECT \"e\".\"EmployeeId\" AS \"employeeid\", COALESCE(SUM(\"i\".\"Total\"), 0) AS \"employee_sales\" FROM \"Employee\" AS \"e\" LEFT JOIN \"Customer\" AS \"c\" ON \"e\".\"EmployeeId\" = \"c\".\"SupportRepId\" LEFT JOIN \"Invoice\" AS \"i\" ON \"c\".\"CustomerId\" = \"i\".\"CustomerId\" GROUP BY \"e\".\"EmployeeId\") AS \"_0\" LIMIT 1000"
+    },
+    {
+      "id": "dev_abstain_avg_tracks_per_album",
+      "expect": "answer",
+      "tags": [
+        "avg-per",
+        "inexpressible",
+        "dev-generated"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7821a7c31ac44709",
+      "samples": [],
+      "sql": "SELECT AVG(\"_0\".\"track_count\") AS \"average_tracks_per_album\" FROM (SELECT \"track\".\"AlbumId\" AS \"albumid\", COUNT(*) AS \"track_count\" FROM \"Track\" AS \"track\" GROUP BY \"track\".\"AlbumId\") AS \"_0\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_genre_revenue_top5",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "bdf350c38856ef37",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\", SUM(\"invoiceline\".\"UnitPrice\" * \"invoiceline\".\"Quantity\") AS \"sales_revenue\" FROM \"InvoiceLine\" AS \"invoiceline\" JOIN \"Track\" AS \"track\" ON \"invoiceline\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" GROUP BY \"genre\".\"Name\" ORDER BY \"sales_revenue\" DESC, 1, 2 LIMIT 5"
+    },
+    {
+      "id": "dev_complex_artist_revenue_top5",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "e4c8949f0e853883",
+      "samples": [],
+      "sql": "SELECT \"artist\".\"Name\" AS \"artist\", SUM(\"invoiceline\".\"UnitPrice\" * \"invoiceline\".\"Quantity\") AS \"sales_revenue\" FROM \"InvoiceLine\" AS \"invoiceline\" JOIN \"Track\" AS \"track\" ON \"invoiceline\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"Album\" AS \"album\" ON \"track\".\"AlbumId\" = \"album\".\"AlbumId\" JOIN \"Artist\" AS \"artist\" ON \"album\".\"ArtistId\" = \"artist\".\"ArtistId\" GROUP BY \"artist\".\"Name\" ORDER BY \"sales_revenue\" DESC, 1, 2 LIMIT 5"
+    },
+    {
+      "id": "dev_complex_tracks_sold_per_media_type",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "b7473f27612d531e",
+      "samples": [],
+      "sql": "SELECT \"mediatype\".\"Name\" AS \"media type\", SUM(\"invoiceline\".\"Quantity\") AS \"tracks sold\" FROM \"InvoiceLine\" AS \"invoiceline\" JOIN \"Track\" AS \"track\" ON \"invoiceline\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"MediaType\" AS \"mediatype\" ON \"track\".\"MediaTypeId\" = \"mediatype\".\"MediaTypeId\" GROUP BY \"mediatype\".\"Name\" ORDER BY \"media type\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_revenue_per_year",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "trend",
+        "timebucket"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "e9e18f0af62e428e",
+      "samples": [],
+      "sql": "SELECT STRFTIME('%Y', \"invoice\".\"InvoiceDate\") AS \"year\", SUM(\"invoice\".\"Total\") AS \"totalrevenue\" FROM \"Invoice\" AS \"invoice\" GROUP BY STRFTIME('%Y', \"invoice\".\"InvoiceDate\") ORDER BY \"year\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_monthly_invoices_2022",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "trend",
+        "timebucket",
+        "date-filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "972170afa162c33b",
+      "samples": [],
+      "sql": "SELECT STRFTIME('%Y-%m', \"invoice\".\"InvoiceDate\") AS \"yearmonth\", COUNT(\"invoice\".\"InvoiceId\") AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" WHERE STRFTIME('%Y', \"invoice\".\"InvoiceDate\") = '2022' GROUP BY STRFTIME('%Y-%m', \"invoice\".\"InvoiceDate\") ORDER BY \"yearmonth\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_countries_over_20_invoices",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "having",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "ad899aefd00a7bfc",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", COUNT(*) AS \"invoicecount\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"BillingCountry\" HAVING COUNT(*) > 20 LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_genre_revenue_2023_top3",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn",
+        "date-filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "80cd997990106192",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\", SUM(\"invoiceline\".\"UnitPrice\" * \"invoiceline\".\"Quantity\") AS \"sales_revenue\" FROM \"InvoiceLine\" AS \"invoiceline\" JOIN \"Invoice\" AS \"invoice\" ON \"invoiceline\".\"InvoiceId\" = \"invoice\".\"InvoiceId\" JOIN \"Track\" AS \"track\" ON \"invoiceline\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2023 GROUP BY \"genre\".\"Name\" ORDER BY \"sales_revenue\" DESC, 1, 2 LIMIT 3"
+    },
+    {
+      "id": "dev_complex_distinct_jazz_buyers",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "distinct"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f0eff14dc3b56ee6",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"invoice\".\"CustomerId\") AS \"distinct_customer_count\" FROM \"Invoice\" AS \"invoice\" JOIN \"InvoiceLine\" AS \"invoiceline\" ON \"invoice\".\"InvoiceId\" = \"invoiceline\".\"InvoiceId\" JOIN \"Track\" AS \"track\" ON \"invoiceline\".\"TrackId\" = \"track\".\"TrackId\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" WHERE \"genre\".\"Name\" = 'Jazz' LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_long_tracks_per_genre",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "join",
+        "group",
+        "comparison"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "235bc62964ff2f12",
+      "samples": [],
+      "sql": "SELECT \"genre\".\"Name\" AS \"genre\", COUNT(\"track\".\"TrackId\") AS \"track_count\" FROM \"Track\" AS \"track\" JOIN \"Genre\" AS \"genre\" ON \"track\".\"GenreId\" = \"genre\".\"GenreId\" WHERE \"track\".\"Milliseconds\" > 300000 GROUP BY \"genre\".\"Name\" ORDER BY \"genre\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_customers_per_rep",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "join",
+        "group"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Johnson', 18), ('Peacock', 21)] (+1 more), got [('Adams', 0), ('Callahan', 0)] (+6 more)",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "61d06f5a189b2db8",
+      "samples": [],
+      "sql": "SELECT \"employee\".\"LastName\" AS \"lastname\", COUNT(DISTINCT \"customer\".\"CustomerId\") AS \"customercount\" FROM \"Employee\" AS \"employee\" LEFT JOIN \"Customer\" AS \"customer\" ON \"employee\".\"EmployeeId\" = \"customer\".\"SupportRepId\" GROUP BY \"employee\".\"LastName\" ORDER BY \"LastName\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_top_rep_by_revenue",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "69e77a2d45ecb210",
+      "samples": [],
+      "sql": "SELECT \"employee\".\"LastName\" AS \"lastname\" FROM \"Employee\" AS \"employee\" JOIN \"Customer\" AS \"customer\" ON \"employee\".\"EmployeeId\" = \"customer\".\"SupportRepId\" JOIN \"Invoice\" AS \"invoice\" ON \"customer\".\"CustomerId\" = \"invoice\".\"CustomerId\" GROUP BY \"employee\".\"EmployeeId\", \"employee\".\"LastName\" ORDER BY SUM(\"invoice\".\"Total\") DESC, 1 LIMIT 1"
+    },
+    {
+      "id": "dev_complex_avg_length_per_media_type",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "join",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "7b3bd18e7d407ff0",
+      "samples": [],
+      "sql": "SELECT \"mediatype\".\"Name\" AS \"media type\", AVG(\"track\".\"Milliseconds\") AS \"average track length milliseconds\" FROM \"Track\" AS \"track\" JOIN \"MediaType\" AS \"mediatype\" ON \"track\".\"MediaTypeId\" = \"mediatype\".\"MediaTypeId\" GROUP BY \"mediatype\".\"Name\" ORDER BY \"media type\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_countries_over_40_rev_2024",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "having",
+        "join",
+        "date-filter"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "61959c7eaa09664a",
+      "samples": [],
+      "sql": "SELECT \"customer\".\"Country\" AS \"country\", SUM(\"invoice\".\"Total\") AS \"totalrevenue\" FROM \"Invoice\" AS \"invoice\" JOIN \"Customer\" AS \"customer\" ON \"invoice\".\"CustomerId\" = \"customer\".\"CustomerId\" WHERE EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2024 GROUP BY \"customer\".\"Country\" HAVING SUM(\"invoice\".\"Total\") > 40 LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_quarterly_revenue_2025",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "trend",
+        "timebucket",
+        "date-filter"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "unstable_answer",
+      "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+      "blocked": null,
+      "blocked_sql": "SELECT STRFTIME('%Y-Q' || ((CAST(STRFTIME('%m', \"invoice\".\"InvoiceDate\") AS INT) - 1) / 3 + 1), \"invoice\".\"InvoiceDate\") AS \"quarter\", SUM(\"invoice\".\"Total\") AS \"totalrevenue\" FROM \"Invoice\" AS \"invoice\" WHERE STRFTIME('%Y', \"invoice\".\"InvoiceDate\") = '2025' GROUP BY STRFTIME('%Y-Q' || ((CAST(STRFTIME('%m', \"invoice\".\"InvoiceDate\") AS INT) - 1) / 3 + 1), \"invoice\".\"InvoiceDate\") ORDER BY \"quarter\" LIMIT 1000",
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_complex_invoices_canada_france_2023",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "in",
+        "date-filter",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "68719882aed6695f",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"invoice_count\" FROM \"Invoice\" AS \"invoice\" WHERE (\"invoice\".\"BillingCountry\" = 'Canada' OR \"invoice\".\"BillingCountry\" = 'France') AND EXTRACT(YEAR FROM \"invoice\".\"InvoiceDate\") = 2023 LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_acdc_album_most_tracks",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "multihop",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "efe31953f9b8d9d3",
+      "samples": [],
+      "sql": "SELECT \"album\".\"Title\" AS \"album\" FROM \"Album\" AS \"album\" JOIN \"Artist\" AS \"artist\" ON \"album\".\"ArtistId\" = \"artist\".\"ArtistId\" JOIN \"Track\" AS \"track\" ON \"album\".\"AlbumId\" = \"track\".\"AlbumId\" WHERE \"artist\".\"Name\" = 'AC/DC' GROUP BY \"album\".\"AlbumId\", \"album\".\"Title\" ORDER BY COUNT(\"track\".\"TrackId\") DESC, 1 LIMIT 1"
+    },
+    {
+      "id": "dev_complex_avg_invoice_three_countries",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "in",
+        "group"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "fab5525d37b9bf33",
+      "samples": [],
+      "sql": "SELECT \"invoice\".\"BillingCountry\" AS \"billingcountry\", AVG(\"invoice\".\"Total\") AS \"averageinvoicetotal\" FROM \"Invoice\" AS \"invoice\" WHERE \"invoice\".\"BillingCountry\" IN ('USA', 'Canada', 'Brazil') GROUP BY \"invoice\".\"BillingCountry\" ORDER BY \"BillingCountry\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_rock_revenue_share",
+      "expect": "abstain",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "known-gap"
+      ],
+      "verdict": "correct",
+      "refusal_code": "unstable_answer",
+      "detail": "declined, as expected",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "dev_complex_mom_revenue_change_2024",
+      "expect": "abstain",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "known-gap"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "answered a question it should have declined (period-over-period change needs a window or self-join)",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": null,
+      "samples": [],
+      "sql": "SELECT STRFTIME('%Y-%m', \"invoice\".\"InvoiceDate\") AS \"yearmonth\", SUM(\"invoice\".\"Total\") AS \"revenue\" FROM \"Invoice\" AS \"invoice\" WHERE STRFTIME('%Y', \"invoice\".\"InvoiceDate\") = '2024' GROUP BY STRFTIME('%Y-%m', \"invoice\".\"InvoiceDate\") ORDER BY \"yearmonth\" LIMIT 1000"
+    },
+    {
+      "id": "dev_complex_above_average_customers",
+      "expect": "answer",
+      "tags": [
+        "complex",
+        "dev-generated",
+        "known-gap"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "unstable_answer",
+      "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+      "blocked": "right",
+      "blocked_sql": "SELECT \"invoice\".\"CustomerId\" AS \"customerid\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"CustomerId\" HAVING SUM(\"invoice\".\"Total\") > (SELECT AVG(\"_0\".\"customer_total\") AS \"_col_0\" FROM (SELECT SUM(\"invoice\".\"Total\") AS \"customer_total\" FROM \"Invoice\" AS \"invoice\" GROUP BY \"invoice\".\"CustomerId\") AS \"_0\") LIMIT 1000",
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    }
+  ]
+}

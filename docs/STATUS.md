@@ -33,6 +33,8 @@ with the generic prompt + `averaged_per_other_entity` guard (1 repeat; see item 
 
 ## Plan: beat Genie on trust, measured
 
+**Order of work:** [PLAN.md](PLAN.md). This section keeps the history and results.
+
 **Goal:** on one real domain, with equal curation effort, Secure Query is wrong
 measurably less often than Databricks Genie, at an answer-rate users accept.
 
@@ -371,7 +373,40 @@ Stronger model, same gate (gpt-4.1-2025-04-14 writes and re-reads):
 | Spider dev 400 | gpt-4.1 | 76.0% | 11.3% | 12.8% | 87.1% |
 
 Within run-to-run noise on both suites at several times the cost: the larger
-model of the same family is not the lever. Results:
+model of the same family is not the lever.
+
+**Regression set (PLAN.md Step 1).** First run: on Chinook dev the gate blocked
+11 right answers. Cause: ties at the LIMIT boundary — two readings with
+identical SQL returned different tied rows, because DuckDB orders ties
+arbitrarily. The kernel now appends every output column as a final ORDER BY
+key when the model writes ORDER BY … LIMIT (`ORDER BY n DESC, 1, 2`), so the
+same query returns the same rows every time. That is also a stability fix for
+users. Same day, SQL path, gpt-4.1-mini, guards (old code) vs gate + tie-break:
+
+| Suite | Guards: right / wrong / abstain | Gate: right / wrong / abstain |
+|-------|--------------------------------|-------------------------------|
+| Chinook holdout (12, 3 repeats) | 9 / 3 / 0 | 9 / 3 / 0 |
+| Chinook dev (134) | 125 / 5 / 4 | 125 / 6 / 3 |
+| Northwind (36) | 21 / 8 / 7 | 28 / 8 / 0 |
+| Northwind dev (10) | 5 / 2 / 3 | 6 / 3 / 1 |
+| Spider dev 400 | 275 / 43 / 69 (2026-10-06) | 312 / 42 / 46 |
+
+Adjudicated by hand:
+- Holdout: all 3 "wrong" are right answers on the SQL path — "Rock" and "Iron
+  Maiden" without a count the question does not ask for ("just the top one"),
+  and average revenue per customer = 39.47, exact (the holdout expects a
+  decline because the LQP cannot compute it). **0 real wrong.** Holdout left
+  frozen; this is a known scoring gap for the SQL path.
+- Gate vs guards on the other suites: new wrongs are `mom_revenue_change_2024`
+  (real: lists monthly revenue, does not compute the change), `product_count`
+  (ambiguous: 69 active vs 77 including discontinued) and
+  `nwdev_country_fewest_orders` (right answer, count column missing). The gate
+  fixed one real wrong the guards let through (`top_category_by_revenue`, now
+  declined). **Real wrongs equal; +9 right; Spider unchanged.** The gate still
+  costs 2 right answers on Chinook dev (COUNT vs COUNT DISTINCT readings).
+
+Results: `baselines/sqlpath-*-2026-10-11.json`,
+[Spider gate + tie-break](baselines/spider-dev400-gpt41mini-gate-tiebreak-2026-10-11.json). Results:
 [BIRD](baselines/bird-mini-dev-gpt41-sc2gate-2026-10-11.json),
 [Spider](baselines/spider-dev400-gpt41-sc2gate-2026-10-11.json).
 

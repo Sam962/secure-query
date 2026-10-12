@@ -1,0 +1,218 @@
+{
+  "generated_at": "2026-10-12T02:40:38+00:00",
+  "provider": "openai",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "model_digest": null,
+  "summary": {
+    "total": 10,
+    "correct": 5,
+    "wrong": 2,
+    "unsafe": 0,
+    "abstained": 3,
+    "error": 0,
+    "accuracy": 0.5,
+    "wrong_rate": 0.2,
+    "wrong_rate_ci95": [
+      0.056680947980693314,
+      0.5098431532792765
+    ],
+    "abstain_rate": 0.3,
+    "answerable": 10,
+    "answer_rate": 0.5,
+    "over_refusal_rate": 0.3,
+    "by_tag": {
+      "count-entity": {
+        "correct": 3,
+        "abstained": 2,
+        "wrong": 1
+      },
+      "scalar": {
+        "correct": 4,
+        "abstained": 2,
+        "wrong": 1
+      },
+      "topn": {
+        "correct": 1,
+        "wrong": 1,
+        "abstained": 1
+      },
+      "unordered-limit": {
+        "correct": 2,
+        "wrong": 1,
+        "abstained": 1
+      }
+    },
+    "by_refusal_code": {
+      "dropped_concept": {
+        "blocked_wrong": 1
+      },
+      "dropped_filter": {
+        "blocked_wrong": 1,
+        "blocked_right": 1
+      }
+    },
+    "consistency": 1.0
+  },
+  "cases": [
+    {
+      "id": "nwdev_top_shipper_by_freight",
+      "expect": "answer",
+      "tags": [
+        "unordered-limit",
+        "topn"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f764997704cae92d",
+      "samples": [],
+      "sql": "SELECT \"shippers\".\"CompanyName\" AS \"shipper\", SUM(\"orders\".\"Freight\") AS \"total_freight\" FROM \"Orders\" AS \"orders\" JOIN \"Shippers\" AS \"shippers\" ON \"orders\".\"ShipVia\" = \"shippers\".\"ShipperID\" GROUP BY \"shippers\".\"CompanyName\" ORDER BY \"total_freight\" DESC LIMIT 1"
+    },
+    {
+      "id": "nwdev_smallest_freight",
+      "expect": "answer",
+      "tags": [
+        "unordered-limit",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "fa97f9d475d2592d",
+      "samples": [],
+      "sql": "SELECT MIN(\"orders\".\"Freight\") AS \"smallestfreightcharge\" FROM \"Orders\" AS \"orders\" LIMIT 1000"
+    },
+    {
+      "id": "nwdev_category_fewest_products",
+      "expect": "answer",
+      "tags": [
+        "unordered-limit",
+        "topn"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [('Produce', 5)], got [('Produce',)]",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "f94467760bf4bc6b",
+      "samples": [],
+      "sql": "SELECT \"categories\".\"CategoryName\" AS \"categoryname\" FROM \"Categories\" AS \"categories\" LEFT JOIN \"Products\" AS \"products\" ON \"categories\".\"CategoryID\" = \"products\".\"CategoryID\" GROUP BY \"categories\".\"CategoryName\" ORDER BY COUNT(\"products\".\"ProductID\") ASC LIMIT 1"
+    },
+    {
+      "id": "nwdev_country_fewest_orders",
+      "expect": "answer",
+      "tags": [
+        "unordered-limit",
+        "topn"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_concept",
+      "detail": "The question asks about \"shipped\" (Orders.ShippedDate), which this plan never returns. Refusing rather than answering a narrower question.",
+      "blocked": "wrong",
+      "blocked_sql": "SELECT \"orders\".\"ShipCountry\" AS \"shipcountry\" FROM \"Orders\" AS \"orders\" GROUP BY \"orders\".\"ShipCountry\" ORDER BY COUNT(*) ASC LIMIT 1",
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "nwdev_supplier_count",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "53b4af107921408d",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"products\".\"SupplierID\") AS \"supplier_count\" FROM \"Products\" AS \"products\" WHERE NOT \"products\".\"SupplierID\" IS NULL LIMIT 1000"
+    },
+    {
+      "id": "nwdev_product_count_carry",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_filter",
+      "detail": "This plan filters on \"0\", which the question does not mention; no filter in this plan may add conditions the user did not ask for.",
+      "blocked": "wrong",
+      "blocked_sql": "SELECT COUNT(*) AS \"product_count\" FROM \"Products\" AS \"products\" WHERE \"products\".\"Discontinued\" = '0' LIMIT 1000",
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "nwdev_category_count",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ],
+      "verdict": "abstained",
+      "refusal_code": "dropped_filter",
+      "detail": "This plan filters on \"0\", which the question does not mention; no filter in this plan may add conditions the user did not ask for.",
+      "blocked": "right",
+      "blocked_sql": "SELECT COUNT(DISTINCT \"products\".\"CategoryID\") AS \"category_count\" FROM \"Products\" AS \"products\" WHERE \"products\".\"Discontinued\" = '0' LIMIT 1000",
+      "fingerprint": null,
+      "samples": [],
+      "sql": null
+    },
+    {
+      "id": "nwdev_shipper_count",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "207cd6d1a9c38f22",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"shippers\".\"ShipperID\") AS \"shipper_count\" FROM \"Orders\" AS \"orders\" JOIN \"Shippers\" AS \"shippers\" ON \"orders\".\"ShipVia\" = \"shippers\".\"ShipperID\" LIMIT 1000"
+    },
+    {
+      "id": "nwdev_territory_count",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ],
+      "verdict": "wrong",
+      "refusal_code": null,
+      "detail": "expected [(53,)], got [(49,)]",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "cad852eee02aca00",
+      "samples": [],
+      "sql": "SELECT COUNT(DISTINCT \"employeeterritories\".\"TerritoryID\") AS \"territory_count\" FROM \"EmployeeTerritories\" AS \"employeeterritories\" LIMIT 1000"
+    },
+    {
+      "id": "nwdev_order_line_count",
+      "expect": "answer",
+      "tags": [
+        "count-entity",
+        "scalar"
+      ],
+      "verdict": "correct",
+      "refusal_code": null,
+      "detail": "matches reference",
+      "blocked": null,
+      "blocked_sql": null,
+      "fingerprint": "2940255f8e2a880d",
+      "samples": [],
+      "sql": "SELECT COUNT(*) AS \"order_line_count\" FROM \"Order Details\" AS \"order details\" LIMIT 1000"
+    }
+  ]
+}
