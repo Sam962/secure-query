@@ -323,6 +323,44 @@ message. No triggers on Chinook dev, Northwind or Northwind dev. Cost: one extra
 LLM call, only on these questions (~0.7%). Turning the refusals into right
 answers would need stored values in the prompt (per-catalog opt-in, not done).
 
+### Self-consistency replaces the keyword guards on the SQL path — 2026-10-11
+
+BIRD mini-dev (446 answerable questions, 10 databases, evidence hint appended)
+showed the shared semantic guards net-negative on the SQL path: in the best
+tuned version `dropped_concept` stopped 37 wrong / cost 48 right and
+`dropped_filter` 27 / 39; Spider dev had the same sign (32 right / 11 wrong
+blocked). The SQL path now plans every question twice (second reading at
+temperature 0.7), runs both, and refuses with `unstable_answer` when the answers
+differ. One extra LLM call and probe per question; no keyword rules. The LQP
+path keeps its guards.
+
+Offline, from a guards-off run with 4 extra samples ([evidence](baselines/bird-mini-dev-gpt41mini-noguard-sc4-2026-10-11.json)):
+a perfect selector over 5 candidates reaches 54% vs 52% for the first one, so
+picking among samples has no headroom; agreement is the signal (2 of 2 agree:
+70% precision, 3 or 5 unanimous: 71%). Guards on top of agreement cost 17
+points of accuracy for +3 points of precision.
+
+gpt-4.1-mini-2025-04-14, live:
+
+| Suite | Policy | Right | Wrong | Abstain | Precision |
+|-------|--------|-------|-------|---------|-----------|
+| BIRD mini-dev | guards (hint-stripped) | 32.5% | 16.8% | 47.5% | 65.9% |
+| BIRD mini-dev | **2 readings agree** | **47.3%** | 22.0% | 30.7% | **68.3%** |
+| Spider dev 400 | guards (2026-10-06) | 68.8% | 10.8% | 17.3% | 86.5% |
+| Spider dev 400 | **2 readings agree** | **77.8%** | 10.3% | 12.0% | **88.4%** |
+
+Results: [BIRD guards](baselines/bird-mini-dev-gpt41mini-guards-2026-10-11.json),
+[BIRD gate](baselines/bird-mini-dev-gpt41mini-sc2gate-2026-10-11.json),
+[Spider gate](baselines/spider-dev400-gpt41mini-sc2gate-2026-10-11.json).
+
+- On BIRD the gate stopped 37 wrong / cost 22 right; on Spider 4 / 13 — most
+  of the Spider gain is removing the guards.
+- BIRD's wrong rate is unadjudicated; sampled wrongs mix grader artefacts
+  (name split across columns, extra rank column) with real errors the model
+  makes consistently, which no agreement check can catch.
+- The 2026-10-07 claim that `dropped_filter` stops the 'yes' retry no longer
+  holds on the SQL path; that case now depends on the gate.
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).

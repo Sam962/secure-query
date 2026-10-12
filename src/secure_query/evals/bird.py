@@ -25,7 +25,7 @@ from sqlglot import exp
 
 from secure_query.demo import DATA_DIR
 from secure_query.evals.accuracy import LiveCase
-from secure_query.evals.spider import _column_type, _coerce, _DUCK_TYPES
+from secure_query.evals.spider import _DUCK_TYPES, _coerce, _column_type
 from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
 
 BIRD_URL = "https://bird-bench.oss-cn-beijing.aliyuncs.com/minidev.zip"

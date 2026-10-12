@@ -267,20 +267,39 @@ def test_row_filter_on_unrelated_table_is_rejected() -> None:
     assert "sql.row_filter_unreachable" in {e.code for e in info.value.errors}
 
 
-def test_sql_path_runs_semantic_guards_and_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sql_path_refuses_when_two_readings_disagree() -> None:
     import json
 
     from secure_query.planner import MockLLMClient
     from secure_query.planner.sql_plan import plan_sql_question
 
-    dropped = plan_sql_question(
-        "How many customers live in Brazil?",
-        CATALOG,
-        MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})]),
-    )
-    assert dropped.clarify_code == "dropped_filter" and dropped.blocked is not None
+    customers = json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+    invoices = json.dumps({"sql": "SELECT COUNT(*) FROM Invoice"})
+
+    def probe(query):
+        return [(59,)] if "Customer" in query.sql else [(412,)]
+
+    def plan(check_sql: str):
+        return plan_sql_question(
+            "How many customers are there?",
+            CATALOG,
+            MockLLMClient([customers]),
+            value_probe=probe,
+            check_client=MockLLMClient([check_sql]),
+        )
+
+    split = plan(invoices)
+    assert split.clarify_code == "unstable_answer" and split.blocked is not None
+    agreed = plan(customers)
+    assert agreed.status == "ok"
+
+
+def test_sql_path_applies_row_filters() -> None:
+    import json
 
     from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
 
     usa = Eq(
         op="eq",

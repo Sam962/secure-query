@@ -28,6 +28,7 @@ from secure_query.planner import (
     ollama_model_digest,
     resolve_llm_settings,
 )
+from secure_query.planner.llm import CHECK_TEMPERATURE
 
 
 def _client(provider: str | None, temperature: float = 0.0):
@@ -181,6 +182,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     try:
         client = _client(args.provider)
         sample_client = _client(args.provider, args.sample_temperature) if args.samples else None
+        check_client = _client(args.provider, CHECK_TEMPERATURE) if args.planner == "sql" else None
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return -1
@@ -231,7 +233,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         return run_live_case(
             case, catalog, client, db_path,
             repeats=args.repeat, samples=args.samples, sample_client=sample_client,
-            planner=planner,
+            planner=planner, check_client=check_client,
         )
 
     from concurrent.futures import ThreadPoolExecutor

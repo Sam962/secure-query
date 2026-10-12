@@ -48,6 +48,7 @@ from secure_query.planner.clarify import (
     looks_like_sql_statement,
     question_too_long,
 )
+from secure_query.planner.llm import get_check_client
 from secure_query.planner.retrieve import prompt_catalog_and_hint, retrieve_k_from_env, retrieve_tables
 from secure_query.planner.sql_plan import plan_sql_question
 from secure_query.planner.suggest import SuggestedQuestion, suggest_questions
@@ -202,6 +203,7 @@ def ask(
             value_probe=lambda probe: execute_compiled_query(
                 probe, config, principal=principal, options=_PROBE_OPTIONS
             ).rows,
+            check_client=None if client else get_check_client(),
         )
     else:
         planned = plan_question(

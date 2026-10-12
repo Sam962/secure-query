@@ -7,22 +7,15 @@ every column against the catalog, enforces policy and emits the SQL that runs.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Sequence
+from typing import Any
 
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import Filter
-from secure_query.kernel.sql_validate import SqlValidationFailed, ValidatedSql, validate_sql
-from secure_query.planner.clarify import ClarifyCode
-from secure_query.planner.guard import (
-    Concept,
-    lists_instead_of_count,
-    missing_average,
-    missing_concepts,
-    ranked_list_for_singular_question,
-    unmatched_values,
-)
+from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
@@ -83,34 +76,29 @@ def _parse(raw: str) -> dict:
     return data
 
 
-def sql_refusal(
-    question: str, validated: ValidatedSql, catalog: Catalog
-) -> tuple[ClarifyCode, str] | None:
-    """The LogicalPlan path's semantic guards, applied to what the validated SQL reads.
+def answer_fingerprint(rows: Sequence[tuple[Any, ...]]) -> str:
+    """Hash of the rows ignoring row and column order, floats rounded: equal answers agree."""
 
-    Arithmetic refusals (percent, growth, ratios) do not apply: SQL can compute them.
-    """
-    used = {Concept(table=t) for t in validated.tables}
-    used |= {Concept(table=t, column=c) for t, c in validated.columns}
-    numbers = list(validated.filter_numbers)
-    singular_hit = ranked_list_for_singular_question(question, validated.limit)
-    checks: tuple[tuple[ClarifyCode, str | None], ...] = (
-        singular_hit or ("dropped_concept", None),
-        ("dropped_concept", missing_concepts(question, used, catalog)),
-        ("dropped_concept", missing_average(question, averaged="avg" in validated.aggregates)),
-        ("dropped_concept", lists_instead_of_count(question, aggregated=bool(validated.aggregates))),
-        (
-            "dropped_filter",
-            unmatched_values(
-                question,
-                [*validated.filter_strings, *(f"{n:g}" for n in numbers)],
-                list(validated.filter_strings),
-                numbers,
-                catalog,
-            ),
-        ),
-    )
-    return next(((code, msg) for code, msg in checks if msg is not None), None)
+    def cell(v: Any) -> str:
+        return f"{float(v):.4f}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
+
+    canon = sorted("|".join(sorted(cell(c) for c in row)) for row in rows)
+    return hashlib.sha256("\n".join(canon).encode()).hexdigest()[:16]
+
+
+_UNSTABLE_MESSAGE = (
+    "Two independent readings of this question returned different answers, so I won't "
+    "guess. Name the exact measure, filters or time period and ask again."
+)
+
+
+def _same_answer(probe: ValueProbe, first: Any, second: Any) -> bool:
+    if second is None:
+        return False
+    try:
+        return answer_fingerprint(probe(first)) == answer_fingerprint(probe(second))
+    except Exception:  # noqa: BLE001 — a query that cannot run is not a confirmed answer
+        return False
 
 
 class _NoStoredValue(Exception):
@@ -126,16 +114,21 @@ def plan_sql_question(
     *,
     max_repairs: int = 1,
     row_filters: Sequence[Filter] = (),
-    guard: bool = True,
     prompt_catalog: Catalog | None = None,
     relevant_tables: Sequence[str] = (),
     value_probe: ValueProbe | None = None,
+    check_client: LLMClient | None = None,
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
 
     With `value_probe`, string literals are grounded against stored values first, and a
     literal no stored value equals costs the repair round (the value is named, stored
     values are not). If the model keeps it, the empty answer stands.
+
+    With `check_client` (a sampling client) and `value_probe`, the question is planned a
+    second time independently and both queries are run: different answers mean the model
+    is guessing, so it refuses instead (self-consistency; measured on BIRD it beats the
+    keyword guards on both answer rate and precision).
     """
     messages = [
         {"role": "system", "content": sql_system_prompt(catalog.sql_dialect)},
@@ -181,20 +174,29 @@ def plan_sql_question(
                         for table, column, value in missing
                     ]
                 )
-            refusal = sql_refusal(question, validated, catalog) if guard else None
-            if refusal is not None:
-                code, message = refusal
-                return PlannerResult(
-                    status="clarify",
-                    question=question,
-                    attempts=attempt,
-                    errors=errors,
-                    clarify_message=message,
-                    raw_responses=raw_responses,
-                    refused=True,
-                    clarify_code=code,
-                    blocked=validated.compiled,
+            if check_client is not None and value_probe is not None:
+                second = plan_sql_question(
+                    question,
+                    catalog,
+                    check_client,
+                    max_repairs=max_repairs,
+                    row_filters=row_filters,
+                    prompt_catalog=prompt_catalog,
+                    relevant_tables=relevant_tables,
+                    value_probe=value_probe,
                 )
+                if not _same_answer(value_probe, validated.compiled, second.compiled):
+                    return PlannerResult(
+                        status="clarify",
+                        question=question,
+                        attempts=attempt,
+                        errors=errors,
+                        clarify_message=_UNSTABLE_MESSAGE,
+                        raw_responses=raw_responses,
+                        refused=True,
+                        clarify_code="unstable_answer",
+                        blocked=validated.compiled,
+                    )
             return PlannerResult(
                 status="ok",
                 question=question,
