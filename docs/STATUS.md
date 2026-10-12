@@ -33,6 +33,8 @@ with the generic prompt + `averaged_per_other_entity` guard (1 repeat; see item 
 
 ## Plan: beat Genie on trust, measured
 
+**Order of work:** [PLAN.md](PLAN.md). This section keeps the history and results.
+
 **Goal:** on one real domain, with equal curation effort, Secure Query is wrong
 measurably less often than Databricks Genie, at an answer-rate users accept.
 
@@ -322,6 +324,119 @@ wrong 15 → **11/400 (2.75%)**. Legitimately empty questions on Chinook
 message. No triggers on Chinook dev, Northwind or Northwind dev. Cost: one extra
 LLM call, only on these questions (~0.7%). Turning the refusals into right
 answers would need stored values in the prompt (per-catalog opt-in, not done).
+
+### Self-consistency replaces the keyword guards on the SQL path — 2026-10-11
+
+BIRD mini-dev (446 answerable questions, 10 databases, evidence hint appended)
+showed the shared semantic guards net-negative on the SQL path: in the best
+tuned version `dropped_concept` stopped 37 wrong / cost 48 right and
+`dropped_filter` 27 / 39; Spider dev had the same sign (32 right / 11 wrong
+blocked). The SQL path now plans every question twice (second reading at
+temperature 0.7), runs both, and refuses with `unstable_answer` when the answers
+differ. One extra LLM call and probe per question; no keyword rules. The LQP
+path keeps its guards.
+
+Offline, from a guards-off run with 4 extra samples ([evidence](baselines/bird-mini-dev-gpt41mini-noguard-sc4-2026-10-11.json)):
+a perfect selector over 5 candidates reaches 54% vs 52% for the first one, so
+picking among samples has no headroom; agreement is the signal (2 of 2 agree:
+70% precision, 3 or 5 unanimous: 71%). Guards on top of agreement cost 17
+points of accuracy for +3 points of precision.
+
+gpt-4.1-mini-2025-04-14, live:
+
+| Suite | Policy | Right | Wrong | Abstain | Precision |
+|-------|--------|-------|-------|---------|-----------|
+| BIRD mini-dev | guards (hint-stripped) | 32.5% | 16.8% | 47.5% | 65.9% |
+| BIRD mini-dev | **2 readings agree** | **47.3%** | 22.0% | 30.7% | **68.3%** |
+| Spider dev 400 | guards (2026-10-06) | 68.8% | 10.8% | 17.3% | 86.5% |
+| Spider dev 400 | **2 readings agree** | **77.8%** | 10.3% | 12.0% | **88.4%** |
+
+Results: [BIRD guards](baselines/bird-mini-dev-gpt41mini-guards-2026-10-11.json),
+[BIRD gate](baselines/bird-mini-dev-gpt41mini-sc2gate-2026-10-11.json),
+[Spider gate](baselines/spider-dev400-gpt41mini-sc2gate-2026-10-11.json).
+
+- On BIRD the gate stopped 37 wrong / cost 22 right; on Spider 4 / 13 — most
+  of the Spider gain is removing the guards.
+- BIRD's wrong rate is unadjudicated; sampled wrongs mix grader artefacts
+  (name split across columns, extra rank column) with real errors the model
+  makes consistently, which no agreement check can catch.
+- The 2026-10-07 claim that `dropped_filter` stops the 'yes' retry no longer
+  holds on the SQL path; that case now depends on the gate.
+
+Stronger model, same gate (gpt-4.1-2025-04-14 writes and re-reads):
+
+| Suite | Model | Right | Wrong | Abstain | Precision |
+|-------|-------|-------|-------|---------|-----------|
+| BIRD mini-dev | gpt-4.1-mini | 47.3% | 22.0% | 30.7% | 68.3% |
+| BIRD mini-dev | gpt-4.1 | 48.9% | 20.4% | 30.7% | 70.6% |
+| Spider dev 400 | gpt-4.1-mini | 77.8% | 10.3% | 12.0% | 88.4% |
+| Spider dev 400 | gpt-4.1 | 76.0% | 11.3% | 12.8% | 87.1% |
+
+Within run-to-run noise on both suites at several times the cost: the larger
+model of the same family is not the lever.
+
+**Regression set (PLAN.md Step 1).** First run: on Chinook dev the gate blocked
+11 right answers. Cause: ties at the LIMIT boundary — two readings with
+identical SQL returned different tied rows, because DuckDB orders ties
+arbitrarily. The kernel now appends every output column as a final ORDER BY
+key when the model writes ORDER BY … LIMIT (`ORDER BY n DESC, 1, 2`), so the
+same query returns the same rows every time. That is also a stability fix for
+users. Same day, SQL path, gpt-4.1-mini, guards (old code) vs gate + tie-break:
+
+| Suite | Guards: right / wrong / abstain | Gate: right / wrong / abstain |
+|-------|--------------------------------|-------------------------------|
+| Chinook holdout (12, 3 repeats) | 9 / 3 / 0 | 9 / 3 / 0 |
+| Chinook dev (134) | 125 / 5 / 4 | 125 / 6 / 3 |
+| Northwind (36) | 21 / 8 / 7 | 28 / 8 / 0 |
+| Northwind dev (10) | 5 / 2 / 3 | 6 / 3 / 1 |
+| Spider dev 400 | 275 / 43 / 69 (2026-10-06) | 312 / 42 / 46 |
+
+Inspected (one rater, Claude; not a two-rater adjudication):
+- Holdout: the SQL path scores 3/12 wrong under both versions. The 3 answers
+  look right on inspection — "Rock" and "Iron Maiden" without a count the
+  question does not ask for ("just the top one"), and average revenue per
+  customer = 39.47, exact (the holdout expects a decline because the LQP
+  cannot compute it). That is not an adjudicated zero: as scored, the SQL path
+  does not meet the holdout gate. Holdout left frozen.
+- Gate vs guards on the other suites: new wrongs are `mom_revenue_change_2024`
+  (real: lists monthly revenue, does not compute the change), `product_count`
+  (ambiguous: 69 active vs 77 including discontinued) and
+  `nwdev_country_fewest_orders` (right answer, count column missing). The gate
+  fixed one real wrong the guards let through (`top_category_by_revenue`, now
+  declined). **Real wrongs equal; +9 right; Spider unchanged.** The gate still
+  costs 2 right answers on Chinook dev (COUNT vs COUNT DISTINCT readings).
+
+**Step 2 baseline — Spider test 400, adjudicated (PLAN.md).** Same 400 seeded
+test questions as 2026-10-07, SQL path with gate + tie-break, gpt-4.1-mini,
+3 repeats (verdict = worst repeat). **78.8% right (315), 8.25% wrong (33),
+13.0% abstained (52).** Flip rate **5.5%** (22 of 400 questions where the
+answer's rows, a refusal or an error changed across the 3 repeats).
+
+All 33 wrong answers adjudicated ([method and files](adjudication/README.md)):
+14 reuse a 2026-10-07 label (same rows), 19 rated by gpt-5 (blind) and a
+second rater — Claude, not a human; a human pass on those 19 is open.
+Conservative merge, nothing dropped:
+
+| | Count | Share | 95% CI |
+|--|-------|-------|--------|
+| **Real errors** | **11** | **2.75%** | **1.5–4.9%** |
+| Ambiguous, defensible reading | 15 | 3.75% | — |
+| Benchmark faults (system right) | 7 | 1.75% | — |
+
+On 2026-10-07 (keyword guards) the same set was 296 right and 15 real errors
+(3.75%, CI 2.3–6.1%); the tie rule was not then in the rubric, so the two are
+close but not identical measurements.
+
+**'yes' retry:** both questions (`test_1438`, `test_1439`, real_estate_rentals)
+now return a wrong answer on all 3 repeats — `is_buyer = 'yes'` against stored
+1, count 0 instead of 11. Both are among the 11 real errors. `dropped_filter`
+used to refuse them; the gate cannot, because both readings make the same
+mistake.
+
+Results: `baselines/sqlpath-*-2026-10-11.json`,
+[Spider gate + tie-break](baselines/spider-dev400-gpt41mini-gate-tiebreak-2026-10-11.json). Results:
+[BIRD](baselines/bird-mini-dev-gpt41-sc2gate-2026-10-11.json),
+[Spider](baselines/spider-dev400-gpt41-sc2gate-2026-10-11.json).
 
 ### Phase B — real domain (needs a design partner)
 

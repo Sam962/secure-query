@@ -34,7 +34,7 @@ from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
 from secure_query.planner import PlannerError, plan_question
-from secure_query.planner.sql_plan import plan_sql_question
+from secure_query.planner.sql_plan import answer_fingerprint, plan_sql_question
 
 CORRECT = "correct"
 WRONG = "wrong"
@@ -107,6 +107,15 @@ class LiveCaseResult:
         return CORRECT
 
     @property
+    def outcomes(self) -> list[str]:
+        """What each repeat showed the user: the answer's rows (fingerprint), a refusal or an error."""
+        return [a.fingerprint or a.verdict for a in self.attempts]
+
+    @property
+    def flipped(self) -> bool:
+        return len(set(self.outcomes)) > 1
+
+    @property
     def consistency(self) -> float:
         """Share of repeats that produced the most common plan shape."""
         shapes = [a.shape for a in self.attempts if a.shape]
@@ -168,13 +177,16 @@ def run_live_case(
     samples: int = 0,
     sample_client: Any = None,
     planner: Any = None,
+    check_client: Any = None,
 ) -> LiveCaseResult:
     """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question."""
     planner = planner or plan_question
     if planner is plan_sql_question:
         if case.sql_reference:
             case = replace(case, expect="answer", reference_sql=case.sql_reference)
-        planner = partial(plan_sql_question, value_probe=partial(_probe, db_path))
+        planner = partial(
+            plan_sql_question, value_probe=partial(_probe, db_path), check_client=check_client
+        )
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
         try:
@@ -278,7 +290,7 @@ def _run_once(
 
     expected = _reference_rows(case, db_path)
     actual = list(executed.rows)
-    fingerprint = _fingerprint(actual)
+    fingerprint = answer_fingerprint(actual)
     if _matches(case, actual, expected, db_path):
         return Attempt(CORRECT, "matches reference", shape, compiled.sql, fingerprint=fingerprint)
     return Attempt(
@@ -298,7 +310,7 @@ def _judge(case: LiveCase, compiled: Any, db_path: Path) -> tuple[str | None, st
         return None, None
     actual = list(executed.rows)
     verdict = "right" if _matches(case, actual, _reference_rows(case, db_path), db_path) else "wrong"
-    return verdict, _fingerprint(actual)
+    return verdict, answer_fingerprint(actual)
 
 
 def _matches(
@@ -318,17 +330,6 @@ def _matches(
 
 def _probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:
     return execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=50, timeout_seconds=5.0)).rows
-
-
-def _fingerprint(rows: list[tuple[Any, ...]]) -> str:
-    """Hash of the rows ignoring row and column order, floats rounded: equal answers agree."""
-    import hashlib
-
-    def cell(v: Any) -> str:
-        return f"{float(v):.4f}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
-
-    canon = sorted("|".join(sorted(cell(c) for c in row)) for row in rows)
-    return hashlib.sha256("\n".join(canon).encode()).hexdigest()[:16]
 
 
 def _pii_names(catalog: Catalog) -> set[str]:
@@ -582,6 +583,7 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
     verdicts = Counter(r.verdict for r in results)
     total = len(results) or 1
     consistencies = [r.consistency for r in results if r.consistency]
+    repeated = [r for r in results if len(r.attempts) > 1]
     wrong_total = verdicts[WRONG] + verdicts[UNSAFE]
     wrong_low, wrong_high = wilson_interval(wrong_total, len(results))
 
@@ -623,4 +625,5 @@ def summarise(results: list[LiveCaseResult]) -> dict[str, Any]:
         "by_tag": {tag: dict(counts) for tag, counts in sorted(by_tag.items())},
         "by_refusal_code": {code: dict(c) for code, c in sorted(by_code.items())},
         "consistency": sum(consistencies) / len(consistencies) if consistencies else 0.0,
+        "flip_rate": sum(r.flipped for r in repeated) / len(repeated) if repeated else None,
     }

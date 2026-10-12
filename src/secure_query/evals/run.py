@@ -28,6 +28,7 @@ from secure_query.planner import (
     ollama_model_digest,
     resolve_llm_settings,
 )
+from secure_query.planner.llm import CHECK_TEMPERATURE
 
 
 def _client(provider: str | None, temperature: float = 0.0):
@@ -160,6 +161,14 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         from secure_query.evals.spider import load_spider
 
         items = load_spider(args.suite.removeprefix("spider-"))
+    elif args.suite == "bird-mini-dev":
+        from secure_query.evals.bird import load_bird_mini_dev
+
+        items = load_bird_mini_dev()
+    elif args.suite and args.suite.startswith("bird-mini-dev-"):
+        from secure_query.evals.bird import load_bird_mini_dev
+
+        items = load_bird_mini_dev(difficulty=args.suite.removeprefix("bird-mini-dev-"))
     elif args.suite:
         catalog, db_path, suite = _load_domain_suite(args.suite)
         items = [(case, catalog, db_path) for case in suite]
@@ -173,6 +182,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     try:
         client = _client(args.provider)
         sample_client = _client(args.provider, args.sample_temperature) if args.samples else None
+        check_client = _client(args.provider, CHECK_TEMPERATURE) if args.planner == "sql" else None
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return -1
@@ -223,7 +233,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         return run_live_case(
             case, catalog, client, db_path,
             repeats=args.repeat, samples=args.samples, sample_client=sample_client,
-            planner=planner,
+            planner=planner, check_client=check_client,
         )
 
     from concurrent.futures import ThreadPoolExecutor
@@ -264,6 +274,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         print(f"errors        {stats['error']}")
     if args.repeat > 1:
         print(f"consistency   {stats['consistency']:.0%}  (same plan shape across repeats)")
+        print(f"flip rate     {stats['flip_rate']:.1%}  (answer, refusal or error changed across repeats)")
     if stats["by_refusal_code"]:
         print(
             "refusals by control   (correct = should decline; on answerable cases the "
@@ -308,6 +319,25 @@ def _load_domain_suite(name_or_path: str) -> tuple[Catalog, Path, list]:
     return catalog, DATA_DIR / meta["database"], load_live_suite(suite_path)
 
 
+def _case_report(r) -> dict:
+    # The repeat that decided the verdict (the worst one) is the evidence to adjudicate.
+    decisive = next((a for a in r.attempts if a.verdict == r.verdict), None)
+    return {
+        "id": r.case.case_id,
+        "expect": r.case.expect,
+        "tags": list(r.case.tags),
+        "verdict": r.verdict,
+        "refusal_code": next((a.refusal_code for a in reversed(r.attempts) if a.refusal_code), None),
+        "detail": decisive.detail if decisive else None,
+        "blocked": decisive.blocked if decisive else None,
+        "blocked_sql": decisive.blocked_sql if decisive else None,
+        "fingerprint": decisive.fingerprint if decisive else None,
+        "outcomes": r.outcomes,
+        "samples": r.samples,
+        "sql": decisive.sql if decisive else None,
+    }
+
+
 def _write_json_report(path, stats, results, *, provider, model, digest) -> None:
     import json
     from datetime import datetime, timezone
@@ -319,24 +349,7 @@ def _write_json_report(path, stats, results, *, provider, model, digest) -> None
         "model": model,
         "model_digest": digest,
         "summary": stats,
-        "cases": [
-            {
-                "id": r.case.case_id,
-                "expect": r.case.expect,
-                "tags": list(r.case.tags),
-                "verdict": r.verdict,
-                "refusal_code": next(
-                    (a.refusal_code for a in reversed(r.attempts) if a.refusal_code), None
-                ),
-                "detail": r.attempts[-1].detail if r.attempts else None,
-                "blocked": r.attempts[-1].blocked if r.attempts else None,
-                "blocked_sql": r.attempts[-1].blocked_sql if r.attempts else None,
-                "fingerprint": r.attempts[-1].fingerprint if r.attempts else None,
-                "samples": r.samples,
-                "sql": r.attempts[-1].sql if r.attempts else None,
-            }
-            for r in results
-        ],
+        "cases": [_case_report(r) for r in results],
     }
     Path(path).write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
     print(f"wrote {path}")

@@ -172,6 +172,20 @@ def test_consistency_measures_plan_agreement() -> None:
     assert result.consistency == pytest.approx(2 / 3)
 
 
+def test_flip_rate_counts_changed_answers_and_refusals() -> None:
+    case = SUITE[0]
+    same = LiveCaseResult(case=case, attempts=[Attempt(CORRECT, "", fingerprint="r1")] * 3)
+    rows = LiveCaseResult(
+        case=case,
+        attempts=[Attempt(CORRECT, "", fingerprint="r1"), Attempt(WRONG, "", fingerprint="r2")],
+    )
+    refusal = LiveCaseResult(
+        case=case, attempts=[Attempt(CORRECT, "", fingerprint="r1"), Attempt(ABSTAINED, "")]
+    )
+    assert not same.flipped and rows.flipped and refusal.flipped
+    assert summarise([same, rows, refusal])["flip_rate"] == pytest.approx(2 / 3)
+
+
 def test_summary_separates_wrong_from_abstained() -> None:
     case = SUITE[0]
     results = [

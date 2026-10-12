@@ -13,6 +13,7 @@ ClarifyCode = Literal[
     "dropped_concept",
     "dropped_filter",
     "useless_join",
+    "unstable_answer",
     "validation_failed",
     "planner_refusal",
     "ambiguous_metric",

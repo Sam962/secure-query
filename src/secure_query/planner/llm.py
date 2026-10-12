@@ -424,3 +424,13 @@ def default_client() -> LLMClient:
 def get_client() -> LLMClient:
     """Process-wide LLM client, so the SDK connection pool is reused. cache_clear() to reset."""
     return default_client()
+
+
+CHECK_TEMPERATURE = 0.7
+
+
+@lru_cache(maxsize=1)
+def get_check_client() -> LLMClient | None:
+    """Sampling client for the self-consistency check; None without a real LLM."""
+    settings = resolve_llm_settings()
+    return None if settings is None else OpenAIClient(**settings, temperature=CHECK_TEMPERATURE)

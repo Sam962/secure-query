@@ -1,0 +1,78 @@
+{
+ "test_0064_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used a LEFT JOIN, returning invoices without shipments (extra rows), whereas the question implies listing invoices with their shipment dates (inner join as in the gold)."
+ },
+ "test_0129_bbc_channels:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“For each channel” can reasonably include channels with zero programs, so the system’s LEFT JOIN and zero counts are a valid reading while the gold only includes channels that have programs."
+ },
+ "test_0296_customers_and_orders:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify tie-breaking when multiple customers share the most orders, so returning a different top-tied customer is acceptable."
+ },
+ "test_0456_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system used DISTINCT to remove duplicate address–student pairs, and since the question does not specify handling of duplicates, this interpretation is reasonable."
+ },
+ "test_0464_cre_Students_Information_Systems:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query’s EXCEPT removes students who also have any non–most-common behaviour entries, while the question simply asks for students who got the most common result; the system’s query matches that intent (duplicates are an ambiguity about DISTINCT)."
+ },
+ "test_0504_cre_Students_Information_Systems:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for every student’s course count (including zero), but the gold uses an inner join that omits students without classes; the system correctly uses a left join and counts class_id to include 0s."
+ },
+ "test_0708_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query filters the related document to Owner='Braeden' and returns Braeden, but the question asks for owners of documents that are related to Braeden-owned documents (the opposite side), which the system query correctly retrieves."
+ },
+ "test_0711_cre_Doc_and_collections:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to exclude subsets with no documents; the system validly includes all subsets (with zero counts), while the gold query omits empty subsets."
+ },
+ "test_0813_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify deduplication or direction; returning both Boston–Newark and Newark–Boston yields duplicate identical distances, a DISTINCT-vs-duplicates ambiguity."
+ },
+ "test_0820_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question is vague about whether to return city pairs or unique city codes; the system reasonably returns distinct city codes involved in above-average-distance pairs, while the gold returns the pairs."
+ },
+ "test_1006_aan_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "It counts by paper_id (outgoing citations) instead of by cited_paper_id (incoming citations), returning the most citing paper rather than the most cited paper."
+ },
+ "test_1047_aan_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query groups by author and returns many rows of 1 (one per qualifying author) instead of a single overall count, so it does not answer the question."
+ },
+ "test_1073_conference:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question asks for every institution founded after 1800 and their staff counts without excluding zero-staff cases, so including zero-count institutions via a LEFT JOIN is a valid interpretation whereas the gold uses an INNER JOIN."
+ },
+ "test_1304_art_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system returns a different third artist (Georges Seurat instead of Picasso) for the top 3 oil painters with no justified ambiguity or tie handling, so it is incorrect."
+ },
+ "test_1773_university_rank:answered_wrong": {
+  "label": "real_error",
+  "reason": "It filtered out universities with enrollment ≤ 2000 before averaging, instead of averaging all universities per conference and then applying the > 2000 condition."
+ },
+ "test_1842_movie_2:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query returns all distinct theater names (HAVING count(*)>=1 is tautological) instead of filtering to those with a movie, while the system correctly requires a non-null Movie to match “at least one movie playing.”"
+ },
+ "test_2008_book_press:answered_wrong": {
+  "label": "real_error",
+  "reason": "The task is unambiguous (count books per press with sale amount > 1000), and the system’s result miscounts several presses compared to the correct totals (e.g., Air Liquide 2 vs 3), so it is wrong."
+ },
+ "test_2100_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The prompt could mean listing every meeting’s type and details (with duplicates) or the unique set of type–details pairs; using DISTINCT is a reasonable interpretation of “all meeting types and other details.”"
+ },
+ "test_2127_advertising_agencies:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for counts by meeting type for each client, but the gold query aggregates only by meeting_type; the system correctly groups by client_id and meeting_type."
+ }
+}

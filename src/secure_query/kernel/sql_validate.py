@@ -185,6 +185,8 @@ def validate_sql(
     )
     _inject_row_filters(tree, tables, row_filters, catalog)
     original_limit = _limit_value(tree)
+    if original_limit is not None:
+        _break_ties(tree)
     _enforce_limit(tree, catalog)
     out = tree.sql(dialect=catalog.sql_dialect)
     digest = hashlib.sha256(out.encode()).hexdigest()
@@ -580,6 +582,21 @@ def _projected_source(query: exp.Query) -> exp.Select | None:
     else:
         return None
     return target if isinstance(target, exp.Select) else None
+
+
+def _break_ties(tree: exp.Query) -> None:
+    """Order by every output column last, so LIMIT keeps the same tied rows on every run."""
+    order = tree.args.get("order")
+    if not isinstance(tree, exp.Select) or order is None:
+        return
+    order.set(
+        "expressions",
+        [
+            *order.expressions,
+            *(exp.Ordered(this=exp.Literal.number(i)) for i in range(1, len(tree.expressions) + 1)),
+        ],
+    )
+    tree.set("order", order)
 
 
 def _enforce_limit(tree: exp.Query, catalog: Catalog) -> None:

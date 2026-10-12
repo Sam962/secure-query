@@ -1,0 +1,97 @@
+{
+ "test_0064_e_commerce:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps invoices without a shipment; listing them with no date is defensible",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0129_bbc_channels:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN lists channels with 0 programs; zero-count groups are a valid reading",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0296_customers_and_orders:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "question asks for one customer; customer 3 is one of five tied at the maximum (2 orders)",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0456_cre_Students_Information_Systems:answered_wrong": {
+  "label": "real_error",
+  "reason": "DISTINCT merges two students' identical rows; 'each student' needs one row per student",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0464_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "any student with a most-common record vs gold's 'only most-common' EXCEPT; both readings plausible",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0504_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN lists students with 0 courses; zero-count groups are a valid reading",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0708_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold returns Braeden himself (Owner resolves to the Braeden-owned doc); system returns owners of related documents",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0711_cre_Doc_and_collections:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN lists subsets with 0 documents",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0813_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "distance is right (200); both directions returned, so the value appears twice",
+  "rater": "claude-opus-5-5"
+ },
+ "test_0820_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "question asks for cities; system returns distinct cities on long routes, gold returns route pairs",
+  "rater": "claude-opus-5-5"
+ },
+ "test_1006_aan_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "groups by citing paper_id, not cited_paper_id: returns the paper that cites most, not the most cited",
+  "rater": "claude-opus-5-5"
+ },
+ "test_1047_aan_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "GROUP BY author then COUNT returns 10000 rows of 1 instead of one count",
+  "rater": "claude-opus-5-5"
+ },
+ "test_1073_conference:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN lists institutions with 0 staff",
+  "rater": "claude-opus-5-5"
+ },
+ "test_1304_art_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "top 3 with painters 111 and 222 tied at 2 for third; the answer drops one side of the tie at the cutoff",
+  "rater": "claude-opus-5-5"
+ },
+ "test_1773_university_rank:answered_wrong": {
+  "label": "real_error",
+  "reason": "WHERE enrollment > 2000 filters universities before averaging; question needs HAVING AVG > 2000",
+  "rater": "claude-opus-5-5"
+ },
+ "test_1842_movie_2:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "gold counts theaters whose Movie is NULL; system correctly requires a movie",
+  "rater": "claude-opus-5-5"
+ },
+ "test_2008_book_press:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Sale_Amount compared as number by system; gold's SQLite text comparison miscounts",
+  "rater": "claude-opus-5-5"
+ },
+ "test_2100_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "DISTINCT meeting type/detail pairs vs every row; 'what are all ... types' allows distinct",
+  "rater": "claude-opus-5-5"
+ },
+ "test_2127_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "system groups by client and type as the question says 'for each client'; gold ignores client",
+  "rater": "claude-opus-5-5"
+ }
+}
