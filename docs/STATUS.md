@@ -361,6 +361,20 @@ Results: [BIRD guards](baselines/bird-mini-dev-gpt41mini-guards-2026-10-11.json)
 - The 2026-10-07 claim that `dropped_filter` stops the 'yes' retry no longer
   holds on the SQL path; that case now depends on the gate.
 
+Stronger model, same gate (gpt-4.1-2025-04-14 writes and re-reads):
+
+| Suite | Model | Right | Wrong | Abstain | Precision |
+|-------|-------|-------|-------|---------|-----------|
+| BIRD mini-dev | gpt-4.1-mini | 47.3% | 22.0% | 30.7% | 68.3% |
+| BIRD mini-dev | gpt-4.1 | 48.9% | 20.4% | 30.7% | 70.6% |
+| Spider dev 400 | gpt-4.1-mini | 77.8% | 10.3% | 12.0% | 88.4% |
+| Spider dev 400 | gpt-4.1 | 76.0% | 11.3% | 12.8% | 87.1% |
+
+Within run-to-run noise on both suites at several times the cost: the larger
+model of the same family is not the lever. Results:
+[BIRD](baselines/bird-mini-dev-gpt41-sc2gate-2026-10-11.json),
+[Spider](baselines/spider-dev400-gpt41-sc2gate-2026-10-11.json).
+
 ### Phase B — real domain (needs a design partner)
 
 9. [ ] Pick one schema + one owner; fill [OWNERSHIP.md](OWNERSHIP.md).
