@@ -41,8 +41,12 @@ Rules:
   distinct or different values.
 - For "which X has the most/least ...", return that one X (ORDER BY ... LIMIT 1).
 - For "each"/"every"/"all" groups, return every group (no small LIMIT).
-- Refuse rather than approximate: if the catalog lacks a needed table, column or value,
-  return cannot_answer instead of a nearby query.
+- Refuse only when the catalog truly lacks what the question needs: no listed table or
+  column holds it, or no listed relationship connects the tables. Then return
+  cannot_answer instead of a nearby query.
+- Do not refuse over wording or types. A column whose name is a synonym or abbreviation
+  of the question's word is that column. A number or date stored as text can be CAST.
+  Any column not marked [pii=high] may be read.
 - Never write INSERT, UPDATE, DELETE, DDL, PRAGMA, ATTACH, COPY or table functions.
 """
 
