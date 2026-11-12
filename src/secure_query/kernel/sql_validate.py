@@ -238,13 +238,24 @@ def validate_sql(
                 )
                 continue
             spec_table = base.get(column.table)
-            if spec_table is None:
-                if (
-                    column.table
-                    and column.table not in derived_aliases
-                    and column.table.lower() not in source_aliases
-                ):
+            if (
+                spec_table is None
+                and column.table
+                and column.table not in derived_aliases
+                and column.table.lower() not in source_aliases
+            ):
+                # Correlated reference: the column belongs to a source of an enclosing
+                # query. It gets the same catalog and PII checks as a local column.
+                outer = scope.parent
+                while outer is not None and column.table not in outer.sources:
+                    outer = outer.parent
+                if outer is None:
                     errors.append(_error("sql.unknown_column", column.sql()))
+                    continue
+                source = outer.sources[column.table]
+                if isinstance(source, exp.Table) and source.name.lower() in tables:
+                    spec_table = tables[source.name.lower()]
+            if spec_table is None:
                 continue  # CTE / derived output: validated in its own scope
             cols = {c.name.lower(): c for c in spec_table.columns}
             spec = cols.get(column.name.lower())

@@ -603,3 +603,55 @@ def test_databricks_version_sample_struct_are_refused() -> None:
         with pytest.raises(SqlValidationFailed) as info:
             validate_sql(sql, dbx)
         assert {e.code for e in info.value.errors} & {"sql.forbidden"}
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT COUNT(*) FROM Artist WHERE NOT EXISTS (SELECT 1 FROM Album WHERE Album.ArtistId = Artist.ArtistId)",
+        "SELECT a.Name FROM Artist a WHERE NOT EXISTS (SELECT 1 FROM Album b WHERE b.ArtistId = a.ArtistId)",
+        "SELECT COUNT(*) FROM Track t WHERE t.Milliseconds = "
+        "(SELECT MAX(t2.Milliseconds) FROM Track t2 WHERE t2.AlbumId = t.AlbumId)",
+    ],
+)
+def test_correlated_subquery_may_reference_the_outer_table(sql: str) -> None:
+    validate_sql(sql, CATALOG)
+
+
+@pytest.mark.parametrize(
+    "sql,code",
+    [
+        (
+            "SELECT c.FirstName FROM Customer c WHERE EXISTS "
+            "(SELECT 1 FROM Invoice i WHERE i.CustomerId = c.CustomerId AND c.Email LIKE 'a%')",
+            "sql.pii",
+        ),
+        (
+            "SELECT a.Name FROM Artist a WHERE EXISTS (SELECT 1 FROM Album b WHERE b.ArtistId = a.ArtistId "
+            "AND EXISTS (SELECT 1 FROM Customer k WHERE k.Email = a.Name))",
+            "sql.pii",
+        ),
+        (
+            "SELECT c.FirstName FROM Customer c WHERE EXISTS (SELECT 1 FROM Invoice i WHERE i.CustomerId = c.Nope)",
+            "sql.unknown_column",
+        ),
+        (
+            "SELECT c.FirstName FROM Customer c WHERE EXISTS (SELECT 1 FROM Invoice i WHERE i.CustomerId = zz.CustomerId)",
+            "sql.unknown_column",
+        ),
+    ],
+)
+def test_correlated_reference_gets_the_same_catalog_and_pii_checks(sql: str, code: str) -> None:
+    assert code in codes(sql)
+
+
+def test_correlated_subquery_keeps_the_outer_row_filter() -> None:
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    usa = Eq(column=ColumnRef(table_id="Customer", column_id="Country"), value=LiteralValue(type="string", value="USA"))
+    sql = validate_sql(
+        "SELECT COUNT(*) FROM Customer c WHERE EXISTS (SELECT 1 FROM Invoice i WHERE i.CustomerId = c.CustomerId)",
+        CATALOG,
+        row_filters=(usa,),
+    ).compiled.sql
+    assert sql.count("'USA'") >= 1 and '"_rf_row"."Country" = \'USA\'' in sql
