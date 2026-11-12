@@ -15,7 +15,6 @@ from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import Filter
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.kernel.trace import answer_fingerprint
-from secure_query.planner.dpc_lite import dpc_lite_check
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
@@ -193,22 +192,6 @@ def plan_sql_question(
                         blocked=validated.compiled,
                     )
                 gate_fps.append(first_fp)
-            if value_probe is not None:
-                ok, fps = dpc_lite_check(validated.compiled, catalog, value_probe)
-                gate_fps.extend(fps)
-                if not ok:
-                    return PlannerResult(
-                        status="clarify",
-                        question=question,
-                        attempts=attempt,
-                        errors=errors,
-                        clarify_message=_UNSTABLE_MESSAGE,
-                        raw_responses=raw_responses,
-                        refused=True,
-                        clarify_code="unstable_answer",
-                        blocked=validated.compiled,
-                        gate_fingerprints=tuple(dict.fromkeys(gate_fps)),
-                    )
             return PlannerResult(
                 status="ok",
                 question=question,
@@ -216,7 +199,7 @@ def plan_sql_question(
                 source_sql=sql,
                 attempts=attempt,
                 raw_responses=raw_responses,
-                gate_fingerprints=tuple(dict.fromkeys(gate_fps)),
+                gate_fingerprints=tuple(gate_fps),
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]

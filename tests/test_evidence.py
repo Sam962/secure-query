@@ -13,10 +13,8 @@ from secure_query.kernel.evidence import (
     EvidenceBundle,
     build_evidence,
 )
-from secure_query.kernel.sql_validate import validate_sql
 from secure_query.planner import MockLLMClient
 from secure_query.planner.confidence import link_tables
-from secure_query.planner.dpc_lite import dpc_lite_check, shadow_count_sql
 
 
 def test_evidence_signs_and_verifies() -> None:
@@ -112,26 +110,3 @@ def test_link_tables_returns_confidence() -> None:
     assert decision.choice
     assert 0.0 <= decision.confidence <= 1.0
     assert decision.alternatives
-
-
-def test_dpc_lite_shadow_count(monkeypatch) -> None:
-    from pathlib import Path
-
-    import duckdb
-
-    from secure_query.demo.load_chinook import DUCKDB_PATH
-
-    if not Path(DUCKDB_PATH).exists():
-        return
-    catalog = sample_catalog()
-    compiled = validate_sql("SELECT COUNT(*) AS n FROM Invoice", catalog).compiled
-    shadow = shadow_count_sql(compiled, catalog)
-    assert shadow is not None
-    con = duckdb.connect(str(DUCKDB_PATH), read_only=True)
-
-    def probe(c):
-        return con.execute(c.sql).fetchall()
-
-    ok, fps = dpc_lite_check(compiled, catalog, probe)
-    assert ok
-    assert fps  # unique fingerprints; COUNT(*) vs COUNT(1) agree → one fp

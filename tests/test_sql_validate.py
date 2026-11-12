@@ -300,7 +300,6 @@ def test_self_consistency_gate_runs_each_reading_once(monkeypatch) -> None:
 
     from secure_query.planner import MockLLMClient, sql_plan
 
-    monkeypatch.setattr(sql_plan, "dpc_lite_check", lambda compiled, catalog, probe: (True, ()))
     calls: list[str] = []
 
     def probe(query):

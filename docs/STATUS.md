@@ -37,10 +37,18 @@ Chinook 11 of 25, Northwind 6 of 28. That is above the 5% rule, so the gate is *
 default** (`SECURE_QUERY_LINK_CONFIDENCE=0`). It has its own refusal code,
 `low_link_confidence`. Whether it prevents wrong answers is still unmeasured.
 
-Unmeasured gate (PLAN 1.5): DPC-lite.
+DPC-lite (PLAN 1.5, 2026-11-11, gpt-4.1-mini, SQL path with the gate): **0 `unstable_probe`
+refusals** on Chinook dev (134 cases) and Northwind dev (10 cases). It never changed an
+outcome, so `planner/dpc_lite.py` was deleted; gate fingerprints now come from the
+two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 7 wrong
+(5%), 7 abstained, 1 harness error; Northwind dev 7/10 right, 3 wrong.
 
 ## Changelog
 
+- **2026-11-11 — DPC-lite measured and deleted (PLAN 1.5).** Live `gpt-4.1-mini` runs on
+  Chinook dev (134 cases) and Northwind dev (10 cases): 0 refusals with code
+  `unstable_probe`. Removed `planner/dpc_lite.py`, its call and its test; each question
+  now costs 2–3 fewer warehouse queries.
 - **2026-11-11 — table-confidence gate measured and turned off by default (PLAN 1.4).**
   17 of 53 answerable questions (32.1%) fell below the 0.55 threshold on the combined
   22-table Chinook + Northwind catalog (Chinook 11/25, Northwind 6/28). Default threshold

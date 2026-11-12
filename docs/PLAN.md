@@ -139,7 +139,7 @@ runs exit 0 (`echo $?` prints `0`).
     4. Record the count, the rate and the decision in STATUS.md.
   - Done when: STATUS.md has the numbers and decision, and Verify passes.
 
-- [ ] **1.5 Measure DPC-lite, then keep or delete it.**
+- [x] **1.5 Measure DPC-lite, then keep or delete it.**
   - Why: `planner/dpc_lite.py` re-runs the same validated SQL twice and compares
     `COUNT(*)` with `COUNT(1)`. Both checks are equal by SQL semantics unless the query is
     nondeterministic, and ties are already made deterministic. It costs 2–3 extra
