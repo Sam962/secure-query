@@ -153,3 +153,40 @@ def test_corrected_value_after_feedback_is_used() -> None:
     )
     result = _plan("How many pop genres are there?", client, "Pop")
     assert result.status == "ok" and "'Pop'" in result.compiled.sql
+
+
+def test_ranked_answer_shows_the_number_it_was_ranked_by() -> None:
+    from secure_query.kernel.sql_validate import validate_sql
+    from secure_query.planner.sql_values import show_ranking_measure
+
+    def shown(sql: str) -> str:
+        return validate_sql(show_ranking_measure(sql, CATALOG), CATALOG).compiled.sql
+
+    top = shown(
+        "SELECT ar.Name FROM Album al JOIN Artist ar ON al.ArtistId = ar.ArtistId "
+        "GROUP BY ar.Name ORDER BY COUNT(*) DESC LIMIT 1"
+    )
+    assert 'COUNT(*) AS "count"' in top
+    over = shown(
+        "SELECT c.Country FROM Customer c JOIN Invoice i ON i.CustomerId = c.CustomerId "
+        "GROUP BY c.Country HAVING SUM(i.Total) > 40"
+    )
+    assert 'SUM("i"."Total") AS "sum_total"' in over
+    ratio = shown(
+        "SELECT g.Name FROM Track t JOIN Genre g ON t.GenreId = g.GenreId "
+        "GROUP BY g.Name ORDER BY SUM(t.Milliseconds) / COUNT(*) DESC LIMIT 3"
+    )
+    assert 'AS "ranked_by_milliseconds"' in ratio and ratio.count(" AS ") == 4  # one new column, not two
+
+
+def test_ranking_measure_leaves_other_queries_alone() -> None:
+    from secure_query.planner.sql_values import show_ranking_measure
+
+    for sql in (
+        "SELECT BillingCountry, COUNT(*) FROM Invoice GROUP BY BillingCountry ORDER BY COUNT(*) DESC LIMIT 2",
+        "SELECT BillingCountry, COUNT(*) AS n FROM Invoice GROUP BY BillingCountry ORDER BY n DESC",
+        "SELECT Name FROM Track ORDER BY Milliseconds DESC LIMIT 1",  # not grouped: no aggregate to show
+        "SELECT DISTINCT BillingCountry FROM Invoice",
+        "SELECT COUNT(*) FROM Invoice",
+    ):
+        assert show_ranking_measure(sql, CATALOG) == sql

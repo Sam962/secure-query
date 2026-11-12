@@ -192,6 +192,11 @@ runs exit 0 (`echo $?` prints `0`).
     reasoning off 13 / 4; `gpt-6-luna` reasoning on 13 / 4 (plus 1 empty reply). Most of the
     gap is one behaviour: the newer models answer "which X has the most Y" with X only and
     leave out Y (6 of terra's 11), which the strict grader scores wrong.
+  - Fixed 2026-11-11: the pipeline now adds the measure a grouped query ranks or filters by
+    (`show_ranking_measure`), for every model. Re-measured, same suites: `gpt-4.1-mini`
+    6 / 1; `gpt-6-luna` reasoning off 5 / 1; `gpt-6-luna` reasoning on 3 / 1 (plus 1 empty
+    reply); `gpt-6.1-terra` 5 / 2. All candidates now qualify on dev. Steps 1 and 2 are
+    done (the fix replaced the prompt line); step 3 remains.
   - Files: `src/secure_query/planner/sql_plan.py` (prompt only), `src/secure_query/planner/llm.py`
     (`DEFAULT_MODEL`), `.env.example`, `README.md`, `docs/STATUS.md`.
   - Steps:

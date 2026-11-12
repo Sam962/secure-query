@@ -13,6 +13,7 @@
 - A signed Evidence Bundle on every response, shown in the UI as "Why this was allowed".
   The bundle lists the checks of the path that produced the query (SQL, LogicalPlan or metric).
 - Self-consistency gate: the question is planned twice; different answers refuse.
+- A ranked or thresholded answer shows the number it was ranked by, whatever the model wrote.
 - Auth modes `dev` / `token` / `header`; production forbids `dev`.
 - Databricks: execution as the end user (`SECURE_QUERY_DATABRICKS_AUTH=user`); the UC
   catalog draft reads real foreign keys; sensitive-looking column names default to high PII.
@@ -45,6 +46,22 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-11 — ranked answers show their measure; successor models re-measured (PLAN 1.7).**
+  The pipeline now adds the aggregate a grouped query sorts or filters by when the model
+  left it out (`planner/sql_values.py`, `show_ranking_measure`); it is deterministic and
+  independent of model and prompt. The grader accepts an integer year for a year bucket.
+  Wrong answers before → after, Chinook dev (134) / Northwind dev (10), one run each, not
+  adjudicated:
+
+  | Model | Before | After |
+  |-------|--------|-------|
+  | `gpt-4.1-mini` | 7 / 3 | 6 / 1 |
+  | `gpt-6-luna`, reasoning off | 13 / 4 | 5 / 1 |
+  | `gpt-6-luna`, reasoning on | 13 / 4 | 3 / 1 (plus 1 empty reply) |
+  | `gpt-6.1-terra`, reasoning off | 11 / 4 | 5 / 2 |
+
+  Every candidate now has no more wrong answers than `gpt-4.1-mini`. The default is
+  unchanged until a Spider run with the chosen model is adjudicated.
 - **2026-11-11 — model-agnostic client; successor models first look (PLAN 1.7).** The
   client drops or swaps a parameter a model rejects, so any model on an OpenAI-compatible
   endpoint runs. `gpt-4.1-mini` shuts down 2027-01-14. Wrong answers on Chinook dev (134) /

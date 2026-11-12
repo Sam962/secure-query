@@ -85,6 +85,44 @@ def case_insensitive_like(sql: str, catalog: Catalog) -> str:
     return tree.sql(dialect=catalog.sql_dialect)
 
 
+def show_ranking_measure(sql: str, catalog: Catalog) -> str:
+    """A ranked or thresholded answer shows the number it was ranked by.
+
+    `SELECT name ... GROUP BY name ORDER BY COUNT(*) DESC LIMIT 1` names a winner but hides
+    the count that made it win. Add each aggregate expression the outer ORDER BY sorts by,
+    and each aggregate HAVING tests, that the SELECT list lacks. Grouped queries only, so
+    the answer gains a column and never a row. It does not depend on the model or the
+    prompt, and the result is validated like any other SQL.
+    """
+    tree = sqlglot.parse_one(sql, read=catalog.sql_dialect)
+    if not isinstance(tree, exp.Select) or not tree.args.get("group") or tree.args.get("distinct"):
+        return sql
+
+    def own_aggregate(node: exp.Expression) -> bool:
+        return node.find_ancestor(exp.Select) is tree and node.find_ancestor(exp.Window) is None
+
+    order, having = tree.args.get("order"), tree.args.get("having")
+    candidates = [o.this for o in (order.expressions if order is not None else ())]
+    if having is not None:
+        candidates += [a for a in having.find_all(exp.AggFunc) if a.find_ancestor(exp.AggFunc) is None]
+    shown = {(p.this if isinstance(p, exp.Alias) else p).sql() for p in tree.expressions}
+    names = {p.alias_or_name.lower() for p in tree.expressions}
+    added = False
+    for expr in candidates:
+        if expr.sql() in shown or not any(own_aggregate(a) for a in expr.find_all(exp.AggFunc)):
+            continue
+        shown.add(expr.sql())
+        columns = list(expr.find_all(exp.Column))
+        base = expr.key if isinstance(expr, exp.AggFunc) else "ranked_by"
+        name = f"{base}_{columns[0].name}".lower() if len(columns) == 1 else base
+        while name in names:
+            name += "_"
+        names.add(name)
+        tree.select(exp.alias_(expr.copy(), name, quoted=True), copy=False)
+        added = True
+    return tree.sql(dialect=catalog.sql_dialect) if added else sql
+
+
 def _norm(value: Any) -> str:
     return re.sub(r"[^0-9a-z]", "", str(value).lower())
 

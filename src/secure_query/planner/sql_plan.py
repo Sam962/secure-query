@@ -22,6 +22,7 @@ from secure_query.planner.sql_values import (
     ValueProbe,
     case_insensitive_like,
     ground_literals,
+    show_ranking_measure,
     unmatched_literals,
 )
 
@@ -146,7 +147,7 @@ def plan_sql_question(
                 )
             sql = str(data["sql"])
             validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
-            sql = case_insensitive_like(sql, catalog)
+            sql = show_ranking_measure(case_insensitive_like(sql, catalog), catalog)
             if value_probe is not None:
                 sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
             validated = validate_sql(sql, catalog, row_filters=row_filters)

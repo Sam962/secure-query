@@ -323,3 +323,15 @@ def test_guard_refusal_is_scored_by_running_the_blocked_plan() -> None:
         result = run_live_case(case, sample_catalog(), MockLLMClient([unfiltered]), DUCKDB_PATH)
         assert result.verdict == ABSTAINED
         assert summarise([result])["by_refusal_code"] == {"dropped_filter": {expected: 1}}
+
+
+def test_integer_year_matches_a_year_bucket() -> None:
+    """EXTRACT(YEAR ...) returns 2022; the reference's DATE_TRUNC returns 2022-01-01."""
+    from datetime import datetime
+
+    from secure_query.evals.accuracy import _results_match
+
+    expected = [(datetime(2021, 1, 1), 10.0), (datetime(2022, 1, 1), 12.0)]
+    assert _results_match([(2021, 10.0), (2022, 12.0)], expected, ordered=False)
+    assert not _results_match([(2021, 10.0), (2023, 12.0)], expected, ordered=False)
+    assert not _results_match([(2021, 10.0), (2022, 12.0)], [(datetime(2021, 3, 1), 10.0), (datetime(2022, 1, 1), 12.0)], ordered=False)

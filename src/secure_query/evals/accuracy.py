@@ -526,8 +526,8 @@ def _row_close(actual: tuple[Any, ...], expected: tuple[Any, ...]) -> bool:
         elif isinstance(a, (int, float)) and isinstance(e, (int, float)):
             if abs(float(a) - float(e)) > _FLOAT_TOL:
                 return False
-        elif isinstance(e, (date, datetime)) and isinstance(a, str):
-            if not _same_bucket(a, e):
+        elif isinstance(e, (date, datetime)) and isinstance(a, (str, int)):
+            if not _same_bucket(str(a), e):  # 2022 (EXTRACT(YEAR ...)) names the same bucket as '2022'
                 return False
         elif str(a) != str(e):
             return False
