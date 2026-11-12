@@ -21,7 +21,8 @@ New here? Read [docs/DEMO.md](docs/DEMO.md) (why this exists) then come back her
 
 The default planner (`SECURE_QUERY_PLANNER=sql`) needs an LLM that emits `{"sql": "..."}` JSON.
 Set `SECURE_QUERY_PLANNER=lqp` for the LogicalPlan path (metrics / explain helpers).
-Local demos work with **qwen2.5:7b** via [Ollama](https://ollama.com) or hosted OpenAI / Groq.
+The measured default is OpenAI **`gpt-4.1-mini`** (`SECURE_QUERY_PROVIDER=openai`); every number in [docs/STATUS.md](docs/STATUS.md) is for that model.
+**qwen2.5:7b** via [Ollama](https://ollama.com) is a local option for demos without an API key; it is not what the numbers measure.
 
 ### 1. Local demo data
 
@@ -31,13 +32,13 @@ pip install -e ".[dev,planner,api]"
 python -m secure_query.demo.load_chinook
 ```
 
-### 2. Pull the recommended model
+### 2. Local option: pull an Ollama model
 
 ```bash
 ollama pull qwen2.5:7b
 ```
 
-Ollama is the default provider when it is running. The default model is `qwen2.5:7b` (`SECURE_QUERY_MODEL` / `--model` override it).
+With no `SECURE_QUERY_PROVIDER` and no API key set, a running Ollama server is picked up automatically, with model `qwen2.5:7b` (`SECURE_QUERY_MODEL` / `--model` override it). For the measured setup, set `SECURE_QUERY_PROVIDER=openai` and `OPENAI_API_KEY`.
 
 ### 3. Ask from the CLI
 
@@ -72,9 +73,9 @@ docker compose up --build   # API + Chinook demo
 
 | Provider | When | Notes |
 |----------|------|--------|
-| `ollama` | Local (recommended) | Default model `qwen2.5:7b` |
+| `ollama` | Local, no API key | Default model `qwen2.5:7b` |
 | `groq` | Hosted, needs `GROQ_API_KEY` | Cloud model ids; do not send an Ollama tag |
-| `openai` | Hosted, needs `OPENAI_API_KEY` | |
+| `openai` | Hosted, needs `OPENAI_API_KEY` | Measured default: `gpt-4.1-mini` |
 | `mock` | Tests / no GPU | Fixed Chinook plan; not a quality measure |
 
 ```bash

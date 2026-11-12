@@ -69,14 +69,14 @@ runs exit 0 (`echo $?` prints `0`).
 
 ## Phase 0 — Sam
 
-- [ ] **0.1 Review and commit the 2026-11-11 cleanup.** Owner: Sam. The working tree holds
+- [x] **0.1 Review and commit the 2026-11-11 cleanup.** Owner: Sam. The working tree holds
   the last two sessions of work, uncommitted. Read `git status` and `git diff`, then commit
   on `trusted-core`. A full backup of the tree from before the cleanup was taken; see
   STATUS.md changelog.
 
 ## Phase 1 — Measurements we can trust (agent; no Databricks needed)
 
-- [ ] **1.1 Make the default model the one we measured.**
+- [x] **1.1 Make the default model the one we measured.**
   - Why: STATUS numbers are for `gpt-4.1-mini`; the code default is `gpt-4o-mini`.
   - Files: `src/secure_query/planner/llm.py` (`DEFAULT_MODEL`), `.env.example`, `README.md`.
   - Steps: set `DEFAULT_MODEL = "gpt-4.1-mini"`. In `.env.example`, replace the two

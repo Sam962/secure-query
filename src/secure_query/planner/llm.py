@@ -18,7 +18,7 @@ _LOCAL_TIMEOUT_S = 120.0  # a local 7B model can take longer than a hosted API
 _MAX_RETRIES = 2
 _MAX_TOKENS = 1200
 _SEED = 7
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = "gpt-4.1-mini"
 
 
 class LLMClient(Protocol):
