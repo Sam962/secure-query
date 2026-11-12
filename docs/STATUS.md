@@ -26,7 +26,12 @@
 - No live Genie numbers. The partner date and workspace are not set (PLAN 3.1).
 - The live Databricks smoke has never run against a workspace.
 
-## Latest measured (SQL path, gpt-4.1-mini)
+## Latest measured (SQL path)
+
+**Default model since 2026-11-11: `gpt-6-luna`, reasoning off** (Sam's decision, on the dev
+comparison in the changelog). It has **no adjudicated wrong-rate yet**: the Spider number
+below was measured with the previous default, `gpt-4.1-mini`, and must not be quoted for
+`gpt-6-luna` until PLAN 1.7 step 3 is done.
 
 Spider test 400, gate + tie-break (2026-10-11): **78.8% right; adjudicated real wrong
 2.75% (11/400, 95% CI 1.5–4.9%)**; flip rate 5.5%. Files: `docs/baselines/` and
@@ -60,8 +65,9 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
   | `gpt-6-luna`, reasoning on | 13 / 4 | 3 / 1 (plus 1 empty reply) |
   | `gpt-6.1-terra`, reasoning off | 11 / 4 | 5 / 2 |
 
-  Every candidate now has no more wrong answers than `gpt-4.1-mini`. The default is
-  unchanged until a Spider run with the chosen model is adjudicated.
+  Every candidate now has no more wrong answers than `gpt-4.1-mini`.
+- **2026-11-11 — default model is `gpt-6-luna`, reasoning off.** Sam's decision on the
+  table above. The Spider run and adjudication for it are still owed (PLAN 1.7 step 3).
 - **2026-11-11 — model-agnostic client; successor models first look (PLAN 1.7).** The
   client drops or swaps a parameter a model rejects, so any model on an OpenAI-compatible
   endpoint runs. `gpt-4.1-mini` shuts down 2027-01-14. Wrong answers on Chinook dev (134) /

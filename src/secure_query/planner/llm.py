@@ -22,7 +22,7 @@ _SEED = 7
 _TOKEN_PARAMS = ("max_completion_tokens", "max_tokens")  # newer OpenAI models / everyone else
 _OPTIONAL_PARAMS = ("temperature", "seed", "reasoning_effort")
 _LOG = logging.getLogger(__name__)
-DEFAULT_MODEL = "gpt-4.1-mini"
+DEFAULT_MODEL = "gpt-6-luna"
 
 
 class LLMClient(Protocol):
@@ -107,8 +107,12 @@ class OpenAIClient:
             self._token_param: _MAX_TOKENS,
             "seed": _SEED,
         }
-        # Optional. Some reasoning models accept a temperature only with reasoning off ("none").
-        effort = (os.environ.get("SECURE_QUERY_REASONING_EFFORT") or "").strip()
+        # Reasoning models accept a temperature only with reasoning off, and the two readings
+        # of the self-consistency gate need one. A model without the setting rejects it once
+        # and _create drops it.
+        effort = (os.environ.get("SECURE_QUERY_REASONING_EFFORT") or "").strip() or (
+            "none" if self.provider == "openai" else ""
+        )
         if effort:
             create_kwargs["reasoning_effort"] = effort
         if response_format is not None and self.structured_outputs:

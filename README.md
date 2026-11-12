@@ -21,7 +21,7 @@ New here? Read [docs/DEMO.md](docs/DEMO.md) (why this exists) then come back her
 
 The default planner (`SECURE_QUERY_PLANNER=sql`) needs an LLM that emits `{"sql": "..."}` JSON.
 Set `SECURE_QUERY_PLANNER=lqp` for the LogicalPlan path (metrics / explain helpers).
-The measured default is OpenAI **`gpt-4.1-mini`** (`SECURE_QUERY_PROVIDER=openai`); every number in [docs/STATUS.md](docs/STATUS.md) is for that model.
+The default is OpenAI **`gpt-6-luna`** with reasoning off (`SECURE_QUERY_PROVIDER=openai`). It replaced `gpt-4.1-mini`, which OpenAI removes on 2027-01-14, after matching it on the dev suites; the adjudicated Spider number in [docs/STATUS.md](docs/STATUS.md) is still the `gpt-4.1-mini` one. Any model on an OpenAI-compatible endpoint works; measure it first ([docs/EVAL.md](docs/EVAL.md), "Qualifying a new model").
 **qwen2.5:7b** via [Ollama](https://ollama.com) is a local option for demos without an API key; it is not what the numbers measure.
 
 ### 1. Local demo data
@@ -75,7 +75,7 @@ docker compose up --build   # API + Chinook demo
 |----------|------|--------|
 | `ollama` | Local, no API key | Default model `qwen2.5:7b` |
 | `groq` | Hosted, needs `GROQ_API_KEY` | Cloud model ids; do not send an Ollama tag |
-| `openai` | Hosted, needs `OPENAI_API_KEY` | Measured default: `gpt-4.1-mini` |
+| `openai` | Hosted, needs `OPENAI_API_KEY` | Default: `gpt-6-luna`, reasoning off |
 | `mock` | Tests / no GPU | Fixed Chinook plan; not a quality measure |
 
 ```bash
@@ -91,7 +91,7 @@ python -m secure_query.evals.run --split dev --provider openai        # SQL path
 python -m secure_query.evals.scorecard --suite src/secure_query/evals/suites/chinook/cases.json --sq-only
 ```
 
-Latest measured result (Spider test 400, `gpt-4.1-mini`, SQL path with the self-consistency gate): **78.8% right, adjudicated wrong 2.75% (95% CI 1.5–4.9%)**. Details in [docs/STATUS.md](docs/STATUS.md); protocol in [docs/EVAL.md](docs/EVAL.md).
+Latest adjudicated result (Spider test 400, the previous default `gpt-4.1-mini`, SQL path with the self-consistency gate): **78.8% right, adjudicated wrong 2.75% (95% CI 1.5–4.9%)**. Details in [docs/STATUS.md](docs/STATUS.md); protocol in [docs/EVAL.md](docs/EVAL.md).
 
 ---
 

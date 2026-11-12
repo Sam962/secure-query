@@ -182,7 +182,7 @@ runs exit 0 (`echo $?` prints `0`).
        before and after, and record both in STATUS.md.
   - Done when: the timing test passes, STATUS.md has both medians, and Verify passes.
 
-- [ ] **1.7 Qualify a successor to `gpt-4.1-mini` before 2027-01-14.**
+- [ ] **1.7 Adjudicate the new default model, `gpt-6-luna`.**
   - Why: OpenAI's deprecations page (read 2026-11-11) lists `gpt-4.1-mini-2025-04-14` for
     shutdown on 2027-01-14 and names `gpt-6-luna` as the replacement. Every number in
     STATUS.md is for `gpt-4.1-mini`. The client now accepts any model (it adapts to the
@@ -196,7 +196,10 @@ runs exit 0 (`echo $?` prints `0`).
     (`show_ranking_measure`), for every model. Re-measured, same suites: `gpt-4.1-mini`
     6 / 1; `gpt-6-luna` reasoning off 5 / 1; `gpt-6-luna` reasoning on 3 / 1 (plus 1 empty
     reply); `gpt-6.1-terra` 5 / 2. All candidates now qualify on dev. Steps 1 and 2 are
-    done (the fix replaced the prompt line); step 3 remains.
+    done (the fix replaced the prompt line).
+  - Decided 2026-11-11 (Sam): `DEFAULT_MODEL` is `gpt-6-luna` with reasoning off, on the dev
+    numbers. Still owed from step 3: re-run Spider test 400 with it, adjudicate, and put
+    the numbers in STATUS.md.
   - Files: `src/secure_query/planner/sql_plan.py` (prompt only), `src/secure_query/planner/llm.py`
     (`DEFAULT_MODEL`), `.env.example`, `README.md`, `docs/STATUS.md`.
   - Steps:
