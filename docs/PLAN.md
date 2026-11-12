@@ -86,7 +86,7 @@ runs exit 0 (`echo $?` prints `0`).
   - Done when: `grep -n DEFAULT_MODEL src/secure_query/planner/llm.py` shows `gpt-4.1-mini`,
     and Verify passes.
 
-- [ ] **1.2 Production refuses to start without a signing secret.**
+- [x] **1.2 Production refuses to start without a signing secret.**
   - Why: without `SECURE_QUERY_REVIEW_SECRET` each process signs with a random key, so
     Evidence Bundles stop verifying after a restart or on another worker.
   - Files: `src/secure_query/auth/__init__.py` (`check_auth_config`), `tests/test_auth.py`.

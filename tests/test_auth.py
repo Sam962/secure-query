@@ -271,6 +271,28 @@ def test_header_mode_without_trusted_proxies_refuses_to_start(monkeypatch: pytes
     check_auth_config()
 
 
+def test_production_without_signing_secret_refuses_to_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.auth import AuthConfigError, check_auth_config
+
+    monkeypatch.setenv("SECURE_QUERY_ENV", "production")
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "token")
+    monkeypatch.delenv("SECURE_QUERY_REVIEW_SECRET", raising=False)
+    with pytest.raises(AuthConfigError, match="SECURE_QUERY_REVIEW_SECRET"):
+        check_auth_config()
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "x" * 31)
+    with pytest.raises(AuthConfigError, match="SECURE_QUERY_REVIEW_SECRET"):
+        check_auth_config()
+
+
+def test_production_with_signing_secret_starts(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.auth import check_auth_config
+
+    monkeypatch.setenv("SECURE_QUERY_ENV", "production")
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "token")
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "x" * 32)
+    check_auth_config()
+
+
 def test_header_identity_is_ignored_unless_from_a_trusted_proxy(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "header")
     monkeypatch.setenv("SECURE_QUERY_TRUSTED_PROXIES", "10.0.0.0/8")

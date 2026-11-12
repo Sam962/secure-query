@@ -121,11 +121,18 @@ def trusted_proxies() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
 
 
 def check_auth_config() -> None:
-    """Fail closed at startup: header mode trusts X-Forwarded-User, so it needs a proxy allowlist."""
+    """Fail closed at startup: header mode needs a proxy allowlist; production needs a signing secret."""
     if auth_mode() == "header" and not trusted_proxies():
         raise AuthConfigError(
             "SECURE_QUERY_AUTH_MODE=header requires SECURE_QUERY_TRUSTED_PROXIES "
             "(the SSO proxy addresses allowed to set identity headers)"
+        )
+    production = (os.environ.get("SECURE_QUERY_ENV") or "").strip().lower() == "production"
+    if production and len((os.environ.get("SECURE_QUERY_REVIEW_SECRET") or "").strip()) < 32:
+        raise AuthConfigError(
+            "SECURE_QUERY_ENV=production requires SECURE_QUERY_REVIEW_SECRET of at least 32 "
+            "characters; without it each process signs with a random key and Evidence Bundles "
+            "stop verifying after a restart or on another worker"
         )
 
 
