@@ -201,6 +201,7 @@ def _principal_and_catalog(
     authorization: str | None,
     x_forwarded_user: str | None,
     x_databricks_user: str | None,
+    x_databricks_access_token: str | None = None,
 ):
     blocked = production_auth_blocked()
     if blocked:
@@ -210,6 +211,7 @@ def _principal_and_catalog(
             authorization=authorization,
             forwarded_user=x_forwarded_user or x_databricks_user,
             client_host=request.client.host if request.client else None,
+            warehouse_token=x_databricks_access_token,
         )
     except AuthError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
@@ -230,9 +232,15 @@ def _run_ask(
     authorization: str | None,
     x_forwarded_user: str | None,
     x_databricks_user: str | None,
+    x_databricks_access_token: str | None = None,
 ) -> AskResponse:
     principal, config, catalog = _principal_and_catalog(
-        request, req.domain, authorization, x_forwarded_user, x_databricks_user
+        request,
+        req.domain,
+        authorization,
+        x_forwarded_user,
+        x_databricks_user,
+        x_databricks_access_token,
     )
     outcome = ask(
         req.question,
@@ -254,8 +262,16 @@ def ask_endpoint(
     authorization: str | None = Header(default=None),
     x_forwarded_user: str | None = Header(default=None),
     x_databricks_user: str | None = Header(default=None),
+    x_databricks_access_token: str | None = Header(default=None),
 ) -> AskResponse:
-    return _run_ask(request, req, authorization, x_forwarded_user, x_databricks_user)
+    return _run_ask(
+        request,
+        req,
+        authorization,
+        x_forwarded_user,
+        x_databricks_user,
+        x_databricks_access_token,
+    )
 
 
 @app.post("/ask/confirm", response_model=AskResponse)
@@ -265,9 +281,17 @@ def ask_confirm(
     authorization: str | None = Header(default=None),
     x_forwarded_user: str | None = Header(default=None),
     x_databricks_user: str | None = Header(default=None),
+    x_databricks_access_token: str | None = Header(default=None),
 ) -> AskResponse:
     req = req.model_copy(update={"confirm_only": True, "execute": False})
-    return _run_ask(request, req, authorization, x_forwarded_user, x_databricks_user)
+    return _run_ask(
+        request,
+        req,
+        authorization,
+        x_forwarded_user,
+        x_databricks_user,
+        x_databricks_access_token,
+    )
 
 
 @app.post("/ask/execute", response_model=AskResponse)
@@ -277,10 +301,16 @@ def ask_execute(
     authorization: str | None = Header(default=None),
     x_forwarded_user: str | None = Header(default=None),
     x_databricks_user: str | None = Header(default=None),
+    x_databricks_access_token: str | None = Header(default=None),
 ) -> AskResponse:
     """Run the query reviewed via /ask/confirm. 409 if it no longer compiles to plan_hash."""
     principal, config, catalog = _principal_and_catalog(
-        request, req.domain, authorization, x_forwarded_user, x_databricks_user
+        request,
+        req.domain,
+        authorization,
+        x_forwarded_user,
+        x_databricks_user,
+        x_databricks_access_token,
     )
     try:
         outcome = execute_reviewed(

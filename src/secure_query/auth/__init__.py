@@ -46,6 +46,9 @@ class Principal:
     row_filters: tuple[Filter, ...] = ()
     """Predicates injected at compile time; plan cannot remove them."""
 
+    warehouse_token: str | None = None
+    """End-user Databricks SQL / OAuth token for on-behalf-of warehouse execute."""
+
 
 def catalog_for_principal(base: Catalog, principal: Principal) -> Catalog:
     """Return a catalog slice visible to this principal, including metrics."""
@@ -142,18 +145,30 @@ def resolve_principal(
     forwarded_user: str | None = None,
     settings: dict[str, Any] | None = None,
     client_host: str | None = None,
+    warehouse_token: str | None = None,
 ) -> Principal:
-    """Resolve the caller. Never reads identity from a JSON body."""
+    """Resolve the caller. Never reads identity from a JSON body.
+
+    `warehouse_token` is the end-user Databricks credential forwarded by Apps /
+    OAuth (e.g. X-Databricks-Access-Token). It is never taken from JSON.
+    """
     mode = auth_mode()
     registry = settings if settings is not None else principal_registry()
     tenant_id = str(registry.get("tenant_id") or os.environ.get("SECURE_QUERY_TENANT_ID") or "chinook")
     principals: dict[str, Any] = registry.get("principals") or {}
+    user_wh_token = (warehouse_token or "").strip() or None
 
     if mode == "dev":
         principal_id = (
             os.environ.get("SECURE_QUERY_PRINCIPAL_ID") or "demo-user"
         ).strip()
-        return _principal_from_registry(principal_id, tenant_id, principals, allow_missing=True)
+        return _principal_from_registry(
+            principal_id,
+            tenant_id,
+            principals,
+            allow_missing=True,
+            warehouse_token=user_wh_token,
+        )
 
     if mode == "token":
         token = _bearer_token(authorization)
@@ -161,7 +176,13 @@ def resolve_principal(
         principal_id = token_map.get(token)
         if not principal_id:
             raise AuthError("invalid or missing API token", status_code=401)
-        return _principal_from_registry(principal_id, tenant_id, principals, allow_missing=False)
+        return _principal_from_registry(
+            principal_id,
+            tenant_id,
+            principals,
+            allow_missing=False,
+            warehouse_token=user_wh_token,
+        )
 
     # header: trusted SSO / Databricks Apps gateway. The identity header is only
     # believed when the request came through an allowlisted proxy.
@@ -174,7 +195,13 @@ def resolve_principal(
     user = (forwarded_user or "").strip()
     if not user:
         raise AuthError("missing identity header", status_code=401)
-    return _principal_from_registry(user, tenant_id, principals, allow_missing=False)
+    return _principal_from_registry(
+        user,
+        tenant_id,
+        principals,
+        allow_missing=False,
+        warehouse_token=user_wh_token,
+    )
 
 
 def _bearer_token(authorization: str | None) -> str:
@@ -192,13 +219,19 @@ def _principal_from_registry(
     principals: dict[str, Any],
     *,
     allow_missing: bool,
+    warehouse_token: str | None = None,
 ) -> Principal:
     spec = principals.get(principal_id)
     if spec is None:
         if not allow_missing:
             raise AuthError(f"unknown principal {principal_id!r}", status_code=403)
         tables = _env_allowed_tables()
-        return Principal(principal_id=principal_id, tenant_id=tenant_id, allowed_tables=tables)
+        return Principal(
+            principal_id=principal_id,
+            tenant_id=tenant_id,
+            allowed_tables=tables,
+            warehouse_token=warehouse_token,
+        )
     if not isinstance(spec, dict):
         raise AuthError(f"invalid principal spec for {principal_id!r}", status_code=500)
     allowed_raw = spec.get("allowed_tables", [])
@@ -216,11 +249,14 @@ def _principal_from_registry(
 
         adapter = TypeAdapter(FilterUnion)
         filters = tuple(adapter.validate_python(f) for f in raw_filters)
+    # Request-scoped OBO token wins; registry may store a per-user PAT for token mode.
+    reg_token = str(spec.get("databricks_token") or "").strip() or None
     return Principal(
         principal_id=principal_id,
         tenant_id=str(spec.get("tenant_id") or tenant_id),
         allowed_tables=allowed,
         row_filters=filters,
+        warehouse_token=warehouse_token or reg_token,
     )
 
 
