@@ -1,13 +1,8 @@
-"""Secure deterministic SQL path: LogicalPlan -> validate(catalog) -> compile(AST) -> execute.
+"""Governed talk-to-data. Model SQL is allowlist-validated and regenerated; it never runs as written.
 
-Public API:
-    validate(plan, catalog) -> list[ValidationError]
-    compile(plan) -> CompiledQuery
-    validate_and_compile(plan, catalog) -> CompiledQuery
-    plan_question(question, catalog, client) -> PlannerResult
-    execute_duckdb(compiled, db_path, ...) -> ExecutionResult
-
-The LLM must only emit LogicalPlan JSON. It must never emit SQL.
+Entry point: ask(question, principal=..., config=..., catalog=...) -> AskOutcome.
+Default NL path: planner.sql_plan -> kernel.sql_validate -> engine execute (ADR 005).
+LogicalPlan (validate / compile) serves catalog-owned metrics and explain helpers.
 """
 
 from secure_query.api.service import AskOutcome, ask

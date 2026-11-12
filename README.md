@@ -1,13 +1,13 @@
 # Secure Query
 
-Governed talk-to-data: **the LLM never writes SQL.**
+Governed talk-to-data: **model SQL is validated against an allowlist and regenerated — it never runs as written.**
 
-You ask in English. The model fills in a typed **Logical Query Plan (LQP)** — a small JSON form of tables, joins, filters, and aggregates. Code you own then:
+You ask in English. The model proposes SQL (or picks a catalog-owned metric). Code you own then:
 
-1. **Validates** the plan against a human-approved **catalog** (not a live schema dump)
-2. **Compiles** SQL with sqlglot (AST only — no string interpolation)
+1. **Parses** the SQL and checks every expression against a human-approved **catalog**
+2. **Regenerates** the SQL that will run (AST only — no string interpolation of model text)
 3. **Executes** read-only, with timeout and row cap
-4. **Audits** the question, plan, SQL, hashes, and principal
+4. **Traces and audits** every ask, confirm, refuse, and execute (hashes + principal; question text is not stored)
 
 Wrong-answer rate is the product metric. A refusal is better than a confident wrong number.
 
@@ -19,7 +19,9 @@ New here? Read [docs/DEMO.md](docs/DEMO.md) (why this exists) then come back her
 
 ## How to use the model
 
-The planner needs an LLM that can emit **LogicalPlan JSON**, not SQL. This repo is measured on **qwen2.5:7b** via [Ollama](https://ollama.com). Smaller tags such as `llama3.2` will look like a kernel regression (they are not).
+The default planner (`SECURE_QUERY_PLANNER=sql`) needs an LLM that emits `{"sql": "..."}` JSON.
+Set `SECURE_QUERY_PLANNER=lqp` for the LogicalPlan path (metrics / explain helpers).
+Local demos work with **qwen2.5:7b** via [Ollama](https://ollama.com) or hosted OpenAI / Groq.
 
 ### 1. Local demo data
 
@@ -84,12 +86,11 @@ python -m secure_query.demo.ask --provider groq "revenue by country"
 ### 6. Measure (do not use holdout to tune)
 
 ```bash
-python -m secure_query.evals.run --split holdout --provider ollama --expect-digest 845dbda0ea48
+python -m secure_query.evals.run --split dev --provider openai        # SQL path by default
+python -m secure_query.evals.scorecard --suite src/secure_query/evals/suites/chinook/cases.json --sq-only
 ```
 
-Latest local gate (2026-10-04, `qwen2.5:7b` digest `845dbda0ea48`): **holdout 12/12, 0% wrong; dev 100/101, 0% wrong.** Pin the build with `--expect-digest`; see [docs/EVAL.md](docs/EVAL.md). Four of those twelve are expected refusals (PII, missing tables, ratios the IR cannot say) and count as correct when the kernel declines.
-
-Protocol: [docs/EVAL.md](docs/EVAL.md).
+Latest measured result (Spider test 400, `gpt-4.1-mini`, SQL path with the self-consistency gate): **78.8% right, adjudicated wrong 2.75% (95% CI 1.5–4.9%)**. Details in [docs/STATUS.md](docs/STATUS.md); protocol in [docs/EVAL.md](docs/EVAL.md).
 
 ---
 
@@ -99,18 +100,17 @@ Protocol: [docs/EVAL.md](docs/EVAL.md).
 question
   → identity (env / Bearer / SSO header — never from JSON)
   → catalog slice for this principal
-  → guards (PII, out-of-scope terms)
-  → LLM emits LogicalPlan JSON or approved metric_id
-  → validate(plan, catalog)
-  → compile (sqlglot AST)
+  → LLM emits SQL JSON (or approved metric_id)
+  → allowlist validate + regenerate (sqlglot AST)  — model SQL never runs as written
+  → consistency gate + DPC-lite probe
   → row filters
-  → execute (DuckDB | Databricks | Postgres)
-  → template answer + audit JSONL  (no LLM on result cells)
+  → execute as end-user on Databricks (or DuckDB / local Postgres)
+  → signed Evidence Bundle + trace/audit JSONL  (no LLM on result cells)
 ```
 
 The **catalog** is the security boundary. The database may contain more; anything not listed is unqueryable.
 
-Unity Catalog on Databricks is **not** this catalog. UC is warehouse grants/RLS. Secure Query drafts from UC `information_schema`, then a human approves PII and join keys. See [docs/SECURITY.md](docs/SECURITY.md).
+Unity Catalog on Databricks is **not** this catalog. UC is warehouse grants/RLS. Secure Query drafts from UC `information_schema`, then a human approves PII and join keys. Postgres and SharePoint lists join via federation / Lakeflow → Delta ([docs/FEDERATION.md](docs/FEDERATION.md)). See [docs/SECURITY.md](docs/SECURITY.md).
 
 ---
 
@@ -126,10 +126,13 @@ Copy [`.env.example`](.env.example) to `.env`. Never commit `.env`.
 | `SECURE_QUERY_CATALOG_FILE` | Approved catalog JSON (default: Chinook sample) |
 | `SECURE_QUERY_KNOWLEDGE_FILE` | Extra synonyms + instructions (never SQL examples) |
 | `SECURE_QUERY_PRINCIPALS_FILE` | Token → principal map |
-| `SECURE_QUERY_BACKEND` | `duckdb` \| `databricks` \| `postgres` |
+| `SECURE_QUERY_BACKEND` | `duckdb` \| `databricks` \| `postgres` (postgres = local CI; prod Postgres via UC federation) |
 | `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_TOKEN` | SQL warehouse |
-| `SECURE_QUERY_POSTGRES_DSN` / `DATABASE_URL` | Postgres |
+| `SECURE_QUERY_DATABRICKS_AUTH` | `user` (default, end-user token) \| `shared` (demo PAT) |
+| `SECURE_QUERY_REVIEW_SECRET` | HMAC for review signatures + Evidence Bundles |
+| `SECURE_QUERY_POSTGRES_DSN` / `DATABASE_URL` | Local Postgres only |
 | `SECURE_QUERY_RETRIEVE_K` | Prompt table retrieval; `0` = off |
+| `GENIE_SPACE_ID` | Head-to-head scorecard (`python -m secure_query.evals.scorecard`) |
 
 `GET /health` and `GET /ready` report the execute backend.
 
@@ -144,7 +147,7 @@ Do **not** auto-go-live from a warehouse URL. Order:
 3. Add synonyms / knowledge JSON, and metric definitions under `metrics` in the catalog JSON
 4. Fill [docs/OWNERSHIP.md](docs/OWNERSHIP.md)
 5. Production auth (`token` or `header`) + SELECT-only warehouse identity
-6. Domain holdout with wrong-rate = 0
+6. Domain holdout, adjudicated (see [docs/EVAL.md](docs/EVAL.md))
 
 ---
 
@@ -152,12 +155,12 @@ Do **not** auto-go-live from a warehouse URL. Order:
 
 ```
 src/secure_query/
-  kernel/                 IR, catalog, validate, AST compile, explain (no I/O, no LLM)
-  planner/                NL → LogicalPlan: prompt, LLM clients, guards (never SQL)
+  kernel/                 Catalog, SQL allowlist validator, IR, AST compile, trace, evidence (no LLM)
+  planner/                LLM clients; validated-SQL planner (default); LogicalPlan planner (metrics)
   engine/                 Execute (DuckDB / Postgres / Databricks), domains, catalog draft
   auth/                   Server-side identity
   api/                    FastAPI + ask pipeline; static/ holds the confirm-first UI
-  evals/                  Accuracy harness, goldens; suites/{chinook,northwind}/
+  evals/                  Accuracy harness, Genie scorecard, goldens; suites/{chinook,northwind}/
   demo/                   Chinook + Northwind catalogs, pinned loaders, CLI
 tests/                    pytest
 config/                   Knowledge + principals templates
@@ -173,16 +176,18 @@ Dependencies point one way: `api → engine/planner → kernel`. See [docs/ARCHI
 
 | Doc | What it is |
 |-----|------------|
+| [docs/HANDOVER.md](docs/HANDOVER.md) | Start here: setup, request path, rules |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Flow, layers, embedding the kernel |
-| [docs/DEMO.md](docs/DEMO.md) | Why LQP, one question end-to-end |
+| [docs/DEMO.md](docs/DEMO.md) | Why this exists, one question end-to-end |
 | [docs/EVAL.md](docs/EVAL.md) | Dev vs holdout; never tune on holdout |
 | [docs/SECURITY.md](docs/SECURITY.md) | Threat model, identity, Databricks/Postgres |
 | [docs/OWNERSHIP.md](docs/OWNERSHIP.md) | Named owner before a real domain |
-| [docs/STATUS.md](docs/STATUS.md) | What is done; what to do next |
-| [docs/REVIEW-2026-10-06.md](docs/REVIEW-2026-10-06.md) | Independent review (scores, findings) |
-| [docs/BACKLOG.md](docs/BACKLOG.md) | Checklist to close every review finding |
+| [docs/STATUS.md](docs/STATUS.md) | What is measured; changelog |
+| [docs/PLAN.md](docs/PLAN.md) | Ordered task list for agents |
+| [docs/FEDERATION.md](docs/FEDERATION.md) | Postgres and SharePoint lists via Databricks |
 | [docs/adr/001-result-policy.md](docs/adr/001-result-policy.md) | No LLM on result cells |
-| [docs/adr/002-ir-boundary.md](docs/adr/002-ir-boundary.md) | LQP will not become a SQL AST |
+| [docs/adr/003-validated-sql-planner.md](docs/adr/003-validated-sql-planner.md) | Model SQL never runs as written |
+| [docs/adr/005-allowlist-sql-validator.md](docs/adr/005-allowlist-sql-validator.md) | Allowlist policy; SQL is the default NL path |
 
 ---
 
@@ -202,7 +207,7 @@ CI: ruff, pytest, compile SQL grep, mock holdout (exits 1 on any wrong answer).
 
 ## Status
 
-**Chinook demo:** ready (confirm UI; qwen2.5:7b @ 845dbda0ea48 holdout 12/12, dev 100/101, 0 wrong). **Company warehouse:** not ready until you have an approved catalog, owner, production auth, and a domain holdout. Details in [docs/STATUS.md](docs/STATUS.md).
+**Chinook demo:** ready (confirm UI; allowlist SQL path; Evidence Bundle). **Company warehouse:** not ready until you have an approved catalog, owner, end-user Databricks identity, and a domain holdout. Roadmap: [docs/PLAN.md](docs/PLAN.md).
 
 ---
 

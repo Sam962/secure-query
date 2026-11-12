@@ -13,14 +13,20 @@ Holdout ids are frozen in `src/secure_query/evals/dev_expansion.py` (`HOLDOUT_CA
 ## Commands
 
 ```bash
+export PYTHONPATH=src
 pytest tests/test_suite_split.py -q
-python -m secure_query.evals.run --split dev --provider mock
-python -m secure_query.evals.run --split holdout --provider ollama
+python -m secure_query.evals.run --split dev --provider mock            # wiring only
+python -m secure_query.evals.run --split holdout --provider openai      # SQL path (default)
+python -m secure_query.evals.run --split holdout --provider openai --planner lqp
 ```
 
-Ollama default is **qwen2.5:7b**. Override with `--model` or `SECURE_QUERY_MODEL`. `llama3.2` is too weak for LogicalPlan JSON and is not a kernel regression.
+`--planner sql` is the default and matches the product. With a real model it also runs
+the self-consistency gate (two readings), exactly as `/ask` does.
 
-**Pin the model build, not just the tag.** An Ollama tag can be re-pulled to a different build: `qwen2.5:7b` changed on 2026-09-07 and the holdout went from 0 to 2 wrong with an identical prompt. The runner prints `digest=` for Ollama models; pass `--expect-digest <prefix>` (or set `SECURE_QUERY_MODEL_DIGEST`) and it refuses to run against any other build (exit 2). Record the digest in every baseline.
+**Pin the model build, not just the name.** Record the model id in every baseline. For
+local Ollama models the runner prints `digest=`; pass `--expect-digest <prefix>` (or set
+`SECURE_QUERY_MODEL_DIGEST`) and it refuses to run against another build (exit 2). A
+re-pulled `qwen2.5:7b` once moved the holdout from 0 to 2 wrong with an identical prompt.
 
 ## How scores work
 
@@ -53,8 +59,8 @@ written against. Everything Northwind-specific is catalog data in
 
 ```bash
 python -m secure_query.demo.load_northwind   # pinned commit + SHA-256
-python -m secure_query.evals.run --provider ollama \
-  --suite northwind --expect-digest 845dbda0ea48
+python -m secure_query.evals.run --provider openai \
+  --suite src/secure_query/evals/suites/northwind/cases.json
 ```
 
 Dev cases for Northwind live in `suites/northwind_dev/` (`--suite northwind_dev`).
@@ -64,13 +70,24 @@ Northwind catalog against its failures. To work on a failure mode it exposed,
 write new dev cases (on either schema) that show it, fix against those, then
 re-run Northwind once.
 
+## Head-to-head with Genie
+
+`python -m secure_query.evals.scorecard --suite <cases.json> --repeat 5 --out <file>`
+scores Secure Query and Genie on the same cases with the **same matcher** (column order,
+float noise and LIMIT ties tolerated for both). A Genie reply with no query result, such as
+a clarifying question, counts as a refusal. Genie cells are converted to their declared
+column types before comparison. `--sq-only` skips Genie. Until PLAN task 2.1 lands, the
+references and Secure Query run on the local DuckDB file, so a live comparison needs the
+same data in the warehouse.
+
 ## Release gate
 
-- Holdout **wrong-rate = 0** (wrong + unsafe)
-- Dev suite ≥ 100 questions
-- Golden SQL tests pass (`pytest`)
+- Adjudicated holdout wrong-rate: 95% upper bound ≤ 2% (PLAN.md Goal).
+- Dev suite ≥ 100 questions.
+- Golden SQL tests pass (`pytest`).
 
-CI runs mock holdout. A live-model holdout is a laptop or nightly job, not GitHub Actions (no Ollama there).
+CI runs the mock holdout on both planner paths. It checks wiring, not quality. A
+live-model holdout is a laptop or nightly job.
 
 ## Adding cases
 
@@ -81,4 +98,4 @@ CI runs mock holdout. A live-model holdout is a laptop or nightly job, not GitHu
 
 ## Baselines
 
-Save runs under `docs/baselines/holdout-YYYY-MM-DD.txt`, including the model digest. See the newest file for the current result.
+Save runs under `docs/baselines/` with the date and model id in the file name. The current result is in [STATUS.md](STATUS.md).

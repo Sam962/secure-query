@@ -4,10 +4,10 @@
 
 | Threat | Control |
 |--------|---------|
-| LLM writes SQL (injection) | LQP planner emits LogicalPlan JSON, compiled from the AST. SQL planner: the model's SQL is parsed, checked against the catalog and regenerated (`kernel/sql_validate.py`); its text never runs |
-| LLM invents columns/tables | `validate(plan, catalog)` against approved catalog |
-| PII exfiltration | Column policy; high-PII blocked in filters/projections |
-| Wrong confident answers | Guards + refusal; holdout wrong-rate = 0 gate |
+| LLM writes SQL (injection) | Model SQL is parsed, **allowlist**-checked against the catalog, and regenerated (`kernel/sql_validate.py`); its text never runs. COLUMNS/#n/STRUCT/whole-row/VERSION refuse |
+| LLM invents columns/tables | Every expression must resolve to an approved catalog column |
+| PII exfiltration | Column policy; high-PII blocked; shapes that skip Column nodes are forbidden |
+| Wrong confident answers | Consistency gate + refusal; adjudicated wrong-rate is the product metric |
 | Over-broad queries | Required `limit`; execute timeout + row cap |
 | Caller claims another identity | Identity from env / Bearer token / SSO header — never from JSON body |
 | Restricted user runs a privileged metric | `catalog_for_principal` drops metrics whose tables are not visible |
@@ -21,7 +21,8 @@
 | Control | Implementation | Verified by |
 |---------|----------------|-------------|
 | LQP planner never outputs SQL | `planner.plan.parse_plan_json` + `_SQL_LEAK_RE` | `test_planner.py`, CI grep |
-| Model SQL is validated and regenerated | `kernel/sql_validate.py`: one read-only query, catalog columns only, no PII, approved joins, fan-out, row filters, LIMIT; dialect-correct identifier quoting | `test_sql_validate.py` |
+| Model SQL is allowlist-validated and regenerated | `kernel/sql_validate.py`: one read-only query, catalog columns only, no PII, no COLUMNS/#n/STRUCT/whole-row, approved joins (derived sides do not auto-approve), fan-out incl. CTE launder, row filters, integer LIMIT | `test_sql_validate.py`, `test_adversarial.py` |
+| Every ask is traced | `kernel/trace.py` TraceRecord on ok/confirm/refuse | `test_trace.py` |
 | Only server-issued reviews execute | `api/service.py` `sign_review` / `execute_reviewed` | `test_api.py` |
 | validate before compile | `validate_and_compile()` | unit tests |
 | AST-only compile | `kernel/compile.py` sqlglot nodes | CI grep (no f-string SQL) |
@@ -51,10 +52,12 @@ Ratio metrics (`numerator` / `denominator`) expand to a `LogicalPlan`, so mandat
 
 ## Databricks
 
-- `execute_databricks` runs compiled SQL on a SQL warehouse. The warehouse principal must be SELECT-only (USE CATALOG / USE SCHEMA / SELECT); UC still enforces grants. On timeout the running statement is cancelled.
-- `/ready` checks this when `SECURE_QUERY_DATABRICKS_SCHEMA` is set: `SHOW GRANTS ON SCHEMA` for the current user, 503 on any write-capable privilege. Only direct grants are visible, not grants through groups, so it is a necessary check, not a proof.
-- `draft_catalog` / `fetch_unity_catalog_draft` build an **unapproved** catalog from `information_schema`. A data owner must review PII flags and joins before that object is the planner allowlist. Unity Catalog is warehouse governance; it does not replace the Secure Query catalog.
+- `execute_databricks` runs compiled SQL on a SQL warehouse as the **end-user** identity by default (`SECURE_QUERY_DATABRICKS_AUTH=user`): the caller’s token comes from `X-Databricks-Access-Token` / principal `databricks_token` / OAuth on-behalf-of. `shared` mode (service PAT) is demo-only. UC RLS/masks apply to the person asking. On timeout the running statement is cancelled.
+- The warehouse principal must be SELECT-only (USE CATALOG / USE SCHEMA / SELECT). `/ready` checks this when `SECURE_QUERY_DATABRICKS_SCHEMA` is set: `SHOW GRANTS ON SCHEMA` for the current user, 503 on any write-capable privilege. Only direct grants are visible, not grants through groups, so it is a necessary check, not a proof.
+- `draft_catalog` / `fetch_unity_catalog_draft` build an **unapproved** catalog from `information_schema`. Foreign keys come from `referential_constraints` + key/constraint column usage — query failure fails the draft (no silent empty join allowlist). Untagged columns whose names look sensitive (`email`, `phone`, `address`, …) default to `pii=high`; explicit `public` / `pii_none` clears that. A data owner must still review before the object is the planner allowlist.
+- Postgres and SharePoint lists join UC via Lakehouse Federation / Lakeflow Connect → Delta ([FEDERATION.md](FEDERATION.md)); they do not become a second production dialect.
 - Local DuckDB remains the CI/demo path. Warehouse catalogs set `sql_dialect="databricks"`.
+- Every ask writes a TraceRecord and a signed Evidence Bundle (HMAC with `SECURE_QUERY_REVIEW_SECRET`).
 
 ## Rules
 

@@ -1,4 +1,4 @@
-"""Planner: natural language → LogicalPlan JSON only (never SQL)."""
+"""Planner: LLM clients, the validated-SQL planner (default) and the LogicalPlan planner (metrics)."""
 
 from secure_query.planner.llm import (
     LLMClient,
