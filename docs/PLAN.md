@@ -198,8 +198,11 @@ runs exit 0 (`echo $?` prints `0`).
     reply); `gpt-6.1-terra` 5 / 2. All candidates now qualify on dev. Steps 1 and 2 are
     done (the fix replaced the prompt line).
   - Decided 2026-11-11 (Sam): `DEFAULT_MODEL` is `gpt-6-luna` with reasoning off, on the dev
-    numbers. Still owed from step 3: re-run Spider test 400 with it, adjudicate, and put
-    the numbers in STATUS.md.
+    numbers. Spider test 400 was then run (STATUS changelog, 2026-11-11):  has
+    29 wrong against 33 for , but answers 67.3% against 76.5%, under the 70%
+    bar. **Open decision for Sam:** keep  and reduce its false refusals (tune
+    on Spider dev, never on test), or go back to  until that is done.
+    Adjudication of the wrong answers waits on that decision.
   - Files: `src/secure_query/planner/sql_plan.py` (prompt only), `src/secure_query/planner/llm.py`
     (`DEFAULT_MODEL`), `.env.example`, `README.md`, `docs/STATUS.md`.
   - Steps:

@@ -25,7 +25,7 @@ from collections import Counter
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from functools import partial
-from itertools import permutations
+from itertools import combinations, permutations
 from pathlib import Path
 from typing import Any
 
@@ -326,7 +326,18 @@ def _matches(
     ):
         return True
     unlimited = _unlimited_reference_rows(case, db_path)
-    return unlimited is not None and _valid_tie_resolution(actual, expected, unlimited)
+    if unlimited is None:
+        return False
+    if _valid_tie_resolution(actual, expected, unlimited):
+        return True
+    # The tie rule under extra_columns_ok: some choice of the answer's columns is a valid tie.
+    width, have = (len(expected[0]) if expected else 0), (len(actual[0]) if actual else 0)
+    if not case.extra_columns_ok or not 0 < width < have <= 6:
+        return False
+    return any(
+        _valid_tie_resolution([tuple(row[i] for i in keep) for row in actual], expected, unlimited)
+        for keep in combinations(range(have), width)
+    )
 
 
 def _probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:

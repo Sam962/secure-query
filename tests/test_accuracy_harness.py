@@ -335,3 +335,29 @@ def test_integer_year_matches_a_year_bucket() -> None:
     assert _results_match([(2021, 10.0), (2022, 12.0)], expected, ordered=False)
     assert not _results_match([(2021, 10.0), (2023, 12.0)], expected, ordered=False)
     assert not _results_match([(2021, 10.0), (2022, 12.0)], [(datetime(2021, 3, 1), 10.0), (datetime(2022, 1, 1), 12.0)], ordered=False)
+
+
+def test_tie_rule_applies_to_answers_with_an_extra_column() -> None:
+    """An answer that also shows another column still gets the tie rule, when extras are allowed."""
+    from dataclasses import replace
+
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+    from secure_query.evals.accuracy import LiveCase, _matches, _reference_rows
+
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+
+    case = LiveCase(
+        case_id="t",
+        question="q",
+        expect="answer",
+        reference_sql="SELECT BillingCountry, COUNT(*) FROM Invoice GROUP BY BillingCountry ORDER BY 2 DESC, 1 DESC LIMIT 3",
+        ordered=True,
+        extra_columns_ok=True,
+    )
+    expected = _reference_rows(case, DUCKDB_PATH)  # USA 91, Canada 56, then France (tied with Brazil at 35)
+    other_tied = "Brazil" if expected[2][0] == "France" else "France"
+    answer = [("USA", 91, "x"), ("Canada", 56, "x"), (other_tied, 35, "x")]
+    assert _matches(case, answer, expected, DUCKDB_PATH)
+    assert not _matches(case, [("USA", 91, "x"), ("Canada", 56, "x"), ("Germany", 28, "x")], expected, DUCKDB_PATH)
+    assert not _matches(replace(case, extra_columns_ok=False), answer, expected, DUCKDB_PATH)
