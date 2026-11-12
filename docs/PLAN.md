@@ -115,7 +115,7 @@ runs exit 0 (`echo $?` prints `0`).
        `METRIC_CHECKS`.
   - Done when: `grep -n _DEFAULT_CHECKS -r src` prints nothing, tests pass, Verify passes.
 
-- [ ] **1.4 Measure the table-confidence gate, then decide its default.**
+- [x] **1.4 Measure the table-confidence gate, then decide its default.**
   - Why: `planner/confidence.py` refuses when lexical table-linking is unsure. It is on
     for any catalog wider than 16 tables, so every real warehouse domain gets it, and it
     was never measured. Forced on for Chinook it refused **4 of 25 answerable questions

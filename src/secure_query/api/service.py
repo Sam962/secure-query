@@ -268,7 +268,7 @@ def ask(
                 question,
                 low_confidence_message(link),
                 principal=principal,
-                code="validation_failed",
+                code="low_link_confidence",
                 refused=True,
                 retrieved_tables=list(link.tables),
                 catalog=scoped,

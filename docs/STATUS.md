@@ -31,11 +31,20 @@ Spider test 400, gate + tie-break (2026-10-11): **78.8% right; adjudicated real 
 2.75% (11/400, 95% CI 1.5–4.9%)**; flip rate 5.5%. Files: `docs/baselines/` and
 `docs/adjudication/`. BIRD is a stress test, not a target.
 
-Unmeasured gates (PLAN 1.4 and 1.5): the table-confidence refusal and DPC-lite.
-Forced on for Chinook, the table-confidence gate refused 4 of 25 answerable questions.
+Table-confidence refusal (PLAN 1.4, 2026-11-11, no LLM): on a 22-table catalog (Chinook +
+Northwind) at threshold 0.55 it would refuse **17 of 53 answerable questions (32.1%)**:
+Chinook 11 of 25, Northwind 6 of 28. That is above the 5% rule, so the gate is **off by
+default** (`SECURE_QUERY_LINK_CONFIDENCE=0`). It has its own refusal code,
+`low_link_confidence`. Whether it prevents wrong answers is still unmeasured.
+
+Unmeasured gate (PLAN 1.5): DPC-lite.
 
 ## Changelog
 
+- **2026-11-11 — table-confidence gate measured and turned off by default (PLAN 1.4).**
+  17 of 53 answerable questions (32.1%) fell below the 0.55 threshold on the combined
+  22-table Chinook + Northwind catalog (Chinook 11/25, Northwind 6/28). Default threshold
+  is now 0; the refusal code is `low_link_confidence`.
 - **2026-11-11 — cleanup and plan rewrite.** Backup of the full pre-cleanup tree:
   `/private/tmp/claude-501/-Users-USER-Desktop-secure-query/086bb7dc-9aaf-474c-bcae-4aab5a73fdd1/scratchpad/worktree-backup-20261111-2002.tgz`
   (temporary; copy it somewhere permanent if you want to keep it).

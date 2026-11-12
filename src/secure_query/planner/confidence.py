@@ -24,11 +24,16 @@ class LinkDecision:
 
 
 def confidence_threshold() -> float:
-    raw = (os.environ.get("SECURE_QUERY_LINK_CONFIDENCE") or "0.55").strip()
+    """SECURE_QUERY_LINK_CONFIDENCE; 0 (the default) turns the refusal off.
+
+    Off by default: at 0.55 on a 22-table catalog it refused 17 of 53 answerable
+    questions (docs/STATUS.md, 2026-11-11).
+    """
+    raw = (os.environ.get("SECURE_QUERY_LINK_CONFIDENCE") or "0").strip()
     try:
         return min(1.0, max(0.0, float(raw)))
     except ValueError:
-        return 0.55
+        return 0.0
 
 
 def score_tables(question: str, catalog: Catalog, *, k: int = 8) -> list[tuple[str, float]]:
