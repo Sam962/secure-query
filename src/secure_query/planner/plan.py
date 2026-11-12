@@ -104,7 +104,7 @@ class PlannerResult:
     """A valid plan a post-plan guard refused. Never executed by the product; the
     eval harness runs it to score whether the guard blocked a right or wrong answer."""
     gate_fingerprints: tuple[str, ...] = ()
-    """Execution fingerprints from the consistency gate / DPC-lite probe."""
+    """Execution fingerprints from the self-consistency gate."""
 
 
 

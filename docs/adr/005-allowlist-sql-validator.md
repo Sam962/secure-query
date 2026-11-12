@@ -32,3 +32,9 @@ execute and leaked PII. Fan-out aggregates laundered through a CTE, and
   “the LLM never writes SQL.”
 - Evidence Bundle builds on TraceRecord + review HMAC; DPC-lite and link
   confidence thresholds refuse unstable / low-confidence plans.
+
+## Update 2026-11-11
+
+Both gates in the last bullet were measured (PLAN 1.4 and 1.5). DPC-lite never changed an
+outcome and was deleted. The link-confidence refusal would have refused 32% of answerable
+questions and is off by default. See [STATUS.md](../STATUS.md).

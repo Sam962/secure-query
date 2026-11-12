@@ -103,7 +103,7 @@ question
   → catalog slice for this principal
   → LLM emits SQL JSON (or approved metric_id)
   → allowlist validate + regenerate (sqlglot AST)  — model SQL never runs as written
-  → consistency gate + DPC-lite probe
+  → self-consistency gate (two readings must agree)
   → row filters
   → execute as end-user on Databricks (or DuckDB / local Postgres)
   → signed Evidence Bundle + trace/audit JSONL  (no LLM on result cells)
