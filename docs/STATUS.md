@@ -51,25 +51,25 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
-- **2026-11-11 — Spider test 400, successor models against  (PLAN 1.7).** Same
+- **2026-11-11 — Spider test 400, successor models against `gpt-4.1-mini` (PLAN 1.7).** Same
   400 questions, SQL path, gate on, 3 repeats, exact match, **not adjudicated**. Rescored
-  after a grader fix (below). Files: .
+  after a grader fix (below). Files: `docs/baselines/spider-test400-*-2026-11-11.json`.
 
   | Model | Right | Wrong | Refused | Answer-rate |
   |-------|-------|-------|---------|-------------|
-  | , 2026-10-11 baseline | 315 | 33 | 52 | 78.8% |
-  | , today | 306 | 33 | 61 | 76.5% |
-  | , reasoning off (current default) | 269 | 29 | 102 | 67.3% |
-  | , reasoning low | 271 | 37 | 92 | 67.8% |
-  | , reasoning off | 290 | 42 | 68 | 72.5% |
+  | `gpt-4.1-mini`, 2026-10-11 baseline | 315 | 33 | 52 | 78.8% |
+  | `gpt-4.1-mini`, today | 306 | 33 | 61 | 76.5% |
+  | `gpt-6-luna`, reasoning off (current default) | 269 | 29 | 102 | 67.3% |
+  | `gpt-6-luna`, reasoning low | 271 | 37 | 92 | 67.8% |
+  | `gpt-6.1-terra`, reasoning off | 290 | 42 | 68 | 72.5% |
 
-   is not wrong more often than  but refuses far more (66 model
+  `gpt-6-luna` is not wrong more often than `gpt-4.1-mini` but refuses far more (66 model
   refusals against 29, mostly "the catalog does not define ..." on loosely named schemas),
   which puts its answer-rate under the 70% bar. The dev suites did not show this.
   - Grader fix: the tie rule (a LIMIT that cuts through a tie may return any tied row) did
     not apply when the answer carried an extra column, so the new measure column turned 5
-    to 7 tied answers per run into "wrong". It now applies under .
-  - Checked offline:  rewrote 77 of 734 past Spider queries and none
+    to 7 tied answers per run into "wrong". It now applies under `extra_columns_ok`.
+  - Checked offline: `show_ranking_measure` rewrote 77 of 734 past Spider queries and none
     failed validation afterwards.
   - Known weakness, not changed: when the reference returns a name only, the tie rule
     cannot tell a tied row from a lower-ranked one.
