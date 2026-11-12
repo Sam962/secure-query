@@ -80,6 +80,26 @@ column types before comparison. `--sq-only` skips Genie. Until PLAN task 2.1 lan
 references and Secure Query run on the local DuckDB file, so a live comparison needs the
 same data in the warehouse.
 
+## Qualifying a new model
+
+Any model on an OpenAI-compatible endpoint runs (`SECURE_QUERY_MODEL`, and
+`SECURE_QUERY_BASE_URL` for a non-OpenAI endpoint). Running is not the same as trusted:
+wrong-rate is a property of the model, so each model is measured before it is used.
+
+1. Run the dev suites with the candidate and with the current default, same day:
+   ```bash
+   python -m secure_query.evals.run --split dev --provider openai --model <candidate> --json dev-<candidate>.json
+   python -m secure_query.evals.run --suite src/secure_query/evals/suites/northwind_dev/cases.json --provider openai --model <candidate>
+   ```
+2. Read the log for `rejected 'temperature'`. If the model refuses a temperature, both
+   readings of the self-consistency gate sample at the model's default, and the first
+   reading is no longer deterministic. Record that next to the numbers. A reasoning model
+   may accept a temperature with `SECURE_QUERY_REASONING_EFFORT=none`.
+3. Compare wrong answers first, then answer-rate, seconds per question and price. A
+   candidate qualifies for dev when its wrong count is not above the current default's.
+4. Before it becomes the default or goes to a client: run the release gate below and the
+   domain holdout with it, and adjudicate. Record the model id in the baseline file.
+
 ## Release gate
 
 - Adjudicated holdout wrong-rate: 95% upper bound ≤ 2% (PLAN.md Goal).

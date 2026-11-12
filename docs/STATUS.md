@@ -45,6 +45,11 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-11 — model-agnostic client; successor models first look (PLAN 1.7).** The
+  client drops or swaps a parameter a model rejects, so any model on an OpenAI-compatible
+  endpoint runs. `gpt-4.1-mini` shuts down 2027-01-14. Wrong answers on Chinook dev (134) /
+  Northwind dev (10), not adjudicated: `gpt-4.1-mini` 7 / 3; `gpt-6.1-terra` (reasoning
+  off) 11 / 4; `gpt-6-luna` 13 / 4 with reasoning off and with it on. No model switched.
 - **2026-11-11 — DPC-lite measured and deleted (PLAN 1.5).** Live `gpt-4.1-mini` runs on
   Chinook dev (134 cases) and Northwind dev (10 cases): 0 refusals with code
   `unstable_probe`. Removed `planner/dpc_lite.py`, its call and its test; each question

@@ -182,6 +182,29 @@ runs exit 0 (`echo $?` prints `0`).
        before and after, and record both in STATUS.md.
   - Done when: the timing test passes, STATUS.md has both medians, and Verify passes.
 
+- [ ] **1.7 Qualify a successor to `gpt-4.1-mini` before 2027-01-14.**
+  - Why: OpenAI's deprecations page (read 2026-11-11) lists `gpt-4.1-mini-2025-04-14` for
+    shutdown on 2027-01-14 and names `gpt-6-luna` as the replacement. Every number in
+    STATUS.md is for `gpt-4.1-mini`. The client now accepts any model (it adapts to the
+    parameters a model rejects), so this is a measurement task, not a code task.
+  - Measured so far (2026-11-11, Chinook dev 134 cases / Northwind dev 10, not adjudicated,
+    wrong answers): `gpt-4.1-mini` 7 / 3; `gpt-6.1-terra` reasoning off 11 / 4; `gpt-6-luna`
+    reasoning off 13 / 4; `gpt-6-luna` reasoning on 13 / 4 (plus 1 empty reply). Most of the
+    gap is one behaviour: the newer models answer "which X has the most Y" with X only and
+    leave out Y (6 of terra's 11), which the strict grader scores wrong.
+  - Files: `src/secure_query/planner/sql_plan.py` (prompt only), `src/secure_query/planner/llm.py`
+    (`DEFAULT_MODEL`), `.env.example`, `README.md`, `docs/STATUS.md`.
+  - Steps:
+    1. Follow "Qualifying a new model" in [EVAL.md](EVAL.md) for each candidate.
+    2. If the missing-measure pattern is still the main gap, try one dataset-agnostic prompt
+       line on **dev only** (return the value a ranking or filter is based on, next to the
+       name), and re-run every candidate and `gpt-4.1-mini` with it.
+    3. Pick the cheapest candidate whose dev wrong-rate is not above `gpt-4.1-mini`'s.
+       Re-run Spider test 400 with it and adjudicate, then change `DEFAULT_MODEL` and the
+       docs. If none qualifies, stop and report.
+  - Done when: STATUS.md has the adjudicated Spider numbers for the new default, and
+    Verify passes.
+
 ## Phase 2 — A fair head-to-head harness (agent; no Databricks needed)
 
 - [ ] **2.1 Run the scorecard against the warehouse, not a local file.**
@@ -251,17 +274,3 @@ runs exit 0 (`echo $?` prints `0`).
 - **P2. Jev / TypeSafe schema linker.** Only with a measured lift over the local linker on
   a wide catalog. The unused hook was removed on 2026-11-11.
 - **P3. Document Q&A over SharePoint.** Out of scope for this product.
-- **P4. Move off `gpt-4.1-mini` before OpenAI removes it.** OpenAI's deprecations page
-  (read 2026-11-11) lists `gpt-4.1-mini-2025-04-14` for shutdown on **2027-01-14**, with
-  `gpt-6-luna` as the recommended replacement (`gpt-4o-mini` and `gpt-4.1` go the same
-  day). Every number in STATUS.md is for `gpt-4.1-mini`, so this is a re-measurement, not
-  a config change: run Chinook dev and Northwind dev with the candidate
-  (`SECURE_QUERY_MODEL=<candidate>`), compare wrong-rate first, then answer-rate, latency
-  and cost against the 2026-11-11 runs; switch `DEFAULT_MODEL` only if wrong-rate does not
-  rise; then redo Spider 400 and its adjudication. Check first that the candidate accepts
-  the `temperature` setting the second reading uses (`CHECK_TEMPERATURE`); the GPT-6
-  models are listed as reasoning models.
-  First look, 2026-11-11, `gpt-6-luna` with `SECURE_QUERY_REASONING_EFFORT=none` (the only
-  setting where it accepts a temperature), not adjudicated: Chinook dev 13 wrong of 134
-  (9.7%) against 7 (5.2%) for `gpt-4.1-mini`; Northwind dev 4 wrong of 10 against 3. Not
-  switched. Still untried: `gpt-6-luna` with reasoning on, and `gpt-6.1-terra`.
