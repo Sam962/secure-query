@@ -31,7 +31,8 @@
 **Default model since 2026-11-11: `gpt-6-luna`, reasoning off** (Sam's decision, on the dev
 comparison in the changelog). It has **no adjudicated wrong-rate yet**: the Spider number
 below was measured with the previous default, `gpt-4.1-mini`, and must not be quoted for
-`gpt-6-luna` until PLAN 1.7 step 3 is done.
+`gpt-6-luna` until PLAN 1.7 step 3 is done. As of 2026-11-12 it matches `gpt-4.1-mini` on
+Spider test 400 by exact match (307 right / 40 wrong against 310 / 39); see the changelog.
 
 Spider test 400, gate + tie-break (2026-10-11): **78.8% right; adjudicated real wrong
 2.75% (11/400, 95% CI 1.5–4.9%)**; flip rate 5.5%. Files: `docs/baselines/` and
@@ -51,6 +52,28 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-12 — `gpt-6-luna` now level with `gpt-4.1-mini` on Spider test (PLAN 1.7).** Two
+  fixes, both found on Spider **dev** and confirmed once on test:
+  - Validator bug: every correlated subquery (`WHERE NOT EXISTS (... = outer.id)`) was
+    refused as an unknown column. Outer references are now resolved through the enclosing
+    queries and get the same catalog and PII checks as local columns.
+  - Prompt: the refusal rule now says when to refuse (the catalog truly lacks the table,
+    column or relationship) and that wording or a text-typed number is not a reason.
+
+  Spider test, same 400 questions, gate on, 3 repeats, exact match, **not adjudicated**
+  (files: `docs/baselines/spider-test400-*-2026-11-12.json`):
+
+  | Model | Right | Wrong | Refused | Answer-rate |
+  |-------|-------|-------|---------|-------------|
+  | `gpt-6-luna`, before (2026-11-11) | 269 | 29 | 102 | 67.3% |
+  | `gpt-6-luna`, after | 307 | 40 | 53 | 76.8% |
+  | `gpt-4.1-mini`, before (2026-11-11) | 306 | 33 | 61 | 76.5% |
+  | `gpt-4.1-mini`, after | 310 | 39 | 51 | 77.5% |
+
+  Dev suites after the fixes, Chinook dev (134) / Northwind dev (10), right-wrong-refused:
+  `gpt-6-luna` 128-5-1 / 9-1-0; `gpt-4.1-mini` 121-5-8 / 8-1-1. Both models answer more and
+  are scored wrong slightly more often (exact match); the wrong answers need adjudication
+  before any wrong-rate is quoted.
 - **2026-11-11 — Spider test 400, successor models against `gpt-4.1-mini` (PLAN 1.7).** Same
   400 questions, SQL path, gate on, 3 repeats, exact match, **not adjudicated**. Rescored
   after a grader fix (below). Files: `docs/baselines/spider-test400-*-2026-11-11.json`.
