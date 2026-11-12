@@ -28,11 +28,13 @@
 
 ## Latest measured (SQL path)
 
-**Default model since 2026-11-11: `gpt-6-luna`, reasoning off** (Sam's decision, on the dev
-comparison in the changelog). It has **no adjudicated wrong-rate yet**: the Spider number
-below was measured with the previous default, `gpt-4.1-mini`, and must not be quoted for
-`gpt-6-luna` until PLAN 1.7 step 3 is done. As of 2026-11-12 it matches `gpt-4.1-mini` on
-Spider test 400 by exact match (307 right / 40 wrong against 310 / 39); see the changelog.
+**Default model: `gpt-6-luna`, reasoning off** (since 2026-11-11). Spider test 400, gate on,
+3 repeats (2026-11-12): **76.8% right; adjudicated real wrong 3.5% (14/400, 95% CI
+2.1–5.8%)**; refused 13.3%. Both raters were models (gpt-5 and Claude); no human rated
+this round. Files: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-12.json` and
+`docs/adjudication/`. This is above the 2% goal, as the previous model's number was.
+
+Previous default, `gpt-4.1-mini`:
 
 Spider test 400, gate + tie-break (2026-10-11): **78.8% right; adjudicated real wrong
 2.75% (11/400, 95% CI 1.5–4.9%)**; flip rate 5.5%. Files: `docs/baselines/` and
@@ -52,6 +54,10 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-12 — `gpt-6-luna` adjudicated on Spider test 400 (PLAN 1.7 done).** 40 wrong by
+  exact match: 14 real errors (3.5%, CI 2.1–5.8%), 15 ambiguous, 11 benchmark faults. 13
+  labels reused from earlier rounds (same rows); 27 rated by gpt-5 and a second model
+  rater (Claude), merged as real error if either said so. See `docs/adjudication/README.md`.
 - **2026-11-12 — `gpt-6-luna` now level with `gpt-4.1-mini` on Spider test (PLAN 1.7).** Two
   fixes, both found on Spider **dev** and confirmed once on test:
   - Validator bug: every correlated subquery (`WHERE NOT EXISTS (... = outer.id)`) was

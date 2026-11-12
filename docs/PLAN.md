@@ -182,7 +182,7 @@ runs exit 0 (`echo $?` prints `0`).
        before and after, and record both in STATUS.md.
   - Done when: the timing test passes, STATUS.md has both medians, and Verify passes.
 
-- [ ] **1.7 Adjudicate the new default model, `gpt-6-luna`.**
+- [x] **1.7 Adjudicate the new default model, `gpt-6-luna`.**
   - Why: OpenAI's deprecations page (read 2026-11-11) lists `gpt-4.1-mini-2025-04-14` for
     shutdown on 2027-01-14 and names `gpt-6-luna` as the replacement. Every number in
     STATUS.md is for `gpt-4.1-mini`. The client now accepts any model (it adapts to the
@@ -203,8 +203,8 @@ runs exit 0 (`echo $?` prints `0`).
     bar. Fixed 2026-11-12 on Spider dev (validator rejected correlated subqueries; refusal
     rule in the prompt): on Spider test 400 `gpt-6-luna` is now 307 right / 40 wrong / 53
     refused (76.8%) against 310 / 39 / 51 for `gpt-4.1-mini`. The default stays
-    `gpt-6-luna`. Still owed: adjudicate its 40 wrong answers and put the adjudicated
-    wrong-rate in STATUS.md.
+    `gpt-6-luna`. Adjudicated 2026-11-12: 14 real errors of 400 (3.5%, CI 2.1–5.8%), by two
+    model raters; no human rated this round.
   - Files: `src/secure_query/planner/sql_plan.py` (prompt only), `src/secure_query/planner/llm.py`
     (`DEFAULT_MODEL`), `.env.example`, `README.md`, `docs/STATUS.md`.
   - Steps:

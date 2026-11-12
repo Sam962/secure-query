@@ -1,0 +1,54 @@
+{
+ "test_0104_e_commerce:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0173_vehicle_driver:answered_wrong": {
+  "label": "real_error",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0708_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0726_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0813_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1047_aan_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-labels-merged.json"
+ },
+ "test_1129_pilot_1:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1159_pilot_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1438_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1439_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1486_bike_racing:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1605_car_racing:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1732_warehouse_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ }
+}

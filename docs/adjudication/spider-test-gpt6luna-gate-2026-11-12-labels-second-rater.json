@@ -1,0 +1,137 @@
+{
+ "test_0074_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "reason": "Joins orders to shipments and then excludes shipped orders, so it can never return a row",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0129_bbc_channels:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps channels with zero programs; 'for each channel' allows it",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0296_customers_and_orders:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Five customers tie at 2 orders; the question asks for one and the row returned is tied for the maximum",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0432_vehicle_rent:answered_wrong": {
+  "label": "real_error",
+  "reason": "Sorts by single rental hours without summing per vehicle, so vehicles repeat and the order is wrong",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0456_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "DISTINCT drops one duplicate pair; the question does not say whether duplicates matter",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0464_cre_Students_Information_Systems:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold adds an EXCEPT (students with only that result) the question does not ask for",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0504_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps students with zero courses; 'for each student' allows it",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0655_club_leader:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Question asks for leader names only; gold also returns the club name",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0711_cre_Doc_and_collections:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counts Related_Document_Object_ID instead of Document_Object_ID",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0819_address_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "Question asks for the two cities of each pair; the answer unions codes and loses the pairing",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0820_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'City codes of cities' can be read as the set of codes rather than pairs",
+  "rater": "claude-fable-5-2"
+ },
+ "test_0939_headphone_store:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters rows that are not plastic (wrong case too) instead of earpads that never appear with plastic",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1006_aan_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold returns an arbitrary citing paper id for the most cited group; the system returns the cited paper",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1059_conference:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counts participations per conference id, giving repeated names, not how often each conference name occurs",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1073_conference:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps institutions with zero staff; 'for each institution' allows it",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1153_pilot_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "Inner join to Hangar drops a plane type that has pilots",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1178_pilot_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Counts distinct pilots where gold counts pilot-plane rows; 'how many pilots' supports distinct",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1291_art_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Same averages per painter; the system names the painter and orders by name as asked, gold returns the id ordered by title",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1305_art_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "One artist has strictly the most oil paintings; gold's LIMIT 3 is arbitrary",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1401_real_estate_rentals:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "One state per property versus distinct states; 'corresponding to each property' allows either",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1556_bakery_1:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Returns the cheapest good's id where gold returns its price; the question asks which good",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1718_warehouse_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "Requires one box to contain both Rocks and Scissors, so it returns nothing",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1773_university_rank:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters universities above 2000 before averaging instead of filtering on the average",
+  "rater": "claude-fable-5-2"
+ },
+ "test_1842_movie_2:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold returns every theater; the system returns theaters that actually have a movie",
+  "rater": "claude-fable-5-2"
+ },
+ "test_2008_book_press:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold compares a text amount with a number in SQLite, which is always true; the system casts and counts correctly",
+  "rater": "claude-fable-5-2"
+ },
+ "test_2066_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "LEFT JOIN keeps agencies with zero clients; 'each agency' allows it",
+  "rater": "claude-fable-5-2"
+ },
+ "test_2127_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups by client and meeting type as the question words it; gold groups by type only",
+  "rater": "claude-fable-5-2"
+ }
+}

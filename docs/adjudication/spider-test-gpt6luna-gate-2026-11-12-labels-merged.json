@@ -1,0 +1,378 @@
+{
+ "test_0104_e_commerce:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0173_vehicle_driver:answered_wrong": {
+  "label": "real_error",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0708_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0726_cre_Doc_and_collections:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0813_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1047_aan_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-labels-merged.json"
+ },
+ "test_1129_pilot_1:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1159_pilot_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1438_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1439_real_estate_rentals:answered_wrong": {
+  "label": "real_error",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1486_bike_racing:answered_wrong": {
+  "label": "ambiguous",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1605_car_racing:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_1732_warehouse_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "reused_from": "spider-test-gpt41mini-gate-2026-10-11-labels-merged.json"
+ },
+ "test_0074_e_commerce:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Joins orders to shipments and then excludes shipped orders, so it can never return a row",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query joins only shipped orders and then filters for unshipped ones, yielding no rows, whereas the question asks for invoice statuses of orders not shipped (invoices not in any shipment), which the gold returns."
+  }
+ },
+ "test_0129_bbc_channels:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN keeps channels with zero programs; 'for each channel' allows it",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to include channels with zero programs; the system\u2019s LEFT JOIN includes them while the gold query filters them out with an inner join."
+  }
+ },
+ "test_0296_customers_and_orders:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Five customers tie at 2 orders; the question asks for one and the row returned is tied for the maximum",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It returns a different customer (and an extra count column) instead of the customer with the highest number of orders requested."
+  }
+ },
+ "test_0432_vehicle_rent:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Sorts by single rental hours without summing per vehicle, so vehicles repeat and the order is wrong",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system failed to aggregate total_hours per vehicle and returned duplicate vehicle names ordered by individual rentals, not by summed total hours as the question requires."
+  }
+ },
+ "test_0456_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "DISTINCT drops one duplicate pair; the question does not say whether duplicates matter",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to include duplicate student\u2013address pairs, so de-duplicating with DISTINCT is a reasonable interpretation."
+  }
+ },
+ "test_0464_cre_Students_Information_Systems:answered_wrong": {
+  "label": "benchmark_fault",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Gold adds an EXCEPT (students with only that result) the question does not ask for",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query excludes students who also have other behaviour details, but the question does not require exclusivity; the system\u2019s inclusive interpretation (students who have at least one most-common result) is valid."
+  }
+ },
+ "test_0504_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN keeps students with zero courses; 'for each student' allows it",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question says \u201cfor each student,\u201d implying inclusion of students with zero courses; the gold uses an inner join that omits them, while the system\u2019s LEFT JOIN with COUNT(class_id) correctly includes zero-count students."
+  }
+ },
+ "test_0655_club_leader:answered_wrong": {
+  "label": "benchmark_fault",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Question asks for leader names only; gold also returns the club name",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks only for the names of club leaders before 2018, which the system returns correctly; the gold query unnecessarily includes and outputs club names."
+  }
+ },
+ "test_0711_cre_Doc_and_collections:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Counts Related_Document_Object_ID instead of Document_Object_ID",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It counts distinct Related_Document_Object_ID instead of the documents in the subset (Document_Object_ID), yielding incorrect counts (e.g., subset 171)."
+  }
+ },
+ "test_0819_address_1:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Question asks for the two cities of each pair; the answer unions codes and loses the pairing",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The question asks for the codes of the two cities in each pair with distance > average, but the system returns a single-column deduplicated list of city codes, losing the pair information."
+  }
+ },
+ "test_0820_address_1:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'City codes of cities' can be read as the set of codes rather than pairs",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question does not specify whether to return city pairs or unique city codes; the system reasonably returns the set of city codes participating in any above\u2011average distance, while the gold returns pairs."
+  }
+ },
+ "test_0939_headphone_store:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Filters rows that are not plastic (wrong case too) instead of earpads that never appear with plastic",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system returns earpad types that appear on some non-plastic models but may also appear with plastic, whereas \u201cnever use plastic\u201d requires excluding any earpads that appear with plastic at all (as the gold EXCEPT logic does)."
+  }
+ },
+ "test_1006_aan_1:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Gold returns an arbitrary citing paper id for the most cited group; the system returns the cited paper",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "Two papers tie with the same highest citation count (1064), and the question does not specify a tie-break, so returning either paper id is acceptable."
+  }
+ },
+ "test_1059_conference:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Counts participations per conference id, giving repeated names, not how often each conference name occurs",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The question asks for how many times each conference (by name) has occurred, while the system counts participation rows per conference_id and returns multiple rows per name, not the intended per-name occurrence count."
+  }
+ },
+ "test_1073_conference:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN keeps institutions with zero staff; 'for each institution' allows it",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system reasonably includes institutions founded after 1800 with zero staff via a LEFT JOIN, which the question allows, while the gold query excludes such institutions."
+  }
+ },
+ "test_1153_pilot_1:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Inner join to Hangar drops a plane type that has pilots",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "By inner-joining Hangar, the system excluded a plane type (F-17 Fighter) that has pilots in PilotSkills; the question asks for averages by plane type among pilots, so dropping that group is incorrect."
+  }
+ },
+ "test_1178_pilot_1:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Counts distinct pilots where gold counts pilot-plane rows; 'how many pilots' supports distinct",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for the number of pilots (unique individuals), but the gold query counts rows in PilotSkills; the system correctly uses DISTINCT on pilot_name."
+  }
+ },
+ "test_1291_art_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Same averages per painter; the system names the painter and orders by name as asked, gold returns the id ordered by title",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The system correctly computes per-painter averages and orders by painter name, while the gold query orders by painting title and returns painterID, which contradicts the prompt and is likely invalid grouping/order logic."
+  }
+ },
+ "test_1305_art_1:answered_wrong": {
+  "label": "benchmark_fault",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "One artist has strictly the most oil paintings; gold's LIMIT 3 is arbitrary",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for the artist(s) with the maximum number of oil paintings, but the gold query returns the top 3; the system\u2019s single top artist matches the question\u2019s intent."
+  }
+ },
+ "test_1401_real_estate_rentals:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "One state per property versus distinct states; 'corresponding to each property' allows either",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for the state/province for each property (one row per property), but the gold query uses DISTINCT to return a unique set; the system\u2019s non-DISTINCT join matches the question\u2019s intent."
+  }
+ },
+ "test_1556_bakery_1:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Returns the cheapest good's id where gold returns its price; the question asks which good",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question could mean either the price of the cheapest cheese-flavored good or which good is cheapest; the system reasonably returned the item id while the gold returns the price."
+  }
+ },
+ "test_1718_warehouse_1:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Requires one box to contain both Rocks and Scissors, so it returns nothing",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system filters for a single box whose Contents include both 'Rocks' and 'Scissors', whereas the question (and gold) require warehouses that have boxes with Rocks and boxes with Scissors, yielding a different and incorrect result."
+  }
+ },
+ "test_1773_university_rank:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Filters universities above 2000 before averaging instead of filtering on the average",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It wrongly filters out universities with enrollment <= 2000 before averaging, whereas the question requires averaging all universities per conference and then applying HAVING avg(enrollment) > 2000, leading to an extra, incorrect conference."
+  }
+ },
+ "test_1842_movie_2:answered_wrong": {
+  "label": "real_error",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Gold returns every theater; the system returns theaters that actually have a movie",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system\u2019s inner join to Movies excluded theaters that have entries in MovieTheaters (i.e., at least one showing), while the question only asks for distinct theater names with any movie playing, which the gold query correctly returns."
+  }
+ },
+ "test_2008_book_press:answered_wrong": {
+  "label": "benchmark_fault",
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Gold compares a text amount with a number in SQLite, which is always true; the system casts and counts correctly",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question says \u201cfor each press,\u201d implying all presses including zero-counts; the system\u2019s LEFT JOIN counts zeros correctly, while the gold query\u2019s INNER JOIN excludes presses without qualifying books."
+  }
+ },
+ "test_2066_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "LEFT JOIN keeps agencies with zero clients; 'each agency' allows it",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "\u201cEach agency\u201d can reasonably include agencies with zero clients; the system\u2019s LEFT JOIN returns those with 0 while the gold counts only agencies that have clients."
+  }
+ },
+ "test_2127_advertising_agencies:answered_wrong": {
+  "label": "ambiguous",
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Groups by client and meeting type as the question words it; gold groups by type only",
+   "rater": "claude-fable-5-2"
+  },
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query ignores the \u201cfor each client\u201d requirement by aggregating only by meeting_type, while the system correctly groups by client and meeting_type to show counts per client."
+  }
+ }
+}
