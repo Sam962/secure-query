@@ -496,3 +496,85 @@ def test_databricks_double_quoted_identifier_is_refused() -> None:
     assert "backticks" in sql_system_prompt("databricks")
     assert "Double-quote identifiers" in sql_system_prompt("postgres")
     validate_sql('SELECT "Name" FROM "Genre" WHERE "Name" = \'Rock\'', CATALOG)  # duckdb: identifiers
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT COLUMNS('Email') FROM Customer",
+        "SELECT COLUMNS(*) FROM Customer",
+        "SELECT COLUMNS(x -> x LIKE 'Em%') FROM Customer",
+        "SELECT #12 FROM Customer",
+        "SELECT MAX(COLUMNS('Email')) FROM Customer",
+        "SELECT FirstName FROM Customer WHERE COLUMNS('Email') LIKE 'a%'",
+        "WITH x AS (SELECT #12 AS e FROM Customer) SELECT e FROM x",
+        "SELECT STRUCT(*) FROM Customer",
+    ],
+)
+def test_allowlist_rejects_column_bypasses(sql: str) -> None:
+    """COLUMNS(), #n, STRUCT(*) read PII without becoming Column refs — must refuse."""
+    assert codes(sql) & {"sql.forbidden", "sql.pii", "sql.star"}
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "WITH j AS ("
+        "SELECT i.Total AS t, il.Quantity AS q FROM Invoice i "
+        "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId"
+        ") SELECT SUM(t) FROM j",
+        "SELECT SUM(t) FROM ("
+        "SELECT i.Total AS t FROM Invoice i "
+        "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId"
+        ") s",
+    ],
+)
+def test_fan_out_laundered_through_cte_is_refused(sql: str) -> None:
+    assert "sql.fan_out" in codes(sql)
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT c.FirstName, s.n FROM Customer c JOIN "
+        "(SELECT TrackId AS k, Name AS n FROM Track) s ON c.CustomerId = s.k",
+        "SELECT COUNT(DISTINCT a.TrackId) FROM Track a JOIN "
+        "(SELECT TrackId AS k FROM Track) b ON b.k = b.k",
+    ],
+)
+def test_derived_join_side_does_not_bypass_allowlist(sql: str) -> None:
+    assert codes(sql) & {"sql.join", "sql.join_not_allowed", "sql.join_unknown_grain"}
+
+
+def test_limit_percent_is_refused() -> None:
+    assert "sql.limit" in codes("SELECT Name FROM Track LIMIT 100 PERCENT")
+
+
+def test_session_helpers_are_refused() -> None:
+    assert "sql.forbidden" in codes("SELECT VERSION()")
+    assert "sql.forbidden" in codes("SELECT CURRENT_USER")
+
+
+def test_postgres_whole_row_and_star_casts_are_refused() -> None:
+    pg = CATALOG.model_copy(update={"sql_dialect": "postgres"})
+    for sql in (
+        "SELECT c FROM Customer c",
+        "SELECT CAST(c.* AS TEXT) FROM Customer c",
+        "SELECT COUNT(c.*) FROM Customer c",
+    ):
+        with pytest.raises(SqlValidationFailed) as info:
+            validate_sql(sql, pg)
+        assert {e.code for e in info.value.errors} & {"sql.whole_row", "sql.star", "sql.forbidden"}
+
+
+def test_databricks_version_sample_struct_are_refused() -> None:
+    dbx = CATALOG.model_copy(update={"sql_dialect": "databricks"})
+    for sql in (
+        "SELECT FirstName FROM Customer VERSION AS OF 1",
+        "SELECT FirstName FROM Customer TABLESAMPLE (10 PERCENT)",
+        "SELECT struct(*) FROM Customer",
+        "SELECT current_user()",
+    ):
+        with pytest.raises(SqlValidationFailed) as info:
+            validate_sql(sql, dbx)
+        assert {e.code for e in info.value.errors} & {"sql.forbidden"}

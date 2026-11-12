@@ -63,3 +63,40 @@ def test_api_rejects_unknown_body_fields(monkeypatch: pytest.MonkeyPatch) -> Non
         json={"question": "hi", "sql": "SELECT 1", "confirm_only": True},
     )
     assert response.status_code == 422
+
+
+def test_sql_planner_refuses_columns_pii_bypass(monkeypatch: pytest.MonkeyPatch) -> None:
+    """End-to-end: model SQL that uses COLUMNS('Email') must not execute."""
+    import os
+
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
+    client = MockLLMClient(responses=['{"sql": "SELECT COLUMNS(\'Email\') FROM Customer LIMIT 3"}'])
+    result = plan_sql_question(
+        "customer emails",
+        sample_catalog(),
+        client,
+        max_repairs=0,
+    )
+    assert result.status == "clarify"
+    assert result.compiled is None
+    os.environ.pop("SECURE_QUERY_PLANNER", None)
+
+
+def test_sql_planner_refuses_fan_out_cte_launder() -> None:
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    sql = (
+        "WITH j AS (SELECT i.Total AS t FROM Invoice i "
+        "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId) "
+        "SELECT SUM(t) AS revenue FROM j"
+    )
+    result = plan_sql_question(
+        "total invoice revenue",
+        sample_catalog(),
+        MockLLMClient(responses=[json.dumps({"sql": sql})]),
+        max_repairs=0,
+    )
+    assert result.status == "clarify"
+    assert result.compiled is None

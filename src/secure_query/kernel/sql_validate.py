@@ -2,21 +2,21 @@
 
 The model's SQL is never executed as written. It is parsed into an AST,
 every column is resolved against the catalog schema (sqlglot `qualify`), and
-the resolved tree must satisfy the same policy the LogicalPlan path enforces:
+the resolved tree must satisfy an **allowlist** policy:
 
   - exactly one read-only query (SELECT / UNION / INTERSECT / EXCEPT, CTEs allowed)
   - sources are catalog tables or CTEs/derived tables; no table functions
-  - every column resolves to an approved catalog column; none is pii=high
-  - every join is an equi-join on an approved join key; no cross joins
-  - only known SQL functions (unknown names such as getenv are rejected)
-  - an outer LIMIT no larger than the catalog maximum
+  - every projected/filtered/ordered expression resolves to an approved catalog
+    column (or a pure function of those); no COLUMNS(), #n, STRUCT(*), whole-row
+  - every join is an equi-join on an approved join key between base grains
+  - only known SQL functions; no session/meta helpers (CURRENT_USER, VERSION, …)
+  - aggregates over one-to-many joins (including laundered through a CTE) refuse
+  - an outer LIMIT no larger than the catalog maximum (no LIMIT n PERCENT)
 
 The SQL that runs is regenerated from the validated tree, never the model text.
 
-Also enforced, as on the LogicalPlan path: aggregates over rows a one-to-many
-join repeats are rejected (fan-out), and principal row filters are injected by
-replacing each filtered base table with a filtered subquery, so no part of the
-query can see unfiltered rows.
+Principal row filters are injected by replacing each filtered base table with a
+filtered subquery, so no part of the query can see unfiltered rows.
 """
 
 from __future__ import annotations
@@ -44,6 +44,30 @@ _STATEMENTS = tuple(
         "Copy", "Pragma", "Set", "Use", "Transaction", "Commit", "Rollback", "LoadData",
         "Attach", "Detach", "Install", "Grant", "Revoke", "Cache", "Uncache", "Refresh",
         "Analyze", "Export", "Describe", "Summarize",
+    )
+    if hasattr(exp, name)
+)
+# Nodes that read columns without becoming Column refs — allowlist rejects them.
+_FORBIDDEN_SHAPES = tuple(
+    getattr(exp, name)
+    for name in (
+        "Columns",  # DuckDB COLUMNS('Email') / COLUMNS(*)
+        "PositionalColumn",  # #12
+        "Struct",  # STRUCT(*) / struct(c.*) packs every column including PII
+        "TableSample",
+        "Version",  # VERSION AS OF — time-travel / alternate snapshot
+        "CurrentUser",
+        "CurrentDate",
+        "CurrentTime",
+        "CurrentTimestamp",
+        "CurrentDatetime",
+        "CurrentSchema",
+        "CurrentCatalog",
+        "CurrentDatabase",
+        "CurrentVersion",
+        "SessionParameter",
+        "Lock",  # FOR UPDATE / FOR SHARE — not a read-only snapshot
+        "TableColumn",  # Postgres whole-row `SELECT c FROM t c`
     )
     if hasattr(exp, name)
 )
@@ -113,6 +137,9 @@ def validate_sql(
         raise SqlValidationFailed(
             [_error("sql.function", f"{', '.join(unbounded)} can allocate unbounded memory; not allowed")]
         )
+    shape_errors = _forbid_shapes(tree)
+    if shape_errors:
+        raise SqlValidationFailed(shape_errors)
     misquoted = _misquoted_identifiers(tree, catalog, dialect)
     if misquoted:
         raise SqlValidationFailed(
@@ -135,6 +162,10 @@ def validate_sql(
             raise SqlValidationFailed([_error("sql.unknown_table", f"{table.sql()} is not a catalog table")])
         if table.name.lower() not in tables and table.name.lower() not in ctes:
             raise SqlValidationFailed([_error("sql.unknown_table", f"{table.name} is not in the catalog")])
+        if table.args.get("version") is not None or table.args.get("sample") is not None:
+            raise SqlValidationFailed(
+                [_error("sql.forbidden", "VERSION AS OF / TABLESAMPLE are not allowed")]
+            )
 
     try:
         tree = qualify(
@@ -149,6 +180,40 @@ def validate_sql(
     for func in tree.find_all(exp.Anonymous):
         if str(func.this).lower() not in _SAFE_ANONYMOUS.get(dialect, frozenset()):
             errors.append(_error("sql.function", f"function {func.this} is not allowed"))
+    # Qualify rewrites Postgres `SELECT c FROM t c` into TableColumn; catch it here.
+    table_column = getattr(exp, "TableColumn", None)
+    if table_column is not None and any(isinstance(n, table_column) for n in tree.walk()):
+        errors.append(
+            _error(
+                "sql.whole_row",
+                "whole-row table references are not allowed; name the columns",
+            )
+        )
+    # scope.columns omits `c.*` under CAST/COUNT; walk the tree for starred columns.
+    for column in tree.find_all(exp.Column):
+        if isinstance(column.this, exp.Star):
+            errors.append(
+                _error(
+                    "sql.star",
+                    "qualified star / whole-row references are not allowed; name the columns",
+                )
+            )
+            break
+    # Unqualified column whose name is a source alias = whole-row reference.
+    source_names = {
+        a.lower()
+        for scope in traverse_scope(tree)
+        for a in scope.sources
+    }
+    for column in tree.find_all(exp.Column):
+        if not column.table and column.name.lower() in source_names:
+            errors.append(
+                _error(
+                    "sql.whole_row",
+                    f"{column.name} names a table alias, not a column; name the columns",
+                )
+            )
+            break
 
     for scope in traverse_scope(tree):
         base = {
@@ -156,10 +221,31 @@ def validate_sql(
             for alias, src in scope.sources.items()
             if isinstance(src, exp.Table) and src.name.lower() in tables
         }
+        derived_aliases = {
+            alias for alias, src in scope.sources.items() if alias not in base
+        }
+        source_aliases = {a.lower() for a in scope.sources}
         for column in scope.columns:
+            if isinstance(column.this, exp.Star):
+                continue  # already reported above
+            # Whole-row leftovers: alias names a source, not a column.
+            if not column.table and column.name.lower() in source_aliases:
+                errors.append(
+                    _error(
+                        "sql.whole_row",
+                        f"{column.name} names a table alias, not a column; name the columns",
+                    )
+                )
+                continue
             spec_table = base.get(column.table)
             if spec_table is None:
-                continue  # resolves to a CTE / derived table, validated in its own scope
+                if (
+                    column.table
+                    and column.table not in derived_aliases
+                    and column.table.lower() not in source_aliases
+                ):
+                    errors.append(_error("sql.unknown_column", column.sql()))
+                continue  # CTE / derived output: validated in its own scope
             cols = {c.name.lower(): c for c in spec_table.columns}
             spec = cols.get(column.name.lower())
             if spec is None:
@@ -173,6 +259,7 @@ def validate_sql(
         errors.extend(_check_joins(scope, base, catalog))
         errors.extend(_check_unused_joins(scope))
         errors.extend(_check_fan_out(scope, base, catalog))
+        errors.extend(_check_aggregate_over_joined_derived(scope, base, catalog))
     if errors:
         raise SqlValidationFailed(errors)
 
@@ -199,6 +286,34 @@ def validate_sql(
         aggregates=aggregates,
         limit=original_limit,
     )
+
+
+def _forbid_shapes(tree: exp.Expression) -> list[ValidationError]:
+    """Reject AST shapes that read columns without becoming allowlisted Column refs."""
+    errors: list[ValidationError] = []
+    if _FORBIDDEN_SHAPES:
+        found = sorted({type(n).__name__ for n in tree.find_all(*_FORBIDDEN_SHAPES)})
+        if found:
+            errors.append(
+                _error(
+                    "sql.forbidden",
+                    f"{', '.join(found)} is not allowed; name approved catalog columns only",
+                )
+            )
+    for limit in tree.find_all(exp.Limit):
+        # LIMIT 100 PERCENT / LIMIT (SELECT …) bypass the integer row cap.
+        node = limit.expression if isinstance(limit, exp.Limit) else limit
+        options = limit.args.get("limit_options")
+        percent = bool(getattr(options, "args", {}).get("percent")) if options is not None else False
+        if percent or not (isinstance(node, exp.Literal) and node.is_int):
+            errors.append(
+                _error(
+                    "sql.limit",
+                    "LIMIT must be a fixed integer (PERCENT / expressions are not allowed)",
+                )
+            )
+            break
+    return errors
 
 
 def _misquoted_identifiers(tree: exp.Expression, catalog: Catalog, dialect: str) -> list[str]:
@@ -313,9 +428,20 @@ def _requalify(node: exp.Expression, table: str, alias: str) -> exp.Expression:
 
 
 def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
+    """Every JOIN ON must be AND-ed equalities on an approved key between *base* grains.
+
+    A derived / CTE side does not auto-approve: `ON b.k = b.k` is a Cartesian product
+    that used to slip through when either side was non-base.
+    """
     select = scope.expression
     if not isinstance(select, exp.Select):
         return []
+    tables = {t.name.lower(): t for t in catalog.tables}
+    derived = {
+        alias: _derived_grain(src, tables)
+        for alias, src in scope.sources.items()
+        if alias not in base
+    }
     errors: list[ValidationError] = []
     for join in select.args.get("joins") or []:
         on = join.args.get("on")
@@ -335,22 +461,57 @@ def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
             left, right = eq.this, eq.expression
             if not (isinstance(left, exp.Column) and isinstance(right, exp.Column)):
                 continue
-            lt, rt = base.get(left.table), base.get(right.table)
-            if lt is None or rt is None:
-                approved = True  # a derived table / CTE side: its columns were validated
+            # Same-alias equality (b.k = b.k) never connects two relations.
+            if left.table and right.table and left.table == right.table:
                 continue
-            if catalog.allow_any_join or _join_allowed(catalog, lt.name, left.name, rt.name, right.name):
+            ls, rs = _resolve_join_side(left, base, derived), _resolve_join_side(right, base, derived)
+            if ls is None or rs is None:
+                if catalog.allow_any_join:
+                    approved = True
+                    continue
+                errors.append(
+                    _error(
+                        "sql.join_unknown_grain",
+                        f"cannot verify join key {eq.sql()} against the catalog "
+                        "(derived table of unknown grain); join base tables on an approved key",
+                    )
+                )
+                continue
+            (lt, lc), (rt, rc) = ls, rs
+            if catalog.allow_any_join or _join_allowed(catalog, lt, lc, rt, rc):
                 approved = True
             else:
                 errors.append(
                     _error(
                         "sql.join_not_allowed",
-                        f"{lt.name}.{left.name} = {rt.name}.{right.name} is not an approved join key",
+                        f"{lt}.{lc} = {rt}.{rc} is not an approved join key",
                     )
                 )
-        if not approved and not errors:
+        if not approved and not any(e.code.startswith("sql.join") for e in errors):
             errors.append(_error("sql.join", "each JOIN needs an equality on an approved join key"))
     return errors
+
+
+def _resolve_join_side(
+    col: exp.Column, base: dict, derived: dict
+) -> tuple[str, str] | None:
+    """(base_table, column) for a join side, or None when the grain is unknown."""
+    if col.table in base:
+        return base[col.table].name, col.name
+    grain = derived.get(col.table)
+    if grain is None:
+        return None
+    kind, info = grain
+    if kind == "table":
+        table, columns = info
+        column = columns.get(col.name.lower())
+        return (table, column) if column else None
+    # Grouped single-table subquery: group-key outputs map back to base columns.
+    base_name, mapping = info
+    if base_name is None:
+        return None
+    column = mapping.get(col.name.lower())
+    return (base_name, column) if column else None
 
 
 def _check_unused_joins(scope) -> list[ValidationError]:
@@ -426,7 +587,12 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
             table, columns = info
             column = columns.get(col.name.lower())
             return (table, column) if column else None
-        return "unique" if info is None or col.name.lower() in info else None
+        base_name, mapping = info
+        if not mapping:  # single-row aggregate: every join to it is to-one
+            return "unique"
+        if col.name.lower() in mapping:
+            return "unique" if base_name is None else (base_name, mapping[col.name.lower()])
+        return None
 
     to_one: dict[str, dict[str, bool]] = {}
     for join in select.args["joins"]:
@@ -506,33 +672,78 @@ def _derived_grain(source, tables: dict) -> tuple[str, object] | None:
     """Grain of a CTE / derived source, or None when it cannot be told.
 
     ("table", (base table, {output column: base column})) for a plain
-    single-table SELECT; ("unique", group-key output columns, or None for a
-    single-row aggregate) for a grouped subquery.
+    single-table SELECT; ("unique", (base table or None, {output: base col}))
+    for a grouped / single-row aggregate subquery; None when joins make grain
+    unknown (those CTEs must not be aggregated or joined as if approved).
     """
     select = getattr(source, "expression", None)
     if not isinstance(select, exp.Select) or select.args.get("joins"):
         return None
-    if select.args.get("group"):
-        keys = {e.sql().lower() for e in select.args["group"].expressions}
-        return "unique", {
-            p.alias_or_name.lower()
-            for p in select.expressions
-            if (p.this if isinstance(p, exp.Alias) else p).sql().lower() in keys
-        }
-    if select.find(exp.AggFunc):
-        return "unique", None
-    if select.args.get("distinct"):
-        return None
     from_ = select.args.get("from_") or select.args.get("from")
     table = from_.this if from_ is not None else None
-    if not isinstance(table, exp.Table) or table.name.lower() not in tables:
+    base_name = (
+        tables[table.name.lower()].name
+        if isinstance(table, exp.Table) and table.name.lower() in tables
+        else None
+    )
+    if select.args.get("group"):
+        keys = {e.sql().lower() for e in select.args["group"].expressions}
+        mapping: dict[str, str] = {}
+        for p in select.expressions:
+            inner = p.this if isinstance(p, exp.Alias) else p
+            if isinstance(inner, exp.Column) and inner.sql().lower() in keys:
+                mapping[p.alias_or_name.lower()] = inner.name
+            elif (p.this if isinstance(p, exp.Alias) else p).sql().lower() in keys:
+                mapping[p.alias_or_name.lower()] = p.alias_or_name
+        return "unique", (base_name, mapping)
+    if select.find(exp.AggFunc):
+        return "unique", (base_name, {})
+    if select.args.get("distinct"):
+        return None
+    if base_name is None:
         return None
     columns = {}
     for p in select.expressions:
         inner = p.this if isinstance(p, exp.Alias) else p
         if isinstance(inner, exp.Column):
             columns[p.alias_or_name.lower()] = inner.name
-    return "table", (tables[table.name.lower()].name, columns)
+    return "table", (base_name, columns)
+
+
+def _check_aggregate_over_joined_derived(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
+    """Refuse aggregates over a CTE/subquery that itself joined tables (fan-out launder).
+
+    `WITH j AS (SELECT i.Total AS t, … FROM Invoice i JOIN InvoiceLine …) SELECT SUM(t) FROM j`
+    has no outer join, so the per-join fan-out check never runs — yet SUM(t) is inflated.
+    """
+    select = scope.expression
+    if not isinstance(select, exp.Select):
+        return []
+    aggs = [
+        a
+        for a in select.find_all(exp.AggFunc)
+        if a.find_ancestor(exp.Select) is select and not isinstance(a, _FAN_OUT_SAFE) and not a.find(exp.Distinct)
+    ]
+    if not aggs:
+        return []
+    tables = {t.name.lower(): t for t in catalog.tables}
+    for alias, src in scope.sources.items():
+        if alias in base:
+            continue
+        # Joined derived bodies have unknown grain (_derived_grain → None).
+        if _derived_grain(src, tables) is not None:
+            continue
+        body = getattr(src, "expression", None)
+        if not isinstance(body, exp.Select) or not body.args.get("joins"):
+            continue
+        return [
+            _error(
+                "sql.fan_out",
+                f"aggregate over {alias} would be inflated: that subquery joins tables. "
+                "Pre-aggregate inside the subquery, or aggregate the base tables directly",
+            )
+        ]
+    return []
 
 
 def _join_allowed(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:
