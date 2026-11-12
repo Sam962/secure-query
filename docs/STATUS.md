@@ -11,7 +11,7 @@
 - A trace record for every ask, confirm, refuse and execute (`data/trace.jsonl`); the
   question is stored only as a hash.
 - A signed Evidence Bundle on every response, shown in the UI as "Why this was allowed".
-  Caveat: the listed policy checks are a fixed list today (PLAN 1.3).
+  The bundle lists the checks of the path that produced the query (SQL, LogicalPlan or metric).
 - Self-consistency gate: the question is planned twice; different answers refuse.
 - Auth modes `dev` / `token` / `header`; production forbids `dev`.
 - Databricks: execution as the end user (`SECURE_QUERY_DATABRICKS_AUTH=user`); the UC

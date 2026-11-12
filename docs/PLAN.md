@@ -97,7 +97,7 @@ runs exit 0 (`echo $?` prints `0`).
     secret passes.
   - Done when: the two new tests pass and Verify passes.
 
-- [ ] **1.3 Evidence lists the checks that actually ran.**
+- [x] **1.3 Evidence lists the checks that actually ran.**
   - Why: `policy_checks` is a fixed tuple today, the same for every path, so a bundle can
     claim a check that did not run.
   - Files: `src/secure_query/kernel/evidence.py`, `src/secure_query/api/service.py`,

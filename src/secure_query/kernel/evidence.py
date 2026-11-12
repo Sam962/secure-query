@@ -66,14 +66,25 @@ class EvidenceBundle:
         return asdict(self)
 
 
-_DEFAULT_CHECKS = (
+# The checks each path runs. A bundle lists only the checks of the path that produced the query.
+SQL_PATH_CHECKS = (
     "allowlist_columns",
     "no_pii_high",
     "approved_joins",
     "fan_out",
+    "row_filters",
     "read_only",
     "limit_capped",
 )
+PLAN_PATH_CHECKS = (
+    "catalog_columns",
+    "no_pii_high",
+    "approved_joins",
+    "row_filters",
+    "read_only",
+    "limit_capped",
+)
+METRIC_CHECKS = ("approved_metric", "read_only")
 
 
 def build_evidence(
@@ -92,11 +103,17 @@ def build_evidence(
     policy_checks: tuple[str, ...] | None = None,
     gate_fingerprints: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """Return a signed evidence dict ready for AskOutcome / API responses."""
+    """Return a signed evidence dict ready for AskOutcome / API responses.
+
+    `policy_checks` is required for kinds "ok" and "confirm": the caller names the
+    checks of the path that produced the query.
+    """
+    if policy_checks is None:
+        if kind != "refuse":
+            raise ValueError(f"build_evidence(kind={kind!r}) requires policy_checks")
+        policy_checks = ("refused",)
+    checks = policy_checks
     q_hash = hashlib.sha256((question or "").encode()).hexdigest()
-    checks = policy_checks if policy_checks is not None else (
-        _DEFAULT_CHECKS if kind in ("ok", "confirm") else ("refused",)
-    )
     bundle = EvidenceBundle(
         version="evidence/1",
         kind=kind,

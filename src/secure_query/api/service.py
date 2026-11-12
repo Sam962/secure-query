@@ -32,7 +32,7 @@ from secure_query.engine.execute import ExecuteOptions
 from secure_query.engine.runtime import RuntimeConfig, execute_compiled_query
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
-from secure_query.kernel.evidence import build_evidence
+from secure_query.kernel.evidence import METRIC_CHECKS, PLAN_PATH_CHECKS, SQL_PATH_CHECKS, build_evidence
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.metrics import get_metric
@@ -376,11 +376,13 @@ def ask(
     assert compiled is not None
 
     if sql_mode:
-        explanation = _SQL_EXPLANATION
+        explanation, policy_checks = _SQL_EXPLANATION, SQL_PATH_CHECKS
     elif metric is not None and metric.kind != "plan":
-        explanation = f"Approved metric {metric.id}: {metric.description}"
+        explanation, policy_checks = f"Approved metric {metric.id}: {metric.description}", METRIC_CHECKS
+    elif plan is not None:
+        explanation, policy_checks = explain_plan(plan), PLAN_PATH_CHECKS
     else:
-        explanation = explain_plan(plan) if plan else "Approved metric"
+        explanation, policy_checks = "Approved metric", METRIC_CHECKS
     review = {
         "plan_hash": compiled.plan_hash,
         "plan": reviewed_plan.model_dump(mode="json") if reviewed_plan is not None and not sql_mode else None,
@@ -402,6 +404,7 @@ def ask(
         confirm=confirm_only or not execute,
         options=options,
         review=review,
+        policy_checks=policy_checks,
         model_id=model_id,
         timer=timer,
         gate_fingerprints=getattr(planned, "gate_fingerprints", ()) or (),
@@ -461,6 +464,10 @@ def execute_reviewed(
         confirm=False,
         options=options,
         review=review,
+        # Same branch order as _recompile: SQL, then metric, then LogicalPlan.
+        policy_checks=(
+            SQL_PATH_CHECKS if sql is not None else METRIC_CHECKS if metric_id is not None else PLAN_PATH_CHECKS
+        ),
         timer=timer,
     )
 
@@ -511,6 +518,7 @@ def _finish(
     confirm: bool,
     options: ExecuteOptions | None,
     review: dict[str, Any],
+    policy_checks: tuple[str, ...],
     model_id: str | None = None,
     timer: TraceTimer | None = None,
     gate_fingerprints: tuple[str, ...] = (),
@@ -549,6 +557,7 @@ def _finish(
             model_id=model_id,
             plan_hash=compiled.plan_hash,
             sql_hash=compiled.sql_hash,
+            policy_checks=policy_checks,
             gate_fingerprints=gate_fingerprints,
         )
         return AskOutcome(
@@ -607,6 +616,7 @@ def _finish(
         plan_hash=compiled.plan_hash,
         sql_hash=compiled.sql_hash,
         result_fingerprint=fingerprint,
+        policy_checks=policy_checks,
         gate_fingerprints=gate_fingerprints,
     )
     return AskOutcome(

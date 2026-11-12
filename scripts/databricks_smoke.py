@@ -30,7 +30,7 @@ from secure_query.auth import Principal  # noqa: E402
 from secure_query.engine.env import load_dotenv  # noqa: E402
 from secure_query.engine.runtime import RuntimeConfig, execute_compiled_query  # noqa: E402
 from secure_query.kernel.catalog import Catalog  # noqa: E402
-from secure_query.kernel.evidence import EvidenceBundle, build_evidence  # noqa: E402
+from secure_query.kernel.evidence import SQL_PATH_CHECKS, EvidenceBundle, build_evidence  # noqa: E402
 from secure_query.kernel.sql_validate import validate_sql  # noqa: E402
 from secure_query.kernel.trace import catalog_hash, result_fingerprint  # noqa: E402
 
@@ -88,6 +88,7 @@ def main() -> int:
         plan_hash=validated.compiled.plan_hash,
         sql_hash=validated.compiled.sql_hash,
         result_fingerprint=result_fingerprint(result.rows, list(result.columns)),
+        policy_checks=SQL_PATH_CHECKS,
     )
     bundle = EvidenceBundle(
         **{
