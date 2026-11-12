@@ -294,6 +294,32 @@ def test_sql_path_refuses_when_two_readings_disagree() -> None:
     assert agreed.status == "ok"
 
 
+def test_self_consistency_gate_runs_each_reading_once(monkeypatch) -> None:
+    """The gate compares and records the same probe result: no second warehouse round trip."""
+    import json
+
+    from secure_query.planner import MockLLMClient, sql_plan
+
+    monkeypatch.setattr(sql_plan, "dpc_lite_check", lambda compiled, catalog, probe: (True, ()))
+    calls: list[str] = []
+
+    def probe(query):
+        calls.append(query.sql)
+        return [(59,)]
+
+    customers = json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+    result = sql_plan.plan_sql_question(
+        "How many customers are there?",
+        CATALOG,
+        MockLLMClient([customers]),
+        value_probe=probe,
+        check_client=MockLLMClient([customers]),
+    )
+    assert result.status == "ok"
+    assert len(calls) == 2  # one run per reading
+    assert len(result.gate_fingerprints) == 1
+
+
 def test_sql_path_applies_row_filters() -> None:
     import json
 

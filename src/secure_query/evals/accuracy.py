@@ -32,9 +32,10 @@ from typing import Any
 from secure_query.engine.execute import ExecuteOptions, ExecutionError, execute_duckdb
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import LogicalPlan
+from secure_query.kernel.trace import answer_fingerprint
 from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
 from secure_query.planner import PlannerError, plan_question
-from secure_query.planner.sql_plan import answer_fingerprint, plan_sql_question
+from secure_query.planner.sql_plan import plan_sql_question
 
 CORRECT = "correct"
 WRONG = "wrong"

@@ -154,6 +154,7 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
 
     if not DUCKDB_PATH.exists():
         pytest.skip("sample DB not built")
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     question = "How many invoices per billing country?"
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
@@ -184,6 +185,7 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
 def test_execute_rejects_a_plan_that_differs_from_the_review(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
         lambda: MockLLMClient([_plan_json("BillingCountry")]),

@@ -32,10 +32,18 @@ from secure_query.engine.execute import ExecuteOptions
 from secure_query.engine.runtime import RuntimeConfig, execute_compiled_query
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
+from secure_query.kernel.evidence import build_evidence
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.metrics import get_metric
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
+from secure_query.kernel.trace import (
+    TraceTimer,
+    catalog_hash,
+    make_trace,
+    result_fingerprint,
+    write_trace,
+)
 from secure_query.kernel.validate import (
     PlanValidationFailed,
     validate_and_compile,
@@ -48,6 +56,7 @@ from secure_query.planner.clarify import (
     looks_like_sql_statement,
     question_too_long,
 )
+from secure_query.planner.confidence import confidence_threshold, link_tables, low_confidence_message
 from secure_query.planner.llm import get_check_client
 from secure_query.planner.retrieve import prompt_catalog_and_hint, retrieve_k_from_env, retrieve_tables
 from secure_query.planner.sql_plan import plan_sql_question
@@ -78,6 +87,8 @@ class AskOutcome:
     review: dict[str, Any] | None = None
     """What /ask/execute needs to run exactly this query: plan_hash plus the
     pre-row-filter plan, the model's source SQL, or the metric id."""
+    trace_id: str | None = None
+    evidence: dict[str, Any] | None = None
 
 
 class ReviewMismatch(Exception):
@@ -114,6 +125,16 @@ _PROBE_OPTIONS = ExecuteOptions(max_rows=50, timeout_seconds=5.0)
 _SQL_EXPLANATION = "Model-written SQL, validated and rewritten against the approved catalog"
 
 
+def _client_model_id(client: LLMClient | None) -> str | None:
+    if client is None:
+        return None
+    model = getattr(client, "_model", None)
+    if isinstance(model, str) and model:
+        return model
+    provider = getattr(client, "provider", None)
+    return str(provider) if provider else None
+
+
 def _clarify(
     question: str,
     message: str,
@@ -123,9 +144,37 @@ def _clarify(
     refused: bool = True,
     retrieved_tables: list[str] | None = None,
     catalog: Catalog | None = None,
+    config: RuntimeConfig | None = None,
+    model_id: str | None = None,
+    timer: TraceTimer | None = None,
 ) -> AskOutcome:
     suggestions = (
         suggest_questions(question, catalog, code=code) if catalog is not None else []
+    )
+    who = audit_principal_fields(principal)
+    cat_hash = catalog_hash(catalog) if catalog is not None else None
+    record = make_trace(
+        status="refuse",
+        question=question,
+        principal_id=who["principal_id"],
+        tenant_id=who["tenant_id"],
+        backend=config.backend if config is not None else None,
+        clarify_code=code,
+        model_id=model_id,
+        catalog_hash_value=cat_hash,
+        duration_ms=timer.ms() if timer is not None else 0.0,
+        refused=refused,
+    )
+    write_trace(record)
+    evidence = build_evidence(
+        kind="refuse",
+        trace_id=record.trace_id,
+        question=question,
+        principal_id=who["principal_id"],
+        tenant_id=who["tenant_id"],
+        catalog_hash=cat_hash,
+        model_id=model_id,
+        clarify_code=code,
     )
     return AskOutcome(
         status="clarify",
@@ -133,9 +182,11 @@ def _clarify(
         clarify_message=message,
         clarify_code=code,
         refused=refused,
-        audit=audit_principal_fields(principal),
+        audit={**who, "trace_id": record.trace_id},
         retrieved_tables=retrieved_tables or [],
         suggestions=suggestions,
+        trace_id=record.trace_id,
+        evidence=evidence,
     )
 
 
@@ -151,22 +202,34 @@ def ask(
     options: ExecuteOptions | None = None,
 ) -> AskOutcome:
     """Plan (and optionally execute) a question for an already-resolved principal."""
+    timer = TraceTimer()
     question = (question or "").strip()
+    active_client = client
+    model_id = _client_model_id(active_client)
     too_long = question_too_long(question)
     if too_long:
-        return _clarify(question, too_long, principal=principal, code="invalid_request")
+        return _clarify(
+            question, too_long, principal=principal, code="invalid_request",
+            config=config, model_id=model_id, timer=timer,
+        )
     if looks_like_sql_statement(question):
         return _clarify(
             question,
             "Submit a natural-language question. SQL is compiled by the server, not accepted from callers.",
             principal=principal,
             code="sql_in_question",
+            config=config,
+            model_id=model_id,
+            timer=timer,
         )
 
     try:
         scoped = catalog_for_principal(catalog, principal)
     except PermissionError as exc:
-        return _clarify(question, str(exc), principal=principal, code="auth")
+        return _clarify(
+            question, str(exc), principal=principal, code="auth",
+            config=config, model_id=model_id, timer=timer,
+        )
 
     if not question:
         return _clarify(
@@ -175,6 +238,9 @@ def ask(
             principal=principal,
             code="invalid_request",
             catalog=scoped,
+            config=config,
+            model_id=model_id,
+            timer=timer,
         )
 
     ambiguous = ambiguous_metrics(question, scoped)
@@ -185,17 +251,39 @@ def ask(
             principal=principal,
             code="ambiguous_metric",
             catalog=scoped,
+            config=config,
+            model_id=model_id,
+            timer=timer,
         )
 
-    retrieved = retrieve_tables(question, scoped, k=retrieve_k_from_env(len(scoped.tables)))
+    k = retrieve_k_from_env(len(scoped.tables))
+    retrieved = retrieve_tables(question, scoped, k=k)
     prompt_catalog, relevant = prompt_catalog_and_hint(scoped, retrieved)
 
     sql_mode = planner_mode() == "sql"
+    if sql_mode and k > 0:
+        link = link_tables(question, scoped, k=k)
+        if link.confidence < confidence_threshold() and len(scoped.tables) > 8:
+            return _clarify(
+                question,
+                low_confidence_message(link),
+                principal=principal,
+                code="validation_failed",
+                refused=True,
+                retrieved_tables=list(link.tables),
+                catalog=scoped,
+                config=config,
+                model_id=model_id,
+                timer=timer,
+            )
+    if active_client is None:
+        active_client = get_client()
+        model_id = _client_model_id(active_client)
     if sql_mode:
         planned = plan_sql_question(
             question,
             scoped,
-            client or get_client(),
+            active_client,
             max_repairs=1,
             row_filters=principal.row_filters,
             prompt_catalog=prompt_catalog,
@@ -209,7 +297,7 @@ def ask(
         planned = plan_question(
             question,
             scoped,
-            client or get_client(),
+            active_client,
             max_repairs=1,
             prompt_catalog=prompt_catalog,
             relevant_tables=relevant,
@@ -225,6 +313,9 @@ def ask(
             refused=planned.refused,
             retrieved_tables=retrieved,
             catalog=scoped,
+            config=config,
+            model_id=model_id,
+            timer=timer,
         )
 
     plan = planned.plan
@@ -251,6 +342,9 @@ def ask(
                 refused=False,
                 retrieved_tables=retrieved,
                 catalog=scoped,
+                config=config,
+                model_id=model_id,
+                timer=timer,
             )
     elif compiled is None:
         return _clarify(
@@ -260,6 +354,9 @@ def ask(
             code="validation_failed",
             retrieved_tables=retrieved,
             catalog=scoped,
+            config=config,
+            model_id=model_id,
+            timer=timer,
         )
     else:
         try:
@@ -271,6 +368,9 @@ def ask(
                 principal=principal,
                 code="auth",
                 retrieved_tables=retrieved,
+                config=config,
+                model_id=model_id,
+                timer=timer,
             )
 
     assert compiled is not None
@@ -302,6 +402,9 @@ def ask(
         confirm=confirm_only or not execute,
         options=options,
         review=review,
+        model_id=model_id,
+        timer=timer,
+        gate_fingerprints=getattr(planned, "gate_fingerprints", ()) or (),
     )
 
 
@@ -329,10 +432,14 @@ def execute_reviewed(
     if not hmac.compare_digest(sign_review(review, principal), signature or ""):
         raise ReviewForbidden("review was not issued by this server for this principal")
     review["signature"] = signature
+    timer = TraceTimer()
     try:
         scoped = catalog_for_principal(catalog, principal)
     except PermissionError as exc:
-        return _clarify(question, str(exc), principal=principal, code="auth")
+        return _clarify(
+            question, str(exc), principal=principal, code="auth",
+            config=config, timer=timer,
+        )
     try:
         compiled, run_plan, explanation, answer_plan = _recompile(
             scoped, principal, plan=plan, sql=sql, metric_id=metric_id
@@ -354,6 +461,7 @@ def execute_reviewed(
         confirm=False,
         options=options,
         review=review,
+        timer=timer,
     )
 
 
@@ -403,26 +511,58 @@ def _finish(
     confirm: bool,
     options: ExecuteOptions | None,
     review: dict[str, Any],
+    model_id: str | None = None,
+    timer: TraceTimer | None = None,
+    gate_fingerprints: tuple[str, ...] = (),
 ) -> AskOutcome:
     """Return the confirm view, or execute and format the answer."""
+    cat_hash = catalog_hash(scoped)
     audit_base = {
         **audit_principal_fields(principal),
         "backend": config.backend,
         "plan_hash": compiled.plan_hash,
         "retrieved_tables": retrieved,
+        "catalog_hash": cat_hash,
     }
 
     if confirm:
+        record = make_trace(
+            status="confirm",
+            question=question,
+            principal_id=principal.principal_id,
+            tenant_id=principal.tenant_id,
+            backend=config.backend,
+            model_id=model_id,
+            catalog_hash_value=cat_hash,
+            plan_hash=compiled.plan_hash,
+            sql_hash=compiled.sql_hash,
+            duration_ms=timer.ms() if timer is not None else 0.0,
+        )
+        write_trace(record)
+        evidence = build_evidence(
+            kind="confirm",
+            trace_id=record.trace_id,
+            question=question,
+            principal_id=principal.principal_id,
+            tenant_id=principal.tenant_id,
+            catalog_hash=cat_hash,
+            model_id=model_id,
+            plan_hash=compiled.plan_hash,
+            sql_hash=compiled.sql_hash,
+            gate_fingerprints=gate_fingerprints,
+        )
         return AskOutcome(
             status="confirm",
             question=question,
             explanation=explanation,
             sql=compiled.sql,
-            audit=audit_base,
+            audit={**audit_base, "trace_id": record.trace_id},
             retrieved_tables=retrieved,
             plan=plan,
             compiled=compiled,
             review=review,
+            trace_id=record.trace_id,
+            evidence=evidence,
         )
 
     result = execute_compiled_query(
@@ -441,6 +581,34 @@ def _finish(
     column_units = result_column_units(
         list(result.columns), plan=answer_plan, catalog=scoped, compiled=compiled
     )
+    fingerprint = result_fingerprint(result.rows, list(result.columns))
+    record = make_trace(
+        status="ok",
+        question=question,
+        principal_id=principal.principal_id,
+        tenant_id=principal.tenant_id,
+        backend=config.backend,
+        model_id=model_id,
+        catalog_hash_value=cat_hash,
+        plan_hash=compiled.plan_hash,
+        sql_hash=compiled.sql_hash,
+        result_fingerprint=fingerprint,
+        duration_ms=timer.ms() if timer is not None else 0.0,
+    )
+    write_trace(record)
+    evidence = build_evidence(
+        kind="ok",
+        trace_id=record.trace_id,
+        question=question,
+        principal_id=principal.principal_id,
+        tenant_id=principal.tenant_id,
+        catalog_hash=cat_hash,
+        model_id=model_id,
+        plan_hash=compiled.plan_hash,
+        sql_hash=compiled.sql_hash,
+        result_fingerprint=fingerprint,
+        gate_fingerprints=gate_fingerprints,
+    )
     return AskOutcome(
         status="ok",
         question=question,
@@ -451,6 +619,8 @@ def _finish(
             **audit_base,
             "sql_hash": compiled.sql_hash,
             "row_count": len(result.rows),
+            "trace_id": record.trace_id,
+            "result_fingerprint": fingerprint,
         },
         columns=list(result.columns),
         rows=rows,
@@ -460,13 +630,15 @@ def _finish(
         plan=plan,
         compiled=compiled,
         review=review,
+        trace_id=record.trace_id,
+        evidence=evidence,
     )
 
 
 def planner_mode() -> str:
-    """SECURE_QUERY_PLANNER: "lqp" (default, LogicalPlan) or "sql" (validated SQL, see ADR 003)."""
-    mode = (os.environ.get("SECURE_QUERY_PLANNER") or "lqp").strip().lower()
-    return mode if mode in ("lqp", "sql") else "lqp"
+    """SECURE_QUERY_PLANNER: "sql" (validated SQL, production) or "lqp" (LogicalPlan / metrics)."""
+    mode = (os.environ.get("SECURE_QUERY_PLANNER") or "sql").strip().lower()
+    return mode if mode in ("lqp", "sql") else "sql"
 
 
 def production_auth_blocked() -> str | None:

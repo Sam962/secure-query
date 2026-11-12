@@ -506,7 +506,23 @@
       }
 
       const audit = data.audit || {};
+      const evidence = data.evidence || {};
       html += `
+        <article class="card">
+          <h2>Why this was allowed</h2>
+          <p class="hint" style="margin-top:0">${
+            evidence.kind === "refuse"
+              ? "Refused — signed evidence records the clarify code."
+              : "Allowlist checks passed; SQL was regenerated from a validated tree."
+          }</p>
+          <dl class="meta-grid">
+            <div><dt>Evidence</dt><dd>${esc(evidence.kind || "—")}</dd></div>
+            <div><dt>Trace</dt><dd>${esc(data.trace_id || evidence.trace_id || "—")}</dd></div>
+            <div><dt>Catalog</dt><dd>${esc(evidence.catalog_hash || audit.catalog_hash || "—")}</dd></div>
+            <div><dt>Policy</dt><dd>${esc((evidence.policy_checks || []).join(", ") || "—")}</dd></div>
+            <div><dt>Signature</dt><dd>${esc((evidence.signature || "").slice(0, 16) || "—")}${evidence.signature ? "…" : ""}</dd></div>
+          </dl>
+        </article>
         <article class="card">
           <h2>Audit</h2>
           <dl class="meta-grid">
@@ -514,7 +530,7 @@
             <div><dt>Tenant</dt><dd>${esc(audit.tenant_id || "—")}</dd></div>
             <div><dt>Backend</dt><dd>${esc(audit.backend || "—")}</dd></div>
             <div><dt>Plan hash</dt><dd>${esc(audit.plan_hash || "—")}</dd></div>
-            <div><dt>SQL hash</dt><dd>${esc(audit.sql_hash || "—")}</dd></div>
+            <div><dt>SQL hash</dt><dd>${esc(audit.sql_hash || evidence.sql_hash || "—")}</dd></div>
           </dl>
         </article>`;
 

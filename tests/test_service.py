@@ -48,12 +48,13 @@ def test_production_blocks_dev_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     assert production_auth_blocked() is None
 
 
-def test_ratio_metric_runs_under_principal_row_filters() -> None:
+def test_ratio_metric_runs_under_principal_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ratio metrics used to be refused for row-filtered principals; now the filter applies."""
     import json
 
     from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
 
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     usa_only = Eq(
         column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
         value=LiteralValue(type="string", value="USA"),
@@ -73,11 +74,12 @@ def test_ratio_metric_runs_under_principal_row_filters() -> None:
     assert outcome.explanation.startswith("Approved metric avg_revenue_per_customer")
 
 
-def test_builtin_metric_refused_under_principal_row_filters() -> None:
+def test_builtin_metric_refused_under_principal_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
     import json
 
     from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
 
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     usa_only = Eq(
         column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
         value=LiteralValue(type="string", value="USA"),
@@ -118,13 +120,14 @@ def test_sql_planner_mode_applies_row_filters(monkeypatch: pytest.MonkeyPatch) -
     assert "EXISTS" in outcome.sql and "'USA'" in outcome.sql
 
 
-def test_reviewed_plan_gets_row_filters_from_the_server() -> None:
+def test_reviewed_plan_gets_row_filters_from_the_server(monkeypatch: pytest.MonkeyPatch) -> None:
     """The review payload carries the plan before row filters; execute re-injects them,
     so a client cannot drop the principal's filter and keep the hash."""
     import json
 
     from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
 
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     usa_only = Eq(
         column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
         value=LiteralValue(type="string", value="USA"),

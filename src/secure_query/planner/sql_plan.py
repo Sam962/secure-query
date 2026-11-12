@@ -1,13 +1,11 @@
 """SQL planner path: the model writes SQL in the catalog's dialect; the kernel validates and regenerates it.
 
-Experimental alternative to the LogicalPlan path (see docs/STATUS.md, Spider
-results). The model's text never runs: kernel.sql_validate parses it, resolves
+The production NL path (ADR 005). The model's text never runs: kernel.sql_validate parses it, resolves
 every column against the catalog, enforces policy and emits the SQL that runs.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from collections.abc import Sequence
@@ -16,6 +14,8 @@ from typing import Any
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import Filter
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
+from secure_query.kernel.trace import answer_fingerprint
+from secure_query.planner.dpc_lite import dpc_lite_check
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
@@ -76,29 +76,20 @@ def _parse(raw: str) -> dict:
     return data
 
 
-def answer_fingerprint(rows: Sequence[tuple[Any, ...]]) -> str:
-    """Hash of the rows ignoring row and column order, floats rounded: equal answers agree."""
-
-    def cell(v: Any) -> str:
-        return f"{float(v):.4f}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
-
-    canon = sorted("|".join(sorted(cell(c) for c in row)) for row in rows)
-    return hashlib.sha256("\n".join(canon).encode()).hexdigest()[:16]
-
-
 _UNSTABLE_MESSAGE = (
     "Two independent readings of this question returned different answers, so I won't "
     "guess. Name the exact measure, filters or time period and ask again."
 )
 
 
-def _same_answer(probe: ValueProbe, first: Any, second: Any) -> bool:
-    if second is None:
-        return False
+def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
+    """Fingerprint of one probe run; None when there is nothing to run or it fails."""
+    if compiled is None:
+        return None
     try:
-        return answer_fingerprint(probe(first)) == answer_fingerprint(probe(second))
+        return answer_fingerprint(probe(compiled))
     except Exception:  # noqa: BLE001 — a query that cannot run is not a confirmed answer
-        return False
+        return None
 
 
 class _NoStoredValue(Exception):
@@ -174,6 +165,7 @@ def plan_sql_question(
                         for table, column, value in missing
                     ]
                 )
+            gate_fps: list[str] = []
             if check_client is not None and value_probe is not None:
                 second = plan_sql_question(
                     question,
@@ -185,7 +177,10 @@ def plan_sql_question(
                     relevant_tables=relevant_tables,
                     value_probe=value_probe,
                 )
-                if not _same_answer(value_probe, validated.compiled, second.compiled):
+                # Each reading runs once: its fingerprint is both the comparison and the evidence.
+                first_fp = _probe_fingerprint(value_probe, validated.compiled)
+                second_fp = _probe_fingerprint(value_probe, second.compiled)
+                if first_fp is None or first_fp != second_fp:
                     return PlannerResult(
                         status="clarify",
                         question=question,
@@ -197,6 +192,23 @@ def plan_sql_question(
                         clarify_code="unstable_answer",
                         blocked=validated.compiled,
                     )
+                gate_fps.append(first_fp)
+            if value_probe is not None:
+                ok, fps = dpc_lite_check(validated.compiled, catalog, value_probe)
+                gate_fps.extend(fps)
+                if not ok:
+                    return PlannerResult(
+                        status="clarify",
+                        question=question,
+                        attempts=attempt,
+                        errors=errors,
+                        clarify_message=_UNSTABLE_MESSAGE,
+                        raw_responses=raw_responses,
+                        refused=True,
+                        clarify_code="unstable_answer",
+                        blocked=validated.compiled,
+                        gate_fingerprints=tuple(dict.fromkeys(gate_fps)),
+                    )
             return PlannerResult(
                 status="ok",
                 question=question,
@@ -204,6 +216,7 @@ def plan_sql_question(
                 source_sql=sql,
                 attempts=attempt,
                 raw_responses=raw_responses,
+                gate_fingerprints=tuple(dict.fromkeys(gate_fps)),
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]

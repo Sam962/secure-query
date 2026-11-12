@@ -101,6 +101,11 @@ class AskResponse(BaseModel):
         default=None,
         description="Send back to /ask/execute to run exactly this reviewed query",
     )
+    evidence: dict[str, Any] | None = Field(
+        default=None,
+        description="Signed Evidence Bundle: why this answer or refusal was allowed",
+    )
+    trace_id: str | None = None
 
 
 class ExecuteRequest(BaseModel):
@@ -135,6 +140,8 @@ def _outcome_to_response(outcome) -> AskResponse:
         column_units=list(outcome.column_units),
         scale_note=outcome.scale_note,
         review=outcome.review,
+        evidence=outcome.evidence,
+        trace_id=outcome.trace_id,
     )
 
 
