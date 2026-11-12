@@ -251,3 +251,17 @@ runs exit 0 (`echo $?` prints `0`).
 - **P2. Jev / TypeSafe schema linker.** Only with a measured lift over the local linker on
   a wide catalog. The unused hook was removed on 2026-11-11.
 - **P3. Document Q&A over SharePoint.** Out of scope for this product.
+- **P4. Move off `gpt-4.1-mini` before OpenAI removes it.** OpenAI's deprecations page
+  (read 2026-11-11) lists `gpt-4.1-mini-2025-04-14` for shutdown on **2027-01-14**, with
+  `gpt-6-luna` as the recommended replacement (`gpt-4o-mini` and `gpt-4.1` go the same
+  day). Every number in STATUS.md is for `gpt-4.1-mini`, so this is a re-measurement, not
+  a config change: run Chinook dev and Northwind dev with the candidate
+  (`SECURE_QUERY_MODEL=<candidate>`), compare wrong-rate first, then answer-rate, latency
+  and cost against the 2026-11-11 runs; switch `DEFAULT_MODEL` only if wrong-rate does not
+  rise; then redo Spider 400 and its adjudication. Check first that the candidate accepts
+  the `temperature` setting the second reading uses (`CHECK_TEMPERATURE`); the GPT-6
+  models are listed as reasoning models.
+  First look, 2026-11-11, `gpt-6-luna` with `SECURE_QUERY_REASONING_EFFORT=none` (the only
+  setting where it accepts a temperature), not adjudicated: Chinook dev 13 wrong of 134
+  (9.7%) against 7 (5.2%) for `gpt-4.1-mini`; Northwind dev 4 wrong of 10 against 3. Not
+  switched. Still untried: `gpt-6-luna` with reasoning on, and `gpt-6.1-terra`.

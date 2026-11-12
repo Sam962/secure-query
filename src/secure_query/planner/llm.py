@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import time
@@ -18,6 +19,9 @@ _LOCAL_TIMEOUT_S = 120.0  # a local 7B model can take longer than a hosted API
 _MAX_RETRIES = 2
 _MAX_TOKENS = 1200
 _SEED = 7
+_TOKEN_PARAMS = ("max_completion_tokens", "max_tokens")  # newer OpenAI models / everyone else
+_OPTIONAL_PARAMS = ("temperature", "seed", "reasoning_effort")
+_LOG = logging.getLogger(__name__)
 DEFAULT_MODEL = "gpt-4.1-mini"
 
 
@@ -65,6 +69,8 @@ class OpenAIClient:
         # OpenAI enforces json_schema response formats; local/compat servers may not.
         self.structured_outputs = provider == "openai"
         self._model = model or DEFAULT_MODEL
+        self._token_param = _TOKEN_PARAMS[0] if provider == "openai" else _TOKEN_PARAMS[1]
+        self._rejected: set[str] = set()  # parameters this model refused; see _create
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
         )
@@ -98,9 +104,13 @@ class OpenAIClient:
             "model": self._model,
             "messages": messages,
             "temperature": self.temperature,
-            "max_tokens": _MAX_TOKENS,
+            self._token_param: _MAX_TOKENS,
             "seed": _SEED,
         }
+        # Optional. Some reasoning models accept a temperature only with reasoning off ("none").
+        effort = (os.environ.get("SECURE_QUERY_REASONING_EFFORT") or "").strip()
+        if effort:
+            create_kwargs["reasoning_effort"] = effort
         if response_format is not None and self.structured_outputs:
             create_kwargs["response_format"] = response_format
         elif self._json_mode:
@@ -108,19 +118,19 @@ class OpenAIClient:
 
         if self.provider == "openai":
             # One request; the SDK's bounded retries are the only retries.
-            return self._content(self._client.chat.completions.create(**create_kwargs))
+            return self._content(self._create(create_kwargs))
 
         for attempt in range(_RATE_LIMIT_MAX_RETRIES):
             try:
                 try:
-                    resp = self._client.chat.completions.create(**create_kwargs)
+                    resp = self._create(create_kwargs)
                 except Exception as exc:
                     # Some local models reject response_format — retry without it.
                     if (
                         not isinstance(exc, RateLimitError)
                         and create_kwargs.pop("response_format", None) is not None
                     ):
-                        resp = self._client.chat.completions.create(**create_kwargs)
+                        resp = self._create(create_kwargs)
                     else:
                         raise
             except RateLimitError as exc:
@@ -136,6 +146,35 @@ class OpenAIClient:
             return self._content(resp)
 
         raise PlannerError("LLM rate limit retries exhausted")
+
+    def _create(self, create_kwargs: dict[str, Any]) -> Any:
+        """Send the request, adapting to the model: any model the endpoint serves should work.
+
+        Models differ in which optional parameters they accept. When the server rejects one
+        by name (HTTP 400), drop it (or switch the token-limit name), remember that for this
+        client, and resend. A dropped temperature means the model samples at its own default.
+        """
+        from openai import BadRequestError
+
+        for _ in range(len(_OPTIONAL_PARAMS) + 2):
+            for name in self._rejected:
+                create_kwargs.pop(name, None)
+            try:
+                return self._client.chat.completions.create(**create_kwargs)
+            except BadRequestError as exc:
+                message = str(exc)
+                named = next((n for n in (*_TOKEN_PARAMS, *_OPTIONAL_PARAMS) if n in create_kwargs and n in message), None)
+                if named is None:
+                    raise
+                if named in _TOKEN_PARAMS:
+                    other = _TOKEN_PARAMS[1 - _TOKEN_PARAMS.index(named)]
+                    if other in self._rejected:
+                        raise
+                    create_kwargs[other] = create_kwargs[named]
+                    self._token_param = other
+                self._rejected.add(named)
+                _LOG.warning("%s %s rejected %r; continuing without it", self.provider, self._model, named)
+        raise PlannerError(f"LLM request could not be adapted to {self._model}")
 
     @staticmethod
     def _content(resp: Any) -> str:
