@@ -6,13 +6,10 @@ from the question payload.
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
 import os
-import secrets
+import time
 from dataclasses import dataclass, field
-from functools import lru_cache
 from typing import Any, Literal
 
 from secure_query.api.respond import (
@@ -36,6 +33,7 @@ from secure_query.kernel.evidence import METRIC_CHECKS, PLAN_PATH_CHECKS, SQL_PA
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.metrics import get_metric
+from secure_query.kernel.signing import mac, mac_matches
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.kernel.trace import (
     TraceTimer,
@@ -99,25 +97,42 @@ class ReviewForbidden(Exception):
     """The review was not issued by this server for this principal (bad or missing signature)."""
 
 
-@lru_cache(maxsize=1)
-def _review_secret() -> bytes:
-    """SECURE_QUERY_REVIEW_SECRET; without it a per-process key (one worker only)."""
-    return (os.environ.get("SECURE_QUERY_REVIEW_SECRET") or "").encode() or secrets.token_bytes(32)
+def review_ttl_seconds() -> int:
+    """How long a signed review may be executed (SECURE_QUERY_REVIEW_TTL_SECONDS, default 15 minutes)."""
+    return int(os.environ.get("SECURE_QUERY_REVIEW_TTL_SECONDS") or 900)
 
 
-def sign_review(review: dict[str, Any], principal: Principal) -> str:
-    """HMAC binding a review to the principal it was issued to.
-
-    /ask/execute recomputes plan_hash from the artifact it is sent, so the hash alone
-    cannot tell a reviewed query from one the caller wrote; the signature can.
-    """
-    payload = json.dumps(
-        [principal.principal_id, principal.tenant_id, {k: v for k, v in review.items() if k != "signature"}],
+def _review_message(review: dict[str, Any], principal: Principal, expires_at: int) -> str:
+    return json.dumps(
+        [
+            principal.principal_id,
+            principal.tenant_id,
+            expires_at,
+            {k: v for k, v in review.items() if k != "signature"},
+        ],
         sort_keys=True,
         separators=(",", ":"),
         default=str,
     )
-    return hmac.new(_review_secret(), payload.encode(), hashlib.sha256).hexdigest()
+
+
+def sign_review(review: dict[str, Any], principal: Principal, *, now: float | None = None) -> str:
+    """`<expires_at>.<hmac>` binding a review to the principal it was issued to, for a limited time.
+
+    /ask/execute recomputes plan_hash from the artifact it is sent, so the hash alone
+    cannot tell a reviewed query from one the caller wrote; the signature can.
+    """
+    expires_at = int((time.time() if now is None else now) + review_ttl_seconds())
+    return f"{expires_at}.{mac(_review_message(review, principal, expires_at))}"
+
+
+def verify_review(review: dict[str, Any], principal: Principal, signature: str) -> None:
+    """Raise ReviewForbidden unless this server signed `review` for `principal` and it has not expired."""
+    expires, _, digest = (signature or "").partition(".")
+    if not expires.isdigit() or not mac_matches(_review_message(review, principal, int(expires)), digest):
+        raise ReviewForbidden("review was not issued by this server for this principal")
+    if int(expires) < time.time():
+        raise ReviewForbidden("review has expired; ask again and confirm the new review")
 
 
 # Value lookups that ground the SQL planner's string literals: small and fast.
@@ -432,8 +447,7 @@ def execute_reviewed(
     Raises ReviewForbidden unless `signature` is the one this server issued.
     """
     review = {"plan_hash": plan_hash, "plan": plan, "sql": sql, "metric_id": metric_id}
-    if not hmac.compare_digest(sign_review(review, principal), signature or ""):
-        raise ReviewForbidden("review was not issued by this server for this principal")
+    verify_review(review, principal, signature)
     review["signature"] = signature
     timer = TraceTimer()
     try:

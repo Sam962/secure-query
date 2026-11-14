@@ -7,21 +7,14 @@ bundle without trusting the UI. Question text is never included — only its has
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
-import os
-import secrets
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from functools import lru_cache
 from typing import Any, Literal
 
+from secure_query.kernel.signing import mac, mac_matches
+
 EvidenceKind = Literal["ok", "confirm", "refuse"]
-
-
-@lru_cache(maxsize=1)
-def _evidence_secret() -> bytes:
-    return (os.environ.get("SECURE_QUERY_REVIEW_SECRET") or "").encode() or secrets.token_bytes(32)
 
 
 @dataclass(frozen=True)
@@ -52,15 +45,13 @@ class EvidenceBundle:
 
     def sign(self) -> EvidenceBundle:
         body = json.dumps(self.payload_for_sign(), sort_keys=True, separators=(",", ":"), default=str)
-        sig = hmac.new(_evidence_secret(), body.encode(), hashlib.sha256).hexdigest()
-        return EvidenceBundle(**{**asdict(self), "signature": sig})
+        return EvidenceBundle(**{**asdict(self), "signature": mac(body)})
 
     def verify(self) -> bool:
         if not self.signature:
             return False
         body = json.dumps(self.payload_for_sign(), sort_keys=True, separators=(",", ":"), default=str)
-        expected = hmac.new(_evidence_secret(), body.encode(), hashlib.sha256).hexdigest()
-        return hmac.compare_digest(expected, self.signature)
+        return mac_matches(body, self.signature)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

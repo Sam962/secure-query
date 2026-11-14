@@ -284,7 +284,7 @@ Sam asked on 2026-11-13 for the architecture review's findings to be fixed, ahea
 Each task is one commit. Every new control is off or permissive by default outside
 `SECURE_QUERY_ENV=production`, so the demo keeps working.
 
-- [ ] **4.1 Signed reviews expire; signing keys rotate.** A review carries `expires_at`
+- [x] **4.1 Signed reviews expire; signing keys rotate.** A review carries `expires_at`
   (default 15 minutes, `SECURE_QUERY_REVIEW_TTL_SECONDS`) inside the signed payload.
   `SECURE_QUERY_REVIEW_SECRET_PREVIOUS` is accepted for verification only, so a key can be
   rotated without failing reviews in flight. Files: `api/service.py`, `api/http.py`, tests.
