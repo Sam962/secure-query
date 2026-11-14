@@ -110,3 +110,30 @@ def test_link_tables_returns_confidence() -> None:
     assert decision.choice
     assert 0.0 <= decision.confidence <= 1.0
     assert decision.alternatives
+
+
+def test_evidence_signed_with_ed25519_verifies_with_the_public_key_alone(monkeypatch) -> None:
+    import pytest
+
+    pytest.importorskip("cryptography")
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat
+
+    from secure_query.kernel.evidence import EvidenceBundle, build_evidence
+    from secure_query.kernel.signing import evidence_public_key
+
+    pem = Ed25519PrivateKey.generate().private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()).decode()
+    monkeypatch.setenv("SECURE_QUERY_EVIDENCE_PRIVATE_KEY", pem)
+    raw = build_evidence(kind="refuse", trace_id="t1", question="q")
+    public = evidence_public_key()
+    assert raw["signature"].startswith(f"ed25519:{public['key_id']}:")
+
+    monkeypatch.delenv("SECURE_QUERY_EVIDENCE_PRIVATE_KEY")  # the auditor has no private key
+    as_bundle = {**raw, "policy_checks": tuple(raw["policy_checks"]), "gate_fingerprints": tuple(raw["gate_fingerprints"])}
+    assert EvidenceBundle(**as_bundle).verify(public["public_key_pem"])
+    assert not EvidenceBundle(**{**as_bundle, "clarify_code": "tampered"}).verify(public["public_key_pem"])
+    other = Ed25519PrivateKey.generate().public_key()
+    from cryptography.hazmat.primitives.serialization import PublicFormat
+
+    other_pem = other.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()
+    assert not EvidenceBundle(**as_bundle).verify(other_pem)

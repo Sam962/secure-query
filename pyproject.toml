@@ -33,6 +33,10 @@ api = [
 databricks = [
     "databricks-sql-connector>=3.0",
 ]
+enterprise = [
+    "cryptography>=42",
+    "PyJWT>=2.8",
+]
 postgres = [
     "psycopg[binary]>=3.1",
 ]

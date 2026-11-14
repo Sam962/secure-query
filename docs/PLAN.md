@@ -288,7 +288,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   (default 15 minutes, `SECURE_QUERY_REVIEW_TTL_SECONDS`) inside the signed payload.
   `SECURE_QUERY_REVIEW_SECRET_PREVIOUS` is accepted for verification only, so a key can be
   rotated without failing reviews in flight. Files: `api/service.py`, `api/http.py`, tests.
-- [ ] **4.2 Evidence an auditor can verify without the secret.** With
+- [x] **4.2 Evidence an auditor can verify without the secret.** With
   `SECURE_QUERY_EVIDENCE_PRIVATE_KEY` (Ed25519, PEM) bundles are signed asymmetrically and
   carry a `key_id`; `GET /evidence/public-key` serves the public key. HMAC stays the
   fallback. Files: `kernel/evidence.py`, `api/http.py`, `pyproject.toml`, tests.

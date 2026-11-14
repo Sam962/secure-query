@@ -1,7 +1,8 @@
 """Signed Evidence Bundle — why an answer (or refusal) was allowed.
 
-Built on the same HMAC family as review signatures. Clients can re-verify the
-bundle without trusting the UI. Question text is never included — only its hash.
+Signed with Ed25519 when SECURE_QUERY_EVIDENCE_PRIVATE_KEY is set, so an auditor can verify
+a bundle with the public key alone; otherwise with the review HMAC secret. Question text is
+never included — only its hash.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from secure_query.kernel.signing import mac, mac_matches
+from secure_query.kernel.signing import evidence_matches, sign_evidence
 
 EvidenceKind = Literal["ok", "confirm", "refuse"]
 
@@ -45,13 +46,14 @@ class EvidenceBundle:
 
     def sign(self) -> EvidenceBundle:
         body = json.dumps(self.payload_for_sign(), sort_keys=True, separators=(",", ":"), default=str)
-        return EvidenceBundle(**{**asdict(self), "signature": mac(body)})
+        return EvidenceBundle(**{**asdict(self), "signature": sign_evidence(body)})
 
-    def verify(self) -> bool:
+    def verify(self, public_key_pem: str | None = None) -> bool:
+        """With `public_key_pem`, anyone can verify an Ed25519-signed bundle without the server."""
         if not self.signature:
             return False
         body = json.dumps(self.payload_for_sign(), sort_keys=True, separators=(",", ":"), default=str)
-        return mac_matches(body, self.signature)
+        return evidence_matches(body, self.signature, public_key_pem)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
