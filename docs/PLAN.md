@@ -278,6 +278,48 @@ runs exit 0 (`echo $?` prints `0`).
 
 ---
 
+## Phase 4 — Production hardening (agent; no Databricks needed)
+
+Sam asked on 2026-11-13 for the architecture review's findings to be fixed, ahead of Phase 2.
+Each task is one commit. Every new control is off or permissive by default outside
+`SECURE_QUERY_ENV=production`, so the demo keeps working.
+
+- [ ] **4.1 Signed reviews expire; signing keys rotate.** A review carries `expires_at`
+  (default 15 minutes, `SECURE_QUERY_REVIEW_TTL_SECONDS`) inside the signed payload.
+  `SECURE_QUERY_REVIEW_SECRET_PREVIOUS` is accepted for verification only, so a key can be
+  rotated without failing reviews in flight. Files: `api/service.py`, `api/http.py`, tests.
+- [ ] **4.2 Evidence an auditor can verify without the secret.** With
+  `SECURE_QUERY_EVIDENCE_PRIVATE_KEY` (Ed25519, PEM) bundles are signed asymmetrically and
+  carry a `key_id`; `GET /evidence/public-key` serves the public key. HMAC stays the
+  fallback. Files: `kernel/evidence.py`, `api/http.py`, `pyproject.toml`, tests.
+- [ ] **4.3 OIDC sign-in.** `SECURE_QUERY_AUTH_MODE=jwt` validates a Bearer JWT against the
+  identity provider's keys (issuer, audience, expiry) and maps a group claim to tables.
+  Files: `auth/__init__.py`, `pyproject.toml`, tests.
+- [ ] **4.4 Access changes without a restart.** The principals file is re-read when it
+  changes. Files: `auth/__init__.py`, tests.
+- [ ] **4.5 Audit trail that shows tampering.** Trace and audit lines are hash-chained and
+  written under a lock; `SECURE_QUERY_AUDIT_STDOUT=1` also emits them as JSON on stdout for
+  a log shipper; `scripts/verify_audit.py` checks a file. Files: `kernel/trace.py`,
+  `engine/audit.py`, script, tests.
+- [ ] **4.6 Operational surface.** Per-person rate limit, `GET /metrics` (Prometheus text),
+  a request id on every response, and a breaker that fails fast when the model provider is
+  down. Files: `api/http.py`, new `api/ops.py`, `planner/llm.py`, tests.
+- [ ] **4.7 Reuse warehouse connections.** One Databricks connection per credential, reused
+  across the lookups and the query of one ask. Files: `engine/databricks.py`, tests.
+- [ ] **4.8 The gate compares whole answers.** Check what the 50-row probe misses and fix
+  it. Files: `planner/sql_plan.py`, `api/service.py`, tests.
+- [ ] **4.9 Catalog lifecycle.** The catalog records its version and who approved it and
+  when; production refuses an unapproved catalog; a drift check compares it with the
+  warehouse. Files: `kernel/catalog.py`, `engine/catalog_draft.py`, tests.
+- [ ] **4.10 Production image.** Non-root, pinned from `requirements.lock`, no demo data or
+  dev auth baked in. Files: `Dockerfile`, `docker-compose.yml`.
+- [ ] **4.11 Say what leaves the building.** SECURITY.md lists exactly what is sent to the
+  model provider and how to use a private endpoint. Files: `docs/SECURITY.md`.
+- [ ] **4.12 Retire the LogicalPlan question planner (was P1).** Metrics and explain stay.
+- [ ] **4.13 Docs.** HANDOVER, STATUS, README, SECURITY, `.env.example` describe the above.
+
+Not started, because each is a product decision rather than a fix: see P4–P6 below.
+
 ## Parking lot (needs Sam's decision; do not start)
 
 - **P1. Retire the LogicalPlan question planner.** It is off by default since ADR 005 but
@@ -287,3 +329,9 @@ runs exit 0 (`echo $?` prints `0`).
 - **P2. Jev / TypeSafe schema linker.** Only with a measured lift over the local linker on
   a wide catalog. The unused hook was removed on 2026-11-11.
 - **P3. Document Q&A over SharePoint.** Out of scope for this product.
+- **P4. Certified answers.** Route common questions to analyst-approved queries and metrics
+  before free SQL. The likeliest way to the 2% wrong-rate goal; needs a matching rule and a
+  measured before/after on a real domain.
+- **P5. Sensitivity levels and masking.** PII is high or not, per column. Roles, masking and
+  checks on returned rows need the customer's data classification.
+- **P6. Conversation.** Follow-up questions and a feedback loop from users into the dev suite.
