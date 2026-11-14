@@ -1,6 +1,8 @@
+# Local demo only: dev identity and the Chinook sample. Not a production configuration.
 services:
   api:
     build: .
+    command: sh -c "python -m secure_query.demo.load_chinook && uvicorn secure_query.api:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
     environment:

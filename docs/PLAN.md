@@ -311,7 +311,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
 - [x] **4.9 Catalog lifecycle.** The catalog records its version and who approved it and
   when; production refuses an unapproved catalog; a drift check compares it with the
   warehouse. Files: `kernel/catalog.py`, `engine/catalog_draft.py`, tests.
-- [ ] **4.10 Production image.** Non-root, pinned from `requirements.lock`, no demo data or
+- [x] **4.10 Production image.** Non-root, pinned from `requirements.lock`, no demo data or
   dev auth baked in. Files: `Dockerfile`, `docker-compose.yml`.
 - [ ] **4.11 Say what leaves the building.** SECURITY.md lists exactly what is sent to the
   model provider and how to use a private endpoint. Files: `docs/SECURITY.md`.
