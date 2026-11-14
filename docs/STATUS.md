@@ -171,8 +171,7 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
   22-table Chinook + Northwind catalog (Chinook 11/25, Northwind 6/28). Default threshold
   is now 0; the refusal code is `low_link_confidence`.
 - **2026-11-11 — cleanup and plan rewrite.** Backup of the full pre-cleanup tree:
-  `/private/tmp/claude-501/-Users-USER-Desktop-secure-query/086bb7dc-9aaf-474c-bcae-4aab5a73fdd1/scratchpad/worktree-backup-20261111-2002.tgz`
-  (temporary; copy it somewhere permanent if you want to keep it).
+  `data/backups/worktree-backup-20261111-2002.tgz` (local only; `data/` is not committed).
   - Fixed: the Genie scorecard graded Genie more strictly than Secure Query (no float,
     column-order or tie tolerance), scored a Genie clarifying reply as wrong, and compared
     Genie's string-typed cells with numbers. Genie now uses the same matcher, typed cells,
