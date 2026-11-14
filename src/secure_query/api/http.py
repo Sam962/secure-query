@@ -10,7 +10,10 @@ Execute backend: DuckDB locally, Databricks SQL warehouse, or Postgres.
 
 from __future__ import annotations
 
+import hmac
 import logging
+import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from importlib.metadata import version as pkg_version
@@ -18,9 +21,10 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from secure_query.api.ops import limiter, metrics, rate_limit_per_minute
 from secure_query.api.service import (
     ReviewForbidden,
     ReviewMismatch,
@@ -65,6 +69,34 @@ app = FastAPI(
     version=_package_version(),
     description="Governed talk-to-data: LogicalPlan → validate → AST compile → execute.",
 )
+
+
+_MEASURED_ROUTES = ("/ask", "/ask/confirm", "/ask/execute")
+
+
+@app.middleware("http")
+async def _request_id_and_metrics(request: Request, call_next):
+    """Every response carries X-Request-ID; ask routes are counted and timed."""
+    supplied = request.headers.get("x-request-id") or ""
+    request_id = supplied if 0 < len(supplied) <= 64 and supplied.isascii() and supplied.isprintable() else uuid.uuid4().hex
+    request.state.request_id = request_id
+    started = time.perf_counter()
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    route = request.url.path
+    if route in _MEASURED_ROUTES:
+        metrics.count("secure_query_requests_total", route=route, status=str(response.status_code))
+        metrics.observe(route, time.perf_counter() - started)
+    return response
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics_endpoint(authorization: str | None = Header(default=None)) -> PlainTextResponse:
+    """Prometheus text. With SECURE_QUERY_METRICS_TOKEN set, needs `Authorization: Bearer <token>`."""
+    token = (os.environ.get("SECURE_QUERY_METRICS_TOKEN") or "").strip()
+    if token and not hmac.compare_digest(authorization or "", f"Bearer {token}"):
+        raise HTTPException(status_code=401, detail="metrics token required")
+    return PlainTextResponse(metrics.render(), media_type="text/plain; version=0.0.4")
 
 
 class AskRequest(BaseModel):
@@ -124,6 +156,7 @@ class ExecuteRequest(BaseModel):
 
 
 def _outcome_to_response(outcome) -> AskResponse:
+    metrics.count("secure_query_asks_total", status=outcome.status, code=outcome.clarify_code or "none")
     return AskResponse(
         status=outcome.status,
         question=outcome.question,
@@ -224,6 +257,14 @@ def _principal_and_catalog(
     except AuthError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
+    wait = limiter.retry_after(f"{principal.tenant_id}:{principal.principal_id}", rate_limit_per_minute())
+    if wait > 0:
+        metrics.count("secure_query_rate_limited_total")
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests; try again shortly.",
+            headers={"Retry-After": str(max(1, round(wait)))},
+        )
     config = get_runtime()
     catalog = config.catalog
     if domain:

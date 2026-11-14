@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 from functools import lru_cache
 from typing import Any, Protocol
@@ -41,6 +42,47 @@ class PlannerError(Exception):
 
 
 
+class _Breaker:
+    """Fail fast while the provider is down, instead of making every user wait for a timeout.
+
+    After `threshold` transport failures in a row (connection, timeout, HTTP 5xx) calls are
+    refused for `cooloff` seconds; then one call is let through to test the provider.
+    SECURE_QUERY_LLM_BREAKER_FAILURES sets the threshold (default 5; 0 turns it off).
+    """
+
+    def __init__(self, cooloff: float = 30.0) -> None:
+        self.cooloff = cooloff
+        self._lock = threading.Lock()
+        self._failures = 0
+        self._open_until = 0.0
+
+    def call(self, send: Any) -> Any:
+        from openai import APIConnectionError, InternalServerError  # a timeout is an APIConnectionError
+
+        threshold = int(os.environ.get("SECURE_QUERY_LLM_BREAKER_FAILURES") or 5)
+        with self._lock:
+            if threshold > 0 and time.monotonic() < self._open_until:
+                raise PlannerError("model provider is failing; not retrying for a few seconds")
+        try:
+            result = send()
+        except (APIConnectionError, InternalServerError):
+            with self._lock:
+                self._failures += 1
+                if threshold > 0 and self._failures >= threshold:
+                    self._open_until = time.monotonic() + self.cooloff
+                    _LOG.error("model provider failed %d times in a row; pausing calls for %.0fs", self._failures, self.cooloff)
+            raise
+        with self._lock:
+            self._failures = 0
+        return result
+
+
+@lru_cache(maxsize=16)
+def _breaker_for(provider: str, base_url: str) -> _Breaker:
+    """One breaker per endpoint, shared by every client of this process."""
+    return _Breaker()
+
+
 class OpenAIClient:
     """OpenAI-compatible Chat Completions client (OpenAI, Groq, Ollama, …).
 
@@ -71,6 +113,7 @@ class OpenAIClient:
         self._model = model or DEFAULT_MODEL
         self._token_param = _TOKEN_PARAMS[0] if provider == "openai" else _TOKEN_PARAMS[1]
         self._rejected: set[str] = set()  # parameters this model refused; see _create
+        self._breaker = _breaker_for(provider, base_url or "")
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
         )
@@ -164,7 +207,7 @@ class OpenAIClient:
             for name in self._rejected:
                 create_kwargs.pop(name, None)
             try:
-                return self._client.chat.completions.create(**create_kwargs)
+                return self._breaker.call(lambda: self._client.chat.completions.create(**create_kwargs))
             except BadRequestError as exc:
                 message = str(exc)
                 named = next((n for n in (*_TOKEN_PARAMS, *_OPTIONAL_PARAMS) if n in create_kwargs and n in message), None)

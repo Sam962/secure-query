@@ -301,7 +301,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   written under a lock; `SECURE_QUERY_AUDIT_STDOUT=1` also emits them as JSON on stdout for
   a log shipper; `scripts/verify_audit.py` checks a file. Files: `kernel/trace.py`,
   `engine/audit.py`, script, tests.
-- [ ] **4.6 Operational surface.** Per-person rate limit, `GET /metrics` (Prometheus text),
+- [x] **4.6 Operational surface.** Per-person rate limit, `GET /metrics` (Prometheus text),
   a request id on every response, and a breaker that fails fast when the model provider is
   down. Files: `api/http.py`, new `api/ops.py`, `planner/llm.py`, tests.
 - [ ] **4.7 Reuse warehouse connections.** One Databricks connection per credential, reused
