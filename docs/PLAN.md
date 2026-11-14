@@ -1,6 +1,6 @@
 # Plan — Trusted Evidence Kernel
 
-**Updated:** 2026-11-13 · Measured results live in [STATUS.md](STATUS.md) · Start at [HANDOVER.md](HANDOVER.md).
+**Updated:** 2026-11-14 · Measured results live in [STATUS.md](STATUS.md) · Start at [HANDOVER.md](HANDOVER.md).
 
 ## Goal
 
@@ -275,6 +275,9 @@ runs exit 0 (`echo $?` prints `0`).
   ```
   Adjudicate every wrong answer from both systems the same way, then record the table in
   STATUS.md. The pass bar is the Goal table above.
+  Also audit a random sample of at least 60 answers scored right, per system: a match on
+  one database does not prove the query is right (SpotIt, arXiv 2510.26840; first audit
+  in STATUS.md, 2026-11-14).
 
 ---
 
@@ -344,3 +347,13 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
 - **P5. Sensitivity levels and masking.** PII is high or not, per column. Roles, masking and
   checks on returned rows need the customer's data classification.
 - **P6. Conversation.** Follow-up questions and a feedback loop from users into the dev suite.
+- **P8. A different model as the gate's second reader.** `SECURE_QUERY_CHECK_MODEL` exists
+  and is off. On Spider dev 400 with `gpt-6.1-terra` it cut wrong answers from 42 to 29 and
+  right answers from 300 to 281 (STATUS, 2026-11-14). To turn it on: one confirming run on
+  Spider test 400, adjudicated, and Sam's call on the answer-rate it costs.
+- **P9. NULL ordering on Databricks.** `ORDER BY x LIMIT 1` for "the lowest X" returns a
+  NULL row on Databricks when the column has one (NULL sorts first ascending there, last on
+  DuckDB). Check on the real warehouse in 3.3 before changing anything; Genie may do the same.
+- **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
+  tags and column names only. Add value sampling only if the owner's review in 3.2 finds
+  personal data in columns that neither a tag nor the name gave away.

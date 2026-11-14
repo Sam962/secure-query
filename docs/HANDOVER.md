@@ -19,18 +19,22 @@ adjudicated wrong-rate (PLAN.md, Goal).
 - **Phase 3 (the live head-to-head with Genie) is the only open phase and is blocked on
   Sam**: task 3.1 needs the domain, the partner date, and Databricks and Genie access. Do
   not start 3.2–3.5 before 3.1.
-- Latest number: `gpt-6-luna` on Spider test 400, adjudicated 2026-11-12: 14 real errors of
-  400 (3.5%, 95% CI 2.1–5.8%), refused 13.3%. The raters were two models, not people. This
+- Latest number: `gpt-6-luna` on Spider test 400, run of 2026-11-13: 15 real errors of 400
+  (3.75%, 95% CI 2.3–6.1%), refused 13%. The raters were two models, not people. This
   misses the 2% bar. Details in STATUS.md.
+- 2026-11-14 changes are committed locally and **not pushed**: an audit of answers scored
+  right, and `SECURE_QUERY_CHECK_MODEL` (a different model as second reader, off by default).
 
 Open, all waiting for Sam:
 
 1. Inputs for 3.1 (above).
-2. A human adjudication pass: the 40 packets in `docs/adjudication/`, plus two wrong answers
-   from the 2026-11-13 rerun that have no label
-   (`test_0453_cre_Students_Information_Systems`, `test_1041_aan_1`).
+2. A human adjudication pass, all in `docs/adjudication/`: the 40 wrong-answer packets of
+   2026-11-12, the 2 of 2026-11-13 (`*-new2-packets.json`), and the 60 right answers
+   (`*-right60-packets.json`). The last matters most: the model raters flag between 1 and
+   11 of the 60.
 3. Parking-lot decisions in PLAN.md: P1 (retire the LogicalPlan planner), P4 (certified
-   answers), P5 (masking), P6 (conversation).
+   answers), P5 (masking), P6 (conversation), P8 (turn the different-model second reader
+   on), P9 (NULL ordering on Databricks).
 4. The local branch `backup/trusted-core-before-rewrite` holds the history from before a
    personal detail was removed. Never push it; Sam deletes it when satisfied. Older
    published branches still hold that detail; rewriting them is Sam's decision.

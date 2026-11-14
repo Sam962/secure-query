@@ -200,3 +200,12 @@ def test_real_client_supplies_a_sampling_twin_on_the_same_connection() -> None:
     assert twin is client.check_twin() and twin is not client
     assert twin.temperature == CHECK_TEMPERATURE and client.temperature == 0.0
     assert twin._model == "any-model" and twin._client is client._client
+
+
+def test_second_reader_can_be_another_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    pytest.importorskip("openai")
+    from secure_query.planner.llm import OpenAIClient
+
+    monkeypatch.setenv("SECURE_QUERY_CHECK_MODEL", "other-model")
+    client = OpenAIClient(api_key="sk-test", provider="openai", model="any-model")
+    assert client.check_twin()._model == "other-model" and client._model == "any-model"

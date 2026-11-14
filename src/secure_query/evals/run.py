@@ -44,6 +44,12 @@ def _client(provider: str | None, temperature: float = 0.0):
     return OpenAIClient(**settings, temperature=temperature)
 
 
+def _second_reader(client, provider: str | None):
+    """The gate's second reader: the product's own (`check_twin`), or a second scripted client."""
+    twin = getattr(client, "check_twin", None)
+    return twin() if callable(twin) else _client(provider, CHECK_TEMPERATURE)
+
+
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     parser = argparse.ArgumentParser(description="Execution-accuracy eval runner")
@@ -183,7 +189,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     try:
         client = _client(args.provider)
         sample_client = _client(args.provider, args.sample_temperature) if args.samples else None
-        check_client = _client(args.provider, CHECK_TEMPERATURE) if args.planner == "sql" else None
+        check_client = _second_reader(client, args.provider) if args.planner == "sql" else None
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return -1

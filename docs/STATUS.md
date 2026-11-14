@@ -1,6 +1,6 @@
 # Status
 
-**Updated:** 2026-11-13 · Tasks: [PLAN.md](PLAN.md)
+**Updated:** 2026-11-14 · Tasks: [PLAN.md](PLAN.md)
 
 ## What works (verified in code and tests)
 
@@ -38,8 +38,11 @@
 **Default model: `gpt-6-luna`, reasoning off** (since 2026-11-11). Spider test 400, gate on,
 3 repeats (2026-11-12): **76.8% right; adjudicated real wrong 3.5% (14/400, 95% CI
 2.1–5.8%)**; refused 13.3%. A rerun on 2026-11-13 after the gate compared whole
-answers gave 310 right / 38 wrong / 52 refused by exact match (not re-adjudicated). Both raters were models (gpt-5 and Claude); no human rated
-this round. Files: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-12.json` and
+answers gave 310 right / 38 wrong / 52 refused by exact match; its two new wrong answers
+were rated on 2026-11-14, which makes **15 real errors of 400 (3.75%, 95% CI 2.3–6.1%)** for
+that run. Both raters were models (gpt-5 and Claude); no human rated either round. Answers
+scored right were audited for the first time on 2026-11-14 (changelog): the raters flag
+between 1 and 11 of 60, so the wrong-rate may be understated until a person rates them. Files: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-12.json` and
 `docs/adjudication/`. This is above the 2% goal, as the previous model's number was.
 
 Previous default, `gpt-4.1-mini`:
@@ -61,6 +64,45 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 (5%), 7 abstained, 1 harness error; Northwind dev 7/10 right, 3 wrong.
 
 ## Changelog
+
+- **2026-11-14 — audit of answers scored right; a different model as second reader.**
+  Prompted by two papers (SpotIt, arXiv 2510.26840; a selective-prediction study, arXiv
+  2607.06799). VeriPIE (arXiv 2610.17493) was read and nothing was taken from it.
+  - **The two unlabelled wrong answers of the 2026-11-13 run are rated.** gpt-5 and Claude
+    agree, each without seeing the other: `test_1041_aan_1` is a real error,
+    `test_0453_cre_Students_Information_Systems` is ambiguous. That run has 15 real errors
+    of 400 (3.75%, CI 2.3–6.1%). No human rated them.
+  - **Audit of right answers.** A result that matches the reference on one database can
+    come from a query that is wrong on other data; SpotIt measured 10 to 13 points of this
+    on BIRD. `scripts/adjudicate.py packets REPORT --right N` samples matching answers and
+    `rate` judges the query itself. On 60 of the 310 right answers of the 2026-11-13 run:
+    gpt-5 flags 11; Claude, reviewing gpt-5's first-pass flags (not blind), accepts 1
+    (`test_1168_pilot_1`: `ORDER BY age LIMIT 1` where the reference keeps every row at the
+    minimum). The other 10 need data the schema's keys rule out or share the weakness with
+    the reference. The raters disagree too much for a number: between 1 of 60 (1.7%, CI
+    0.3–8.9%) and 11 of 60 (18%, CI 10–30%). A person has to rate these 60. gpt-5's first
+    pass flagged 40, of which 25 only for the 10,000-row cap; the rubric now excludes the
+    cap, single-row ties and zero-count groups. Files: `docs/adjudication/*-right60-*`.
+  - **Lead for the warehouse, not fixed:** about half of the 11 flags are about NULL. One matters on
+    Databricks: it sorts NULL first ascending, DuckDB sorts it last, so "the lowest X"
+    written as `ORDER BY x LIMIT 1` returns a NULL row there when the column has one. No
+    eval here can see it (PLAN P9).
+  - **Second reader as a different model (`SECURE_QUERY_CHECK_MODEL`, off by default).**
+    Spider **dev** 400, 3 repeats, exact match, not adjudicated, same day:
+
+    | Second reader | Right | Wrong | Refused | Answer-rate |
+    |---|---|---|---|---|
+    | `gpt-6-luna` (default) | 300 | 42 | 58 | 75.0% |
+    | `gpt-6.1-terra` | 281 | 29 | 90 | 70.3% |
+
+    14 of the 42 wrong answers became refusals, and so did 27 of the 300 right ones; 8
+    refusals became right and 1 became wrong. Wrong answers fall by 31% and right answers
+    by 6%; "unstable answer" refusals go from 28 to 62. The setting is one variable, read by
+    the product and both eval runners, on the same endpoint, so nothing new is sent
+    anywhere. Not confirmed on Spider test and not adjudicated; the default is unchanged
+    (PLAN P8). Files: `docs/baselines/spider-dev400-gpt6luna-*-2026-11-14.json`.
+  - The eval runners now take the second reader from the client (`check_twin`), as the
+    product does. Mock runs are unchanged; 654 tests pass.
 
 - **2026-11-14 — head-to-head harness ready (PLAN 2.1, 2.2).** `evals.scorecard --backend
   databricks` runs reference SQL, Secure Query and its lookups on the warehouse (needs
