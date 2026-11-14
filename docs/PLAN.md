@@ -297,7 +297,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   Files: `auth/__init__.py`, `pyproject.toml`, tests.
 - [x] **4.4 Access changes without a restart.** The principals file is re-read when it
   changes. Files: `auth/__init__.py`, tests.
-- [ ] **4.5 Audit trail that shows tampering.** Trace and audit lines are hash-chained and
+- [x] **4.5 Audit trail that shows tampering.** Trace and audit lines are hash-chained and
   written under a lock; `SECURE_QUERY_AUDIT_STDOUT=1` also emits them as JSON on stdout for
   a log shipper; `scripts/verify_audit.py` checks a file. Files: `kernel/trace.py`,
   `engine/audit.py`, script, tests.

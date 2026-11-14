@@ -84,3 +84,36 @@ def test_write_trace_roundtrip(tmp_path: Path) -> None:
     loaded = json.loads(path.read_text().strip())
     assert loaded["trace_id"] == record.trace_id
     assert loaded["status"] == "refuse"
+
+
+def test_trace_file_shows_edits_and_removed_lines(tmp_path: Path, monkeypatch) -> None:
+    from secure_query.kernel import ledger
+
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "a-secret-a-secret-a-secret-a-secret")
+    path = tmp_path / "t.jsonl"
+    for code in ("auth", "planner_refusal", "unstable_answer"):
+        write_trace(make_trace(status="refuse", question="hi", clarify_code=code, refused=True), path)
+    assert ledger.verify(path) == (True, 3, "")
+
+    lines = path.read_text().splitlines()
+    path.write_text("\n".join([lines[0], lines[2]]) + "\n")  # a refusal quietly removed
+    assert ledger.verify(path)[:2] == (False, 2)
+    path.write_text("\n".join([lines[0], lines[1].replace("planner_refusal", "ok"), lines[2]]) + "\n")
+    assert ledger.verify(path)[:2] == (False, 2)
+
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "another-secret-another-secret-12345")
+    path.write_text("\n".join(lines) + "\n")
+    assert not ledger.verify(path)[0]  # the chain cannot be recomputed without the secret
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET_PREVIOUS", "a-secret-a-secret-a-secret-a-secret")
+    assert ledger.verify(path)[0]
+
+
+def test_trace_lines_from_many_threads_stay_chained(tmp_path: Path) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    from secure_query.kernel import ledger
+
+    path = tmp_path / "t.jsonl"
+    with ThreadPoolExecutor(8) as pool:
+        list(pool.map(lambda i: write_trace(make_trace(status="refuse", question=str(i), refused=True), path), range(40)))
+    assert ledger.verify(path) == (True, 40, "")

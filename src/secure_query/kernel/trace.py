@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
+from secure_query.kernel import ledger
 from secure_query.kernel.catalog import Catalog
 
 TraceStatus = Literal["ok", "confirm", "refuse", "error"]
@@ -74,10 +75,7 @@ def write_trace(record: TraceRecord, path: Path | None = None) -> None:
     target = path if path is not None else default_trace_path()
     if target is None:
         return
-    target = Path(target)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as fh:
-        fh.write(record.to_json() + "\n")
+    ledger.append(target, record.to_json())
 
 
 def make_trace(
