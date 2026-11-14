@@ -115,6 +115,7 @@ def plan_sql_question(
     relevant_tables: Sequence[str] = (),
     value_probe: ValueProbe | None = None,
     check_client: LLMClient | None = None,
+    answer_probe: ValueProbe | None = None,
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
 
@@ -127,6 +128,10 @@ def plan_sql_question(
     is guessing, so it refuses instead (self-consistency; measured on BIRD it beats the
     keyword guards on both answer rate and precision). The second reading runs beside the
     first, so the gate costs one wait, not two.
+
+    `answer_probe` runs the two readings for that comparison. It should return as many rows
+    as the answer itself may hold; `value_probe` (small, for value lookups) is the fallback,
+    and two answers that only differ after its last row would then pass as equal.
     """
     reading = partial(
         _plan_one_reading,
@@ -137,6 +142,7 @@ def plan_sql_question(
         prompt_catalog=prompt_catalog,
         relevant_tables=relevant_tables,
         value_probe=value_probe,
+        answer_probe=answer_probe or value_probe,
     )
     if check_client is None or value_probe is None:
         return reading(client)
@@ -161,6 +167,7 @@ def _plan_one_reading(
     prompt_catalog: Catalog | None,
     relevant_tables: Sequence[str],
     value_probe: ValueProbe | None,
+    answer_probe: ValueProbe | None,
     second_reading: Callable[[], PlannerResult] | None = None,
 ) -> PlannerResult:
     """One reading of the question. `second_reading` returns the independent one to compare with."""
@@ -209,11 +216,11 @@ def _plan_one_reading(
                     ]
                 )
             gate_fps: list[str] = []
-            if second_reading is not None and value_probe is not None:
+            if second_reading is not None and answer_probe is not None:
                 second = second_reading()
                 # Each reading runs once: its fingerprint is both the comparison and the evidence.
-                first_fp = _probe_fingerprint(value_probe, validated.compiled)
-                second_fp = _probe_fingerprint(value_probe, second.compiled)
+                first_fp = _probe_fingerprint(answer_probe, validated.compiled)
+                second_fp = _probe_fingerprint(answer_probe, second.compiled)
                 if first_fp is None or first_fp != second_fp:
                     return PlannerResult(
                         status="clarify",

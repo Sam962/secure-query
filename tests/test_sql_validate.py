@@ -690,3 +690,31 @@ def test_gate_discards_the_second_reading_when_the_first_refuses() -> None:
         check_client=MockLLMClient([answer]),
     )
     assert result.status == "clarify" and result.clarify_code == "planner_refusal"
+
+
+def test_gate_compares_the_whole_answer_not_the_first_rows() -> None:
+    """Two readings that agree on their first 50 rows and differ later are different answers."""
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    first = json.dumps({"sql": "SELECT TrackId FROM Track"})
+    second = json.dumps({"sql": "SELECT TrackId FROM Track WHERE TrackId <= 60"})
+
+    def rows(limit: int):
+        def probe(query):
+            total = 60 if "<= 60" in query.sql else 80
+            return [(n,) for n in range(1, min(total, limit) + 1)]
+
+        return probe
+
+    lookups_only = plan_sql_question(
+        "List the track ids", CATALOG, MockLLMClient([first]), value_probe=rows(50), check_client=MockLLMClient([second])
+    )
+    assert lookups_only.status == "ok"  # the gap this test documents: 50 equal rows look like agreement
+    whole = plan_sql_question(
+        "List the track ids", CATALOG, MockLLMClient([first]), value_probe=rows(50), answer_probe=rows(1000),
+        check_client=MockLLMClient([second]),
+    )
+    assert whole.status == "clarify" and whole.clarify_code == "unstable_answer"

@@ -306,6 +306,10 @@ def ask(
             value_probe=lambda probe: execute_compiled_query(
                 probe, config, principal=principal, options=_PROBE_OPTIONS
             ).rows,
+            # The gate compares the answers themselves, so it reads as many rows as an answer may hold.
+            answer_probe=lambda reading: execute_compiled_query(
+                reading, config, principal=principal, options=options
+            ).rows,
             check_client=None if client else get_check_client(),
         )
     else:

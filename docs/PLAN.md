@@ -306,7 +306,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   down. Files: `api/http.py`, new `api/ops.py`, `planner/llm.py`, tests.
 - [x] **4.7 Reuse warehouse connections.** One Databricks connection per credential, reused
   across the lookups and the query of one ask. Files: `engine/databricks.py`, tests.
-- [ ] **4.8 The gate compares whole answers.** Check what the 50-row probe misses and fix
+- [x] **4.8 The gate compares whole answers.** Check what the 50-row probe misses and fix
   it. Files: `planner/sql_plan.py`, `api/service.py`, tests.
 - [ ] **4.9 Catalog lifecycle.** The catalog records its version and who approved it and
   when; production refuses an unapproved catalog; a drift check compares it with the

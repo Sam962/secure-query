@@ -186,7 +186,10 @@ def run_live_case(
         if case.sql_reference:
             case = replace(case, expect="answer", reference_sql=case.sql_reference)
         planner = partial(
-            plan_sql_question, value_probe=partial(_probe, db_path), check_client=check_client
+            plan_sql_question,
+            value_probe=partial(_probe, db_path),
+            answer_probe=partial(_answer_probe, db_path),
+            check_client=check_client,
         )
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
@@ -342,6 +345,11 @@ def _matches(
 
 def _probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:
     return execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=50, timeout_seconds=5.0)).rows
+
+
+def _answer_probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:
+    """The gate compares whole answers: the row cap the product runs with, not the lookup cap."""
+    return execute_duckdb(compiled, db_path, options=ExecuteOptions(timeout_seconds=10.0)).rows
 
 
 def _pii_names(catalog: Catalog) -> set[str]:
