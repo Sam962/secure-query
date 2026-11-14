@@ -313,7 +313,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   warehouse. Files: `kernel/catalog.py`, `engine/catalog_draft.py`, tests.
 - [x] **4.10 Production image.** Non-root, pinned from `requirements.lock`, no demo data or
   dev auth baked in. Files: `Dockerfile`, `docker-compose.yml`.
-- [ ] **4.11 Say what leaves the building.** SECURITY.md lists exactly what is sent to the
+- [x] **4.11 Say what leaves the building.** SECURITY.md lists exactly what is sent to the
   model provider and how to use a private endpoint. Files: `docs/SECURITY.md`.
 - [x] **4.12 The consistency gate runs for API and CLI requests.** Found on 2026-11-13 by a
   live end-to-end check: `ask()` skipped the second reading whenever a client was passed

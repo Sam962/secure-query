@@ -16,7 +16,7 @@ adjudicated wrong-rate (PLAN.md, Goal).
 ```bash
 cd secure-query
 python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,planner,api]"
+pip install -e ".[dev,planner,api,enterprise]"
 python -m secure_query.demo.load_chinook      # downloads the pinned demo DB to data/
 ```
 
@@ -29,13 +29,16 @@ hides files inside `.venv`, which breaks the editable install.
 |------|------|
 | HTTP + UI | `src/secure_query/api/http.py`, `api/static/index.html` |
 | Ask pipeline (one function, `ask`) | `src/secure_query/api/service.py` |
-| Identity and per-user catalog slice | `src/secure_query/auth/__init__.py` |
+| Identity (dev, token, header, OIDC) and per-user catalog slice | `src/secure_query/auth/__init__.py` |
+| Rate limit, metrics, request id | `src/secure_query/api/ops.py`, middleware in `api/http.py` |
 | LLM client (any OpenAI-compatible model) | `src/secure_query/planner/llm.py` |
 | LLM writes SQL; two-readings gate | `src/secure_query/planner/sql_plan.py` |
 | SQL rewrites before validation (value grounding, ranking measure) | `src/secure_query/planner/sql_values.py` |
 | Allowlist validator (the security core) | `src/secure_query/kernel/sql_validate.py` |
 | Execute (DuckDB / Postgres / Databricks) | `src/secure_query/engine/runtime.py` |
 | Trace, fingerprints, Evidence Bundle | `src/secure_query/kernel/trace.py`, `kernel/evidence.py` |
+| Signing keys and rotation; hash-chained audit files | `src/secure_query/kernel/signing.py`, `kernel/ledger.py` |
+| Catalog approval record and drift check | `src/secure_query/kernel/catalog.py`, `engine/catalog_draft.py` |
 | Eval harness and Genie scorecard | `src/secure_query/evals/accuracy.py`, `evals/scorecard.py` |
 
 Layering: `api → engine/planner → kernel`. The kernel never imports the planner or an LLM.
@@ -47,6 +50,15 @@ The default is OpenAI `gpt-6-luna` with reasoning off (`DEFAULT_MODEL` in `plann
 Any model on an OpenAI-compatible endpoint runs; the client drops a parameter the model
 rejects. Measure a model before trusting it: [EVAL.md](EVAL.md), "Qualifying a new model".
 Live evals need `OPENAI_API_KEY` in `.env` and cost a few dollars per Spider run.
+
+## Production settings
+
+`SECURE_QUERY_ENV=production` refuses to start with dev auth, without a 32-character
+signing secret, or with a catalog that has no `approval` record, and turns the per-person
+rate limit on. Sign-in, signing, audit and the list of what is sent to the model provider
+are in [SECURITY.md](SECURITY.md); every variable is in `.env.example`. The `Dockerfile` is
+the production image (it has not been built in this repository's CI yet);
+`docker-compose.yml` is the local demo.
 
 ## Everyday commands
 
@@ -67,5 +79,7 @@ python scripts/databricks_smoke.py                          # exits 2 (skip) wit
 - Wrong-rate claims are adjudicated. A model's rating is never called "human".
 - Tune on dev suites and Spider dev only. Spider test and the holdouts are for one
   confirming run, never for tuning.
+- Check a change end to end through the API with a live model, not only through the eval
+  harness: on 2026-11-13 the harness ran the consistency gate and the API did not.
 - A change to what an answer shows can break the grader. After one, re-check the tie rule
   and the column flags (`extra_columns_ok`, `subset_columns_ok`) on a full run.

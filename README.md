@@ -28,7 +28,7 @@ The default is OpenAI **`gpt-6-luna`** with reasoning off (`SECURE_QUERY_PROVIDE
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,planner,api]"
+pip install -e ".[dev,planner,api,enterprise]"
 python -m secure_query.demo.load_chinook
 ```
 
@@ -199,7 +199,7 @@ Dependencies point one way: `api → engine/planner → kernel`. See [docs/ARCHI
 ## Development
 
 ```bash
-pip install -e ".[dev,planner,api,databricks,postgres]"
+pip install -e ".[dev,planner,api,enterprise,databricks,postgres]"
 pytest -q
 python -m secure_query.evals.run --split dev --provider mock
 ```
