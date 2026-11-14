@@ -1,6 +1,6 @@
 # Handover — start here
 
-**Updated:** 2026-11-13. Read this file, then [PLAN.md](PLAN.md) (the task list), then
+**Updated:** 2026-11-14. Read this file, then [PLAN.md](PLAN.md) (the task list), then
 [STATUS.md](STATUS.md) (what is measured).
 
 ## What this project is
@@ -10,6 +10,34 @@ checks every expression against a human-approved catalog, and **regenerates** th
 that runs. Model SQL never runs as written. Every answer or refusal writes a trace record
 and returns a signed Evidence Bundle. The goal is to beat Databricks Genie on
 adjudicated wrong-rate (PLAN.md, Goal).
+
+## Where things stand (2026-11-14)
+
+- Branch `trusted-core`, pushed to `origin`, 41 commits ahead of `main`, CI green. No pull
+  request is open; Sam decides when to open and merge one.
+- PLAN Phases 0, 1, 2 and 4 are done. 653 tests pass.
+- **Phase 3 (the live head-to-head with Genie) is the only open phase and is blocked on
+  Sam**: task 3.1 needs the domain, the partner date, and Databricks and Genie access. Do
+  not start 3.2–3.5 before 3.1.
+- Latest number: `gpt-6-luna` on Spider test 400, adjudicated 2026-11-12: 14 real errors of
+  400 (3.5%, 95% CI 2.1–5.8%), refused 13.3%. The raters were two models, not people. This
+  misses the 2% bar. Details in STATUS.md.
+
+Open, all waiting for Sam:
+
+1. Inputs for 3.1 (above).
+2. A human adjudication pass: the 40 packets in `docs/adjudication/`, plus two wrong answers
+   from the 2026-11-13 rerun that have no label
+   (`test_0453_cre_Students_Information_Systems`, `test_1041_aan_1`).
+3. Parking-lot decisions in PLAN.md: P1 (retire the LogicalPlan planner), P4 (certified
+   answers), P5 (masking), P6 (conversation).
+4. The local branch `backup/trusted-core-before-rewrite` holds the history from before a
+   personal detail was removed. Never push it; Sam deletes it when satisfied. Older
+   published branches still hold that detail; rewriting them is Sam's decision.
+
+Built but never run against the real thing: the Docker image (never built), OIDC sign-in
+(no real identity provider), and the Databricks connection pool, catalog drift check and
+`--backend databricks` scorecard (fakes only). Check each one live before relying on it.
 
 ## Setup (once per machine)
 
@@ -74,7 +102,10 @@ python scripts/databricks_smoke.py                          # exits 2 (skip) wit
 ## Rules that bite
 
 - Follow PLAN.md in order, one task per change. Ideas go to the PLAN parking lot.
-- Sam commits, pushes and merges. Never add AI co-author trailers.
+- The agent commits one task at a time, only when the Verify block in PLAN.md is green.
+  Push `trusted-core` only when Sam says so (he allowed it on 2026-11-14); never
+  force-push. Sam opens pull requests and merges. Never add AI co-author trailers.
+- `.env` holds real keys. Never print it or send personal details to an outside service.
 - Never tune on holdout cases. Never put dataset or domain words in code.
 - Wrong-rate claims are adjudicated. A model's rating is never called "human".
 - Tune on dev suites and Spider dev only. Spider test and the holdouts are for one
