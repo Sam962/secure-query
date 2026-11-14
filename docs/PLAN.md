@@ -292,10 +292,10 @@ Each task is one commit. Every new control is off or permissive by default outsi
   `SECURE_QUERY_EVIDENCE_PRIVATE_KEY` (Ed25519, PEM) bundles are signed asymmetrically and
   carry a `key_id`; `GET /evidence/public-key` serves the public key. HMAC stays the
   fallback. Files: `kernel/evidence.py`, `api/http.py`, `pyproject.toml`, tests.
-- [ ] **4.3 OIDC sign-in.** `SECURE_QUERY_AUTH_MODE=jwt` validates a Bearer JWT against the
+- [x] **4.3 OIDC sign-in.** `SECURE_QUERY_AUTH_MODE=jwt` validates a Bearer JWT against the
   identity provider's keys (issuer, audience, expiry) and maps a group claim to tables.
   Files: `auth/__init__.py`, `pyproject.toml`, tests.
-- [ ] **4.4 Access changes without a restart.** The principals file is re-read when it
+- [x] **4.4 Access changes without a restart.** The principals file is re-read when it
   changes. Files: `auth/__init__.py`, tests.
 - [ ] **4.5 Audit trail that shows tampering.** Trace and audit lines are hash-chained and
   written under a lock; `SECURE_QUERY_AUDIT_STDOUT=1` also emits them as JSON on stdout for
