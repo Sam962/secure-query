@@ -655,3 +655,38 @@ def test_correlated_subquery_keeps_the_outer_row_filter() -> None:
         row_filters=(usa,),
     ).compiled.sql
     assert sql.count("'USA'") >= 1 and '"_rf_row"."Country" = \'USA\'' in sql
+
+
+def test_gate_plans_both_readings_at_the_same_time() -> None:
+    """Two readings that each take 0.2 s finish in well under 0.4 s."""
+    import json
+    import time
+
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    class Slow:
+        def complete(self, messages):
+            time.sleep(0.2)
+            return json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+
+    started = time.perf_counter()
+    result = plan_sql_question(
+        "How many customers are there?", CATALOG, Slow(), value_probe=lambda query: [(59,)], check_client=Slow()
+    )
+    assert result.status == "ok" and len(result.gate_fingerprints) == 1
+    assert time.perf_counter() - started < 0.35
+
+
+def test_gate_discards_the_second_reading_when_the_first_refuses() -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    refusal = json.dumps({"cannot_answer": True, "reason": "no such table"})
+    answer = json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+    result = plan_sql_question(
+        "How many spaceships?", CATALOG, MockLLMClient([refusal]), value_probe=lambda query: [(59,)],
+        check_client=MockLLMClient([answer]),
+    )
+    assert result.status == "clarify" and result.clarify_code == "planner_refusal"

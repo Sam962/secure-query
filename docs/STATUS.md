@@ -59,6 +59,18 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-13 — the two readings run at the same time (PLAN 1.6 done).** Median seconds
+  per question, 20 Chinook dev questions, `gpt-6-luna`, planning only: **2.06 s before,
+  0.87 s after**. The comparison logic is unchanged. Cost: when the first reading refuses,
+  the second call has already been sent, so a refused question now costs two LLM calls
+  where it cost one.
+  - Chinook dev, one run each, right / wrong / refused: sequential 128 / 4 / 2; parallel
+    126 / 4 / 4 and 125 / 6 / 3. The runs differ on the same four questions. Planned 16
+    times each, all four flip between answer and refusal in both versions, so this is the
+    known run-to-run noise of the gate, not the change. One of them
+    (`dev_complex_rock_revenue_share`) was refused as unstable 7 of 16 times sequential
+    and 1 of 16 parallel; with four questions compared that can be chance, and it is not
+    explained.
 - **2026-11-13 — review of the 2026-11-11/12 changes (offline; no live runs).**
   - Measure column and the suites: no reference in the Chinook or Northwind suites, dev or
     holdout, ranks or filters by an aggregate it does not show, so the added column cannot

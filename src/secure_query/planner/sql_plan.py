@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from typing import Any
 
 from secure_query.kernel.catalog import Catalog
@@ -123,8 +125,45 @@ def plan_sql_question(
     With `check_client` (a sampling client) and `value_probe`, the question is planned a
     second time independently and both queries are run: different answers mean the model
     is guessing, so it refuses instead (self-consistency; measured on BIRD it beats the
-    keyword guards on both answer rate and precision).
+    keyword guards on both answer rate and precision). The second reading runs beside the
+    first, so the gate costs one wait, not two.
     """
+    reading = partial(
+        _plan_one_reading,
+        question,
+        catalog,
+        max_repairs=max_repairs,
+        row_filters=row_filters,
+        prompt_catalog=prompt_catalog,
+        relevant_tables=relevant_tables,
+        value_probe=value_probe,
+    )
+    if check_client is None or value_probe is None:
+        return reading(client)
+    pool = ThreadPoolExecutor(max_workers=1)
+    second = pool.submit(reading, check_client)
+    try:
+        return reading(client, second_reading=second.result)
+    finally:
+        # The first reading may end without asking for the second (a refusal, an error):
+        # cancel it if it has not started, otherwise let it finish unobserved.
+        second.cancel()
+        pool.shutdown(wait=False)
+
+
+def _plan_one_reading(
+    question: str,
+    catalog: Catalog,
+    client: LLMClient,
+    *,
+    max_repairs: int,
+    row_filters: Sequence[Filter],
+    prompt_catalog: Catalog | None,
+    relevant_tables: Sequence[str],
+    value_probe: ValueProbe | None,
+    second_reading: Callable[[], PlannerResult] | None = None,
+) -> PlannerResult:
+    """One reading of the question. `second_reading` returns the independent one to compare with."""
     messages = [
         {"role": "system", "content": sql_system_prompt(catalog.sql_dialect)},
         {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog, relevant_tables)},
@@ -170,17 +209,8 @@ def plan_sql_question(
                     ]
                 )
             gate_fps: list[str] = []
-            if check_client is not None and value_probe is not None:
-                second = plan_sql_question(
-                    question,
-                    catalog,
-                    check_client,
-                    max_repairs=max_repairs,
-                    row_filters=row_filters,
-                    prompt_catalog=prompt_catalog,
-                    relevant_tables=relevant_tables,
-                    value_probe=value_probe,
-                )
+            if second_reading is not None and value_probe is not None:
+                second = second_reading()
                 # Each reading runs once: its fingerprint is both the comparison and the evidence.
                 first_fp = _probe_fingerprint(value_probe, validated.compiled)
                 second_fp = _probe_fingerprint(value_probe, second.compiled)

@@ -162,7 +162,7 @@ runs exit 0 (`echo $?` prints `0`).
        with what made the answer unstable.
   - Done when: STATUS.md has the count and decision, and Verify passes.
 
-- [ ] **1.6 Plan the two readings at the same time.**
+- [x] **1.6 Plan the two readings at the same time.**
   - Why: with the self-consistency gate on, each question waits for two LLM calls one
     after the other. Running them together roughly halves that wait.
   - Blocked by: 1.5.
