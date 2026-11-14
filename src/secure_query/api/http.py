@@ -37,6 +37,7 @@ from secure_query.engine.databricks import databricks_grant_check
 from secure_query.engine.env import load_dotenv
 from secure_query.engine.execute import ExecuteOptions, ExecutionError
 from secure_query.engine.runtime import get_runtime, load_active_catalog
+from secure_query.kernel.catalog import production_problems
 from secure_query.kernel.signing import evidence_public_key
 from secure_query.planner import PlannerError, get_client
 from secure_query.planner.suggest import SuggestedQuestion
@@ -53,6 +54,10 @@ log = logging.getLogger(__name__)
 async def _lifespan(_app: FastAPI):
     load_dotenv()
     check_auth_config()  # refuse to start with an unsafe auth configuration
+    if (os.environ.get("SECURE_QUERY_ENV") or "").strip().lower() == "production":
+        problems = production_problems(get_runtime().catalog)
+        if problems:
+            raise RuntimeError("SECURE_QUERY_ENV=production refuses this catalog: " + "; ".join(problems))
     yield
 
 

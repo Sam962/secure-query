@@ -77,6 +77,7 @@ def catalog_for_principal(base: Catalog, principal: Principal) -> Catalog:
         max_limit=base.max_limit,
         require_limit=base.require_limit,
         sql_dialect=base.sql_dialect,
+        approval=base.approval,
     )
 
 

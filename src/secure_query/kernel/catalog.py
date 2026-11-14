@@ -102,6 +102,16 @@ class Synonym(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class CatalogApproval(BaseModel):
+    """Who signed off this catalog, and which version it is. Written by a person, not a tool."""
+
+    version: str = Field(min_length=1)
+    approved_by: str = Field(min_length=1)
+    approved_at: str = Field(min_length=8, description="ISO date or timestamp of the approval")
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 class Catalog(BaseModel):
     """Tenant-scoped allowlist used by validate()."""
 
@@ -126,6 +136,10 @@ class Catalog(BaseModel):
     )
     max_limit: int = 10000
     require_limit: bool = True
+    approval: CatalogApproval | None = Field(
+        default=None,
+        description="Sign-off record. A drafted catalog has none; production refuses to start without it.",
+    )
     sql_dialect: str = Field(
         default="duckdb",
         description="sqlglot dialect for compile (duckdb locally, postgres, or databricks)",
@@ -240,3 +254,16 @@ class Catalog(BaseModel):
                     f"{jk.right_table}.{jk.right_column}"
                 )
         return "\n".join(lines)
+
+
+def production_problems(catalog: Catalog) -> list[str]:
+    """Why this catalog must not serve production traffic; empty when it may."""
+    problems = []
+    if catalog.approval is None:
+        problems.append(
+            "the catalog has no `approval` record (version, approved_by, approved_at); "
+            "a drafted catalog is not an approved one"
+        )
+    if catalog.allow_any_join:
+        problems.append("`allow_any_join` is a development setting; list the approved join_keys")
+    return problems

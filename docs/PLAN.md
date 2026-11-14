@@ -308,7 +308,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   across the lookups and the query of one ask. Files: `engine/databricks.py`, tests.
 - [x] **4.8 The gate compares whole answers.** Check what the 50-row probe misses and fix
   it. Files: `planner/sql_plan.py`, `api/service.py`, tests.
-- [ ] **4.9 Catalog lifecycle.** The catalog records its version and who approved it and
+- [x] **4.9 Catalog lifecycle.** The catalog records its version and who approved it and
   when; production refuses an unapproved catalog; a drift check compares it with the
   warehouse. Files: `kernel/catalog.py`, `engine/catalog_draft.py`, tests.
 - [ ] **4.10 Production image.** Non-root, pinned from `requirements.lock`, no demo data or
