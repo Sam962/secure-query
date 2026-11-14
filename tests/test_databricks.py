@@ -327,3 +327,40 @@ def test_execute_uses_end_user_token(monkeypatch) -> None:
         principal=principal,
     )
     assert seen["access_token"] == "user-obo"
+
+
+def test_connections_are_reused_per_credential_and_dropped_after_a_failure(monkeypatch) -> None:
+    from secure_query.engine import databricks
+
+    monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example")
+    monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "user")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    opened: list[_FakeConnection] = []
+
+    def connect(**settings):
+        opened.append(_FakeConnection(rows=[(1,)], columns=["n"]))
+        opened[-1].token = settings["access_token"]
+        return opened[-1]
+
+    monkeypatch.setattr(databricks, "_connect", connect)
+    databricks._POOL.close_all()
+    compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
+    alice = Principal(principal_id="alice", tenant_id="t", warehouse_token="alice-token")
+    bob = Principal(principal_id="bob", tenant_id="t", warehouse_token="bob-token")
+
+    for _ in range(3):
+        execute_databricks(compiled, principal=alice)
+    assert len(opened) == 1 and not opened[0].closed  # three statements, one session
+    execute_databricks(compiled, principal=bob)
+    assert len(opened) == 2 and opened[1].token == "bob-token"  # never another person's session
+
+    def broken(*_a, **_k):
+        raise RuntimeError("statement failed")
+
+    monkeypatch.setattr(databricks, "_execute_once", broken)
+    with pytest.raises(Exception):
+        execute_databricks(compiled, principal=alice)
+    assert opened[0].closed  # a session that failed is not reused
+    databricks._POOL.close_all()
+    assert opened[1].closed

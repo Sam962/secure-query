@@ -304,7 +304,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
 - [x] **4.6 Operational surface.** Per-person rate limit, `GET /metrics` (Prometheus text),
   a request id on every response, and a breaker that fails fast when the model provider is
   down. Files: `api/http.py`, new `api/ops.py`, `planner/llm.py`, tests.
-- [ ] **4.7 Reuse warehouse connections.** One Databricks connection per credential, reused
+- [x] **4.7 Reuse warehouse connections.** One Databricks connection per credential, reused
   across the lookups and the query of one ask. Files: `engine/databricks.py`, tests.
 - [ ] **4.8 The gate compares whole answers.** Check what the 50-row probe misses and fix
   it. Files: `planner/sql_plan.py`, `api/service.py`, tests.

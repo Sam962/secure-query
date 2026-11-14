@@ -10,8 +10,12 @@ planner allowlist.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
 from typing import Any, Literal
@@ -343,17 +347,20 @@ def execute_databricks(
         raise ValueError("timeout_seconds must be > 0")
 
     owns_connection = connection is None
+    settings: dict[str, str] = {}
     if connection is None:
         token = resolve_warehouse_token(principal)
-        connection = _connect(**databricks_settings_from_env(access_token=token))
+        settings = databricks_settings_from_env(access_token=token)
+        connection = _POOL.borrow(settings)
 
     def _runner() -> tuple[list[str], list[tuple[Any, ...]], bool]:
         cursor = connection.cursor()
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sq-databricks")
         fut = pool.submit(_execute_once, cursor, compiled.sql, opts.max_rows)
+        healthy = False
         try:
             try:
-                return fut.result(timeout=opts.timeout_seconds)
+                result = fut.result(timeout=opts.timeout_seconds)
             except FuturesTimeout:
                 cancel = getattr(cursor, "cancel", None)
                 if cancel is not None:
@@ -363,11 +370,17 @@ def execute_databricks(
                         pass
                 _await_stop(fut, "databricks")
                 raise
+            healthy = True
+            return result
         finally:
             pool.shutdown(wait=fut.done())
             _safe_close(cursor)
             if owns_connection:
-                _safe_close(connection)
+                # A timed-out or failed statement leaves the session in an unknown state.
+                if healthy:
+                    _POOL.give_back(settings, connection)
+                else:
+                    _safe_close(connection)
 
     return run_with_policy(
         compiled,
@@ -378,6 +391,73 @@ def execute_databricks(
         backend="databricks",
         runner=_runner,
     )
+
+
+class _ConnectionPool:
+    """Idle warehouse connections, kept per credential, lent to one thread at a time.
+
+    One ask runs several statements (value lookups, the two readings, the reviewed query);
+    without reuse each opens a new session. A connection is only ever reused for the same
+    host, warehouse, catalog, schema and access token, so one person's session never
+    serves another. SECURE_QUERY_DATABRICKS_POOL_IDLE_SECONDS (default 300; 0 = no reuse).
+    """
+
+    _MAX_IDLE_PER_KEY = 4
+    _MAX_KEYS = 256
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._idle: dict[str, list[tuple[Any, float]]] = {}
+
+    @staticmethod
+    def _key(settings: dict[str, str]) -> str:
+        return hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def _idle_seconds() -> float:
+        return float(os.environ.get("SECURE_QUERY_DATABRICKS_POOL_IDLE_SECONDS") or 300)
+
+    def borrow(self, settings: dict[str, str]) -> Any:
+        limit, now, stale = self._idle_seconds(), time.monotonic(), []
+        found = None
+        with self._lock:
+            waiting = self._idle.get(self._key(settings), [])
+            while waiting and found is None:
+                connection, since = waiting.pop()
+                if now - since <= limit:
+                    found = connection
+                else:
+                    stale.append(connection)
+        for connection in stale:
+            _safe_close(connection)
+        return found if found is not None else _connect(**settings)
+
+    def give_back(self, settings: dict[str, str], connection: Any) -> None:
+        if self._idle_seconds() <= 0:
+            _safe_close(connection)
+            return
+        key, evicted = self._key(settings), []
+        with self._lock:
+            if key not in self._idle and len(self._idle) >= self._MAX_KEYS:
+                oldest = min(self._idle, key=lambda k: max((s for _, s in self._idle[k]), default=0.0))
+                evicted = [c for c, _ in self._idle.pop(oldest)]
+            waiting = self._idle.setdefault(key, [])
+            if len(waiting) >= self._MAX_IDLE_PER_KEY:
+                evicted.append(connection)
+            else:
+                waiting.append((connection, time.monotonic()))
+        for old in evicted:
+            _safe_close(old)
+
+    def close_all(self) -> None:
+        with self._lock:
+            connections = [c for waiting in self._idle.values() for c, _ in waiting]
+            self._idle.clear()
+        for connection in connections:
+            _safe_close(connection)
+
+
+_POOL = _ConnectionPool()
 
 
 def _connect(*, host: str, http_path: str, access_token: str, catalog: str, schema: str) -> Any:
