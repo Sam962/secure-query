@@ -55,7 +55,6 @@ from secure_query.planner.clarify import (
     question_too_long,
 )
 from secure_query.planner.confidence import confidence_threshold, link_tables, low_confidence_message
-from secure_query.planner.llm import get_check_client
 from secure_query.planner.retrieve import prompt_catalog_and_hint, retrieve_k_from_env, retrieve_tables
 from secure_query.planner.sql_plan import plan_sql_question
 from secure_query.planner.suggest import SuggestedQuestion, suggest_questions
@@ -310,7 +309,7 @@ def ask(
             answer_probe=lambda reading: execute_compiled_query(
                 reading, config, principal=principal, options=options
             ).rows,
-            check_client=None if client else get_check_client(),
+            check_client=_second_reader(active_client),
         )
     else:
         planned = plan_question(
@@ -661,6 +660,16 @@ def _finish(
         trace_id=record.trace_id,
         evidence=evidence,
     )
+
+
+def _second_reader(client: LLMClient) -> LLMClient | None:
+    """The client that reads the question a second time for the self-consistency gate.
+
+    A real model client supplies its own sampling twin. A client without one (a scripted
+    test client) runs without the gate.
+    """
+    twin = getattr(client, "check_twin", None)
+    return twin() if callable(twin) else None
 
 
 def planner_mode() -> str:

@@ -72,7 +72,7 @@ app = FastAPI(
     lifespan=_lifespan,
     title="Secure Query API",
     version=_package_version(),
-    description="Governed talk-to-data: LogicalPlan → validate → AST compile → execute.",
+    description="Governed talk-to-data: model SQL is allowlist-validated and regenerated, never run as written.",
 )
 
 

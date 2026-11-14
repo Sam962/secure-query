@@ -124,8 +124,8 @@ Copy [`.env.example`](.env.example) to `.env`. Never commit `.env`.
 | `SECURE_QUERY_PROVIDER` / `SECURE_QUERY_MODEL` | Planner LLM (default OpenAI `gpt-6-luna`) |
 | `SECURE_QUERY_BASE_URL` | Any OpenAI-compatible endpoint |
 | `SECURE_QUERY_REASONING_EFFORT` | Reasoning setting sent to the model; OpenAI default `none` |
-| `SECURE_QUERY_AUTH_MODE` | `dev` \| `token` \| `header` |
-| `SECURE_QUERY_ENV` | `production` forbids `AUTH_MODE=dev` and requires `SECURE_QUERY_REVIEW_SECRET` |
+| `SECURE_QUERY_AUTH_MODE` | `dev` \| `token` \| `header` \| `jwt` (OIDC; see [docs/SECURITY.md](docs/SECURITY.md)) |
+| `SECURE_QUERY_ENV` | `production` forbids `AUTH_MODE=dev`, requires `SECURE_QUERY_REVIEW_SECRET` and an approved catalog, and turns the rate limit on |
 | `SECURE_QUERY_CATALOG_FILE` | Approved catalog JSON (default: Chinook sample) |
 | `SECURE_QUERY_KNOWLEDGE_FILE` | Extra synonyms + instructions (never SQL examples) |
 | `SECURE_QUERY_PRINCIPALS_FILE` | Token → principal map |
@@ -138,7 +138,7 @@ Copy [`.env.example`](.env.example) to `.env`. Never commit `.env`.
 | `SECURE_QUERY_LINK_CONFIDENCE` | Table-confidence refusal threshold; `0` (default) = off |
 | `GENIE_SPACE_ID` | Head-to-head scorecard (`python -m secure_query.evals.scorecard`) |
 
-`GET /health` and `GET /ready` report the execute backend.
+`GET /health` and `GET /ready` report the execute backend. `GET /metrics` serves Prometheus counters; `GET /evidence/public-key` serves the key that verifies Evidence Bundles. Signing, rotation, audit and rate-limit settings are in [docs/SECURITY.md](docs/SECURITY.md) and [`.env.example`](.env.example).
 
 ---
 
@@ -146,12 +146,13 @@ Copy [`.env.example`](.env.example) to `.env`. Never commit `.env`.
 
 Do **not** auto-go-live from a warehouse URL. Order:
 
-1. Draft a catalog (`python -m secure_query.engine.catalog_draft --duckdb …` or `fetch_unity_catalog_draft`)
-2. Owner reviews PII flags and `join_keys` (a strict allowlist; `allow_any_join` is dev-only)
+1. Draft a catalog (`python -m secure_query.engine.catalog_draft --duckdb …` or `--databricks`)
+2. Owner reviews PII flags and `join_keys` (a strict allowlist; `allow_any_join` is dev-only), then adds the `approval` record (`version`, `approved_by`, `approved_at`)
 3. Add synonyms / knowledge JSON, and metric definitions under `metrics` in the catalog JSON
 4. Fill [docs/OWNERSHIP.md](docs/OWNERSHIP.md)
 5. Production auth (`token` or `header`) + SELECT-only warehouse identity
 6. Domain holdout, adjudicated (see [docs/EVAL.md](docs/EVAL.md))
+7. Schedule the drift check: `python -m secure_query.engine.catalog_draft --databricks --check catalog.json` exits 1 when an approved table or column is gone or changed type
 
 ---
 

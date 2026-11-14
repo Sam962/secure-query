@@ -315,14 +315,23 @@ Each task is one commit. Every new control is off or permissive by default outsi
   dev auth baked in. Files: `Dockerfile`, `docker-compose.yml`.
 - [ ] **4.11 Say what leaves the building.** SECURITY.md lists exactly what is sent to the
   model provider and how to use a private endpoint. Files: `docs/SECURITY.md`.
-- [ ] **4.12 Retire the LogicalPlan question planner (was P1).** Metrics and explain stay.
+- [x] **4.12 The consistency gate runs for API and CLI requests.** Found on 2026-11-13 by a
+  live end-to-end check: `ask()` skipped the second reading whenever a client was passed
+  in, and both the API and the CLI pass one in. Only the eval harness ran the gate. The
+  model client now supplies its own second reader (`check_twin`). Files: `planner/llm.py`,
+  `api/service.py`, `tests/test_service.py`.
 - [ ] **4.13 Docs.** HANDOVER, STATUS, README, SECURITY, `.env.example` describe the above.
 
 Not started, because each is a product decision rather than a fix: see P4–P6 below.
 
 ## Parking lot (needs Sam's decision; do not start)
 
-- **P1. Retire the LogicalPlan question planner.** It is off by default since ADR 005 but
+- **P1. Retire the LogicalPlan question planner — after P4.** Looked at on 2026-11-13 and
+  not done: it is today the only route from a question to a catalog metric (the SQL path
+  never picks a `metric_id`), and the mock planner behind most API and service tests runs
+  through it. Removing it first would drop metrics from the product. Build P4, move the
+  tests to the SQL path, then delete.
+- **P1 (original note). Retire the LogicalPlan question planner.** It is off by default since ADR 005 but
   still carries about 2,000 lines: `planner/plan.py`, `planner/guard.py` (843 lines),
   `planner/prompt.py`, `planner/response_schema.py`, the `lqp` option in `evals/run.py`,
   and guard use in `planner/suggest.py`. Metrics and `kernel/explain.py` would stay.

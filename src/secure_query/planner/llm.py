@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -114,6 +115,7 @@ class OpenAIClient:
         self._token_param = _TOKEN_PARAMS[0] if provider == "openai" else _TOKEN_PARAMS[1]
         self._rejected: set[str] = set()  # parameters this model refused; see _create
         self._breaker = _breaker_for(provider, base_url or "")
+        self._twin: OpenAIClient | None = None
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
         )
@@ -193,6 +195,15 @@ class OpenAIClient:
             return self._content(resp)
 
         raise PlannerError("LLM rate limit retries exhausted")
+
+    def check_twin(self) -> OpenAIClient:
+        """The same model and connection, sampling at CHECK_TEMPERATURE: the gate's second reader."""
+        if self._twin is None:
+            twin = copy.copy(self)
+            twin.temperature = CHECK_TEMPERATURE
+            twin._rejected = set(self._rejected)
+            self._twin = twin
+        return self._twin
 
     def _create(self, create_kwargs: dict[str, Any]) -> Any:
         """Send the request, adapting to the model: any model the endpoint serves should work.
@@ -520,9 +531,3 @@ def get_client() -> LLMClient:
 
 CHECK_TEMPERATURE = 0.7
 
-
-@lru_cache(maxsize=1)
-def get_check_client() -> LLMClient | None:
-    """Sampling client for the self-consistency check; None without a real LLM."""
-    settings = resolve_llm_settings()
-    return None if settings is None else OpenAIClient(**settings, temperature=CHECK_TEMPERATURE)
