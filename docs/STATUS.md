@@ -62,6 +62,13 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-14 — head-to-head harness ready (PLAN 2.1, 2.2).** `evals.scorecard --backend
+  databricks` runs reference SQL, Secure Query and its lookups on the warehouse (needs
+  `SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN`, SELECT-only); the default DuckDB scorecard output
+  is unchanged. `--out` now writes every case of both systems, and
+  `scripts/adjudicate.py packets SCORECARD.json` builds shuffled, numbered packets with no
+  system name, plus a separate key file. Checked live on Northwind dev (10 questions, one
+  wrong, one packet). The Databricks backend was tested with a fake runner, not a warehouse.
 - **2026-11-13 — production hardening (PLAN Phase 4) and one serious fix.**
   - **The consistency gate was off for every API and CLI request** (PLAN 4.12). `ask()`
     skipped the second reading whenever a client was passed in, and both entry points pass

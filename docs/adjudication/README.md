@@ -106,6 +106,19 @@ Files: `spider-test-gpt41mini-gate-2026-10-11-*.json`; run:
 
 ---
 
+# Head-to-head rounds (Secure Query vs Genie)
+
+```
+python -m secure_query.evals.scorecard --suite SUITE.json --backend databricks --repeat 3 --out scorecard.json
+python scripts/adjudicate.py packets scorecard.json -o packets.json
+```
+
+`packets.json` goes to the raters: wrong answers of both systems, shuffled and numbered,
+with no system name. `packets.key.json` maps each number back to its system and case; keep
+it away from the raters until the labels are in.
+
+---
+
 # Spider test (held out), validated SQL with the gate, gpt-6-luna (2026-11-12)
 
 Same 400 seeded questions, rubric and conservative merge as above. `gpt-6-luna` with

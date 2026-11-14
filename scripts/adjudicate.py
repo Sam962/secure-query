@@ -8,6 +8,7 @@ the same packets blind; the merge is conservative (real_error if either says so)
 
 Usage:
     python scripts/adjudicate.py packets REPORT.json [BLOCKED.json] -o packets.json
+    python scripts/adjudicate.py packets SCORECARD.json -o packets.json   # head-to-head, blind
     python scripts/adjudicate.py rate packets.json -o model_labels.json --model gpt-5-2025-08-07
 """
 
@@ -99,6 +100,42 @@ def build_packets(report: Path, blocked: Path | None, split: str = "dev") -> lis
     return packets
 
 
+def build_blind_packets(scorecard: dict) -> tuple[list[dict], dict[str, dict]]:
+    """Packets for every wrong answer of both systems in a scorecard file, and their key.
+
+    A rater must not know which system wrote an answer. Packets are shuffled (fixed seed),
+    numbered, and carry no system name or case id; the key maps each number back.
+    """
+    import random
+
+    found = [
+        (system, case)
+        for system, body in sorted(scorecard["systems"].items())
+        for case in body["cases"]
+        if case["verdict"] == "wrong" and case.get("adjudication")
+    ]
+    random.Random(0).shuffle(found)
+    packets, key = [], {}
+    for number, (system, case) in enumerate(found, start=1):
+        packet_id = f"p{number:03d}"
+        evidence = case["adjudication"]
+        packets.append(
+            {
+                "id": packet_id,
+                "kind": "answered_wrong",
+                "guard": None,
+                "question": evidence["question"],
+                "schema": scorecard.get("schema", ""),
+                "gold_sql": evidence["reference_sql"],
+                "gold_result": evidence["reference_result"],
+                "system_sql": case.get("sql"),
+                "system_result": evidence["system_result"],
+            }
+        )
+        key[packet_id] = {"system": system, "case_id": case["id"]}
+    return packets, key
+
+
 def rate(packets: list[dict], model: str) -> dict[str, dict]:
     from openai import OpenAI
 
@@ -136,8 +173,15 @@ def main(argv: list[str] | None = None) -> int:
     rt.add_argument("--model", required=True)
     args = parser.parse_args(argv)
     if args.cmd == "packets":
-        packets = build_packets(args.report, args.blocked, args.split)
-        args.output.write_text(json.dumps(packets, indent=1, ensure_ascii=False))
+        report = json.loads(args.report.read_text())
+        if "systems" in report:  # a scorecard export: both systems, blind
+            packets, key = build_blind_packets(report)
+            key_path = args.output.with_suffix(".key.json")
+            key_path.write_text(json.dumps(key, indent=1))
+            print(f"key (do not give to raters) -> {key_path}")
+        else:
+            packets = build_packets(args.report, args.blocked, args.split)
+        args.output.write_text(json.dumps(packets, indent=1, ensure_ascii=False, default=str))
         print(f"{len(packets)} packets -> {args.output}")
     else:
         labels = rate(json.loads(args.packets.read_text()), args.model)

@@ -142,3 +142,64 @@ def test_scorecard_loads_each_suite_with_its_own_catalog() -> None:
     assert "Invoice" not in {t.name for t in northwind.tables}
     assert chinook_db.name == "chinook.duckdb" and northwind_db.name == "northwind.duckdb"
     assert cases
+
+
+def test_scorecard_export_becomes_blind_packets_for_both_systems(tmp_path) -> None:
+    """The export holds every case; packets cover both systems and do not say which wrote what."""
+    import importlib.util
+    import json
+
+    from secure_query.evals.accuracy import ABSTAINED, CORRECT, WRONG, Attempt, LiveCase, LiveCaseResult
+    from secure_query.evals.genie import GenieAnswer
+    from secure_query.evals.scorecard import export_cases
+
+    def run_sql(sql: str):
+        return [("USA", 13), ("Canada", 8)]
+
+    case = LiveCase(
+        case_id="c1",
+        question="Customers per country?",
+        expect="answer",
+        reference_sql="SELECT Country, COUNT(*) FROM Customer GROUP BY Country",
+    )
+    answer = GenieAnswer(
+        question=case.question, status="completed", text=None, sql="SELECT 1", columns=["c", "n"],
+        rows=[("USA", 99)], conversation_id=None, message_id=None, raw={},
+    )
+    genie_wrong = grade_genie_answer(case, answer, reference_rows=run_sql(""), run_sql=run_sql)
+    assert genie_wrong.verdict == WRONG and genie_wrong.rows == (("USA", 99),)
+    ours_wrong = Attempt(WRONG, "expected ..., got ...", sql="SELECT 2", rows=(("USA", 12),), row_count=1)
+    other = LiveCase(case_id="c2", question="q2", expect="answer", reference_sql="SELECT 1")
+    results = {
+        "secure_query": [
+            LiveCaseResult(case=case, attempts=[ours_wrong]),
+            LiveCaseResult(case=other, attempts=[Attempt(ABSTAINED, "declined", refusal_code="planner_refusal")]),
+        ],
+        "genie": [
+            LiveCaseResult(case=case, attempts=[genie_wrong]),
+            LiveCaseResult(case=other, attempts=[Attempt(CORRECT, "matches reference", sql="SELECT 1")]),
+        ],
+    }
+    export = {
+        "schema": "tables: Customer",
+        "systems": {
+            name: {"cases": export_cases(rs, db_path=tmp_path / "none.duckdb", run_sql=run_sql)}
+            for name, rs in results.items()
+        },
+    }
+    cases = export["systems"]["secure_query"]["cases"]
+    assert [c["verdict"] for c in cases] == ["wrong", "abstained"] and cases[1]["attempts"][0]["refusal_code"]
+    assert cases[0]["adjudication"]["reference_result"]["count"] == 2
+
+    spec = importlib.util.spec_from_file_location("adjudicate", "scripts/adjudicate.py")
+    adjudicate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(adjudicate)
+    report = tmp_path / "scorecard.json"
+    report.write_text(json.dumps(export, default=str))
+    assert adjudicate.main(["packets", str(report), "-o", str(tmp_path / "p.json")]) == 0
+    packets = json.loads((tmp_path / "p.json").read_text())
+    key = json.loads((tmp_path / "p.key.json").read_text())
+    assert len(packets) == 2 and {k["system"] for k in key.values()} == {"secure_query", "genie"}
+    text = json.dumps(packets)
+    assert "genie" not in text and "secure_query" not in text and "c1" not in text  # blind
+    assert {p["system_sql"] for p in packets} == {"SELECT 1", "SELECT 2"}

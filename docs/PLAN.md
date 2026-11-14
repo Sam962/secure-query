@@ -242,7 +242,7 @@ runs exit 0 (`echo $?` prints `0`).
   - Done when: the new test passes, a `--backend duckdb` run gives the same scorecard as
     before, and Verify passes.
 
-- [ ] **2.2 Export every wrong answer from both systems for adjudication.**
+- [x] **2.2 Export every wrong answer from both systems for adjudication.**
   - Why: the bar is an adjudicated wrong-rate, and today `--out` writes only totals.
   - Blocked by: 2.1.
   - Files: `src/secure_query/evals/scorecard.py`, `scripts/adjudicate.py`,

@@ -25,6 +25,7 @@ from secure_query.evals.accuracy import (
     ABSTAINED,
     CORRECT,
     ERROR,
+    PREVIEW_ROWS,
     ROW_CAP,
     WRONG,
     Attempt,
@@ -112,8 +113,16 @@ def grade_genie_answer(
             extra_columns_ok=case.extra_columns_ok,
             subset_columns_ok=case.subset_columns_ok,
         )
-    verdict, note = (CORRECT, "matches reference") if right else (WRONG, "row mismatch vs reference")
-    return Attempt(verdict, note, fingerprint=fp, sql=answer.sql)
+    if right:
+        return Attempt(CORRECT, "matches reference", fingerprint=fp, sql=answer.sql)
+    return Attempt(
+        WRONG,
+        "row mismatch vs reference",
+        fingerprint=fp,
+        sql=answer.sql,
+        rows=tuple(tuple(row) for row in actual[:PREVIEW_ROWS]),
+        row_count=len(actual),
+    )
 
 
 def run_genie_suite(
@@ -168,6 +177,53 @@ def databricks_runner(tenant_id: str) -> RowRunner:
 
     run_sql.dialect = "databricks"  # type: ignore[attr-defined]
     return run_sql
+
+
+def export_cases(
+    results: list[LiveCaseResult], *, db_path: Path, run_sql: RowRunner | None = None
+) -> list[dict[str, Any]]:
+    """Every case with its attempts, in the shape `evals.run --json` writes.
+
+    A wrong case also carries the question, the reference SQL and the first rows of both
+    answers, so `scripts/adjudicate.py packets` needs no database (the warehouse may not
+    be reachable when a person rates, and Genie's answer cannot be re-run).
+    """
+    from secure_query.evals.run import _case_report
+
+    exported = []
+    for result in results:
+        record = _case_report(result)
+        record["attempts"] = [
+            {
+                "verdict": a.verdict,
+                "detail": a.detail,
+                "sql": a.sql,
+                "fingerprint": a.fingerprint,
+                "refusal_code": a.refusal_code,
+            }
+            for a in result.attempts
+        ]
+        decisive = next((a for a in result.attempts if a.verdict == result.verdict), None)
+        if result.verdict == WRONG and decisive is not None:
+            case = result.case
+            reference: dict[str, Any] | None = None
+            if case.reference_sql:
+                try:
+                    rows = _reference_rows(case, db_path, run_sql)
+                    reference = {"count": len(rows), "first": [list(r) for r in rows[:PREVIEW_ROWS]]}
+                except Exception as exc:  # noqa: BLE001 — the export must not lose the case
+                    reference = {"error": f"{type(exc).__name__}: {exc}"}
+            record["adjudication"] = {
+                "question": case.question,
+                "reference_sql": case.reference_sql,
+                "reference_result": reference,
+                "system_result": {
+                    "count": decisive.row_count,
+                    "first": [list(r) for r in decisive.rows or ()],
+                },
+            }
+        exported.append(record)
+    return exported
 
 
 def beats_genie(sq: SystemStats, genie: SystemStats) -> dict[str, Any]:
@@ -318,8 +374,18 @@ def main(argv: list[str] | None = None) -> int:
                     "secure_query": asdict(sq_stats),
                     "genie": asdict(genie_stats) if genie_stats else None,
                     "gate": beats_genie(sq_stats, genie_stats) if genie_stats else None,
+                    "suite": str(args.suite),
+                    "backend": args.backend,
+                    "repeat": args.repeat,
+                    "schema": catalog.planner_summary(),
+                    "systems": {
+                        name: {"cases": export_cases(results, db_path=db_path, run_sql=run_sql)}
+                        for name, results in (("secure_query", sq_results), ("genie", genie_results))
+                        if results
+                    },
                 },
                 indent=2,
+                default=str,
             ),
             encoding="utf-8",
         )

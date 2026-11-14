@@ -45,6 +45,7 @@ ERROR = "error"
 UNSAFE = "unsafe"
 
 ROW_CAP = 10_000
+PREVIEW_ROWS = 8  # rows of a wrong answer kept for adjudication
 
 # SQL text -> rows. Lets the harness read a warehouse instead of the local DuckDB file.
 RowRunner = Callable[[str], list[tuple[Any, ...]]]
@@ -94,6 +95,9 @@ class Attempt:
     """Order-insensitive hash of the returned rows, for agreement analysis."""
     blocked_sql: str | None = None
     """SQL of the plan a guard refused (never executed by the product)."""
+    rows: tuple[tuple[Any, ...], ...] | None = None
+    """First rows of the returned answer, kept so a rater can judge it without the database."""
+    row_count: int | None = None
 
 
 @dataclass
@@ -323,6 +327,8 @@ def _run_once(
         shape,
         compiled.sql,
         fingerprint=fingerprint,
+        rows=tuple(actual[:PREVIEW_ROWS]),
+        row_count=len(actual),
     )
 
 
