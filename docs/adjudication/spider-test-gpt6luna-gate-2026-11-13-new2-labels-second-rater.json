@@ -1,0 +1,10 @@
+{
+ "test_0453_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'Personal details' can be read as bio_data (it holds the students' names) as well as the gold's student_details (which holds address-like text); joins and the address type are the same."
+ },
+ "test_1041_aan_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for the number of papers per conference per year; the system counted distinct conferences per year."
+ }
+}

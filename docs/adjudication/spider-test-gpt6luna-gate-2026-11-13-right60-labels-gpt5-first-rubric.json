@@ -1,0 +1,242 @@
+{
+ "test_1418_real_estate_rentals:answered_right": {
+  "label": "hidden_error",
+  "reason": "If any property has NULL vendor_requested_price, ORDER BY ASC will put NULLs first and the query returns a property without a requested price instead of the lowest actual price."
+ },
+ "test_1528_bakery_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10000 goods are priced below the average, the LIMIT 10000 will truncate results and miss qualifying rows."
+ },
+ "test_0120_bbc_channels:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 directors older than the average age, the LIMIT 10000 will truncate the result and omit valid names."
+ },
+ "test_0938_headphone_store:answered_right": {
+  "label": "sound",
+  "reason": "It groups by class among rows with Earpads in ('Bowls','Comfort Pads') and requires both types to be present, which exactly yields the classes containing both earpad types; the extra count column and limit do not change which classes are returned."
+ },
+ "test_1859_planet_1:answered_right": {
+  "label": "sound",
+  "reason": "It directly returns Employee.Position for Name = 'Amy Wong' with no joins or aggregation; the LIMIT does not affect correctness."
+ },
+ "test_1778_university_rank:answered_right": {
+  "label": "hidden_error",
+  "reason": "The LIMIT 10000 could truncate results; if the major table has more than 10000 rows, it would not return all majors."
+ },
+ "test_1492_bakery_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 Apple-flavor goods, the LIMIT 10000 truncates the result and returns only a subset of the matching ids."
+ },
+ "test_1170_pilot_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 qualifying pilot–plane rows, the LIMIT 10000 truncates the result and omits some pilots."
+ },
+ "test_1762_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "Counting rows in university where State is Illinois or Ohio correctly returns the number of universities in those states; IN vs OR and the LIMIT do not affect the aggregate result."
+ },
+ "test_1331_car_road_race:answered_right": {
+  "label": "hidden_error",
+  "reason": "If the join produces more than 10,000 driver–race pairs, the LIMIT 10000 will truncate the results and omit valid rows."
+ },
+ "test_2054_cre_Doc_Workflow:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are staff in Staff with no rows in Staff_in_Processes, they should appear with count 0 but this query omits them (and thus doesn’t show “all staff ids”)."
+ },
+ "test_0756_sing_contest:answered_right": {
+  "label": "hidden_error",
+  "reason": "If songs within a language have different numbers of performance_score rows, this averages per performance (weighting songs with more performances more) instead of the average per song."
+ },
+ "test_1838_movie_2:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups rows in Movies by Rating and counts them, which answers how many movies exist per rating without problematic joins or omissions."
+ },
+ "test_0399_vehicle_rent:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects DISTINCT Type_of_powertrain from Vehicles; the high LIMIT does not affect results for any reasonable data in this schema."
+ },
+ "test_1078_conference:answered_right": {
+  "label": "hidden_error",
+  "reason": "The LIMIT 10000 will truncate results if more than 10000 staff members have Age above the staff average, so not all qualifying names are returned."
+ },
+ "test_0260_customers_and_orders:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 Hardware products, the LIMIT 10000 will truncate the list and not return all names."
+ },
+ "test_0920_headphone_store:answered_right": {
+  "label": "hidden_error",
+  "reason": "If two or more headphone models share the maximum Price, the query returns only one due to LIMIT 1 (with an arbitrary tie-breaker), omitting other correct models."
+ },
+ "test_1939_video_game:answered_right": {
+  "label": "sound",
+  "reason": "The query correctly selects platform names and IDs where Download_rank = 1; the LIMIT 10000 does not affect correctness for any reasonable data size."
+ },
+ "test_2130_advertising_agencies:answered_right": {
+  "label": "hidden_error",
+  "reason": "A LIMIT 10000 will omit meetings when there are more than 10,000, so it may not return all meetings."
+ },
+ "test_0403_vehicle_rent:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns powertrain types that have vehicles in both 2013 and 2014 using HAVING COUNT(DISTINCT Model_year)=2; the extra count column does not change the set of types."
+ },
+ "test_1196_district_spokesman:answered_right": {
+  "label": "hidden_error",
+  "reason": "Adds LIMIT 10000 without ORDER BY; if more than 10,000 districts have >1 spokesman, the query omits some qualifying names."
+ },
+ "test_0272_customers_and_orders:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 customers, the LIMIT 10000 would omit some and not return all customers."
+ },
+ "test_0210_online_exams:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10000 student answers, the LIMIT 10000 truncates the results and omits required rows."
+ },
+ "test_1266_art_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 qualifying works between 1900 and 1950, the LIMIT 10000 will truncate the results and omit valid titles."
+ },
+ "test_1757_warehouse_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If any warehouse has Location NULL, boxes there are omitted by the WHERE Location <> 'Chicago' filter even though they are not in Chicago warehouses."
+ },
+ "test_2009_book_press:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects the author of the book with the highest sale amount (casting to numeric for proper ordering), and the name tiebreaker does not change correctness for the asked question."
+ },
+ "test_0276_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Grouping Customers by payment_method_code and counting rows correctly gives the number of customers per payment method; the LIMIT 10000 is harmless for any reasonable number of methods."
+ },
+ "test_1321_car_road_race:answered_right": {
+  "label": "hidden_error",
+  "reason": "If a constructor has multiple drivers with different ages, ordering DISTINCT constructors by Age is undefined (should use MIN(Age)), so the constructor order can be wrong."
+ },
+ "test_1663_institution_sports:answered_right": {
+  "label": "sound",
+  "reason": "It correctly joins institutions to Championship and returns unique institution names where Number_of_Championships >= 1, matching the question’s intent."
+ },
+ "test_1210_art_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects the medium for the painting with ID 80, and the LIMIT does not affect correctness under a reasonable assumption of unique IDs."
+ },
+ "test_0684_cre_Doc_and_collections:answered_right": {
+  "label": "hidden_error",
+  "reason": "If some Document_Objects rows have a Parent_Document_Object_ID that does not match any existing Document_Objects.Document_Object_ID, the system query will count and return those nonexistent parent IDs as parents."
+ },
+ "test_1974_book_press:answered_right": {
+  "label": "hidden_error",
+  "reason": "If the press table has more than 10000 rows, the LIMIT 10000 truncates the list and fails to return all press names sorted by yearly profits."
+ },
+ "test_1689_warehouse_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly computes AVG and SUM over Boxes.Value for all rows, and the LIMIT does not affect the single aggregate result."
+ },
+ "test_1904_planet_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts shipments per planet and returns the name of the planet with the maximum count; extra ordering and an extra selected count column do not change the answer."
+ },
+ "test_0941_headphone_store:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10000 headphone models are priced below the average, the LIMIT 10000 will truncate the result and omit valid models."
+ },
+ "test_0171_vehicle_driver:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10,000 distinct driver names have driven vehicles with Power > 5000, the LIMIT 10000 would truncate the result and omit some names."
+ },
+ "test_1965_video_game:answered_right": {
+  "label": "hidden_error",
+  "reason": "If game_player.Player_ID contains any NULL, NOT IN yields no matches (and the added LIMIT 10000 would truncate results if more than 10000 players qualify), so the query can return a wrong list."
+ },
+ "test_0028_soccer_3:answered_right": {
+  "label": "sound",
+  "reason": "It groups by Manufacturer and filters to those with more than one distinct Club_ID, which correctly lists manufacturers associated with multiple clubs; returning the count as an extra column does not change the answer."
+ },
+ "test_0258_customers_and_orders:answered_right": {
+  "label": "hidden_error",
+  "reason": "The added LIMIT 10000 truncates results; if Products has more than 10,000 rows, some product names would be omitted despite the request for all products."
+ },
+ "test_1471_bike_racing:answered_right": {
+  "label": "hidden_error",
+  "reason": "If the bike table has more than 10000 rows, the LIMIT 10000 truncates the output and fails to list all bikes in ascending price."
+ },
+ "test_0000_soccer_3:answered_right": {
+  "label": "sound",
+  "reason": "Counts all rows in club; LIMIT on an aggregate result has no effect, so it correctly returns the number of clubs for any data."
+ },
+ "test_1793_university_rank:answered_right": {
+  "label": "hidden_error",
+  "reason": "If overall_ranking contains multiple rows per University_ID (e.g., duplicates or multiple years), the join will return duplicate university names instead of one per university sorted by reputation points."
+ },
+ "test_1270_art_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If multiple artists are tied for the highest number of pre-1900 paintings, the LIMIT 1 returns only one ID and drops the tie."
+ },
+ "test_0881_boat_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10000 sailors with rating > 2 have at least one reservation, the LIMIT 10000 truncates the list and omits some qualifying sailors."
+ },
+ "test_1236_art_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If two different Artists share the same fname and lname and both have at least one Painting and one Sculpture, DISTINCT on names collapses them into one row, omitting an artist."
+ },
+ "test_0186_vehicle_driver:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 drivers, the LIMIT 10000 truncates the list and fails to return all driver names as requested."
+ },
+ "test_0636_restaurant_bills:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10000 customers with orders, the LIMIT 10000 will truncate the results and omit required rows."
+ },
+ "test_2020_cre_Doc_Workflow:answered_right": {
+  "label": "sound",
+  "reason": "It directly selects other_details from Authors where author_name equals the given name; LIMIT does not affect correctness."
+ },
+ "test_0760_sing_contest:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10000 performances have rhythm_tempo > 5, the unnecessary LIMIT 10000 would truncate the ordered results and omit valid artists."
+ },
+ "test_0875_boat_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10000 distinct sailors reserved boat 103, the LIMIT 10000 will truncate the results and omit some names."
+ },
+ "test_0400_vehicle_rent:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects the distinct Type_of_powertrain values from Vehicles; the LIMIT 10000 would not truncate results for any reasonable number of powertrain types."
+ },
+ "test_1962_video_game:answered_right": {
+  "label": "hidden_error",
+  "reason": "If multiple franchises are tied for the highest game count, the LIMIT 1 with ordering returns only one, dropping the tie."
+ },
+ "test_1701_warehouse_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts the distinct Contents values across all Boxes (LIMIT on an aggregate is harmless), matching the question."
+ },
+ "test_0250_customers_and_orders:answered_right": {
+  "label": "hidden_error",
+  "reason": "If more than 10000 products are above the average price, the LIMIT 10000 truncates the result and omits valid names."
+ },
+ "test_0241_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects product_price from Products where product_name = 'Monitor'; the LIMIT does not affect correctness for the intended single matching product."
+ },
+ "test_1224_art_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If multiple artists have the same maximum lifespan (deathYear - birthYear), the LIMIT 1 (with tie-breaks) returns only one artist, dropping tied winners."
+ },
+ "test_1850_movie_2:answered_right": {
+  "label": "sound",
+  "reason": "Selecting DISTINCT ratings from Movies answers the question; the LIMIT 10000 cannot affect results given the small, categorical domain of movie ratings."
+ },
+ "test_1784_university_rank:answered_right": {
+  "label": "hidden_error",
+  "reason": "If multiple universities tie for the highest number of Rank=1 majors, the ORDER BY ... LIMIT 1 arbitrarily returns one name and drops the tie."
+ },
+ "test_0311_customers_and_orders:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are more than 10,000 customers without orders, the LIMIT 10000 will truncate the result and omit some qualifying customer_ids."
+ },
+ "test_1168_pilot_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If multiple pilots share the minimum age and fly planes in different locations, the ORDER BY ... LIMIT 1 returns only one location instead of all qualifying ones."
+ }
+}

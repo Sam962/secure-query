@@ -1,0 +1,10 @@
+{
+ "test_0453_cre_Students_Information_Systems:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“Personal details” could reasonably refer to either Students.student_details (gold) or Students.bio_data (system), so both interpretations are valid."
+ },
+ "test_1041_aan_1:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system counts distinct conferences per year, whereas the question (and gold) require counting papers per conference per year."
+ }
+}

@@ -146,3 +146,40 @@ before an aggregate instead of after, "A and B" read as one row holding both, a 
 SUM per group, a wrong column counted, an inner join that drops a group.
 
 Files: `spider-test-gpt6luna-gate-2026-11-12-packets.json` and `-labels-*.json`.
+
+---
+
+# Spider test, gpt-6-luna, run of 2026-11-13: two new wrong answers and an audit of right answers (2026-11-14)
+
+Run: `../baselines/spider-test400-gpt6luna-gate-r3-2026-11-13.json` (310 right, 38 wrong,
+52 refused). **No human rated anything in this section.**
+
+**Two wrong answers without a label** (`*-new2-*`): gpt-5-2025-08-07 with the rubric, and
+Claude (`claude-fable-5-2`), which wrote its labels before seeing gpt-5's. They agree:
+`test_1041_aan_1` real error, `test_0453_cre_Students_Information_Systems` ambiguous. With
+the 36 labels carried over by question id, the run has 15 real errors of 400 (3.75%, 95% CI
+2.3–6.1%).
+
+**Audit of answers scored right** (`*-right60-*`). A match on one database does not prove
+the query (SpotIt, arXiv 2510.26840). 60 of the 310 right answers, seed 0:
+
+```
+python scripts/adjudicate.py packets REPORT.json --split test --right 60 -o right60-packets.json
+python scripts/adjudicate.py rate right60-packets.json -o labels.json --model gpt-5-2025-08-07
+```
+
+Labels: `sound`, or `hidden_error` when the rater can name plausible data on which a careful
+analyst would call the answer wrong (`RIGHT_RUBRIC` in the script).
+
+| Rater | hidden_error of 60 |
+|-------|--------------------|
+| gpt-5, first rubric (`*-labels-gpt5-first-rubric.json`) | 40, of which 25 only for the 10,000-row cap |
+| gpt-5, current rubric (`*-labels-gpt5.json`) | 11 |
+| Claude, on the 40 first-pass flags, **not blind** (`*-labels-second-rater.json`) | 1 |
+
+The rubric was changed once, after the first pass: the row cap, a single row where rows
+could tie, and left-out zero-count groups are not errors. The one case both the second rater
+and gpt-5 flag is `test_1168_pilot_1`, for different reasons. Of gpt-5's other 10, most depend
+on a NULL or on a key the schema forbids being broken, and most are the reference's own
+query. This spread is too wide to quote a rate. A human pass on the 60 packets is open.
+

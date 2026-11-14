@@ -1,0 +1,162 @@
+{
+ "test_1418_real_estate_rentals:answered_right": {
+  "label": "sound",
+  "reason": "Same query as the gold; DuckDB sorts NULL last ascending. On an engine that sorts NULL first the row would be a NULL price: check the ordering on Databricks."
+ },
+ "test_1528_bakery_1:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0120_bbc_channels:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1778_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1492_bakery_1:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1170_pilot_1:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1331_car_road_race:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_2054_cre_Doc_Workflow:answered_right": {
+  "label": "sound",
+  "reason": "Same query as the gold; leaving out staff with no process is a defensible reading."
+ },
+ "test_0756_sing_contest:answered_right": {
+  "label": "sound",
+  "reason": "Same query as the gold; an average over performances is the plain reading."
+ },
+ "test_1078_conference:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0260_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0920_headphone_store:answered_right": {
+  "label": "sound",
+  "reason": "Asks for one model; a tie at the top is ambiguous under the tie rule, and the gold does the same."
+ },
+ "test_2130_advertising_agencies:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1196_district_spokesman:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0272_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0210_online_exams:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1266_art_1:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1757_warehouse_1:answered_right": {
+  "label": "sound",
+  "reason": "Same query as the gold; a warehouse with no location is not 'not in Chicago' with any certainty."
+ },
+ "test_1321_car_road_race:answered_right": {
+  "label": "sound",
+  "reason": "Same query as the gold; the question itself does not define the order of a constructor with several drivers."
+ },
+ "test_0684_cre_Doc_and_collections:answered_right": {
+  "label": "sound",
+  "reason": "Differs from the gold only when a parent id points at no document, which the schema's key rules out."
+ },
+ "test_1974_book_press:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0941_headphone_store:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0171_vehicle_driver:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1965_video_game:answered_right": {
+  "label": "sound",
+  "reason": "Same NOT IN as the gold; a NULL player id in the link table is not plausible."
+ },
+ "test_0258_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1471_bike_racing:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1793_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "Same join as the gold."
+ },
+ "test_1270_art_1:answered_right": {
+  "label": "sound",
+  "reason": "Asks for one artist; tie rule, and the gold does the same."
+ },
+ "test_0881_boat_1:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1236_art_1:answered_right": {
+  "label": "sound",
+  "reason": "Returns names, as the gold does; both merge two artists with the same name."
+ },
+ "test_0186_vehicle_driver:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0636_restaurant_bills:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0760_sing_contest:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_0875_boat_1:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1962_video_game:answered_right": {
+  "label": "sound",
+  "reason": "Asks for one franchise; tie rule, and the gold does the same."
+ },
+ "test_0250_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1224_art_1:answered_right": {
+  "label": "sound",
+  "reason": "Asks for one artist; tie rule, and the gold does the same."
+ },
+ "test_1784_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "Asks for one university; tie rule, and the gold does the same."
+ },
+ "test_0311_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Flagged only for the 10,000-row cap, which is product policy and not a fault of the query."
+ },
+ "test_1168_pilot_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "ORDER BY age LIMIT 1 returns one location; when the youngest pilot flew planes kept in different places, the gold's age = MIN(age) returns all of them."
+ }
+}

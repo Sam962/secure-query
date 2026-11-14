@@ -1,0 +1,176 @@
+[
+ {
+  "id": "test_0453_cre_Students_Information_Systems",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List the personal details and the address type descriptions of all the students.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT DISTINCT T1.student_details ,  T3.address_type_description FROM Students AS T1 JOIN Students_Addresses AS T2 ON T1.student_id  =  T2.student_id JOIN Ref_Address_Types AS T3 ON T2.address_type_code  =  T3.address_type_code",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Suite 889",
+     "Home"
+    ],
+    [
+     "Apt. 748",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "College"
+    ],
+    [
+     "Suite 218",
+     "College"
+    ],
+    [
+     "Apt. 763",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "Home"
+    ],
+    [
+     "Suite 218",
+     "Home"
+    ],
+    [
+     "Suite 303",
+     "College"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"students\".\"bio_data\" AS \"bio_data\", \"ref_address_types\".\"address_type_description\" AS \"address_type_description\" FROM \"Students\" AS \"students\" JOIN \"Students_Addresses\" AS \"students_addresses\" ON \"students\".\"student_id\" = \"students_addresses\".\"student_id\" JOIN \"Ref_Address_Types\" AS \"ref_address_types\" ON \"students_addresses\".\"address_type_code\" = \"ref_address_types\".\"address_type_code\" LIMIT 10000",
+  "system_result": {
+   "count": 10,
+   "first": [
+    [
+     "Camila",
+     "Home"
+    ],
+    [
+     "Louvenia",
+     "Home"
+    ],
+    [
+     "Leora",
+     "Home"
+    ],
+    [
+     "Antone",
+     "Home"
+    ],
+    [
+     "Edison",
+     "Home"
+    ],
+    [
+     "Houston",
+     "Home"
+    ],
+    [
+     "Keshawn",
+     "Home"
+    ],
+    [
+     "Antone",
+     "College"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1041_aan_1",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the number of papers published in different conferences each year.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT count(*) ,  venue ,  YEAR FROM Paper GROUP BY venue ,  YEAR",
+  "gold_result": {
+   "count": 667,
+   "first": [
+    [
+     "158",
+     "*SEM",
+     "2013"
+    ],
+    [
+     "172",
+     "*SEM",
+     "2014"
+    ],
+    [
+     "239",
+     "*SEM",
+     "2015"
+    ],
+    [
+     "35",
+     "2000 Joint SIGDAT Conference on Empirical Methods in Natural Language Processing and Very Large Corpora",
+     "1999"
+    ],
+    [
+     "27",
+     "2000 Joint SIGDAT Conference on Empirical Methods in Natural Language Processing and Very Large Corpora",
+     "2000"
+    ],
+    [
+     "28",
+     "ACL",
+     "1979"
+    ],
+    [
+     "44",
+     "ACL",
+     "1980"
+    ],
+    [
+     "36",
+     "ACL",
+     "1981"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"paper\".\"year\" AS \"year\", COUNT(DISTINCT \"paper\".\"venue\") AS \"conference_count\" FROM \"Paper\" AS \"paper\" GROUP BY \"paper\".\"year\" LIMIT 10000",
+  "system_result": {
+   "count": 45,
+   "first": [
+    [
+     "1965",
+     "1"
+    ],
+    [
+     "1967",
+     "1"
+    ],
+    [
+     "1969",
+     "1"
+    ],
+    [
+     "1973",
+     "1"
+    ],
+    [
+     "1975",
+     "1"
+    ],
+    [
+     "1978",
+     "1"
+    ],
+    [
+     "1979",
+     "2"
+    ],
+    [
+     "1980",
+     "3"
+    ]
+   ]
+  }
+ }
+]
