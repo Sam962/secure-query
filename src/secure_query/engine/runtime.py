@@ -92,7 +92,8 @@ def ensure_execute_ready(config: RuntimeConfig) -> None:
             "run: python -m secure_query.demo.load_chinook"
         )
     if config.backend == "databricks":
-        databricks_settings_from_env()
+        # Host/path/schema must be set; end-user token is resolved per request.
+        databricks_settings_from_env(require_token=False)
     if config.backend == "postgres" and not (config.postgres_dsn or postgres_dsn()):
         raise ExecutionError("Postgres backend selected but no DSN is configured")
 

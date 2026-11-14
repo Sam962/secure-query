@@ -1,17 +1,24 @@
 """Databricks warehouse execute + Unity Catalog catalog draft.
 
-Execute uses a SELECT-only service principal / user token. Unity Catalog remains
-the last line of defense (grants, RLS, column masks) even if a plan bug slips
-through. Catalog drafts are generated from information_schema; a human still
-approves the resulting Catalog before it is used as the security boundary.
+Execute prefers the **end-user** warehouse token (OAuth / Databricks Apps
+on-behalf-of / per-principal PAT). A shared service token is only allowed when
+`SECURE_QUERY_DATABRICKS_AUTH=shared` (demo). Unity Catalog remains the last
+line of defense (grants, RLS, column masks). Catalog drafts come from
+information_schema; a human still approves the Catalog before it is the
+planner allowlist.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
+import re
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeout
-from typing import Any
+from typing import Any, Literal
 
 from secure_query.auth import Principal
 from secure_query.engine.execute import (
@@ -52,6 +59,15 @@ _DTYPE_MAP: dict[str, str] = {
 }
 
 _PII_TAGS = frozenset({"pii", "pii_high", "sensitive", "email", "phone", "ssn"})
+_PII_CLEAR_TAGS = frozenset({"pii_none", "public", "not_pii", "non_pii"})
+# Fail-closed name heuristics when UC tags are missing.
+_SENSITIVE_NAME_RE = re.compile(
+    r"(^|_)(email|e[_-]?mail|phone|mobile|fax|ssn|social|password|passwd|secret|"
+    r"address|street|postal|zip|dob|birth|tax[_-]?id|passport|iban|credit[_-]?card)(_|$)",
+    re.IGNORECASE,
+)
+
+DatabricksAuthMode = Literal["user", "shared"]
 
 
 def map_uc_dtype(data_type: str) -> str:
@@ -61,11 +77,35 @@ def map_uc_dtype(data_type: str) -> str:
     return _DTYPE_MAP.get(base, "str")
 
 
-def pii_risk_from_tags(tags: list[str] | tuple[str, ...] | None) -> str:
-    lowered = {t.strip().lower() for t in (tags or [])}
+def pii_risk_from_tags(
+    tags: list[str] | tuple[str, ...] | None,
+    *,
+    column_name: str | None = None,
+) -> str:
+    """PII risk for a draft column.
+
+    Explicit clear tags (`public`, `pii_none`, …) win. Otherwise any PII-ish tag
+    or a sensitive column name → `high`. Untagged non-sensitive names stay `none`.
+    """
+    lowered = {t.strip().lower() for t in (tags or []) if str(t).strip()}
+    if lowered & _PII_CLEAR_TAGS:
+        return "none"
     if lowered & _PII_TAGS or any("pii" in t for t in lowered):
         return "high"
+    if column_name and _SENSITIVE_NAME_RE.search(column_name.replace(" ", "_")):
+        return "high"
     return "none"
+
+
+def databricks_auth_mode() -> DatabricksAuthMode:
+    """`user` (default): execute as the caller. `shared`: demo service PAT only."""
+    raw = (os.environ.get("SECURE_QUERY_DATABRICKS_AUTH") or "user").strip().lower()
+    if raw not in ("user", "shared"):
+        raise ExecutionError(
+            "SECURE_QUERY_DATABRICKS_AUTH must be 'user' or 'shared', "
+            f"got {raw!r}"
+        )
+    return raw  # type: ignore[return-value]
 
 
 def draft_catalog(
@@ -85,11 +125,12 @@ def draft_catalog(
     by_table: dict[str, list[ColumnSpec]] = {}
     for row in columns:
         table = str(row["table_name"])
+        col_name = str(row["column_name"])
         tags = row.get("tags") or []
         spec = ColumnSpec(
-            name=str(row["column_name"]),
+            name=col_name,
             dtype=map_uc_dtype(str(row["data_type"])),  # type: ignore[arg-type]
-            pii_risk=pii_risk_from_tags(tags),  # type: ignore[arg-type]
+            pii_risk=pii_risk_from_tags(tags, column_name=col_name),  # type: ignore[arg-type]
         )
         by_table.setdefault(table, []).append(spec)
 
@@ -165,33 +206,9 @@ def fetch_unity_catalog_draft(
     except Exception:  # noqa: BLE001 — tags are optional; draft still useful
         pass
 
-    fks: list[dict[str, Any]] = []
-    try:
-        cur.execute(
-            """
-            SELECT
-                kcu.table_name,
-                kcu.column_name,
-                kcu.referenced_table_name,
-                kcu.referenced_column_name
-            FROM system.information_schema.key_column_usage kcu
-            WHERE kcu.table_catalog = :cat
-              AND kcu.table_schema = :sch
-              AND kcu.referenced_table_name IS NOT NULL
-            """,
-            {"cat": catalog_name, "sch": schema_name},
-        )
-        for left_table, left_col, right_table, right_col in cur.fetchall():
-            fks.append(
-                {
-                    "left_table": left_table,
-                    "left_column": left_col,
-                    "right_table": right_table,
-                    "right_column": right_col,
-                }
-            )
-    except Exception:  # noqa: BLE001 — FKs optional
-        pass
+    # Real UC FK surface: referential_constraints + key/constraint column usage.
+    # Do not swallow failures — empty join_keys would silently ban every join.
+    fks = _fetch_foreign_keys(cur, catalog_name=catalog_name, schema_name=schema_name)
 
     return draft_catalog(
         tenant_id=tenant_id,
@@ -201,22 +218,73 @@ def fetch_unity_catalog_draft(
     )
 
 
-def databricks_settings_from_env() -> dict[str, str]:
+def _fetch_foreign_keys(
+    cursor: Any, *, catalog_name: str, schema_name: str
+) -> list[dict[str, Any]]:
+    """Load FK edges for a UC schema. Raises ExecutionError on query failure."""
+    sql = """
+        SELECT
+            fk.table_name AS left_table,
+            fk.column_name AS left_column,
+            pk.table_name AS right_table,
+            pk.column_name AS right_column
+        FROM system.information_schema.referential_constraints AS rc
+        JOIN system.information_schema.key_column_usage AS fk
+          ON rc.constraint_catalog = fk.constraint_catalog
+         AND rc.constraint_schema = fk.constraint_schema
+         AND rc.constraint_name = fk.constraint_name
+        JOIN system.information_schema.constraint_column_usage AS pk
+          ON rc.unique_constraint_catalog = pk.constraint_catalog
+         AND rc.unique_constraint_schema = pk.constraint_schema
+         AND rc.unique_constraint_name = pk.constraint_name
+        WHERE fk.table_catalog = :cat
+          AND fk.table_schema = :sch
+        ORDER BY left_table, left_column, right_table, right_column
+        """
+    try:
+        cursor.execute(sql, {"cat": catalog_name, "sch": schema_name})
+        rows = cursor.fetchall()
+    except Exception as exc:  # noqa: BLE001 — surface as draft failure
+        raise ExecutionError(
+            f"Unity Catalog foreign-key draft failed for {catalog_name}.{schema_name}: {exc}"
+        ) from exc
+    fks: list[dict[str, Any]] = []
+    for left_table, left_col, right_table, right_col in rows:
+        if not all((left_table, left_col, right_table, right_col)):
+            continue
+        fks.append(
+            {
+                "left_table": left_table,
+                "left_column": left_col,
+                "right_table": right_table,
+                "right_column": right_col,
+            }
+        )
+    return fks
+
+
+def databricks_settings_from_env(
+    *,
+    access_token: str | None = None,
+    require_token: bool = True,
+) -> dict[str, str]:
     """Connection settings, including the catalog and schema the approved tables live in.
 
     The validator only accepts unqualified table names, so the session's default
     catalog/schema decides which `Invoice` a query reads; it must be set explicitly.
+
+    `access_token` overrides the shared env PAT when executing as an end user.
     """
     host = os.environ.get("DATABRICKS_HOST") or os.environ.get("DATABRICKS_SERVER_HOSTNAME")
     http_path = os.environ.get("DATABRICKS_HTTP_PATH")
-    token = os.environ.get("DATABRICKS_TOKEN") or os.environ.get("DATABRICKS_ACCESS_TOKEN")
+    token = access_token or os.environ.get("DATABRICKS_TOKEN") or os.environ.get("DATABRICKS_ACCESS_TOKEN")
     catalog, _, schema = (os.environ.get("SECURE_QUERY_DATABRICKS_SCHEMA") or "").strip().partition(".")
     missing = [
         name
         for name, val in (
             ("DATABRICKS_HOST", host),
             ("DATABRICKS_HTTP_PATH", http_path),
-            ("DATABRICKS_TOKEN", token),
+            ("DATABRICKS_TOKEN (or end-user token)", token if require_token else True),
             ("SECURE_QUERY_DATABRICKS_SCHEMA (catalog.schema)", catalog and schema),
         )
         if not val
@@ -226,10 +294,34 @@ def databricks_settings_from_env() -> dict[str, str]:
     return {
         "host": host.rstrip("/"),  # type: ignore[union-attr]
         "http_path": http_path,  # type: ignore[dict-item]
-        "access_token": token,  # type: ignore[dict-item]
+        "access_token": token or "",  # type: ignore[dict-item]
         "catalog": catalog,
         "schema": schema,
     }
+
+
+def resolve_warehouse_token(principal: Principal | None) -> str:
+    """Pick the Databricks SQL token for this ask.
+
+    Auth modes (`SECURE_QUERY_DATABRICKS_AUTH`):
+    - `user` (default): require `principal.warehouse_token` (Apps OBO / registry).
+      Never fall back to the shared service PAT.
+    - `shared`: demo only — use DATABRICKS_TOKEN from the environment.
+    """
+    mode = databricks_auth_mode()
+    if mode == "shared":
+        token = os.environ.get("DATABRICKS_TOKEN") or os.environ.get("DATABRICKS_ACCESS_TOKEN")
+        if not token:
+            raise ExecutionError("shared Databricks auth requires DATABRICKS_TOKEN")
+        return token
+    user_token = (principal.warehouse_token if principal is not None else None) or None
+    if not user_token:
+        raise ExecutionError(
+            "end-user Databricks identity required: set principal warehouse_token "
+            "(X-Databricks-Access-Token / OAuth on-behalf-of) or "
+            "SECURE_QUERY_DATABRICKS_AUTH=shared for demo only"
+        )
+    return user_token
 
 
 def execute_databricks(
@@ -241,11 +333,12 @@ def execute_databricks(
     options: ExecuteOptions | None = None,
     connection: Any | None = None,
 ) -> ExecutionResult:
-    """Run compiled SQL on a Databricks SQL warehouse.
+    """Run compiled SQL on a Databricks SQL warehouse as the caller's identity.
 
-    The warehouse principal must hold SELECT-only privileges (USE CATALOG / USE
-    SCHEMA / SELECT); `databricks_grant_check` verifies that at /ready. On timeout
-    the running statement is cancelled and the worker joined.
+    Default auth is end-user (`SECURE_QUERY_DATABRICKS_AUTH=user`): UC RLS/masks
+    apply to the person asking. The warehouse principal must hold SELECT-only
+    privileges; `databricks_grant_check` verifies that at /ready. On timeout the
+    running statement is cancelled and the worker joined.
     """
     opts = options or ExecuteOptions()
     if opts.max_rows < 1:
@@ -254,16 +347,20 @@ def execute_databricks(
         raise ValueError("timeout_seconds must be > 0")
 
     owns_connection = connection is None
+    settings: dict[str, str] = {}
     if connection is None:
-        connection = _connect(**databricks_settings_from_env())
+        token = resolve_warehouse_token(principal)
+        settings = databricks_settings_from_env(access_token=token)
+        connection = _POOL.borrow(settings)
 
     def _runner() -> tuple[list[str], list[tuple[Any, ...]], bool]:
         cursor = connection.cursor()
         pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sq-databricks")
         fut = pool.submit(_execute_once, cursor, compiled.sql, opts.max_rows)
+        healthy = False
         try:
             try:
-                return fut.result(timeout=opts.timeout_seconds)
+                result = fut.result(timeout=opts.timeout_seconds)
             except FuturesTimeout:
                 cancel = getattr(cursor, "cancel", None)
                 if cancel is not None:
@@ -273,11 +370,17 @@ def execute_databricks(
                         pass
                 _await_stop(fut, "databricks")
                 raise
+            healthy = True
+            return result
         finally:
             pool.shutdown(wait=fut.done())
             _safe_close(cursor)
             if owns_connection:
-                _safe_close(connection)
+                # A timed-out or failed statement leaves the session in an unknown state.
+                if healthy:
+                    _POOL.give_back(settings, connection)
+                else:
+                    _safe_close(connection)
 
     return run_with_policy(
         compiled,
@@ -288,6 +391,73 @@ def execute_databricks(
         backend="databricks",
         runner=_runner,
     )
+
+
+class _ConnectionPool:
+    """Idle warehouse connections, kept per credential, lent to one thread at a time.
+
+    One ask runs several statements (value lookups, the two readings, the reviewed query);
+    without reuse each opens a new session. A connection is only ever reused for the same
+    host, warehouse, catalog, schema and access token, so one person's session never
+    serves another. SECURE_QUERY_DATABRICKS_POOL_IDLE_SECONDS (default 300; 0 = no reuse).
+    """
+
+    _MAX_IDLE_PER_KEY = 4
+    _MAX_KEYS = 256
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._idle: dict[str, list[tuple[Any, float]]] = {}
+
+    @staticmethod
+    def _key(settings: dict[str, str]) -> str:
+        return hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def _idle_seconds() -> float:
+        return float(os.environ.get("SECURE_QUERY_DATABRICKS_POOL_IDLE_SECONDS") or 300)
+
+    def borrow(self, settings: dict[str, str]) -> Any:
+        limit, now, stale = self._idle_seconds(), time.monotonic(), []
+        found = None
+        with self._lock:
+            waiting = self._idle.get(self._key(settings), [])
+            while waiting and found is None:
+                connection, since = waiting.pop()
+                if now - since <= limit:
+                    found = connection
+                else:
+                    stale.append(connection)
+        for connection in stale:
+            _safe_close(connection)
+        return found if found is not None else _connect(**settings)
+
+    def give_back(self, settings: dict[str, str], connection: Any) -> None:
+        if self._idle_seconds() <= 0:
+            _safe_close(connection)
+            return
+        key, evicted = self._key(settings), []
+        with self._lock:
+            if key not in self._idle and len(self._idle) >= self._MAX_KEYS:
+                oldest = min(self._idle, key=lambda k: max((s for _, s in self._idle[k]), default=0.0))
+                evicted = [c for c, _ in self._idle.pop(oldest)]
+            waiting = self._idle.setdefault(key, [])
+            if len(waiting) >= self._MAX_IDLE_PER_KEY:
+                evicted.append(connection)
+            else:
+                waiting.append((connection, time.monotonic()))
+        for old in evicted:
+            _safe_close(old)
+
+    def close_all(self) -> None:
+        with self._lock:
+            connections = [c for waiting in self._idle.values() for c, _ in waiting]
+            self._idle.clear()
+        for connection in connections:
+            _safe_close(connection)
+
+
+_POOL = _ConnectionPool()
 
 
 def _connect(*, host: str, http_path: str, access_token: str, catalog: str, schema: str) -> Any:

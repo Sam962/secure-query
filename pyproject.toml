@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "secure-query"
 version = "0.4.0"
-description = "Governed talk-to-data: LogicalPlan → validate(catalog) → AST compile → audit"
+description = "Governed talk-to-data: model SQL is allowlist-validated and regenerated, never run as written"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -32,6 +32,10 @@ api = [
 ]
 databricks = [
     "databricks-sql-connector>=3.0",
+]
+enterprise = [
+    "cryptography>=42",
+    "PyJWT>=2.8",
 ]
 postgres = [
     "psycopg[binary]>=3.1",

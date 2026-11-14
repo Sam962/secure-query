@@ -28,6 +28,11 @@ def test_pii_tags_mark_high() -> None:
     assert pii_risk_from_tags(["PII"]) == "high"
     assert pii_risk_from_tags(["email"]) == "high"
     assert pii_risk_from_tags(["public"]) == "none"
+    # Fail closed on sensitive names when UC tags are missing.
+    assert pii_risk_from_tags([], column_name="Email") == "high"
+    assert pii_risk_from_tags([], column_name="billing_address") == "high"
+    assert pii_risk_from_tags(["public"], column_name="Email") == "none"
+    assert pii_risk_from_tags([], column_name="Country") == "none"
 
 
 def test_draft_catalog_from_information_schema_rows() -> None:
@@ -53,7 +58,13 @@ def test_draft_catalog_from_information_schema_rows() -> None:
                 "table_name": "customers",
                 "column_name": "email",
                 "data_type": "string",
-                "tags": ["pii"],
+                # no tags — name heuristic must still mark high
+            },
+            {
+                "table_name": "customers",
+                "column_name": "phone",
+                "data_type": "string",
+                "tags": ["public"],  # explicit clear wins over name
             },
         ],
         foreign_keys=[
@@ -71,7 +82,65 @@ def test_draft_catalog_from_information_schema_rows() -> None:
     assert {t.name for t in catalog.tables} == {"orders", "customers"}
     email = catalog.get_column("customers", "email")
     assert email is not None and email.pii_risk == "high"
+    phone = catalog.get_column("customers", "phone")
+    assert phone is not None and phone.pii_risk == "none"
     assert catalog.join_allowed("orders", "customer_id", "customers", "customer_id")
+
+
+def test_fetch_foreign_keys_uses_referential_constraints() -> None:
+    from secure_query.engine.databricks import _fetch_foreign_keys
+
+    class Cur:
+        def __init__(self) -> None:
+            self.sql = ""
+
+        def execute(self, sql, params=None):
+            self.sql = sql
+            self.params = params
+
+        def fetchall(self):
+            return [("orders", "customer_id", "customers", "customer_id")]
+
+    fks = _fetch_foreign_keys(Cur(), catalog_name="main", schema_name="sales")
+    assert fks == [
+        {
+            "left_table": "orders",
+            "left_column": "customer_id",
+            "right_table": "customers",
+            "right_column": "customer_id",
+        }
+    ]
+
+
+def test_fetch_foreign_keys_fail_closed_on_error() -> None:
+    from secure_query.engine.databricks import _fetch_foreign_keys
+    from secure_query.engine.execute import ExecutionError
+
+    class Bad:
+        def execute(self, *_a, **_k):
+            raise RuntimeError("no such table")
+
+        def fetchall(self):
+            return []
+
+    with pytest.raises(ExecutionError, match="foreign-key draft failed"):
+        _fetch_foreign_keys(Bad(), catalog_name="main", schema_name="sales")
+
+
+def test_resolve_warehouse_token_user_vs_shared(monkeypatch) -> None:
+    from secure_query.engine.databricks import resolve_warehouse_token
+    from secure_query.engine.execute import ExecutionError
+
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "user")
+    with pytest.raises(ExecutionError, match="end-user Databricks identity"):
+        resolve_warehouse_token(Principal(principal_id="a", tenant_id="t"))
+    tok = resolve_warehouse_token(
+        Principal(principal_id="a", tenant_id="t", warehouse_token="user-pat")
+    )
+    assert tok == "user-pat"
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "shared")
+    monkeypatch.setenv("DATABRICKS_TOKEN", "svc-pat")
+    assert resolve_warehouse_token(None) == "svc-pat"
 
 
 class _FakeCursor:
@@ -225,6 +294,7 @@ def test_connection_pins_the_catalog_and_schema(monkeypatch) -> None:
         "DATABRICKS_HOST": "https://dbc.example.com",
         "DATABRICKS_HTTP_PATH": "/sql/1.0/warehouses/abc",
         "DATABRICKS_TOKEN": "pat",
+        "SECURE_QUERY_DATABRICKS_AUTH": "shared",
     }.items():
         monkeypatch.setenv(key, value)
     monkeypatch.delenv("SECURE_QUERY_DATABRICKS_SCHEMA", raising=False)
@@ -235,3 +305,62 @@ def test_connection_pins_the_catalog_and_schema(monkeypatch) -> None:
     monkeypatch.setattr(databricks, "_connect", lambda **kw: seen.update(kw) or _FakeConnection(rows=[], columns=[]))
     databricks.execute_databricks(CompiledQuery(sql="SELECT 1", plan_hash="h", sql_hash="h", parameters=[]))
     assert seen["catalog"] == "main" and seen["schema"] == "sales"
+    assert seen["access_token"] == "pat"
+
+
+def test_execute_uses_end_user_token(monkeypatch) -> None:
+    from secure_query.engine import databricks
+    from secure_query.kernel.compile import CompiledQuery
+
+    monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example.com")
+    monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
+    monkeypatch.setenv("DATABRICKS_TOKEN", "svc-must-not-use")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "user")
+    seen: dict = {}
+    monkeypatch.setattr(
+        databricks, "_connect", lambda **kw: seen.update(kw) or _FakeConnection(rows=[(1,)], columns=["n"])
+    )
+    principal = Principal(principal_id="alice", tenant_id="sales", warehouse_token="user-obo")
+    databricks.execute_databricks(
+        CompiledQuery(sql="SELECT 1", plan_hash="h", sql_hash="h", parameters=[]),
+        principal=principal,
+    )
+    assert seen["access_token"] == "user-obo"
+
+
+def test_connections_are_reused_per_credential_and_dropped_after_a_failure(monkeypatch) -> None:
+    from secure_query.engine import databricks
+
+    monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example")
+    monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "user")
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    opened: list[_FakeConnection] = []
+
+    def connect(**settings):
+        opened.append(_FakeConnection(rows=[(1,)], columns=["n"]))
+        opened[-1].token = settings["access_token"]
+        return opened[-1]
+
+    monkeypatch.setattr(databricks, "_connect", connect)
+    databricks._POOL.close_all()
+    compiled = CompiledQuery(sql="SELECT 1", plan_hash="p", sql_hash="s", parameters=[])
+    alice = Principal(principal_id="alice", tenant_id="t", warehouse_token="alice-token")
+    bob = Principal(principal_id="bob", tenant_id="t", warehouse_token="bob-token")
+
+    for _ in range(3):
+        execute_databricks(compiled, principal=alice)
+    assert len(opened) == 1 and not opened[0].closed  # three statements, one session
+    execute_databricks(compiled, principal=bob)
+    assert len(opened) == 2 and opened[1].token == "bob-token"  # never another person's session
+
+    def broken(*_a, **_k):
+        raise RuntimeError("statement failed")
+
+    monkeypatch.setattr(databricks, "_execute_once", broken)
+    with pytest.raises(Exception):
+        execute_databricks(compiled, principal=alice)
+    assert opened[0].closed  # a session that failed is not reused
+    databricks._POOL.close_all()
+    assert opened[1].closed

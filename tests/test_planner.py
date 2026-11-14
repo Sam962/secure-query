@@ -396,7 +396,44 @@ def test_openai_client_is_bounded() -> None:
     calls: list[dict] = []
     client._client = _fake_openai_client(None, calls)
     client.complete([{"role": "user", "content": "hi"}])
-    assert calls[0]["max_tokens"] == 1200 and "seed" in calls[0]
+    assert calls[0]["max_completion_tokens"] == 1200 and "seed" in calls[0]
+
+
+def test_openai_client_adapts_to_parameters_a_model_rejects() -> None:
+    """Any model should work: a parameter the server rejects by name is dropped and remembered."""
+    from unittest.mock import MagicMock
+
+    import openai
+
+    from secure_query.planner import OpenAIClient
+
+    def bad(message: str) -> Exception:
+        response = MagicMock(status_code=400)
+        response.request = MagicMock()
+        return openai.BadRequestError(message, response=response, body=None)
+
+    calls: list[dict] = []
+    client = OpenAIClient(api_key="test", provider="groq", temperature=0.7)
+    fake = _fake_openai_client(None, calls)
+    real_create = fake.chat.completions.create
+
+    def create(**kwargs: object) -> object:
+        if "max_tokens" in kwargs:
+            calls.append(kwargs)
+            raise bad("Unsupported parameter: 'max_tokens'. Use 'max_completion_tokens' instead.")
+        if "temperature" in kwargs:
+            calls.append(kwargs)
+            raise bad("Unsupported value: 'temperature' does not support 0.7 with this model.")
+        return real_create(**kwargs)
+
+    fake.chat.completions.create = create
+    client._client = fake
+    client.complete([{"role": "user", "content": "hi"}])
+    assert len(calls) == 3
+    assert calls[-1]["max_completion_tokens"] == 1200 and "seed" in calls[-1]
+    assert "temperature" not in calls[-1] and "max_tokens" not in calls[-1]
+    client.complete([{"role": "user", "content": "hi"}])
+    assert len(calls) == 4  # remembered: the second request is right first time
 
 
 def test_plan_response_schema_is_strict_compatible() -> None:

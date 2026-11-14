@@ -294,6 +294,31 @@ def test_sql_path_refuses_when_two_readings_disagree() -> None:
     assert agreed.status == "ok"
 
 
+def test_self_consistency_gate_runs_each_reading_once() -> None:
+    """The gate compares and records the same probe result: no second warehouse round trip."""
+    import json
+
+    from secure_query.planner import MockLLMClient, sql_plan
+
+    calls: list[str] = []
+
+    def probe(query):
+        calls.append(query.sql)
+        return [(59,)]
+
+    customers = json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+    result = sql_plan.plan_sql_question(
+        "How many customers are there?",
+        CATALOG,
+        MockLLMClient([customers]),
+        value_probe=probe,
+        check_client=MockLLMClient([customers]),
+    )
+    assert result.status == "ok"
+    assert len(calls) == 2  # one run per reading
+    assert len(result.gate_fingerprints) == 1
+
+
 def test_sql_path_applies_row_filters() -> None:
     import json
 
@@ -496,3 +521,200 @@ def test_databricks_double_quoted_identifier_is_refused() -> None:
     assert "backticks" in sql_system_prompt("databricks")
     assert "Double-quote identifiers" in sql_system_prompt("postgres")
     validate_sql('SELECT "Name" FROM "Genre" WHERE "Name" = \'Rock\'', CATALOG)  # duckdb: identifiers
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT COLUMNS('Email') FROM Customer",
+        "SELECT COLUMNS(*) FROM Customer",
+        "SELECT COLUMNS(x -> x LIKE 'Em%') FROM Customer",
+        "SELECT #12 FROM Customer",
+        "SELECT MAX(COLUMNS('Email')) FROM Customer",
+        "SELECT FirstName FROM Customer WHERE COLUMNS('Email') LIKE 'a%'",
+        "WITH x AS (SELECT #12 AS e FROM Customer) SELECT e FROM x",
+        "SELECT STRUCT(*) FROM Customer",
+    ],
+)
+def test_allowlist_rejects_column_bypasses(sql: str) -> None:
+    """COLUMNS(), #n, STRUCT(*) read PII without becoming Column refs — must refuse."""
+    assert codes(sql) & {"sql.forbidden", "sql.pii", "sql.star"}
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "WITH j AS ("
+        "SELECT i.Total AS t, il.Quantity AS q FROM Invoice i "
+        "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId"
+        ") SELECT SUM(t) FROM j",
+        "SELECT SUM(t) FROM ("
+        "SELECT i.Total AS t FROM Invoice i "
+        "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId"
+        ") s",
+    ],
+)
+def test_fan_out_laundered_through_cte_is_refused(sql: str) -> None:
+    assert "sql.fan_out" in codes(sql)
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT c.FirstName, s.n FROM Customer c JOIN "
+        "(SELECT TrackId AS k, Name AS n FROM Track) s ON c.CustomerId = s.k",
+        "SELECT COUNT(DISTINCT a.TrackId) FROM Track a JOIN "
+        "(SELECT TrackId AS k FROM Track) b ON b.k = b.k",
+    ],
+)
+def test_derived_join_side_does_not_bypass_allowlist(sql: str) -> None:
+    assert codes(sql) & {"sql.join", "sql.join_not_allowed", "sql.join_unknown_grain"}
+
+
+def test_limit_percent_is_refused() -> None:
+    assert "sql.limit" in codes("SELECT Name FROM Track LIMIT 100 PERCENT")
+
+
+def test_session_helpers_are_refused() -> None:
+    assert "sql.forbidden" in codes("SELECT VERSION()")
+    assert "sql.forbidden" in codes("SELECT CURRENT_USER")
+
+
+def test_postgres_whole_row_and_star_casts_are_refused() -> None:
+    pg = CATALOG.model_copy(update={"sql_dialect": "postgres"})
+    for sql in (
+        "SELECT c FROM Customer c",
+        "SELECT CAST(c.* AS TEXT) FROM Customer c",
+        "SELECT COUNT(c.*) FROM Customer c",
+    ):
+        with pytest.raises(SqlValidationFailed) as info:
+            validate_sql(sql, pg)
+        assert {e.code for e in info.value.errors} & {"sql.whole_row", "sql.star", "sql.forbidden"}
+
+
+def test_databricks_version_sample_struct_are_refused() -> None:
+    dbx = CATALOG.model_copy(update={"sql_dialect": "databricks"})
+    for sql in (
+        "SELECT FirstName FROM Customer VERSION AS OF 1",
+        "SELECT FirstName FROM Customer TABLESAMPLE (10 PERCENT)",
+        "SELECT struct(*) FROM Customer",
+        "SELECT current_user()",
+    ):
+        with pytest.raises(SqlValidationFailed) as info:
+            validate_sql(sql, dbx)
+        assert {e.code for e in info.value.errors} & {"sql.forbidden"}
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT COUNT(*) FROM Artist WHERE NOT EXISTS (SELECT 1 FROM Album WHERE Album.ArtistId = Artist.ArtistId)",
+        "SELECT a.Name FROM Artist a WHERE NOT EXISTS (SELECT 1 FROM Album b WHERE b.ArtistId = a.ArtistId)",
+        "SELECT COUNT(*) FROM Track t WHERE t.Milliseconds = "
+        "(SELECT MAX(t2.Milliseconds) FROM Track t2 WHERE t2.AlbumId = t.AlbumId)",
+    ],
+)
+def test_correlated_subquery_may_reference_the_outer_table(sql: str) -> None:
+    validate_sql(sql, CATALOG)
+
+
+@pytest.mark.parametrize(
+    "sql,code",
+    [
+        (
+            "SELECT c.FirstName FROM Customer c WHERE EXISTS "
+            "(SELECT 1 FROM Invoice i WHERE i.CustomerId = c.CustomerId AND c.Email LIKE 'a%')",
+            "sql.pii",
+        ),
+        (
+            "SELECT a.Name FROM Artist a WHERE EXISTS (SELECT 1 FROM Album b WHERE b.ArtistId = a.ArtistId "
+            "AND EXISTS (SELECT 1 FROM Customer k WHERE k.Email = a.Name))",
+            "sql.pii",
+        ),
+        (
+            "SELECT c.FirstName FROM Customer c WHERE EXISTS (SELECT 1 FROM Invoice i WHERE i.CustomerId = c.Nope)",
+            "sql.unknown_column",
+        ),
+        (
+            "SELECT c.FirstName FROM Customer c WHERE EXISTS (SELECT 1 FROM Invoice i WHERE i.CustomerId = zz.CustomerId)",
+            "sql.unknown_column",
+        ),
+    ],
+)
+def test_correlated_reference_gets_the_same_catalog_and_pii_checks(sql: str, code: str) -> None:
+    assert code in codes(sql)
+
+
+def test_correlated_subquery_keeps_the_outer_row_filter() -> None:
+    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
+
+    usa = Eq(column=ColumnRef(table_id="Customer", column_id="Country"), value=LiteralValue(type="string", value="USA"))
+    sql = validate_sql(
+        "SELECT COUNT(*) FROM Customer c WHERE EXISTS (SELECT 1 FROM Invoice i WHERE i.CustomerId = c.CustomerId)",
+        CATALOG,
+        row_filters=(usa,),
+    ).compiled.sql
+    assert sql.count("'USA'") >= 1 and '"_rf_row"."Country" = \'USA\'' in sql
+
+
+def test_gate_plans_both_readings_at_the_same_time() -> None:
+    """Two readings that each take 0.2 s finish in well under 0.4 s."""
+    import json
+    import time
+
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    class Slow:
+        def complete(self, messages):
+            time.sleep(0.2)
+            return json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+
+    started = time.perf_counter()
+    result = plan_sql_question(
+        "How many customers are there?", CATALOG, Slow(), value_probe=lambda query: [(59,)], check_client=Slow()
+    )
+    assert result.status == "ok" and len(result.gate_fingerprints) == 1
+    assert time.perf_counter() - started < 0.35
+
+
+def test_gate_discards_the_second_reading_when_the_first_refuses() -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    refusal = json.dumps({"cannot_answer": True, "reason": "no such table"})
+    answer = json.dumps({"sql": "SELECT COUNT(*) FROM Customer"})
+    result = plan_sql_question(
+        "How many spaceships?", CATALOG, MockLLMClient([refusal]), value_probe=lambda query: [(59,)],
+        check_client=MockLLMClient([answer]),
+    )
+    assert result.status == "clarify" and result.clarify_code == "planner_refusal"
+
+
+def test_gate_compares_the_whole_answer_not_the_first_rows() -> None:
+    """Two readings that agree on their first 50 rows and differ later are different answers."""
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    first = json.dumps({"sql": "SELECT TrackId FROM Track"})
+    second = json.dumps({"sql": "SELECT TrackId FROM Track WHERE TrackId <= 60"})
+
+    def rows(limit: int):
+        def probe(query):
+            total = 60 if "<= 60" in query.sql else 80
+            return [(n,) for n in range(1, min(total, limit) + 1)]
+
+        return probe
+
+    lookups_only = plan_sql_question(
+        "List the track ids", CATALOG, MockLLMClient([first]), value_probe=rows(50), check_client=MockLLMClient([second])
+    )
+    assert lookups_only.status == "ok"  # the gap this test documents: 50 equal rows look like agreement
+    whole = plan_sql_question(
+        "List the track ids", CATALOG, MockLLMClient([first]), value_probe=rows(50), answer_probe=rows(1000),
+        check_client=MockLLMClient([second]),
+    )
+    assert whole.status == "clarify" and whole.clarify_code == "unstable_answer"

@@ -16,10 +16,14 @@ certifi==2026.7.22
     #   httpcore
     #   httpx
     #   requests
+cffi==2.1.1
+    # via cryptography
 charset-normalizer==3.5.2
     # via requests
 click==8.5.0
     # via uvicorn
+cryptography==50.0.2
+    # via secure-query (pyproject.toml)
 databricks-sql-connector==4.6.0
     # via secure-query (pyproject.toml)
 duckdb==1.5.6
@@ -77,6 +81,8 @@ psycopg-binary==3.3.6
     # via psycopg
 pybreaker==1.4.1
     # via databricks-sql-connector
+pycparser==3.12
+    # via cffi
 pydantic==2.13.5
     # via
     #   secure-query (pyproject.toml)
@@ -87,7 +93,9 @@ pydantic-core==2.46.5
 pygments==2.21.0
     # via pytest
 pyjwt==2.15.1
-    # via databricks-sql-connector
+    # via
+    #   secure-query (pyproject.toml)
+    #   databricks-sql-connector
 pytest==9.1.1
     # via secure-query (pyproject.toml)
 python-dateutil==2.9.0.post0

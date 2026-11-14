@@ -103,3 +103,46 @@ its worst repeat and the packet holds that repeat's rows. 315 right, 33 wrong.
 
 Files: `spider-test-gpt41mini-gate-2026-10-11-*.json`; run:
 `../baselines/spider-test400-gpt41mini-gate-r3-2026-10-11.json`.
+
+---
+
+# Head-to-head rounds (Secure Query vs Genie)
+
+```
+python -m secure_query.evals.scorecard --suite SUITE.json --backend databricks --repeat 3 --out scorecard.json
+python scripts/adjudicate.py packets scorecard.json -o packets.json
+```
+
+`packets.json` goes to the raters: wrong answers of both systems, shuffled and numbered,
+with no system name. `packets.key.json` maps each number back to its system and case; keep
+it away from the raters until the labels are in.
+
+---
+
+# Spider test (held out), validated SQL with the gate, gpt-6-luna (2026-11-12)
+
+Same 400 seeded questions, rubric and conservative merge as above. `gpt-6-luna` with
+reasoning off, self-consistency gate on, 3 repeats, after the correlated-subquery
+validator fix and the refusal-rule prompt change. Exact match: 307 right, 40 wrong, 53
+refused.
+
+- **Cases:** the 40 answered-wrong cases. 13 return the same rows as a case labelled in an
+  earlier round and reuse that merged label (`*-labels-reused.json`). The other 27 were
+  rated new.
+- **Raters for the 27:** gpt-5-2025-08-07 with the rubric, and a second rater that is a
+  model, not a human (Claude, `claude-fable-5-2`), which wrote its labels before seeing
+  gpt-5's. Agreement: 20/27 on the exact label, 25/27 on error vs not-error.
+- **No human rated this round.**
+
+| Count | Share | 95% CI | What it is |
+|-------|-------|--------|------------|
+| 14 | 3.5% | 2.1–5.8% | real errors (conservative merge) |
+| 15 | 3.75% | — | ambiguous question, defensible reading |
+| 11 | 2.75% | — | benchmark faults (system right) |
+
+For comparison, `gpt-4.1-mini` on 2026-10-11 had 11 real errors (2.75%, CI 1.5–4.9%) with
+78.8% right; the intervals overlap. The real errors are logic errors: a filter applied
+before an aggregate instead of after, "A and B" read as one row holding both, a missing
+SUM per group, a wrong column counted, an inner join that drops a group.
+
+Files: `spider-test-gpt6luna-gate-2026-11-12-packets.json` and `-labels-*.json`.

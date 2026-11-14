@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import copy
 import json
+import logging
 import os
 import re
+import threading
 import time
 from functools import lru_cache
 from typing import Any, Protocol
@@ -18,7 +21,10 @@ _LOCAL_TIMEOUT_S = 120.0  # a local 7B model can take longer than a hosted API
 _MAX_RETRIES = 2
 _MAX_TOKENS = 1200
 _SEED = 7
-DEFAULT_MODEL = "gpt-4o-mini"
+_TOKEN_PARAMS = ("max_completion_tokens", "max_tokens")  # newer OpenAI models / everyone else
+_OPTIONAL_PARAMS = ("temperature", "seed", "reasoning_effort")
+_LOG = logging.getLogger(__name__)
+DEFAULT_MODEL = "gpt-6-luna"
 
 
 class LLMClient(Protocol):
@@ -35,6 +41,47 @@ class LLMClient(Protocol):
 class PlannerError(Exception):
     """Raised for planner configuration / transport failures (not validation)."""
 
+
+
+class _Breaker:
+    """Fail fast while the provider is down, instead of making every user wait for a timeout.
+
+    After `threshold` transport failures in a row (connection, timeout, HTTP 5xx) calls are
+    refused for `cooloff` seconds; then one call is let through to test the provider.
+    SECURE_QUERY_LLM_BREAKER_FAILURES sets the threshold (default 5; 0 turns it off).
+    """
+
+    def __init__(self, cooloff: float = 30.0) -> None:
+        self.cooloff = cooloff
+        self._lock = threading.Lock()
+        self._failures = 0
+        self._open_until = 0.0
+
+    def call(self, send: Any) -> Any:
+        from openai import APIConnectionError, InternalServerError  # a timeout is an APIConnectionError
+
+        threshold = int(os.environ.get("SECURE_QUERY_LLM_BREAKER_FAILURES") or 5)
+        with self._lock:
+            if threshold > 0 and time.monotonic() < self._open_until:
+                raise PlannerError("model provider is failing; not retrying for a few seconds")
+        try:
+            result = send()
+        except (APIConnectionError, InternalServerError):
+            with self._lock:
+                self._failures += 1
+                if threshold > 0 and self._failures >= threshold:
+                    self._open_until = time.monotonic() + self.cooloff
+                    _LOG.error("model provider failed %d times in a row; pausing calls for %.0fs", self._failures, self.cooloff)
+            raise
+        with self._lock:
+            self._failures = 0
+        return result
+
+
+@lru_cache(maxsize=16)
+def _breaker_for(provider: str, base_url: str) -> _Breaker:
+    """One breaker per endpoint, shared by every client of this process."""
+    return _Breaker()
 
 
 class OpenAIClient:
@@ -65,6 +112,10 @@ class OpenAIClient:
         # OpenAI enforces json_schema response formats; local/compat servers may not.
         self.structured_outputs = provider == "openai"
         self._model = model or DEFAULT_MODEL
+        self._token_param = _TOKEN_PARAMS[0] if provider == "openai" else _TOKEN_PARAMS[1]
+        self._rejected: set[str] = set()  # parameters this model refused; see _create
+        self._breaker = _breaker_for(provider, base_url or "")
+        self._twin: OpenAIClient | None = None
         self._json_mode = (
             json_mode if json_mode is not None else provider in ("openai", "groq")
         )
@@ -98,9 +149,17 @@ class OpenAIClient:
             "model": self._model,
             "messages": messages,
             "temperature": self.temperature,
-            "max_tokens": _MAX_TOKENS,
+            self._token_param: _MAX_TOKENS,
             "seed": _SEED,
         }
+        # Reasoning models accept a temperature only with reasoning off, and the two readings
+        # of the self-consistency gate need one. A model without the setting rejects it once
+        # and _create drops it.
+        effort = (os.environ.get("SECURE_QUERY_REASONING_EFFORT") or "").strip() or (
+            "none" if self.provider == "openai" else ""
+        )
+        if effort:
+            create_kwargs["reasoning_effort"] = effort
         if response_format is not None and self.structured_outputs:
             create_kwargs["response_format"] = response_format
         elif self._json_mode:
@@ -108,19 +167,19 @@ class OpenAIClient:
 
         if self.provider == "openai":
             # One request; the SDK's bounded retries are the only retries.
-            return self._content(self._client.chat.completions.create(**create_kwargs))
+            return self._content(self._create(create_kwargs))
 
         for attempt in range(_RATE_LIMIT_MAX_RETRIES):
             try:
                 try:
-                    resp = self._client.chat.completions.create(**create_kwargs)
+                    resp = self._create(create_kwargs)
                 except Exception as exc:
                     # Some local models reject response_format — retry without it.
                     if (
                         not isinstance(exc, RateLimitError)
                         and create_kwargs.pop("response_format", None) is not None
                     ):
-                        resp = self._client.chat.completions.create(**create_kwargs)
+                        resp = self._create(create_kwargs)
                     else:
                         raise
             except RateLimitError as exc:
@@ -136,6 +195,50 @@ class OpenAIClient:
             return self._content(resp)
 
         raise PlannerError("LLM rate limit retries exhausted")
+
+    def check_twin(self) -> OpenAIClient:
+        """The same model and connection, sampling at CHECK_TEMPERATURE: the gate's second reader."""
+        if self._twin is None:
+            twin = copy.copy(self)
+            twin.temperature = CHECK_TEMPERATURE
+            twin._rejected = set(self._rejected)
+            self._twin = twin
+        return self._twin
+
+    def _create(self, create_kwargs: dict[str, Any]) -> Any:
+        """Send the request, adapting to the model: any model the endpoint serves should work.
+
+        Models differ in which optional parameters they accept. When the server rejects one
+        by name (HTTP 400), drop it (or switch the token-limit name), remember that for this
+        client, and resend. A dropped temperature means the model samples at its own default.
+        """
+        from openai import BadRequestError
+
+        for _ in range(len(_OPTIONAL_PARAMS) + 2):
+            for name in self._rejected:
+                create_kwargs.pop(name, None)
+            try:
+                return self._breaker.call(lambda: self._client.chat.completions.create(**create_kwargs))
+            except BadRequestError as exc:
+                message = str(exc)
+                named = next((n for n in (*_TOKEN_PARAMS, *_OPTIONAL_PARAMS) if n in create_kwargs and n in message), None)
+                if named is None:
+                    raise
+                if named in _TOKEN_PARAMS:
+                    other = _TOKEN_PARAMS[1 - _TOKEN_PARAMS.index(named)]
+                    if other in self._rejected:
+                        raise
+                    create_kwargs[other] = create_kwargs[named]
+                    self._token_param = other
+                self._rejected.add(named)
+                # The client's own reasoning default is expected to be refused by models
+                # without the setting; anything the operator relies on is worth a warning.
+                expected = named == "reasoning_effort" and not os.environ.get("SECURE_QUERY_REASONING_EFFORT")
+                _LOG.log(
+                    logging.DEBUG if expected else logging.WARNING,
+                    "%s %s rejected %r; continuing without it", self.provider, self._model, named,
+                )
+        raise PlannerError(f"LLM request could not be adapted to {self._model}")
 
     @staticmethod
     def _content(resp: Any) -> str:
@@ -428,9 +531,3 @@ def get_client() -> LLMClient:
 
 CHECK_TEMPERATURE = 0.7
 
-
-@lru_cache(maxsize=1)
-def get_check_client() -> LLMClient | None:
-    """Sampling client for the self-consistency check; None without a real LLM."""
-    settings = resolve_llm_settings()
-    return None if settings is None else OpenAIClient(**settings, temperature=CHECK_TEMPERATURE)

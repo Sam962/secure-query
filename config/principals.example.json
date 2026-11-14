@@ -3,6 +3,12 @@
   "tokens": {
     "REPLACE_WITH_RANDOM_API_TOKEN": "finance-analyst"
   },
+  "groups": {
+    "finance-readers": {
+      "allowed_tables": ["Invoice", "Customer", "InvoiceLine"],
+      "row_filters": []
+    }
+  },
   "principals": {
     "finance-analyst": {
       "allowed_tables": ["Invoice", "Customer", "InvoiceLine"],

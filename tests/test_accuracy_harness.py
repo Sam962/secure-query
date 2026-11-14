@@ -323,3 +323,83 @@ def test_guard_refusal_is_scored_by_running_the_blocked_plan() -> None:
         result = run_live_case(case, sample_catalog(), MockLLMClient([unfiltered]), DUCKDB_PATH)
         assert result.verdict == ABSTAINED
         assert summarise([result])["by_refusal_code"] == {"dropped_filter": {expected: 1}}
+
+
+def test_integer_year_matches_a_year_bucket() -> None:
+    """EXTRACT(YEAR ...) returns 2022; the reference's DATE_TRUNC returns 2022-01-01."""
+    from datetime import datetime
+
+    from secure_query.evals.accuracy import _results_match
+
+    expected = [(datetime(2021, 1, 1), 10.0), (datetime(2022, 1, 1), 12.0)]
+    assert _results_match([(2021, 10.0), (2022, 12.0)], expected, ordered=False)
+    assert not _results_match([(2021, 10.0), (2023, 12.0)], expected, ordered=False)
+    assert not _results_match([(2021, 10.0), (2022, 12.0)], [(datetime(2021, 3, 1), 10.0), (datetime(2022, 1, 1), 12.0)], ordered=False)
+
+
+def test_tie_rule_applies_to_answers_with_an_extra_column() -> None:
+    """An answer that also shows another column still gets the tie rule, when extras are allowed."""
+    from dataclasses import replace
+
+    from secure_query.demo.load_chinook import DUCKDB_PATH
+    from secure_query.evals.accuracy import LiveCase, _matches, _reference_rows
+
+    if not DUCKDB_PATH.exists():
+        pytest.skip("sample DB not built")
+
+    case = LiveCase(
+        case_id="t",
+        question="q",
+        expect="answer",
+        reference_sql="SELECT BillingCountry, COUNT(*) FROM Invoice GROUP BY BillingCountry ORDER BY 2 DESC, 1 DESC LIMIT 3",
+        ordered=True,
+        extra_columns_ok=True,
+    )
+    expected = _reference_rows(case, DUCKDB_PATH)  # USA 91, Canada 56, then France (tied with Brazil at 35)
+    other_tied = "Brazil" if expected[2][0] == "France" else "France"
+    answer = [("USA", 91, "x"), ("Canada", 56, "x"), (other_tied, 35, "x")]
+    assert _matches(case, answer, expected, DUCKDB_PATH)
+    assert not _matches(case, [("USA", 91, "x"), ("Canada", 56, "x"), ("Germany", 28, "x")], expected, DUCKDB_PATH)
+    assert not _matches(replace(case, extra_columns_ok=False), answer, expected, DUCKDB_PATH)
+
+
+def test_harness_reads_only_the_runner_when_one_is_given(tmp_path) -> None:
+    """Head-to-head: the system's queries, its lookups and the reference all go to the warehouse."""
+    import json
+
+    from secure_query.demo.chinook import sample_catalog
+    from secure_query.evals.accuracy import CORRECT, WRONG, LiveCase, run_live_case
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    seen: list[str] = []
+
+    def run_sql(sql: str):
+        seen.append(sql)
+        return [("Canada", 8), ("USA", 13)] if "Employee" not in sql else [(8,)]
+
+    missing = tmp_path / "no-such-file.duckdb"  # opening it would raise
+    case = LiveCase(
+        case_id="c1",
+        question="How many customers per country?",
+        expect="answer",
+        reference_sql="SELECT Country, COUNT(*) FROM Customer GROUP BY Country",
+    )
+
+    def answer(sql: str) -> MockLLMClient:
+        return MockLLMClient([json.dumps({"sql": sql})])
+
+    right = run_live_case(
+        case, sample_catalog(), answer("SELECT Country, COUNT(*) AS n FROM Customer GROUP BY Country"), missing,
+        planner=plan_sql_question, check_client=answer("SELECT Country, COUNT(CustomerId) AS n FROM Customer GROUP BY Country"),
+        run_sql=run_sql,
+    )
+    assert right.attempts[0].verdict == CORRECT, right.attempts[0].detail
+    assert case.reference_sql in seen and len(seen) >= 4  # two readings, the answer, the reference
+    assert not missing.exists()
+
+    wrong = run_live_case(
+        case, sample_catalog(), answer("SELECT COUNT(*) FROM Employee"), missing,
+        planner=plan_sql_question, run_sql=run_sql,
+    )
+    assert wrong.attempts[0].verdict == WRONG

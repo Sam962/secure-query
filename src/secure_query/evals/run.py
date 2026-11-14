@@ -75,8 +75,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--limit", type=int, default=None, help="Run only the first N cases")
     parser.add_argument(
-        "--planner", choices=("lqp", "sql"), default="lqp",
-        help="lqp: model writes a LogicalPlan; sql: model writes SQL, kernel validates it",
+        "--planner", choices=("lqp", "sql"), default="sql",
+        help="sql (default, production path): model writes SQL, kernel validates it; "
+        "lqp: model writes a LogicalPlan",
     )
     parser.add_argument(
         "--samples",
@@ -309,14 +310,19 @@ def _load_domain_suite(name_or_path: str) -> tuple[Catalog, Path, list]:
     The suite file's "catalog" is relative to it; its "database" to the data dir.
     """
     from secure_query.demo import DATA_DIR
+    from secure_query.demo.load_chinook import DUCKDB_PATH
     from secure_query.evals.accuracy import load_live_suite
 
     suite_path = Path(name_or_path)
     if not suite_path.suffix:
         suite_path = SUITES_DIR / name_or_path / "cases.json"
     meta = json.loads(suite_path.read_text(encoding="utf-8"))
-    catalog = Catalog.from_json_file(suite_path.parent / meta["catalog"])
-    return catalog, DATA_DIR / meta["database"], load_live_suite(suite_path)
+    if meta["catalog"] == "chinook_sample":  # the built-in demo catalog and its pinned DB
+        catalog = sample_catalog()
+    else:
+        catalog = Catalog.from_json_file(suite_path.parent / meta["catalog"])
+    db_path = DATA_DIR / meta["database"] if meta.get("database") else DUCKDB_PATH
+    return catalog, db_path, load_live_suite(suite_path)
 
 
 def _case_report(r) -> dict:

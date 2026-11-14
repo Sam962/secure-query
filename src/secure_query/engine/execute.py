@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from secure_query.auth import Principal, audit_principal_fields
+from secure_query.kernel import ledger
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.kernel.explain import explain_plan
 from secure_query.kernel.logical_plan import LogicalPlan
@@ -300,7 +301,4 @@ def _make_audit(
 def _maybe_write_audit(path: Path | None, audit: AuditRecord) -> None:
     if path is None:
         return
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(audit.to_json() + "\n")
+    ledger.append(path, audit.to_json())

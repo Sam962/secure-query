@@ -154,6 +154,7 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
 
     if not DUCKDB_PATH.exists():
         pytest.skip("sample DB not built")
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     question = "How many invoices per billing country?"
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
@@ -184,6 +185,7 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
 def test_execute_rejects_a_plan_that_differs_from_the_review(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
         lambda: MockLLMClient([_plan_json("BillingCountry")]),
@@ -331,3 +333,31 @@ def test_ready_reports_the_databricks_grant_check(
     )
     response = client.get("/ready")
     assert response.status_code == 503 and "MODIFY" not in response.text
+
+
+def test_signed_review_expires_and_survives_key_rotation(monkeypatch) -> None:
+    import time
+
+    import pytest
+
+    from secure_query.api.service import ReviewForbidden, sign_review, verify_review
+    from secure_query.auth import Principal
+
+    alice = Principal(principal_id="alice", tenant_id="t")
+    review = {"plan_hash": "abc", "plan": None, "sql": "SELECT 1", "metric_id": None}
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "old-secret-old-secret-old-secret-123")
+    signature = sign_review(review, alice)
+    verify_review(review, alice, signature)
+
+    expired = sign_review(review, alice, now=time.time() - 3600)
+    with pytest.raises(ReviewForbidden, match="expired"):
+        verify_review(review, alice, expired)
+    later, _, digest = signature.partition(".")
+    with pytest.raises(ReviewForbidden):  # the expiry is inside the signature
+        verify_review(review, alice, f"{int(later) + 9999}.{digest}")
+
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "new-secret-new-secret-new-secret-456")
+    with pytest.raises(ReviewForbidden):
+        verify_review(review, alice, signature)
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET_PREVIOUS", "old-secret-old-secret-old-secret-123")
+    verify_review(review, alice, signature)

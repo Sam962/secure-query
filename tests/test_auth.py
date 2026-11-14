@@ -271,6 +271,28 @@ def test_header_mode_without_trusted_proxies_refuses_to_start(monkeypatch: pytes
     check_auth_config()
 
 
+def test_production_without_signing_secret_refuses_to_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.auth import AuthConfigError, check_auth_config
+
+    monkeypatch.setenv("SECURE_QUERY_ENV", "production")
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "token")
+    monkeypatch.delenv("SECURE_QUERY_REVIEW_SECRET", raising=False)
+    with pytest.raises(AuthConfigError, match="SECURE_QUERY_REVIEW_SECRET"):
+        check_auth_config()
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "x" * 31)
+    with pytest.raises(AuthConfigError, match="SECURE_QUERY_REVIEW_SECRET"):
+        check_auth_config()
+
+
+def test_production_with_signing_secret_starts(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.auth import check_auth_config
+
+    monkeypatch.setenv("SECURE_QUERY_ENV", "production")
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "token")
+    monkeypatch.setenv("SECURE_QUERY_REVIEW_SECRET", "x" * 32)
+    check_auth_config()
+
+
 def test_header_identity_is_ignored_unless_from_a_trusted_proxy(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "header")
     monkeypatch.setenv("SECURE_QUERY_TRUSTED_PROXIES", "10.0.0.0/8")
@@ -278,3 +300,91 @@ def test_header_identity_is_ignored_unless_from_a_trusted_proxy(monkeypatch: pyt
         with pytest.raises(AuthError) as exc:
             resolve_principal(forwarded_user="alice", client_host=host)
         assert exc.value.status_code == 403
+
+
+def _rsa_token(private_key, **claims) -> str:
+    import time
+
+    import jwt
+
+    body = {"iss": "https://idp.example", "aud": "secure-query", "exp": int(time.time()) + 300, **claims}
+    return jwt.encode(body, private_key, algorithm="RS256")
+
+
+REGISTRY = {
+    "tenant_id": "acme",
+    "principals": {"carol": {"allowed_tables": ["Track"]}},
+    "groups": {
+        "finance": {"allowed_tables": ["Invoice", "Customer"]},
+        "usa": {
+            "allowed_tables": ["Customer"],
+            "row_filters": [
+                {
+                    "op": "eq",
+                    "column": {"table_id": "Customer", "column_id": "Country"},
+                    "value": {"type": "string", "value": "USA"},
+                }
+            ],
+        },
+    },
+}
+
+
+def test_jwt_mode_maps_groups_to_tables_and_keeps_every_row_filter(monkeypatch: pytest.MonkeyPatch) -> None:
+    pytest.importorskip("jwt")
+    pytest.importorskip("cryptography")
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    import secure_query.auth as auth
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "jwt")
+    monkeypatch.setenv("SECURE_QUERY_OIDC_ISSUER", "https://idp.example")
+    monkeypatch.setenv("SECURE_QUERY_OIDC_AUDIENCE", "secure-query")
+    monkeypatch.setattr(auth, "_jwt_signing_key", lambda token: key.public_key())
+    auth.check_auth_config()
+
+    def who(**claims) -> auth.Principal:
+        return resolve_principal(authorization=f"Bearer {_rsa_token(key, **claims)}", settings=REGISTRY)
+
+    both = who(sub="dana", groups=["finance", "usa", "unrelated"])
+    assert both.principal_id == "dana" and both.tenant_id == "acme"
+    assert both.allowed_tables == frozenset({"Invoice", "Customer"}) and len(both.row_filters) == 1
+    assert who(sub="carol", groups=["finance"]).allowed_tables == frozenset({"Track"})  # named principal wins
+
+    with pytest.raises(AuthError) as no_group:
+        who(sub="erin", groups=["unrelated"])
+    assert no_group.value.status_code == 403
+    for bad in ({"sub": "dana", "groups": ["finance"], "aud": "other"}, {"sub": "dana", "exp": 1}, {"groups": ["finance"]}):
+        with pytest.raises(AuthError) as denied:
+            who(**bad)
+        assert denied.value.status_code == 401
+    forged = _rsa_token(rsa.generate_private_key(public_exponent=65537, key_size=2048), sub="dana", groups=["finance"])
+    with pytest.raises(AuthError):
+        resolve_principal(authorization=f"Bearer {forged}", settings=REGISTRY)
+
+
+def test_jwt_mode_needs_issuer_and_audience(monkeypatch: pytest.MonkeyPatch) -> None:
+    from secure_query.auth import AuthConfigError, check_auth_config
+
+    monkeypatch.setenv("SECURE_QUERY_AUTH_MODE", "jwt")
+    monkeypatch.delenv("SECURE_QUERY_OIDC_ISSUER", raising=False)
+    monkeypatch.delenv("SECURE_QUERY_OIDC_AUDIENCE", raising=False)
+    with pytest.raises(AuthConfigError, match="OIDC_ISSUER"):
+        check_auth_config()
+
+
+def test_principals_file_is_reread_when_it_changes(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import json
+    import os
+
+    from secure_query.auth import principal_registry
+
+    path = tmp_path / "principals.json"
+    path.write_text(json.dumps({"tokens": {"t1": "alice"}, "principals": {"alice": {"allowed_tables": ["Track"]}}}))
+    monkeypatch.setenv("SECURE_QUERY_PRINCIPALS_FILE", str(path))
+    monkeypatch.delenv("SECURE_QUERY_API_TOKENS", raising=False)
+    assert principal_registry()["principals"]["alice"]["allowed_tables"] == ["Track"]
+    path.write_text(json.dumps({"tokens": {}, "principals": {}}))
+    os.utime(path, ns=(1, 1))  # a different modification time, whatever the clock resolution
+    assert principal_registry()["tokens"] == {} and "alice" not in principal_registry()["principals"]

@@ -9,27 +9,27 @@ loads the ask pipeline (`api.service`) but not FastAPI — import
 ## Flow
 
 ```
-question → LogicalPlan JSON (LLM) → validate(catalog) → AST compile → execute → audit
+question → SQL JSON (LLM, twice) → allowlist validate(catalog) → regenerate AST → execute → trace/audit + signed evidence
 ```
 
-Default path: the LLM emits a LogicalPlan, never SQL. An experimental SQL
-planner (ADR 003) writes SQL that `kernel.sql_validate` parses, checks, and
-regenerates — the model text still never runs.
+Default path (ADR 005): the LLM emits SQL; `kernel.sql_validate` parses it,
+allowlists every expression against the approved catalog, and regenerates the
+SQL that runs. LQP remains for catalog-owned metrics.
 
 ## Layers
 
 | Package | Role | May import |
 |---------|------|------------|
-| `kernel/` | LogicalPlan IR, catalog, validate, joins, metrics, AST compile, explain | — |
-| `planner/` | Prompt, LLM clients, NL → LogicalPlan, deterministic guards | `kernel`, `auth` |
+| `kernel/` | Catalog, SQL allowlist validator, LogicalPlan IR, joins, metrics, AST compile, explain, trace, evidence | — |
+| `planner/` | LLM clients, validated-SQL planner (default), LogicalPlan planner (metrics), value grounding, consistency checks | `kernel`, `auth` |
 | `engine/` | Execute backends, domain catalogs, runtime wiring, catalog draft | `kernel`, `planner`, `auth`, `demo` |
 | `auth/` | Server-side principal and per-principal catalog slice | `kernel` |
 | `api/` | FastAPI app, ask pipeline, templated answers, static UI | everything above |
-| `evals/` | Execution-accuracy harness, golden cases, `suites/` data | everything above |
+| `evals/` | Execution-accuracy harness, Genie scorecard, golden cases, `suites/` data | everything above |
 | `demo/` | Chinook / Northwind catalogs, pinned loaders, CLI | everything above |
 
-`kernel` is the trust boundary: it never sees an LLM, and nothing outside it
-writes SQL.
+`kernel` is the trust boundary: it never sees an LLM. Model SQL reaches the
+warehouse only after allowlist validation and regeneration inside the kernel.
 
 ## Quick start
 

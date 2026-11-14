@@ -1,4 +1,4 @@
-"""Trust kernel: LogicalPlan IR, catalog, validate, AST compile.
+"""Trust kernel: catalog, SQL allowlist validator, LogicalPlan IR, AST compile, trace, evidence.
 
 This package is the security boundary. The LLM never lives here.
 """

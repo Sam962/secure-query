@@ -1,21 +1,22 @@
 """SQL planner path: the model writes SQL in the catalog's dialect; the kernel validates and regenerates it.
 
-Experimental alternative to the LogicalPlan path (see docs/STATUS.md, Spider
-results). The model's text never runs: kernel.sql_validate parses it, resolves
+The production NL path (ADR 005). The model's text never runs: kernel.sql_validate parses it, resolves
 every column against the catalog, enforces policy and emits the SQL that runs.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from typing import Any
 
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import Filter
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
+from secure_query.kernel.trace import answer_fingerprint
 from secure_query.planner.llm import LLMClient
 from secure_query.planner.plan import PlannerResult
 from secure_query.planner.prompt import relevant_tables_line
@@ -23,6 +24,7 @@ from secure_query.planner.sql_values import (
     ValueProbe,
     case_insensitive_like,
     ground_literals,
+    show_ranking_measure,
     unmatched_literals,
 )
 
@@ -41,8 +43,12 @@ Rules:
   distinct or different values.
 - For "which X has the most/least ...", return that one X (ORDER BY ... LIMIT 1).
 - For "each"/"every"/"all" groups, return every group (no small LIMIT).
-- Refuse rather than approximate: if the catalog lacks a needed table, column or value,
-  return cannot_answer instead of a nearby query.
+- Refuse only when the catalog truly lacks what the question needs: no listed table or
+  column holds it, or no listed relationship connects the tables. Then return
+  cannot_answer instead of a nearby query.
+- Do not refuse over wording or types. A column whose name is a synonym or abbreviation
+  of the question's word is that column. A number or date stored as text can be CAST.
+  Any column not marked [pii=high] may be read.
 - Never write INSERT, UPDATE, DELETE, DDL, PRAGMA, ATTACH, COPY or table functions.
 """
 
@@ -76,29 +82,20 @@ def _parse(raw: str) -> dict:
     return data
 
 
-def answer_fingerprint(rows: Sequence[tuple[Any, ...]]) -> str:
-    """Hash of the rows ignoring row and column order, floats rounded: equal answers agree."""
-
-    def cell(v: Any) -> str:
-        return f"{float(v):.4f}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
-
-    canon = sorted("|".join(sorted(cell(c) for c in row)) for row in rows)
-    return hashlib.sha256("\n".join(canon).encode()).hexdigest()[:16]
-
-
 _UNSTABLE_MESSAGE = (
     "Two independent readings of this question returned different answers, so I won't "
     "guess. Name the exact measure, filters or time period and ask again."
 )
 
 
-def _same_answer(probe: ValueProbe, first: Any, second: Any) -> bool:
-    if second is None:
-        return False
+def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
+    """Fingerprint of one probe run; None when there is nothing to run or it fails."""
+    if compiled is None:
+        return None
     try:
-        return answer_fingerprint(probe(first)) == answer_fingerprint(probe(second))
+        return answer_fingerprint(probe(compiled))
     except Exception:  # noqa: BLE001 — a query that cannot run is not a confirmed answer
-        return False
+        return None
 
 
 class _NoStoredValue(Exception):
@@ -118,6 +115,7 @@ def plan_sql_question(
     relevant_tables: Sequence[str] = (),
     value_probe: ValueProbe | None = None,
     check_client: LLMClient | None = None,
+    answer_probe: ValueProbe | None = None,
 ) -> PlannerResult:
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
 
@@ -128,8 +126,51 @@ def plan_sql_question(
     With `check_client` (a sampling client) and `value_probe`, the question is planned a
     second time independently and both queries are run: different answers mean the model
     is guessing, so it refuses instead (self-consistency; measured on BIRD it beats the
-    keyword guards on both answer rate and precision).
+    keyword guards on both answer rate and precision). The second reading runs beside the
+    first, so the gate costs one wait, not two.
+
+    `answer_probe` runs the two readings for that comparison. It should return as many rows
+    as the answer itself may hold; `value_probe` (small, for value lookups) is the fallback,
+    and two answers that only differ after its last row would then pass as equal.
     """
+    reading = partial(
+        _plan_one_reading,
+        question,
+        catalog,
+        max_repairs=max_repairs,
+        row_filters=row_filters,
+        prompt_catalog=prompt_catalog,
+        relevant_tables=relevant_tables,
+        value_probe=value_probe,
+        answer_probe=answer_probe or value_probe,
+    )
+    if check_client is None or value_probe is None:
+        return reading(client)
+    pool = ThreadPoolExecutor(max_workers=1)
+    second = pool.submit(reading, check_client)
+    try:
+        return reading(client, second_reading=second.result)
+    finally:
+        # The first reading may end without asking for the second (a refusal, an error):
+        # cancel it if it has not started, otherwise let it finish unobserved.
+        second.cancel()
+        pool.shutdown(wait=False)
+
+
+def _plan_one_reading(
+    question: str,
+    catalog: Catalog,
+    client: LLMClient,
+    *,
+    max_repairs: int,
+    row_filters: Sequence[Filter],
+    prompt_catalog: Catalog | None,
+    relevant_tables: Sequence[str],
+    value_probe: ValueProbe | None,
+    answer_probe: ValueProbe | None,
+    second_reading: Callable[[], PlannerResult] | None = None,
+) -> PlannerResult:
+    """One reading of the question. `second_reading` returns the independent one to compare with."""
     messages = [
         {"role": "system", "content": sql_system_prompt(catalog.sql_dialect)},
         {"role": "user", "content": build_sql_prompt(question, prompt_catalog or catalog, relevant_tables)},
@@ -156,7 +197,7 @@ def plan_sql_question(
                 )
             sql = str(data["sql"])
             validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
-            sql = case_insensitive_like(sql, catalog)
+            sql = show_ranking_measure(case_insensitive_like(sql, catalog), catalog)
             if value_probe is not None:
                 sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
             validated = validate_sql(sql, catalog, row_filters=row_filters)
@@ -174,18 +215,13 @@ def plan_sql_question(
                         for table, column, value in missing
                     ]
                 )
-            if check_client is not None and value_probe is not None:
-                second = plan_sql_question(
-                    question,
-                    catalog,
-                    check_client,
-                    max_repairs=max_repairs,
-                    row_filters=row_filters,
-                    prompt_catalog=prompt_catalog,
-                    relevant_tables=relevant_tables,
-                    value_probe=value_probe,
-                )
-                if not _same_answer(value_probe, validated.compiled, second.compiled):
+            gate_fps: list[str] = []
+            if second_reading is not None and answer_probe is not None:
+                second = second_reading()
+                # Each reading runs once: its fingerprint is both the comparison and the evidence.
+                first_fp = _probe_fingerprint(answer_probe, validated.compiled)
+                second_fp = _probe_fingerprint(answer_probe, second.compiled)
+                if first_fp is None or first_fp != second_fp:
                     return PlannerResult(
                         status="clarify",
                         question=question,
@@ -197,6 +233,7 @@ def plan_sql_question(
                         clarify_code="unstable_answer",
                         blocked=validated.compiled,
                     )
+                gate_fps.append(first_fp)
             return PlannerResult(
                 status="ok",
                 question=question,
@@ -204,6 +241,7 @@ def plan_sql_question(
                 source_sql=sql,
                 attempts=attempt,
                 raw_responses=raw_responses,
+                gate_fingerprints=tuple(gate_fps),
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]
