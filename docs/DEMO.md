@@ -54,11 +54,13 @@ The demo catalog is all 11 [Chinook](https://github.com/lerocha/chinook-database
 2. **Validate:** tables, columns, approved joins, PII, row filters, fan-out, LIMIT.
 3. **Ground values:** string literals are checked against stored values through the same
    validator and read-only executor. Stored values are never sent to the model.
-4. **Check consistency:** the question is planned a second time; if the two readings give
+4. **Show the evidence:** if the query ranks or filters groups by a number it does not
+   return (`ORDER BY COUNT(*) DESC LIMIT 3`), that number is added to the answer.
+5. **Check consistency:** the question is planned a second time; if the two readings give
    different answers, the system refuses instead of guessing.
-5. **Confirm, then run:** the UI shows the regenerated SQL. **Run** executes exactly the
+6. **Confirm, then run:** the UI shows the regenerated SQL. **Run** executes exactly the
    reviewed query, signed for this user.
-6. **Record:** a trace record and a signed Evidence Bundle (hashes, not question text).
+7. **Record:** a trace record and a signed Evidence Bundle (hashes, not question text).
 
 ## Honest limits
 

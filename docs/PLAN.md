@@ -1,6 +1,6 @@
 # Plan — Trusted Evidence Kernel
 
-**Updated:** 2026-11-11 · Measured results live in [STATUS.md](STATUS.md) · Start at [HANDOVER.md](HANDOVER.md).
+**Updated:** 2026-11-13 · Measured results live in [STATUS.md](STATUS.md) · Start at [HANDOVER.md](HANDOVER.md).
 
 ## Goal
 

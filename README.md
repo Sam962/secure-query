@@ -21,7 +21,7 @@ New here? Read [docs/DEMO.md](docs/DEMO.md) (why this exists) then come back her
 
 The default planner (`SECURE_QUERY_PLANNER=sql`) needs an LLM that emits `{"sql": "..."}` JSON.
 Set `SECURE_QUERY_PLANNER=lqp` for the LogicalPlan path (metrics / explain helpers).
-The default is OpenAI **`gpt-6-luna`** with reasoning off (`SECURE_QUERY_PROVIDER=openai`). It replaced `gpt-4.1-mini`, which OpenAI removes on 2027-01-14, after matching it on the dev suites; the adjudicated Spider number in [docs/STATUS.md](docs/STATUS.md) is still the `gpt-4.1-mini` one. Any model on an OpenAI-compatible endpoint works; measure it first ([docs/EVAL.md](docs/EVAL.md), "Qualifying a new model").
+The default is OpenAI **`gpt-6-luna`** with reasoning off (`SECURE_QUERY_PROVIDER=openai`); the numbers in [docs/STATUS.md](docs/STATUS.md) are for it. It replaced `gpt-4.1-mini`, which OpenAI removes on 2027-01-14. Any model on an OpenAI-compatible endpoint works; measure it first ([docs/EVAL.md](docs/EVAL.md), "Qualifying a new model").
 **qwen2.5:7b** via [Ollama](https://ollama.com) is a local option for demos without an API key; it is not what the numbers measure.
 
 ### 1. Local demo data
@@ -91,7 +91,7 @@ python -m secure_query.evals.run --split dev --provider openai        # SQL path
 python -m secure_query.evals.scorecard --suite src/secure_query/evals/suites/chinook/cases.json --sq-only
 ```
 
-Latest adjudicated result (Spider test 400, the previous default `gpt-4.1-mini`, SQL path with the self-consistency gate): **78.8% right, adjudicated wrong 2.75% (95% CI 1.5–4.9%)**. Details in [docs/STATUS.md](docs/STATUS.md); protocol in [docs/EVAL.md](docs/EVAL.md).
+Latest adjudicated result (Spider test 400, `gpt-6-luna`, SQL path with the self-consistency gate, 2026-11-12): **76.8% right, adjudicated wrong 3.5% (95% CI 2.1–5.8%)**, rated by two models and not yet by a human. Details in [docs/STATUS.md](docs/STATUS.md); protocol in [docs/EVAL.md](docs/EVAL.md).
 
 ---
 
@@ -121,18 +121,21 @@ Copy [`.env.example`](.env.example) to `.env`. Never commit `.env`.
 
 | Variable | Purpose |
 |----------|---------|
-| `SECURE_QUERY_PROVIDER` / `SECURE_QUERY_MODEL` | Planner LLM |
+| `SECURE_QUERY_PROVIDER` / `SECURE_QUERY_MODEL` | Planner LLM (default OpenAI `gpt-6-luna`) |
+| `SECURE_QUERY_BASE_URL` | Any OpenAI-compatible endpoint |
+| `SECURE_QUERY_REASONING_EFFORT` | Reasoning setting sent to the model; OpenAI default `none` |
 | `SECURE_QUERY_AUTH_MODE` | `dev` \| `token` \| `header` |
-| `SECURE_QUERY_ENV` | `production` forbids `AUTH_MODE=dev` |
+| `SECURE_QUERY_ENV` | `production` forbids `AUTH_MODE=dev` and requires `SECURE_QUERY_REVIEW_SECRET` |
 | `SECURE_QUERY_CATALOG_FILE` | Approved catalog JSON (default: Chinook sample) |
 | `SECURE_QUERY_KNOWLEDGE_FILE` | Extra synonyms + instructions (never SQL examples) |
 | `SECURE_QUERY_PRINCIPALS_FILE` | Token → principal map |
 | `SECURE_QUERY_BACKEND` | `duckdb` \| `databricks` \| `postgres` (postgres = local CI; prod Postgres via UC federation) |
 | `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_TOKEN` | SQL warehouse |
 | `SECURE_QUERY_DATABRICKS_AUTH` | `user` (default, end-user token) \| `shared` (demo PAT) |
-| `SECURE_QUERY_REVIEW_SECRET` | HMAC for review signatures + Evidence Bundles |
+| `SECURE_QUERY_REVIEW_SECRET` | HMAC for review signatures + Evidence Bundles; 32+ characters, required in production |
 | `SECURE_QUERY_POSTGRES_DSN` / `DATABASE_URL` | Local Postgres only |
 | `SECURE_QUERY_RETRIEVE_K` | Prompt table retrieval; `0` = off |
+| `SECURE_QUERY_LINK_CONFIDENCE` | Table-confidence refusal threshold; `0` (default) = off |
 | `GENIE_SPACE_ID` | Head-to-head scorecard (`python -m secure_query.evals.scorecard`) |
 
 `GET /health` and `GET /ready` report the execute backend.

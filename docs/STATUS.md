@@ -1,6 +1,6 @@
 # Status
 
-**Updated:** 2026-11-11 · Tasks: [PLAN.md](PLAN.md)
+**Updated:** 2026-11-13 · Tasks: [PLAN.md](PLAN.md)
 
 ## What works (verified in code and tests)
 
@@ -14,7 +14,12 @@
   The bundle lists the checks of the path that produced the query (SQL, LogicalPlan or metric).
 - Self-consistency gate: the question is planned twice; different answers refuse.
 - A ranked or thresholded answer shows the number it was ranked by, whatever the model wrote.
-- Auth modes `dev` / `token` / `header`; production forbids `dev`.
+- Correlated subqueries (`WHERE NOT EXISTS (... = outer.id)`) validate; outer references get
+  the same catalog and PII checks as local columns.
+- Any model on an OpenAI-compatible endpoint: the client drops or swaps a parameter the
+  model rejects (`planner/llm.py`).
+- Auth modes `dev` / `token` / `header`; production forbids `dev` and refuses to start
+  without a 32-character `SECURE_QUERY_REVIEW_SECRET`.
 - Databricks: execution as the end user (`SECURE_QUERY_DATABRICKS_AUTH=user`); the UC
   catalog draft reads real foreign keys; sensitive-looking column names default to high PII.
 - Genie Conversation API client and head-to-head scorecard (code only; no live run yet).
