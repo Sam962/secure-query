@@ -67,8 +67,6 @@ def test_api_rejects_unknown_body_fields(monkeypatch: pytest.MonkeyPatch) -> Non
 
 def test_sql_planner_refuses_columns_pii_bypass(monkeypatch: pytest.MonkeyPatch) -> None:
     """End-to-end: model SQL that uses COLUMNS('Email') must not execute."""
-    import os
-
     from secure_query.planner.sql_plan import plan_sql_question
 
     monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
@@ -81,7 +79,6 @@ def test_sql_planner_refuses_columns_pii_bypass(monkeypatch: pytest.MonkeyPatch)
     )
     assert result.status == "clarify"
     assert result.compiled is None
-    os.environ.pop("SECURE_QUERY_PLANNER", None)
 
 
 def test_sql_planner_refuses_fan_out_cte_launder() -> None:

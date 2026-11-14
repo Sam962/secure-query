@@ -294,7 +294,7 @@ def test_sql_path_refuses_when_two_readings_disagree() -> None:
     assert agreed.status == "ok"
 
 
-def test_self_consistency_gate_runs_each_reading_once(monkeypatch) -> None:
+def test_self_consistency_gate_runs_each_reading_once() -> None:
     """The gate compares and records the same probe result: no second warehouse round trip."""
     import json
 

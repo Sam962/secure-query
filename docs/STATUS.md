@@ -54,6 +54,27 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-13 — review of the 2026-11-11/12 changes (offline; no live runs).**
+  - Measure column and the suites: no reference in the Chinook or Northwind suites, dev or
+    holdout, ranks or filters by an aggregate it does not show, so the added column cannot
+    turn a right answer wrong there. Checked by applying the same rewrite to every
+    reference; none changed.
+  - Tie rule audit on Spider test 400: 9 answers per run pass only through the tie rule; 7
+    are truly tied on the ranking value. The other 2 are the same two questions in every
+    run back to 2026-10-11, and in both the benchmark sorts a number stored as text, so the
+    system's answer is the right one. The rule's known gap hid no real error.
+  - Prompt versus validator, Spider dev 400, right / wrong / refused, one run each:
+
+    | | `gpt-6-luna` | `gpt-4.1-mini` |
+    |---|---|---|
+    | Before both | 278 / 30 / 92 | 306 / 30 / 64 |
+    | Prompt change only | 291 / 31 / 78 | 309 / 33 / 58 |
+    | Prompt + validator fix | 311 / 36 / 53 | 309 / 33 / 58 |
+
+    The prompt change added 13 right answers and 1 wrong for `gpt-6-luna`; the validator
+    fix added 20 right and 5 wrong, and did not move `gpt-4.1-mini`.
+  - Both rewrites checked on the Databricks and Postgres dialects. The client's own
+    reasoning default no longer logs a warning when a model does not know the setting.
 - **2026-11-12 — `gpt-6-luna` adjudicated on Spider test 400 (PLAN 1.7 done).** 40 wrong by
   exact match: 14 real errors (3.5%, CI 2.1–5.8%), 15 ambiguous, 11 benchmark faults. 13
   labels reused from earlier rounds (same rows); 27 rated by gpt-5 and a second model

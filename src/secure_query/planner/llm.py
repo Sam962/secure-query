@@ -177,7 +177,13 @@ class OpenAIClient:
                     create_kwargs[other] = create_kwargs[named]
                     self._token_param = other
                 self._rejected.add(named)
-                _LOG.warning("%s %s rejected %r; continuing without it", self.provider, self._model, named)
+                # The client's own reasoning default is expected to be refused by models
+                # without the setting; anything the operator relies on is worth a warning.
+                expected = named == "reasoning_effort" and not os.environ.get("SECURE_QUERY_REASONING_EFFORT")
+                _LOG.log(
+                    logging.DEBUG if expected else logging.WARNING,
+                    "%s %s rejected %r; continuing without it", self.provider, self._model, named,
+                )
         raise PlannerError(f"LLM request could not be adapted to {self._model}")
 
     @staticmethod

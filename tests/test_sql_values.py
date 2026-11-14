@@ -177,6 +177,12 @@ def test_ranked_answer_shows_the_number_it_was_ranked_by() -> None:
         "GROUP BY g.Name ORDER BY SUM(t.Milliseconds) / COUNT(*) DESC LIMIT 3"
     )
     assert 'AS "ranked_by_milliseconds"' in ratio and ratio.count(" AS ") == 4  # one new column, not two
+    databricks = CATALOG.model_copy(update={"sql_dialect": "databricks"})
+    spark = validate_sql(
+        show_ranking_measure("SELECT Name FROM Genre GROUP BY Name ORDER BY COUNT(*) DESC LIMIT 1", databricks),
+        databricks,
+    ).compiled.sql
+    assert "COUNT(*) AS `count`" in spark
 
 
 def test_ranking_measure_leaves_other_queries_alone() -> None:
