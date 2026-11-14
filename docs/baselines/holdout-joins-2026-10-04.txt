@@ -43,4 +43,4 @@ by tag
   timebucket           n=  1  correct=  1  wrong=  0  abstained=  0
   topn                 n=  3  correct=  3  wrong=  0  abstained=  0
   trend                n=  1  correct=  1  wrong=  0  abstained=  0
-wrote /private/tmp/claude-501/-Users-samjordan-Desktop-secure-query/44b6031d-aa92-48a0-a235-67978ef9f9e1/scratchpad/holdout-v8.json
+wrote <scratch>/holdout-v8.json
