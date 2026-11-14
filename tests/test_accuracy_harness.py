@@ -361,3 +361,45 @@ def test_tie_rule_applies_to_answers_with_an_extra_column() -> None:
     assert _matches(case, answer, expected, DUCKDB_PATH)
     assert not _matches(case, [("USA", 91, "x"), ("Canada", 56, "x"), ("Germany", 28, "x")], expected, DUCKDB_PATH)
     assert not _matches(replace(case, extra_columns_ok=False), answer, expected, DUCKDB_PATH)
+
+
+def test_harness_reads_only_the_runner_when_one_is_given(tmp_path) -> None:
+    """Head-to-head: the system's queries, its lookups and the reference all go to the warehouse."""
+    import json
+
+    from secure_query.demo.chinook import sample_catalog
+    from secure_query.evals.accuracy import CORRECT, WRONG, LiveCase, run_live_case
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    seen: list[str] = []
+
+    def run_sql(sql: str):
+        seen.append(sql)
+        return [("Canada", 8), ("USA", 13)] if "Employee" not in sql else [(8,)]
+
+    missing = tmp_path / "no-such-file.duckdb"  # opening it would raise
+    case = LiveCase(
+        case_id="c1",
+        question="How many customers per country?",
+        expect="answer",
+        reference_sql="SELECT Country, COUNT(*) FROM Customer GROUP BY Country",
+    )
+
+    def answer(sql: str) -> MockLLMClient:
+        return MockLLMClient([json.dumps({"sql": sql})])
+
+    right = run_live_case(
+        case, sample_catalog(), answer("SELECT Country, COUNT(*) AS n FROM Customer GROUP BY Country"), missing,
+        planner=plan_sql_question, check_client=answer("SELECT Country, COUNT(CustomerId) AS n FROM Customer GROUP BY Country"),
+        run_sql=run_sql,
+    )
+    assert right.attempts[0].verdict == CORRECT, right.attempts[0].detail
+    assert case.reference_sql in seen and len(seen) >= 4  # two readings, the answer, the reference
+    assert not missing.exists()
+
+    wrong = run_live_case(
+        case, sample_catalog(), answer("SELECT COUNT(*) FROM Employee"), missing,
+        planner=plan_sql_question, run_sql=run_sql,
+    )
+    assert wrong.attempts[0].verdict == WRONG

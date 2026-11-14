@@ -25,10 +25,12 @@ from secure_query.evals.accuracy import (
     ABSTAINED,
     CORRECT,
     ERROR,
+    ROW_CAP,
     WRONG,
     Attempt,
     LiveCase,
     LiveCaseResult,
+    RowRunner,
     _matches,
     _reference_rows,
     _results_match,
@@ -83,6 +85,7 @@ def grade_genie_answer(
     *,
     reference_rows: list[tuple[Any, ...]] | None,
     db_path: Path | None = None,
+    run_sql: RowRunner | None = None,
 ) -> Attempt:
     """Map a GenieAnswer onto an Attempt with the same matcher Secure Query is graded by.
 
@@ -99,8 +102,8 @@ def grade_genie_answer(
     if reference_rows is None:
         return Attempt(ERROR, "no reference rows to grade genie")
     actual = list(answer.rows)
-    if db_path is not None:
-        right = _matches(case, actual, reference_rows, db_path)
+    if db_path is not None or run_sql is not None:
+        right = _matches(case, actual, reference_rows, db_path or Path(), run_sql)
     else:  # no reference database: same matcher minus the LIMIT-tie check
         right = _results_match(
             actual,
@@ -118,24 +121,53 @@ def run_genie_suite(
     *,
     db_path: Path,
     repeat: int,
+    run_sql: RowRunner | None = None,
 ) -> list[LiveCaseResult]:
     results: list[LiveCaseResult] = []
     for case in cases:
         ref_rows = None
         if case.expect == "answer" and case.reference_sql:
             try:
-                ref_rows = _reference_rows(case, db_path)
+                ref_rows = _reference_rows(case, db_path, run_sql)
             except Exception:  # noqa: BLE001 — graded as ERROR below, never as a Genie miss
                 ref_rows = None
         attempts: list[Attempt] = []
         for _ in range(max(1, repeat)):
             try:
                 answer = ask_genie(case.question)
-                attempts.append(grade_genie_answer(case, answer, reference_rows=ref_rows, db_path=db_path))
+                attempts.append(
+                    grade_genie_answer(case, answer, reference_rows=ref_rows, db_path=db_path, run_sql=run_sql)
+                )
             except GenieError as exc:
                 attempts.append(Attempt(ERROR, str(exc)))
         results.append(LiveCaseResult(case=case, attempts=attempts))
     return results
+
+
+def databricks_runner(tenant_id: str) -> RowRunner:
+    """Run SQL text on the warehouse both systems are compared on.
+
+    Reference SQL runs unvalidated here. That is acceptable only because this is eval-only
+    and the token (SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN) must be SELECT-only.
+    """
+    import os
+
+    from secure_query.auth import Principal
+    from secure_query.engine.databricks import execute_databricks
+    from secure_query.engine.execute import ExecuteOptions
+    from secure_query.kernel.compile import CompiledQuery
+
+    token = (os.environ.get("SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN") or "").strip()
+    if not token:
+        raise RuntimeError("--backend databricks needs SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN (a SELECT-only token)")
+    principal = Principal(principal_id="eval", tenant_id=tenant_id, warehouse_token=token)
+
+    def run_sql(sql: str) -> list[tuple[Any, ...]]:
+        compiled = CompiledQuery(sql=sql, plan_hash="eval", sql_hash="eval", parameters=[])
+        return execute_databricks(compiled, principal=principal, options=ExecuteOptions(max_rows=ROW_CAP)).rows
+
+    run_sql.dialect = "databricks"  # type: ignore[attr-defined]
+    return run_sql
 
 
 def beats_genie(sq: SystemStats, genie: SystemStats) -> dict[str, Any]:
@@ -194,6 +226,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--genie-only", action="store_true", help="Skip Secure Query side")
     parser.add_argument("--out", type=Path, default=None, help="Write JSON scorecard")
     parser.add_argument("--provider", default=None)
+    parser.add_argument(
+        "--backend",
+        choices=("duckdb", "databricks"),
+        default="duckdb",
+        help="Where reference SQL and Secure Query run. Use databricks for a head-to-head: "
+        "Genie answers from the warehouse, so everything else must read it too.",
+    )
     args = parser.parse_args(argv)
 
     from secure_query.evals.run import _client, _load_domain_suite
@@ -203,7 +242,15 @@ def main(argv: list[str] | None = None) -> int:
     catalog, db_path, cases = _load_domain_suite(args.suite)  # same loader as evals.run
     if args.limit:
         cases = cases[: args.limit]
-    if not db_path.exists() and not args.genie_only:
+    run_sql: RowRunner | None = None
+    if args.backend == "databricks":
+        try:
+            run_sql = databricks_runner(catalog.tenant_id)
+        except RuntimeError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        catalog = catalog.model_copy(update={"sql_dialect": "databricks"})
+    elif not db_path.exists() and not args.genie_only:
         print(f"database missing: {db_path}", file=sys.stderr)
         return 2
 
@@ -226,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
                     repeats=args.repeat,
                     planner=plan_sql_question,
                     check_client=check_client,
+                    run_sql=run_sql,
                 )
             )
 
@@ -240,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.genie_only:
                 return 2
         else:
-            genie_results = run_genie_suite(cases, db_path=db_path, repeat=args.repeat)
+            genie_results = run_genie_suite(cases, db_path=db_path, repeat=args.repeat, run_sql=run_sql)
 
     sq_stats = _stats_from_results("secure_query", sq_results) if sq_results else None
     genie_stats = _stats_from_results("genie", genie_results) if genie_results else None

@@ -220,7 +220,7 @@ runs exit 0 (`echo $?` prints `0`).
 
 ## Phase 2 — A fair head-to-head harness (agent; no Databricks needed)
 
-- [ ] **2.1 Run the scorecard against the warehouse, not a local file.**
+- [x] **2.1 Run the scorecard against the warehouse, not a local file.**
   - Why: `evals/scorecard.py` runs reference SQL and Secure Query on local DuckDB while
     Genie answers from the warehouse. For a real domain there is no local copy, and for
     a fair comparison both systems and the references must read the same data.

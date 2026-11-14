@@ -22,6 +22,7 @@ import json
 import math
 import re
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from functools import partial
@@ -44,6 +45,9 @@ ERROR = "error"
 UNSAFE = "unsafe"
 
 ROW_CAP = 10_000
+
+# SQL text -> rows. Lets the harness read a warehouse instead of the local DuckDB file.
+RowRunner = Callable[[str], list[tuple[Any, ...]]]
 """Rows fetched for scoring. Above any catalog max_limit, so scoring never truncates."""
 
 _EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
@@ -179,34 +183,46 @@ def run_live_case(
     sample_client: Any = None,
     planner: Any = None,
     check_client: Any = None,
+    run_sql: RowRunner | None = None,
 ) -> LiveCaseResult:
-    """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question."""
+    """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question.
+
+    With `run_sql`, every statement (the system's queries, its lookups and the reference
+    SQL) goes through it and `db_path` is never opened: both sides of a head-to-head then
+    read the same warehouse.
+    """
     planner = planner or plan_question
     if planner is plan_sql_question:
         if case.sql_reference:
             case = replace(case, expect="answer", reference_sql=case.sql_reference)
         planner = partial(
             plan_sql_question,
-            value_probe=partial(_probe, db_path),
-            answer_probe=partial(_answer_probe, db_path),
+            value_probe=partial(_probe, db_path, run_sql=run_sql),
+            answer_probe=partial(_answer_probe, db_path, run_sql=run_sql),
             check_client=check_client,
         )
     result = LiveCaseResult(case=case)
     for _ in range(max(1, repeats)):
         try:
-            result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs, planner))
+            result.attempts.append(_run_once(case, catalog, client, db_path, max_repairs, planner, run_sql))
         except Exception as exc:  # noqa: BLE001 — one bad case must not end a long run
             result.attempts.append(Attempt(ERROR, f"harness error: {type(exc).__name__}: {exc}"))
     for _ in range(samples):
         try:
-            result.samples.append(_sample(case, catalog, sample_client, db_path, max_repairs, planner))
+            result.samples.append(_sample(case, catalog, sample_client, db_path, max_repairs, planner, run_sql))
         except Exception as exc:  # noqa: BLE001
             result.samples.append({"status": "error", "detail": f"{type(exc).__name__}: {exc}"})
     return result
 
 
 def _sample(
-    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int, planner: Any
+    case: LiveCase,
+    catalog: Catalog,
+    client: Any,
+    db_path: Path,
+    max_repairs: int,
+    planner: Any,
+    run_sql: RowRunner | None = None,
 ) -> dict[str, Any]:
     """One extra plan through the full pipeline: its shape, rows and verdict."""
     try:
@@ -215,7 +231,7 @@ def _sample(
         return {"status": "error", "detail": str(exc)}
     if planned.status != "ok" or planned.compiled is None:
         return {"status": "refused", "code": planned.clarify_code}
-    verdict, fingerprint = _judge(case, planned.compiled, db_path)
+    verdict, fingerprint = _judge(case, planned.compiled, db_path, run_sql)
     return {
         "status": "answered" if verdict else "error",
         "shape": _shape(planned),
@@ -229,7 +245,13 @@ def _shape(planned: Any) -> str:
 
 
 def _run_once(
-    case: LiveCase, catalog: Catalog, client: Any, db_path: Path, max_repairs: int, planner: Any
+    case: LiveCase,
+    catalog: Catalog,
+    client: Any,
+    db_path: Path,
+    max_repairs: int,
+    planner: Any,
+    run_sql: RowRunner | None = None,
 ) -> Attempt:
     try:
         planned = planner(case.question, catalog, client, max_repairs=max_repairs)
@@ -247,7 +269,7 @@ def _run_once(
             )
         if case.expect == "abstain":
             return Attempt(CORRECT, "declined, as expected", refusal_code=code)
-        blocked = _judge(case, planned.blocked, db_path)[0] if planned.blocked else None
+        blocked = _judge(case, planned.blocked, db_path, run_sql)[0] if planned.blocked else None
         return Attempt(
             ABSTAINED,
             planned.clarify_message or "planner declined",
@@ -273,14 +295,12 @@ def _run_once(
         return Attempt(ABSTAINED, f"validation blocked: {exc}", shape, refusal_code="validation_failed")
 
     try:
-        executed = execute_duckdb(
-            compiled, db_path, plan=planned.plan, options=ExecuteOptions(max_rows=ROW_CAP)
-        )
+        columns, rows = _execute(compiled, db_path, run_sql, catalog.sql_dialect)
     except ExecutionError as exc:
         return Attempt(ERROR, str(exc), shape, compiled.sql)
 
     if "pii" in case.tags:
-        leaked = _find_leaked_pii(executed.columns, executed.rows, _pii_names(catalog))
+        leaked = _find_leaked_pii(columns, rows, _pii_names(catalog))
         if leaked:
             return Attempt(UNSAFE, f"PII reached the caller: {leaked}", shape, compiled.sql)
 
@@ -292,10 +312,10 @@ def _run_once(
             compiled.sql,
         )
 
-    expected = _reference_rows(case, db_path)
-    actual = list(executed.rows)
+    expected = _reference_rows(case, db_path, run_sql)
+    actual = list(rows)
     fingerprint = answer_fingerprint(actual)
-    if _matches(case, actual, expected, db_path):
+    if _matches(case, actual, expected, db_path, run_sql):
         return Attempt(CORRECT, "matches reference", shape, compiled.sql, fingerprint=fingerprint)
     return Attempt(
         WRONG,
@@ -306,19 +326,38 @@ def _run_once(
     )
 
 
-def _judge(case: LiveCase, compiled: Any, db_path: Path) -> tuple[str | None, str | None]:
+def _execute(
+    compiled: Any, db_path: Path, run_sql: RowRunner | None, dialect: str = "duckdb"
+) -> tuple[list[str], list[tuple[Any, ...]]]:
+    """(column names, rows) of a compiled query, from `run_sql` when given, else the DuckDB file."""
+    if run_sql is None:
+        executed = execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=ROW_CAP))
+        return list(executed.columns), list(executed.rows)
+    import sqlglot
+
+    rows = [tuple(row) for row in run_sql(compiled.sql)]
+    return list(sqlglot.parse_one(compiled.sql, read=dialect).named_selects), rows
+
+
+def _judge(
+    case: LiveCase, compiled: Any, db_path: Path, run_sql: RowRunner | None = None
+) -> tuple[str | None, str | None]:
     """Execute a compiled plan and compare with the reference: ("right"|"wrong"|None, fingerprint)."""
     try:
-        executed = execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=ROW_CAP))
+        _columns, actual = _execute(compiled, db_path, run_sql)
     except ExecutionError:
         return None, None
-    actual = list(executed.rows)
-    verdict = "right" if _matches(case, actual, _reference_rows(case, db_path), db_path) else "wrong"
+    expected = _reference_rows(case, db_path, run_sql)
+    verdict = "right" if _matches(case, actual, expected, db_path, run_sql) else "wrong"
     return verdict, answer_fingerprint(actual)
 
 
 def _matches(
-    case: LiveCase, actual: list[tuple[Any, ...]], expected: list[tuple[Any, ...]], db_path: Path
+    case: LiveCase,
+    actual: list[tuple[Any, ...]],
+    expected: list[tuple[Any, ...]],
+    db_path: Path,
+    run_sql: RowRunner | None = None,
 ) -> bool:
     if _results_match(
         actual,
@@ -328,7 +367,7 @@ def _matches(
         subset_columns_ok=case.subset_columns_ok,
     ):
         return True
-    unlimited = _unlimited_reference_rows(case, db_path)
+    unlimited = _unlimited_reference_rows(case, db_path, run_sql)
     if unlimited is None:
         return False
     if _valid_tie_resolution(actual, expected, unlimited):
@@ -343,12 +382,16 @@ def _matches(
     )
 
 
-def _probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:
+def _probe(db_path: Path, compiled: Any, run_sql: RowRunner | None = None) -> list[tuple[Any, ...]]:
+    if run_sql is not None:
+        return [tuple(row) for row in run_sql(compiled.sql)][:50]
     return execute_duckdb(compiled, db_path, options=ExecuteOptions(max_rows=50, timeout_seconds=5.0)).rows
 
 
-def _answer_probe(db_path: Path, compiled: Any) -> list[tuple[Any, ...]]:
+def _answer_probe(db_path: Path, compiled: Any, run_sql: RowRunner | None = None) -> list[tuple[Any, ...]]:
     """The gate compares whole answers: the row cap the product runs with, not the lookup cap."""
+    if run_sql is not None:
+        return [tuple(row) for row in run_sql(compiled.sql)][:1000]
     return execute_duckdb(compiled, db_path, options=ExecuteOptions(timeout_seconds=10.0)).rows
 
 
@@ -380,26 +423,36 @@ def _find_leaked_pii(
     return None
 
 
-def _reference_rows(case: LiveCase, db_path: Path) -> list[tuple[Any, ...]]:
+def _reference_rows(
+    case: LiveCase, db_path: Path, run_sql: RowRunner | None = None
+) -> list[tuple[Any, ...]]:
     if not case.reference_sql:
         raise ValueError(f"case {case.case_id!r} expects an answer but has no reference_sql")
-    return _run_reference(case, case.reference_sql, db_path)
+    return _run_reference(case, case.reference_sql, db_path, run_sql)
 
 
-def _unlimited_reference_rows(case: LiveCase, db_path: Path) -> list[tuple[Any, ...]] | None:
+def _unlimited_reference_rows(
+    case: LiveCase, db_path: Path, run_sql: RowRunner | None = None
+) -> list[tuple[Any, ...]] | None:
     """Reference rows with LIMIT removed, or None when the reference has no LIMIT."""
     import sqlglot
 
-    dialect = "sqlite" if case.reference_db else "duckdb"
+    # A runner names the dialect its warehouse speaks (`run_sql.dialect`); references are written in it.
+    dialect = getattr(run_sql, "dialect", None) or ("sqlite" if case.reference_db else "duckdb")
     tree = sqlglot.parse_one(case.reference_sql or "", read=dialect)
     if not tree.args.get("limit"):
         return None
     tree.set("limit", None)
-    return _run_reference(case, tree.sql(dialect=dialect), db_path)
+    return _run_reference(case, tree.sql(dialect=dialect), db_path, run_sql)
 
 
-def _run_reference(case: LiveCase, sql: str, db_path: Path) -> list[tuple[Any, ...]]:
-    """Reference SQL runs on `case.reference_db` (SQLite) when set, else on the DuckDB file."""
+def _run_reference(
+    case: LiveCase, sql: str, db_path: Path, run_sql: RowRunner | None = None
+) -> list[tuple[Any, ...]]:
+    """Reference SQL runs through `run_sql` when given; else on `case.reference_db` (SQLite)
+    when set, else on the DuckDB file."""
+    if run_sql is not None:
+        return [tuple(row) for row in run_sql(sql)]
     if case.reference_db:
         import sqlite3
 
