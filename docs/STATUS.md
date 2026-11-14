@@ -18,8 +18,10 @@
   the same catalog and PII checks as local columns.
 - Any model on an OpenAI-compatible endpoint: the client drops or swaps a parameter the
   model rejects (`planner/llm.py`).
-- Auth modes `dev` / `token` / `header`; production forbids `dev` and refuses to start
-  without a 32-character `SECURE_QUERY_REVIEW_SECRET`.
+- Auth modes `dev` / `token` / `header` / `jwt` (OIDC); production forbids `dev` and refuses
+  to start without a 32-character `SECURE_QUERY_REVIEW_SECRET` or with an unapproved catalog.
+- Signed reviews expire; Evidence Bundles can be Ed25519-signed and verified with a public
+  key; trace and audit files are hash-chained; per-person rate limit and `/metrics`.
 - Databricks: execution as the end user (`SECURE_QUERY_DATABRICKS_AUTH=user`); the UC
   catalog draft reads real foreign keys; sensitive-looking column names default to high PII.
 - Genie Conversation API client and head-to-head scorecard (code only; no live run yet).
@@ -35,7 +37,8 @@
 
 **Default model: `gpt-6-luna`, reasoning off** (since 2026-11-11). Spider test 400, gate on,
 3 repeats (2026-11-12): **76.8% right; adjudicated real wrong 3.5% (14/400, 95% CI
-2.1–5.8%)**; refused 13.3%. Both raters were models (gpt-5 and Claude); no human rated
+2.1–5.8%)**; refused 13.3%. A rerun on 2026-11-13 after the gate compared whole
+answers gave 310 right / 38 wrong / 52 refused by exact match (not re-adjudicated). Both raters were models (gpt-5 and Claude); no human rated
 this round. Files: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-12.json` and
 `docs/adjudication/`. This is above the 2% goal, as the previous model's number was.
 
@@ -59,6 +62,32 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-13 — production hardening (PLAN Phase 4) and one serious fix.**
+  - **The consistency gate was off for every API and CLI request** (PLAN 4.12). `ask()`
+    skipped the second reading whenever a client was passed in, and both entry points pass
+    one. Only the eval harness ran the gate, so every measured number describes a
+    configuration the product did not run. Fixed; a live request now runs two readings
+    (three audited warehouse statements for one confirm-and-run).
+  - The gate now compares whole answers, not the first 50 rows (4.8). Spider test 400, 3
+    repeats, `gpt-6-luna`, exact match: **310 right / 38 wrong / 52 refused** (was 307 / 40
+    / 53). Not re-adjudicated: of the 38, 36 are questions labelled on 2026-11-12 (14 real
+    errors, 12 ambiguous, 10 benchmark faults, matched by question id) and 2 are new and
+    unlabelled, so real errors are between 14 and 16 of 400. All 14 earlier real errors are
+    still answered wrong. File: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-13.json`.
+  - Added: review expiry and secret rotation (4.1); Ed25519 Evidence Bundles with a public
+    key endpoint (4.2); OIDC sign-in with group mapping (4.3); principals file reload (4.4);
+    hash-chained, lock-safe trace and audit files with a verify script (4.5); per-person
+    rate limit, `/metrics`, request ids, model-provider breaker (4.6); Databricks
+    connection reuse per credential (4.7); catalog approval record and drift check (4.9);
+    production Docker image (4.10); what is sent to the model provider (4.11).
+  - Checked live through the API with `gpt-6-luna` on DuckDB: token sign-in, confirm, run,
+    forged expiry refused, evidence verified with the public key alone, refusal, metrics,
+    both audit files intact.
+  - **Not verified:** the Docker image was not built (no Docker on this machine); OIDC was
+    tested with locally generated keys, not a real identity provider; Databricks connection
+    reuse and the `--databricks` drift check were tested with fakes, not a warehouse.
+  - Not done, by decision: retiring the LogicalPlan planner (it is the only route to
+    metrics; PLAN P1), certified answers (P4), masking (P5), conversation (P6).
 - **2026-11-13 — the two readings run at the same time (PLAN 1.6 done).** Median seconds
   per question, 20 Chinook dev questions, `gpt-6-luna`, planning only: **2.06 s before,
   0.87 s after**. The comparison logic is unchanged. Cost: when the first reading refuses,

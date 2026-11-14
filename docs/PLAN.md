@@ -320,7 +320,7 @@ Each task is one commit. Every new control is off or permissive by default outsi
   in, and both the API and the CLI pass one in. Only the eval harness ran the gate. The
   model client now supplies its own second reader (`check_twin`). Files: `planner/llm.py`,
   `api/service.py`, `tests/test_service.py`.
-- [ ] **4.13 Docs.** HANDOVER, STATUS, README, SECURITY, `.env.example` describe the above.
+- [x] **4.13 Docs.** HANDOVER, STATUS, README, SECURITY, `.env.example` describe the above.
 
 Not started, because each is a product decision rather than a fix: see P4–P6 below.
 
