@@ -358,7 +358,9 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   script leaves out an answer over 5,000 rows, an undetermined gold column and a gold LIMIT
   that cuts a tie. Apply the same three rules when the holdout is frozen in 3.4. Still
   open, a product question: neither system told the user its answer was cut.
-- **P11. Refusals from a missing join.** On `bakery_1` 31 of 94 questions were refused
+- **P11. Refusals from a missing join.** Done 2026-11-15 for joins whose names agree:
+  the catalog draft proposes them (`with_discovered_joins`, STATUS). Left: joins whose names
+  do not agree (`bakery_1` `items.item -> goods.id`) stay for the owner's review. On `bakery_1` 31 of 94 questions were refused
   because the drafted catalog lacked one join the source schema does not declare (STATUS
   2026-11-15). In 3.2 the owner's catalog review must cover joins, and the refusal text
   should name the missing join so the owner can approve it.

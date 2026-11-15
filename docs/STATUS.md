@@ -66,6 +66,23 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — the catalog draft proposes the joins the data shows (PLAN P11).** Most
+  refusals the model wrote on BIRD and Spider dev were "no approved relationship connects
+  X to Y": the schema leaves the join out (114 BIRD dev questions, 24 distinct joins), and
+  Unity Catalog rarely declares foreign keys at all. `with_discovered_joins` proposes A.x ->
+  B.y when B.y is a key, every A.x value is stored in B.y and the names agree; it reads
+  counts only, never a PII column, and the owner approves each join. Spider test with every
+  declared join hidden (never used to design it): 123 of 145 recovered, 13 extra, most of
+  them real links the schema forgot. BIRD dev (1,534): right 776 -> 812, wrong 378 -> 409,
+  refused 380 -> 313; on the 114 questions needing a missing join right 12 -> 37, wrong
+  20 -> 35, refused 82 -> 42 (new answers about as precise as the rest); the other 1,420
+  move within noise (149 answer/refuse flips between two runs of the same code). BIRD's own
+  column descriptions, tried the same way, changed nothing beyond noise and were not built.
+  Spider dev 400, 3 repeats, `--values --joins`: right 308, wrong 46, refused 46 (same-setup
+  range 303-310 / 43-51 / 44-52); `flight_2`, the one dev schema missing a join, 7 right 7
+  refused -> 15 right. Not fixed: `bakery_1`'s `items.item -> goods.id`, whose names do not
+  agree. Files: `docs/baselines/bird-dev-catalog-variants-2026-11-15.json`,
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-joins-2026-11-15.json`.
 - **2026-11-15 — the two-readings gate no longer calls a broken query a disagreement;
   repairing database errors was tried and reverted.** Diagnosis on the 35 Spider dev
   questions the gate refused, with both readings logged: 12 never ran (the database

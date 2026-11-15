@@ -140,6 +140,10 @@ def main(argv: list[str] | None = None) -> int:
         "--values", action="store_true",
         help="Draft value lists for category columns into each catalog first (engine.catalog_draft)",
     )
+    parser.add_argument(
+        "--joins", action="store_true",
+        help="Add the joins the data shows but the schema does not declare (engine.catalog_draft)",
+    )
     args = parser.parse_args(argv)
     if args.model:
         os.environ["SECURE_QUERY_MODEL"] = args.model
@@ -227,10 +231,10 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         items = [it for i, it in enumerate(items) if i in keep]
     if args.limit:
         items = items[: args.limit]
-    if args.values:
+    if args.values or args.joins:
         import duckdb
 
-        from secure_query.engine.catalog_draft import with_value_lists
+        from secure_query.engine.catalog_draft import with_discovered_joins, with_value_lists
 
         drafted: dict[tuple[int, str], Catalog] = {}
         for i, (case, catalog, db_path) in enumerate(items):
@@ -238,7 +242,12 @@ def _run_accuracy(args: argparse.Namespace) -> int:
             if key not in drafted:
                 con = duckdb.connect(str(db_path), read_only=True)
                 try:
-                    drafted[key] = with_value_lists(catalog, lambda sql, con=con: con.execute(sql).fetchall())
+                    def run(sql: str, con=con):  # noqa: ANN001
+                        return con.execute(sql).fetchall()
+
+                    if args.joins:
+                        catalog = with_discovered_joins(catalog, run)
+                    drafted[key] = with_value_lists(catalog, run) if args.values else catalog
                 finally:
                     con.close()
             items[i] = (case, drafted[key], db_path)
