@@ -44,7 +44,8 @@ A workspace exists since 2026-11-14: Chinook in `workspace.default` and Spider `
 `bakery_1` and `advertising_agencies` each in a schema of that name, each with a Genie
 space. Head-to-head on the three Spider databases, 237 questions (STATUS changelog,
 2026-11-15): real errors 9 against Genie's 18 by two model raters, intervals overlap, and
-Secure Query refused 48 where Genie refused none. `.env` points at `aan_1`; for another
+Secure Query refused 48 where Genie refused none; with one missing join approved on
+`bakery_1`, 10 against 14 and 23 refused. `.env` points at `aan_1`; for another
 database set `SECURE_QUERY_DATABRICKS_SCHEMA` and `GENIE_SPACE_ID` for the run
 (`scripts/spider_warehouse_load.py` prints both). `.env` has no
 `SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN`, so pass the main token for a run. The 2026-11-15

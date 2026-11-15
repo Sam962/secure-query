@@ -102,6 +102,15 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
     returns nothing (3 on `bakery_1`); a dropped requested column. Genie: date parsing that
     drops single-digit days; `COUNT(DISTINCT type)` for "how many cakes"; a join that
     multiplies rows before `HAVING COUNT = 1`.
+  - **Re-run of `bakery_1` with that join approved for both systems** (added to the catalog
+    copy and to the Genie space, same day): Secure Query 70 right / 11 wrong / 13 refused,
+    Genie 79 / 15 / 0; real errors by either rater 4 against 4. With this run in place of
+    the first, the 237 questions give: right 187 against 198, wrong 27 against 39, refused
+    23 against 0, answers differing between repeats 10 against 29, real errors by either
+    rater 10 (4.2%, CI 2.3–7.6%) against 14 (5.9%, CI 3.6–9.7%); gpt-5 alone 10 against 14,
+    the assistant alone 5 against 7. Genie's real errors on `bakery_1` fell from 8 to 4
+    between the two runs, so run-to-run variation is as large as the gap between systems.
+    Files: `*-bakery1-join-2026-11-15*`.
   - Files: `docs/baselines/genie-h2h-spider-{bakery1,advertising}-2026-11-15.json`,
     `docs/adjudication/genie-h2h-spider-{bakery1,advertising}-2026-11-15-*`.
 - **2026-11-14 — first head-to-head on a set we did not develop on: Spider test `aan_1` on

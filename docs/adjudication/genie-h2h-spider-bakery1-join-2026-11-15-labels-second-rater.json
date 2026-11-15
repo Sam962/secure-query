@@ -1,0 +1,106 @@
+{
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counts distinct values of the type column (1) instead of the cake goods (7)."
+ },
+ "p003:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold has an AND/OR precedence fault; the empty answer is right."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Returns the cheapest good's id where the gold returns its price."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'Less than any' can mean less than every one; the system uses the minimum."
+ },
+ "p016:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p017:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters the flavor column for food types; empty only by coincidence."
+ },
+ "p025:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p001:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Same seven days; dates are parsed and a total is added."
+ },
+ "p005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold has an AND/OR precedence fault; the empty answer is right."
+ },
+ "p006:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Finds the latest real date; the gold sorts dates as text."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold has an AND/OR precedence fault; the empty answer is right."
+ },
+ "p008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters the flavor column for a food type and returns nothing."
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct receipt numbers where the gold repeats one."
+ },
+ "p013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Same 15 customers; the name is one column instead of two."
+ },
+ "p014:answered_wrong": {
+  "label": "real_error",
+  "reason": "'Cheaper than some' needs the maximum; the system uses the minimum."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct receipt numbers where the gold repeats one."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Average per flavor where the gold gives one average."
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Includes a chocolate item never bought, which 'not more than 10 times' allows."
+ },
+ "p020:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counts two distinct cake-or-cookie items, so two cakes pass without a cookie."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct receipt numbers where the gold repeats one."
+ },
+ "p022:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Same customer; the name is one column instead of two."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct receipt numbers where the gold repeats one."
+ },
+ "p024:answered_wrong": {
+  "label": "real_error",
+  "reason": "Groups by customer and good, so it returns every customer."
+ },
+ "p026:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Averages the per-good averages, one reading of an unclear question."
+ }
+}
