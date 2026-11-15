@@ -66,6 +66,14 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — measured, not built: send a refusal's named column back to the model.**
+  Idea: when the model refuses and its reason names a column the catalog lists, send that
+  column back once. On BIRD dev 57 of 133 model refusals name a catalog column, but most
+  say the model saw it and found it does not answer ("ClosedDate alone cannot identify ...").
+  Replay of those 57, both readings nudged, against a plain re-run as control: right 5 -> 10,
+  wrong 2 -> 6, refused 50 -> 41; the 10 refusals it turned into answers were right 6 times
+  (60%, below the 67% of answers overall). Net +5 right, +4 wrong on 1,534 questions, inside
+  run-to-run noise. Not built; rerun if a model change moves the refusal reasons.
 - **2026-11-15 — the catalog draft proposes the joins the data shows (PLAN P11).** Most
   refusals the model wrote on BIRD and Spider dev were "no approved relationship connects
   X to Y": the schema leaves the join out (114 BIRD dev questions, 24 distinct joins), and
