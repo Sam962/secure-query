@@ -1,6 +1,6 @@
 # Status
 
-**Updated:** 2026-11-14 · Tasks: [PLAN.md](PLAN.md)
+**Updated:** 2026-11-15 · Tasks: [PLAN.md](PLAN.md)
 
 ## What works (verified in code and tests)
 
@@ -65,6 +65,45 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — head-to-head on three Spider test databases on Databricks, 237 questions:
+  Secure Query gives fewer wrong answers and far fewer answers.** Databases `aan_1`,
+  `bakery_1`, `advertising_agencies`; 3 repeats; `gpt-6-luna` with the gate. The raters are
+  two models (gpt-5 and the assistant), no person; the assistant could tell the systems
+  apart by SQL style, so its rating is not blind.
+
+  | 237 questions | Secure Query | Genie |
+  |---|---|---|
+  | Right by exact match | 165 | 197 |
+  | Wrong by exact match | 24 | 40 |
+  | Refused | 48 | 0 |
+  | Answer differs between repeats | 12 | 30 |
+  | Real errors, either rater | 9 (3.8%, CI 2.0–7.1%) | 18 (7.6%, CI 4.9–11.7%) |
+  | Real errors, gpt-5 alone | 9 | 16 |
+  | Real errors, assistant alone | 5 | 11 |
+
+  - The intervals overlap; this is not a win. Of answers given, 9 of 189 (4.8%) against
+    18 of 237 (7.6%). The 2% bar is missed.
+  - Per database (right / wrong / refused; real errors either rater): `aan_1` 56 questions,
+    47/6/3 and 4 against 46/10/0 and 5; `bakery_1` 94, 48/8/38 and 3 against 78/16/0 and
+    8; `advertising_agencies` 87, 70/10/7 and 2 against 73/14/0 and 5.
+  - 31 of the 38 `bakery_1` refusals are one catalog gap: the Spider schema has no foreign
+    key from `items.Receipt` to `receipts.ReceiptNumber`, so the catalog has no such join
+    and Secure Query refuses it. Genie got the same two joins and joined anyway, mostly
+    correctly. A catalog owner would approve that join; the run was not repeated with it.
+  - Suites now leave out what exact match cannot grade (P10, `scripts/spider_warehouse_suite.py`):
+    an answer over 5,000 rows, a gold query that selects a column its GROUP BY does not
+    determine, a gold LIMIT that cuts through a tie. `aan_1` went from 68 to 56 questions;
+    its numbers above are the 2026-11-14 answers re-scored on the 56, not a new run.
+  - The `bakery_1` and `advertising_agencies` tables and Genie spaces were made by
+    `scripts/spider_warehouse_load.py`: tables, column descriptions and joins from the
+    Secure Query catalog, no instructions, no example questions. The `aan_1` space was made
+    by hand and has a one-line instruction.
+  - Real errors seen. Secure Query: a filter on the wrong column or a misspelt value that
+    returns nothing (3 on `bakery_1`); a dropped requested column. Genie: date parsing that
+    drops single-digit days; `COUNT(DISTINCT type)` for "how many cakes"; a join that
+    multiplies rows before `HAVING COUNT = 1`.
+  - Files: `docs/baselines/genie-h2h-spider-{bakery1,advertising}-2026-11-15.json`,
+    `docs/adjudication/genie-h2h-spider-{bakery1,advertising}-2026-11-15-*`.
 - **2026-11-14 — first head-to-head on a set we did not develop on: Spider test `aan_1` on
   Databricks. No clear winner.** 242,907 rows in `workspace.aan_1`; a Genie space with the
   5 tables, 5 joins and a one-line description, no example questions. 68 questions (of

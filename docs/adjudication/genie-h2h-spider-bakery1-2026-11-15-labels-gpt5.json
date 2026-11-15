@@ -1,0 +1,98 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by customer and good and returns customers with any good priced >5, while the question (and gold) require customers whose overall average spend across their purchases exceeds 5."
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system counts distinct Food categories matching “%cake%” (yielding 1) instead of counting the number of cake goods (Food = 'Cake'), which the question asks for."
+ },
+ "p003:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL applies the price filter only to Cake due to missing parentheses, while the system SQL correctly restricts both Cookie and Cake to the 3–7 range as the question asks."
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query returns no rows for items that are clearly expected (Cookie or Cake priced $3–$7), so the system’s answer is wrong for the question."
+ },
+ "p005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query determines the “earliest date” by lexicographic string order (ORDER BY date) instead of true date order, while the system correctly parses dates and returns the corresponding receipts, so the row set difference stems from the benchmark’s faulty handling of dates."
+ },
+ "p006:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for prices above twice the average, but the gold query only filters above the average; the system’s query correctly applies the 2× average condition."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for prices above twice the average, but the gold SQL uses only AVG(price) while the system correctly uses 2 * AVG(price)."
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filtered on 'cookes' (not matching 'Cookie') and used MAX instead of MIN for “cheaper than any croissant,” yielding an incorrect empty result."
+ },
+ "p009:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system returns the same buyers but formats the full name as a single concatenated column instead of separate first/last name columns, a harmless formatting difference given the question."
+ },
+ "p010:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "“Less than any Tart” means less than all tarts (i.e., below the minimum tart price), but the gold uses MAX while the system correctly uses MIN."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system used case-insensitive/partial matches and DISTINCT, yielding the same set of receipt numbers while the question doesn’t specify exact-case/equality or whether to include duplicates."
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filters on Flavor (and 'Cookies') and uses MAX instead of Food='Cookie' with MIN for “lower than any,” yielding an incorrect empty result."
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used MIN (requiring cheaper than all Tarts) and a fuzzy ILIKE filter, while the question asks for cheaper than some Tart (price < MAX where Food = 'Tart'), so it returns too few rows."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question could seek either the minimum price or the identity of the cheapest cheese-flavored good; the gold returns the price while the system returns the item’s id, both valid interpretations."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question asks for a single receipt with the latest date, but multiple receipts share that date; the system returned one of the tied rows, which is valid under that reading."
+ },
+ "p016:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filtered on Flavor with plural values instead of Food='Cookie' or 'Cake' and thus returned none, which misanswers the request for cookie/cake items priced $3–$7."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The wording (“average prices” of blackberry or blueberry flavor) reasonably allows per-flavor averages, which the system returns (with a permissive LIKE), while the gold computes a single combined average."
+ },
+ "p018:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for goods priced more than twice the average, but the gold query compares to AVG(price) rather than 2*AVG(price), while the system correctly implements the 'twice' condition."
+ },
+ "p019:answered_wrong": {
+  "label": "real_error",
+  "reason": "By parsing dates with 'dd-MMM-yyyy' and filtering out parse failures, the system dropped single-digit day dates (e.g., 4-, 7-, 9-Oct), missing valid >$100 days and returning an incomplete result."
+ },
+ "p020:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "“Less than any Tart” in natural language means cheaper than every tart (compare to MIN/ALL), but the gold uses MAX (i.e., < ANY), so the gold query misinterprets the question while the system’s MIN-based query matches it."
+ },
+ "p021:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query misuses OR/AND precedence so the price filter applies only to Cakes, returning all Cookies regardless of price, while the question requires filtering both Cookies and Cakes between $3 and $7; the system query correctly applies the filter to both."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to de-duplicate receipts or require exact matches, so returning distinct receipt numbers with case-insensitive/substring matching is a reasonable interpretation."
+ },
+ "p023:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query includes customers with at least one good averaging >5, not customers whose average spending meets the >5 criterion (overall or per all goods), making it too permissive."
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query checks price > AVG(price) instead of the question’s 'more than twice the average,' while the system correctly uses price > 2*AVG(price)."
+ }
+}

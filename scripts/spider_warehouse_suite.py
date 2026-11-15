@@ -1,8 +1,12 @@
 """One Spider test database as a suite the head-to-head scorecard can run on Databricks.
 
 The gold SQL is converted from SQLite to Databricks, and a question is kept only when the
-converted query returns the same rows on the warehouse as the gold does on SQLite. The
-tables must already be in SECURE_QUERY_DATABRICKS_SCHEMA (see .env.example).
+converted query returns the same rows on the warehouse as the gold does on SQLite. Three
+kinds of question are left out because exact match cannot grade them: an answer larger
+than the smallest row cap of the systems compared, a gold query that selects a column its
+GROUP BY does not determine (SQLite picks an arbitrary row), and a gold query whose LIMIT
+cuts through a tie (a system that returns every tied row is not wrong). The tables must already
+be in SECURE_QUERY_DATABRICKS_SCHEMA (see .env.example).
 
 Usage:
     python scripts/spider_warehouse_suite.py aan_1 data/h2h/aan_1
@@ -27,6 +31,7 @@ DB = sys.argv[1]; here = Path(sys.argv[2]); here.mkdir(parents=True, exist_ok=Tr
 host = os.environ["DATABRICKS_HOST"].rstrip("/"); tok = os.environ["DATABRICKS_TOKEN"]
 wh = os.environ["DATABRICKS_HTTP_PATH"].rsplit("/", 1)[-1]
 cat, sch = os.environ["SECURE_QUERY_DATABRICKS_SCHEMA"].split(".")
+ROW_CAP = 5_000  # the Genie API returns at most this many rows; Secure Query and the reference stop at 10,000
 
 def warehouse(q):
     req = urllib.request.Request(host + "/api/2.0/sql/statements", headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json"},
@@ -56,6 +61,16 @@ def convert(sql, columns):
                 inner.replace(exp.AnyValue(this=inner.copy()))
     return tree.sql(dialect="databricks")
 
+def cuts_a_tie(sql):
+    """True when the row after the gold's LIMIT has the same sort key as the last row inside it."""
+    tree = sqlglot.parse_one(sql, read="databricks")
+    order, limit = tree.args.get("order"), tree.args.get("limit")
+    if not isinstance(tree, exp.Select) or not order or not limit or not limit.expression.is_int: return False
+    n = int(limit.expression.name)
+    probe = tree.copy().select(*[o.this.copy() for o in order.expressions], append=False).limit(n + 1)
+    rows, _ = warehouse(probe.sql(dialect="databricks"))
+    return bool(rows) and len(rows) == n + 1 and rows[-1] == rows[-2]
+
 def norm(rows):
     out = []
     for r in rows:
@@ -80,6 +95,11 @@ for case, _ in items:
     if err: bad.append((case.case_id, err, sql)); continue
     if norm(rows) != local:
         bad.append((case.case_id, f"rows differ: sqlite {len(local)} {local[:2]} | warehouse {len(rows)} {norm(rows)[:2]}", sql)); continue
+    if len(rows) > ROW_CAP: bad.append((case.case_id, f"answer has {len(rows)} rows, over the {ROW_CAP}-row cap", sql)); continue
+    if cuts_a_tie(sql): bad.append((case.case_id, "gold LIMIT cuts through a tie", sql)); continue
+    if "ANY_VALUE(" in sql:  # the bare column is determined by the group only if its lowest and highest value agree
+        low, high = (warehouse(sql.replace("ANY_VALUE(", f + "("))[0] for f in ("MIN", "MAX"))
+        if low is None or low != high: bad.append((case.case_id, "gold selects a column its GROUP BY does not determine", sql)); continue
     cases.append({"id": case.case_id, "question": case.question, "expect": "answer", "reference_sql": sql,
                   "tags": list(case.tags), "extra_columns_ok": True})
 (here / "catalog.json").write_text(catalog.model_dump_json())

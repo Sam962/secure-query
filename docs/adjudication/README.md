@@ -183,3 +183,10 @@ and gpt-5 flag is `test_1168_pilot_1`, for different reasons. Of gpt-5's other 1
 on a NULL or on a key the schema forbids being broken, and most are the reference's own
 query. This spread is too wide to quote a rate. A human pass on the 60 packets is open.
 
+## Head-to-head packets (Genie), 2026-11-14 and 2026-11-15
+
+`genie-h2h-spider-{aan1,bakery1,advertising}-*`: one packet per answer scored wrong, both
+systems shuffled together with no system name; `*-packets.key.json` maps a packet to its
+system and must not go to a rater. Labels: `labels-gpt5` (gpt-5), `labels-second-rater`
+(the assistant, a model, which could tell the systems apart by SQL style), `labels-merged`
+(real_error if either says so). No person has rated these. Result in STATUS, 2026-11-15.

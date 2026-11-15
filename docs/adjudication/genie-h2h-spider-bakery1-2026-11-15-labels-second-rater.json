@@ -1,0 +1,98 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "Groups by customer and good, so it returns nearly every customer; the question means a customer's average."
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counts distinct values of the type column (1) instead of the cake goods (7)."
+ },
+ "p003:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold has an AND/OR precedence fault; the empty answer is right."
+ },
+ "p004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold has an AND/OR precedence fault; the empty answer is right."
+ },
+ "p005:answered_wrong": {
+  "label": "real_error",
+  "reason": "Date parsing with a two-digit day pattern drops single-digit days, so the earliest date is wrong."
+ },
+ "p006:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters on the misspelt value 'cookes' and returns nothing."
+ },
+ "p009:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Same 15 customers; the name is one column instead of two."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'Less than any' can mean less than every one; the system uses the minimum."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct receipt numbers where the gold repeats one."
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters the flavor column for a food type and returns nothing."
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "reason": "'Cheaper than some' needs the maximum; the system uses the minimum."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Returns the cheapest good's id where the gold returns its price."
+ },
+ "p015:answered_wrong": {
+  "label": "real_error",
+  "reason": "Returns one of ten receipts tied on the date, picked arbitrarily."
+ },
+ "p016:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters the flavor column for food types; empty only by coincidence."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Average per flavor where the gold gives one average; 'average prices' allows both."
+ },
+ "p018:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ },
+ "p019:answered_wrong": {
+  "label": "real_error",
+  "reason": "Date parsing drops single-digit days, so three qualifying days are missing."
+ },
+ "p020:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'Less than any' can mean less than every one."
+ },
+ "p021:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold has an AND/OR precedence fault; the empty answer is right."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct receipt numbers where the gold repeats one."
+ },
+ "p023:answered_wrong": {
+  "label": "real_error",
+  "reason": "Groups by customer and good, so it returns every customer."
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold omits 'twice'."
+ }
+}

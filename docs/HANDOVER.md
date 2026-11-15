@@ -1,6 +1,6 @@
 # Handover — start here
 
-**Updated:** 2026-11-14. Read this file, then [PLAN.md](PLAN.md) (the task list), then
+**Updated:** 2026-11-15. Read this file, then [PLAN.md](PLAN.md) (the task list), then
 [STATUS.md](STATUS.md) (what is measured).
 
 ## What this project is
@@ -29,7 +29,8 @@ Open, all waiting for Sam:
 
 1. Inputs for 3.1 (above).
 2. A human adjudication pass, all in `docs/adjudication/`: the 40 wrong-answer packets of
-   2026-11-12, the 2 of 2026-11-13 (`*-new2-packets.json`), and the 60 right answers
+   2026-11-12, the 2 of 2026-11-13 (`*-new2-packets.json`), the head-to-head packets
+   (`genie-h2h-spider-*-packets.json`), and the 60 right answers
    (`*-right60-packets.json`). The last matters most: the model raters flag between 1 and
    11 of the 60.
 3. Parking-lot decisions in PLAN.md: P1 (retire the LogicalPlan planner), P4 (certified
@@ -39,11 +40,15 @@ Open, all waiting for Sam:
    personal detail was removed. Never push it; Sam deletes it when satisfied. Older
    published branches still hold that detail; rewriting them is Sam's decision.
 
-A workspace exists since 2026-11-14: Chinook in `workspace.default` and Spider `aan_1` in
-`workspace.aan_1`, each with a Genie space. Two head-to-heads ran on it (STATUS
-changelog): a Chinook trial and `aan_1`, which showed no clear winner. `.env` points at
-`aan_1`; it has no `SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN`, so pass the main token for a run.
-`bakery_1` and `art_1` are exported in `data/databricks_upload/` and not uploaded.
+A workspace exists since 2026-11-14: Chinook in `workspace.default` and Spider `aan_1`,
+`bakery_1` and `advertising_agencies` each in a schema of that name, each with a Genie
+space. Head-to-head on the three Spider databases, 237 questions (STATUS changelog,
+2026-11-15): real errors 9 against Genie's 18 by two model raters, intervals overlap, and
+Secure Query refused 48 where Genie refused none. `.env` points at `aan_1`; for another
+database set `SECURE_QUERY_DATABRICKS_SCHEMA` and `GENIE_SPACE_ID` for the run
+(`scripts/spider_warehouse_load.py` prints both). `.env` has no
+`SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN`, so pass the main token for a run. The 2026-11-15
+commits are local and not pushed.
 
 Built but never run against the real thing: the Docker image (never built), OIDC sign-in
 (no real identity provider), the catalog draft from Unity Catalog, the drift check and
