@@ -39,9 +39,13 @@ Open, all waiting for Sam:
    personal detail was removed. Never push it; Sam deletes it when satisfied. Older
    published branches still hold that detail; rewriting them is Sam's decision.
 
+A workspace exists since 2026-11-14 (Chinook tables in `workspace.default`, a Genie space
+over them); a trial head-to-head ran on it (STATUS changelog). `.env` has the host, token
+and Genie space id but not `DATABRICKS_HTTP_PATH` or `SECURE_QUERY_DATABRICKS_SCHEMA`.
+
 Built but never run against the real thing: the Docker image (never built), OIDC sign-in
-(no real identity provider), and the Databricks connection pool, catalog drift check and
-`--backend databricks` scorecard (fakes only). Check each one live before relying on it.
+(no real identity provider), the catalog draft from Unity Catalog, the drift check and
+`scripts/databricks_smoke.py`. Check each one live before relying on it.
 
 ## Setup (once per machine)
 

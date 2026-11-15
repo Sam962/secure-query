@@ -65,6 +65,42 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-14 — first live run against Databricks and Genie (a trial, not a result).**
+  Sam's workspace: the 11 Chinook tables in `workspace.default` on a serverless warehouse,
+  and a Genie space over them with instructions, 3 measures, 10 joins and 2 example
+  queries. Chinook is the set we developed on, so nothing here may be quoted as a
+  comparison. `chinook/cases.json` (25 answerable, 9 should-refuse), 3 repeats,
+  `gpt-6-luna`, everything read from the warehouse.
+  - Before the run: all 25 reference queries return the same rows on the warehouse as on
+    the local database; Genie's 2 example questions are not in the suite.
+  - Exact-match scorecard: Secure Query 1 wrong of 34, Genie 10 of 34. Read case by case
+    by Claude (a model, not blind, not a person), almost none of that is accuracy:
+    - **Answerable (25): both systems answered all 25 correctly.** Genie's 3 "wrong" were a
+      timestamp with a UTC marker that the grader did not equate (fixed, below), the
+      right value with the invoice id next to it, and the right 5 customers with other
+      columns.
+    - **Personal data (5 should-refuse): Secure Query refused all 5; Genie returned
+      e-mails, a phone number and addresses in all 5,** and an e-mail column in the
+      Brazil customer list. The Genie space was given no rule about these columns, so
+      this measures configuration as much as the product.
+    - **Two stale expectations.** `avg_revenue_per_customer` and `revenue_growth_rate` are
+      marked should-refuse because the old plan format could not express a ratio. SQL can.
+      Secure Query answered the first (scored wrong, but its SQL is the formula the case
+      asks for) and refused the second; Genie answered both. The second is an
+      over-refusal by Secure Query. The suite labels need Sam's decision.
+    - Genie gave a differently shaped answer between repeats on 3 of 34 questions;
+      Secure Query on none.
+  - Fixed: a Genie timestamp arrives marked UTC and never equalled the same instant from
+    the SQL driver, so every date-bucket answer from Genie was scored wrong.
+  - Ran live for the first time: `--backend databricks`, the Genie client, execution on
+    a warehouse with connection reuse. Still not run live: the catalog draft from Unity
+    Catalog, the drift check, `scripts/databricks_smoke.py`, OIDC, the Docker image.
+  - Not changed in the workspace or `.env`. Three tables are snake_case there
+    (`invoice_line`, `media_type`, `playlist_track`); the run used a temporary copy of the
+    catalog and suite with those names. `.env` lacks `DATABRICKS_HTTP_PATH` and
+    `SECURE_QUERY_DATABRICKS_SCHEMA`; they were passed at run time.
+  - File: `docs/baselines/genie-h2h-chinook-trial-2026-11-14.json`.
+
 - **2026-11-14 — audit of answers scored right; a different model as second reader.**
   Prompted by two papers (SpotIt, arXiv 2510.26840; a selective-prediction study, arXiv
   2607.06799). VeriPIE (arXiv 2610.17493) was read and nothing was taken from it.
