@@ -19,7 +19,7 @@ adjudicated wrong-rate (PLAN.md, Goal).
 - **Phase 3 (the live head-to-head with Genie) is the only open phase and is blocked on
   Sam**: task 3.1 needs the domain, the partner date, and Databricks and Genie access. Do
   not start 3.2–3.5 before 3.1.
-- Latest number: `gpt-6-luna` on Spider test 400, run of 2026-11-13: 15 real errors of 400
+- Latest number on Spider test 400 (before the 2026-11-15 changes): `gpt-6-luna`, run of 2026-11-13: 15 real errors of 400
   (3.75%, 95% CI 2.3–6.1%), refused 13%. The raters were two models, not people. This
   misses the 2% bar. Details in STATUS.md.
 - 2026-11-14 changes are committed locally and **not pushed**: an audit of answers scored
@@ -45,7 +45,9 @@ A workspace exists since 2026-11-14: Chinook in `workspace.default` and Spider `
 space. Head-to-head on the three Spider databases, 237 questions (STATUS changelog,
 2026-11-15): real errors 9 against Genie's 18 by two model raters, intervals overlap, and
 Secure Query refused 48 where Genie refused none; with one missing join approved on
-`bakery_1`, 10 against 14 and 23 refused. `.env` points at `aan_1`; for another
+`bakery_1`, 10 against 14 and 23 refused. After `no_stored_value` and catalog value lists
+(both 2026-11-15), a full re-run gives 6 against 18 on 238 questions, 23 refused; the
+intervals still touch and no person has rated. `.env` points at `aan_1`; for another
 database set `SECURE_QUERY_DATABRICKS_SCHEMA` and `GENIE_SPACE_ID` for the run
 (`scripts/spider_warehouse_load.py` prints both). `.env` has no
 `SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN`, so pass the main token for a run. The 2026-11-15

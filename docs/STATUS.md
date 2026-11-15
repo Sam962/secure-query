@@ -66,6 +66,34 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — head-to-head re-run after the two changes below (`no_stored_value`,
+  value lists): 6 real errors against Genie's 18 on 238 questions.** Both systems re-run,
+  3 repeats, same three Spider test databases; `bakery_1` with the approved join; the
+  catalogs carry drafted value lists (1 column on `bakery_1`, 8 on `advertising_agencies`,
+  none on `aan_1`) and Genie's value matching is on for the same columns. Raters: gpt-5 and
+  the assistant, no person; the assistant wrote the changes and can tell the systems apart,
+  so its rating is neither blind nor independent.
+
+  | 238 questions | Secure Query | Genie |
+  |---|---|---|
+  | Right by exact match | 188 | 198 |
+  | Wrong by exact match | 27 | 40 |
+  | Refused | 23 | 0 |
+  | Answer differs between repeats | 14 | 29 |
+  | Real errors, either rater | 6 (2.5%, CI 1.2–5.4%) | 18 (7.6%, CI 4.8–11.6%) |
+  | Real errors, gpt-5 alone | 6 | 15 |
+  | Real errors, assistant alone | 1 | 9 |
+
+  - The intervals still touch (5.4 against 4.8) and the 2% bar is missed: the upper bound
+    is 5.4%. Raters agree on error-or-not for 50 of 67 packets.
+  - Per database, real errors by either rater: `aan_1` 3 against 6, `bakery_1` 0 against 8
+    (it was 4 against 4 in the run before the changes), `advertising_agencies` 3 against 4.
+  - `no_stored_value` was the outcome on 2 questions (both `aan_1`). On `bakery_1` the
+    value list ended the wrong-column filters: right answers 70 → 74, refusals 13 → 11.
+  - Five of Secure Query's 6 are gpt-5 calling DISTINCT, or grouping by a name instead of
+    an id, an error; the sixth is a dropped requested column.
+  - Files: `docs/baselines/genie-h2h-spider-*-v2-2026-11-15.json`,
+    `docs/adjudication/genie-h2h-spider-*-v2-2026-11-15-*`.
 - **2026-11-15 — a catalog column can list its stored values for the model (`values`).**
   The model cannot see data, so it guesses how a code is stored (`'Cookies'` for
   `'Cookie'`). A column's `values` list is shown to the model with the column; a list on a

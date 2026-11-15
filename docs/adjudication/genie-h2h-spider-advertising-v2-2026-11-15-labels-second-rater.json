@@ -1,0 +1,118 @@
+{
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Counts distinct staff; one meeting lists a staff member twice."
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "reason": "Leaves out the client id the question asks for."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold ignores 'attended at least 1 meeting'."
+ },
+ "p009:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Includes invoices with zero payments."
+ },
+ "p013:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Each agency once where the gold repeats it per client."
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Counts distinct staff; one meeting lists a staff member twice."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Drops one exact duplicate row."
+ },
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "Leaves out the client id the question asks for."
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'Details' read as the invoice's, not the payment's."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The right four clients, repeated once per invoice."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Each agency once where the gold repeats it per client."
+ },
+ "p012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold ignores 'attended at least 1 meeting'."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Each agency once where the gold repeats it per client."
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Distinct pairs where the gold lists one row per meeting."
+ },
+ "p020:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Follows 'for each client'; the gold groups by type only."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The right four clients, repeated once per invoice."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Includes agencies with zero clients."
+ },
+ "p024:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Includes invoices with zero payments."
+ },
+ "p025:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Each agency once where the gold repeats it per client."
+ },
+ "p026:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold ignores 'attended at least 1 meeting'."
+ },
+ "p027:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Follows 'for each client'; the gold groups by type only."
+ },
+ "p028:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold ignores 'attended at least 1 meeting'."
+ },
+ "p029:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Drops one exact duplicate row."
+ }
+}
