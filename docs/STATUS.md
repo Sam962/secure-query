@@ -13,6 +13,7 @@
 - A signed Evidence Bundle on every response, shown in the UI as "Why this was allowed".
   The bundle lists the checks of the path that produced the query (SQL, LogicalPlan or metric).
 - Self-consistency gate: the question is planned twice; different answers refuse.
+- A filter on a value that is not stored refuses (`no_stored_value`) and shows close stored values.
 - A ranked or thresholded answer shows the number it was ranked by, whatever the model wrote.
 - Correlated subqueries (`WHERE NOT EXISTS (... = outer.id)`) validate; outer references get
   the same catalog and PII checks as local columns.
@@ -65,6 +66,26 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — a filter on a value that is not stored is refused, not answered
+  (`no_stored_value`).** Cause of the repeated real errors in the head-to-head
+  (`'Stanford'` for `'Stanford University'`, a food type filtered in the flavor column):
+  the model cannot see values, an unmatched literal got one blind repair, and if kept the
+  empty answer went out. Now (`planner/sql_plan.py`, `planner/sql_values.py`): the repair
+  names another column of the table that stores the value; a literal still unmatched
+  refuses and shows the person up to three close stored values; a column compared through
+  LOWER, UPPER or TRIM is checked too (found live through the service: the model wrote
+  `LOWER(City) = 'atlantis'`); a literal under NOT is left alone. A question about a value
+  that truly does not exist is now refused with that reason instead of answered with 0.
+  - Spider dev 400, 3 repeats, exact match, before and after: right 300 → 310, wrong
+    42 → 43, refused 58 → 47; `no_stored_value` was the outcome on none, so dev shows no
+    cost and no effect.
+  - One confirming run, Secure Query only, on the three head-to-head databases (237
+    questions; not adjudicated, Genie not re-run): right 187 → 185, wrong 27 → 22, refused
+    23 → 30. `no_stored_value` was the outcome on 4 questions; the harness ran the
+    blocked query on 3 and all 3 were wrong, the fourth had been a wrong answer before.
+    The other changes are the two-readings gate and model refusals varying between runs.
+  - Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-nostoredvalue-2026-11-15.json`,
+    `docs/baselines/h2h-spider-3db-sq-only-nostoredvalue-2026-11-15.json`.
 - **2026-11-15 — head-to-head on three Spider test databases on Databricks, 237 questions:
   Secure Query gives fewer wrong answers and far fewer answers.** Databases `aan_1`,
   `bakery_1`, `advertising_agencies`; 3 repeats; `gpt-6-luna` with the gate. The raters are

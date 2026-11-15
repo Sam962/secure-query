@@ -37,7 +37,7 @@
 | Server-side identity | `resolve_principal()` | `test_auth.py`, `test_api.py` |
 | Header identity only via a trusted proxy | `SECURE_QUERY_TRUSTED_PROXIES`; startup refuses `header` mode without it | `test_auth.py` |
 | No DB error text to clients | `api/http.py` handlers: generic 503 + audit id, 502 for planner failures; `/ready` names no tenant or path | `test_api.py` |
-| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM, only whether a literal the model wrote exists | `test_sql_values.py` |
+| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM, only whether a literal the model wrote exists and which other column of that table stores it; a `no_stored_value` refusal shows the person asking up to three close stored values, read under their own permissions | `test_sql_values.py` |
 | No CROSS JOIN | validate + compile | `test_validate.py`, `test_auth.py` |
 
 ## Identity
@@ -63,7 +63,7 @@ The principals file is re-read when it changes, so access can be changed without
 |------|----------|
 | The question, as typed | Rows, query results, or any stored value |
 | Names, types and descriptions of the tables and columns this person may see; approved join keys; synonyms; metric ids; house rules | Who is asking (no principal, tenant or token) |
-| On a repair: the validator's error messages, and a value from the model's own SQL that matched nothing stored | Tables and columns outside this person's catalog slice |
+| On a repair: the validator's error messages, a value from the model's own SQL that matched nothing stored, and the name of another column of that table that stores it | Tables and columns outside this person's catalog slice |
 
 Table and column names can themselves be sensitive. To keep them inside your network, point
 `SECURE_QUERY_BASE_URL` at a private OpenAI-compatible endpoint (Azure OpenAI, Databricks

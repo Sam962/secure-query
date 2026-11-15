@@ -25,6 +25,8 @@ from secure_query.planner.sql_values import (
     case_insensitive_like,
     ground_literals,
     show_ranking_measure,
+    similar_stored,
+    stored_elsewhere,
     unmatched_literals,
 )
 
@@ -98,6 +100,12 @@ def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
         return None
 
 
+def _no_stored_value(table: str, column: str, value: str, similar: Sequence[str]) -> str:
+    """What the person asking is told; `similar` are stored values they are allowed to read."""
+    close = f" Stored values close to it: {', '.join(repr(s) for s in similar)}." if similar else ""
+    return f"No stored {table}.{column} equals {value!r}, so I won't answer with a guess.{close}"
+
+
 class _NoStoredValue(Exception):
     def __init__(self, messages: list[str]) -> None:
         super().__init__("; ".join(messages))
@@ -120,8 +128,10 @@ def plan_sql_question(
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
 
     With `value_probe`, string literals are grounded against stored values first, and a
-    literal no stored value equals costs the repair round (the value is named, stored
-    values are not). If the model keeps it, the empty answer stands.
+    literal no stored value equals costs the repair round: the model is told the value and
+    which other column stores it, never a stored value. If one is still left, the answer
+    would be empty or partial because of a guess, so the question is refused
+    (`no_stored_value`) and the person asking is shown close stored values.
 
     With `check_client` (a sampling client) and `value_probe`, the question is planned a
     second time independently and both queries are run: different answers mean the model
@@ -203,16 +213,35 @@ def _plan_one_reading(
             validated = validate_sql(sql, catalog, row_filters=row_filters)
             missing = (
                 unmatched_literals(sql, catalog, value_probe, row_filters=row_filters)
-                if value_probe is not None and not value_checked and attempt <= max_repairs
+                if value_probe is not None
                 else []
             )
+            if missing and (value_checked or attempt > max_repairs):
+                return PlannerResult(
+                    status="clarify",
+                    question=question,
+                    attempts=attempt,
+                    errors=errors,
+                    clarify_message=" ".join(
+                        _no_stored_value(*m, similar_stored(*m, catalog, value_probe, row_filters=row_filters))
+                        for m in missing
+                    ),
+                    raw_responses=raw_responses,
+                    refused=True,
+                    clarify_code="no_stored_value",
+                    blocked=validated.compiled,
+                )
             if missing:
                 value_checked = True
                 raise _NoStoredValue(
                     [
-                        f"value: no stored {table}.{column} equals {value!r}. Check the column, "
-                        "the spelling and how values are coded; keep it only if it is meant to be absent."
-                        for table, column, value in missing
+                        f"value: no stored {m[0]}.{m[1]} equals {m[2]!r}."
+                        + "".join(
+                            f" It is stored in {m[0]}.{other}."
+                            for other in stored_elsewhere(*m, catalog, value_probe, row_filters=row_filters)
+                        )
+                        + " Check the column, the spelling and how values are coded."
+                        for m in missing
                     ]
                 )
             gate_fps: list[str] = []

@@ -13,7 +13,9 @@ to the model; any other outcome leaves the SQL as written.
 
 `unmatched_literals` reports literals no stored value equals. On Spider dev and
 test (about 860 answers) every such answer was a real error, so the planner
-spends its repair round on them without revealing stored values.
+spends its repair round on them and refuses if one is left. The model is told
+only which other column of the table stores its own literal (`stored_elsewhere`);
+the person asking is shown close stored values (`similar_stored`).
 `case_insensitive_like` makes LIKE patterns ignore case, as users mean "contains".
 """
 
@@ -37,6 +39,7 @@ ValueProbe = Callable[[CompiledQuery], Sequence[tuple[Any, ...]]]
 
 _MAX_LITERALS = 5
 _MAX_CANDIDATES = 50
+_MAX_COLUMNS = 8
 
 
 def ground_literals(
@@ -44,9 +47,9 @@ def ground_literals(
 ) -> str:
     """`sql` with mis-spelled string literals replaced by the one stored value they name."""
     replacements: dict[str, str | None] = {}
-    for table, column, value in _string_literals(sql, catalog)[:_MAX_LITERALS]:
+    for table, column, value, folded in _string_literals(sql, catalog)[:_MAX_LITERALS]:
         stored = _lookup(table, column, value, catalog, probe, row_filters)
-        if stored is None or value in stored:
+        if folded or stored is None or value in stored:
             continue
         same = {s for s in stored if _norm(s) == _norm(value)}
         target = same.pop() if len(same) == 1 else None
@@ -65,13 +68,36 @@ def ground_literals(
 def unmatched_literals(
     sql: str, catalog: Catalog, probe: ValueProbe, *, row_filters: Sequence[Filter] = ()
 ) -> list[tuple[str, str, str]]:
-    """(table, column, literal) for string literals that no stored value equals."""
+    """(table, column, literal) for string literals that no stored value equals.
+
+    A literal under NOT is left out: excluding a value nothing has changes no answer.
+    """
     return [
         (table, column, value)
-        for table, column, value in _string_literals(sql, catalog)[:_MAX_LITERALS]
+        for table, column, value, folded in _string_literals(sql, catalog, negated=False)[:_MAX_LITERALS]
         if (stored := _lookup(table, column, value, catalog, probe, row_filters)) is not None
-        and value not in stored
+        and value not in ({s.strip().lower() for s in stored} if folded else stored)
     ]
+
+
+def stored_elsewhere(
+    table: str, column: str, value: str, catalog: Catalog, probe: ValueProbe, *, row_filters: Sequence[Filter] = ()
+) -> list[str]:
+    """Other string columns of `table` that store `value` (ignoring case and punctuation)."""
+    others = [c.name for c in catalog.table_map()[table].columns if c.dtype == "str" and c.name != column]
+    return [
+        other
+        for other in others[:_MAX_COLUMNS]
+        if any(_norm(s) == _norm(value) for s in _lookup(table, other, value, catalog, probe, row_filters) or ())
+    ]
+
+
+def similar_stored(
+    table: str, column: str, value: str, catalog: Catalog, probe: ValueProbe, *, row_filters: Sequence[Filter] = ()
+) -> list[str]:
+    """Up to three stored values of table.column that contain the literal's words, shortest first."""
+    stored = _lookup(table, column, value, catalog, probe, row_filters) or ()
+    return sorted(stored, key=lambda s: (len(s), s))[:3]
 
 
 def case_insensitive_like(sql: str, catalog: Catalog) -> str:
@@ -127,10 +153,14 @@ def _norm(value: Any) -> str:
     return re.sub(r"[^0-9a-z]", "", str(value).lower())
 
 
-def _string_literals(sql: str, catalog: Catalog) -> list[tuple[str, str, str]]:
-    """(table, column, literal) for equality / IN predicates on catalog string columns."""
+def _string_literals(sql: str, catalog: Catalog, *, negated: bool = True) -> list[tuple[str, str, str, bool]]:
+    """(table, column, literal, folded) for equality / IN predicates on catalog string columns.
+
+    `folded` marks a column compared through LOWER, UPPER or TRIM: the literal then has to
+    equal a stored value ignoring case and outer spaces, and is never rewritten.
+    """
     qualified = sqlglot.parse_one(validate_sql(sql, catalog).compiled.sql, read=catalog.sql_dialect)
-    found: list[tuple[str, str, str]] = []
+    found: list[tuple[str, str, str, bool]] = []
     for scope in traverse_scope(qualified):
         tables = {
             alias: source.name
@@ -139,16 +169,21 @@ def _string_literals(sql: str, catalog: Catalog) -> list[tuple[str, str, str]]:
         }
         pairs: list[tuple[exp.Expression, exp.Expression]] = []
         for eq in scope.expression.find_all(exp.EQ):
-            pairs += [(eq.this, eq.expression), (eq.expression, eq.this)]
+            if negated or eq.find_ancestor(exp.Not) is None:
+                pairs += [(eq.this, eq.expression), (eq.expression, eq.this)]
         for in_ in scope.expression.find_all(exp.In):
-            pairs += [(in_.this, v) for v in in_.expressions]
+            if negated or in_.find_ancestor(exp.Not) is None:
+                pairs += [(in_.this, v) for v in in_.expressions]
         for col, lit in pairs:
+            folded = False
+            while isinstance(col, (exp.Lower, exp.Upper, exp.Trim)):
+                col, folded = col.this, True
             if not (isinstance(col, exp.Column) and isinstance(lit, exp.Literal) and lit.is_string):
                 continue
             table = tables.get(col.table)
             spec = catalog.get_column(table, col.name) if table else None
             if spec is not None and spec.dtype == "str" and lit.this.strip():
-                key = (table, spec.name, lit.this)
+                key = (table, spec.name, lit.this.strip().lower() if folded else lit.this, folded)
                 if key not in found:
                     found.append(key)
     return found

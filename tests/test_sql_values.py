@@ -136,14 +136,47 @@ def _plan(question: str, client: RecordingClient, *values: str):
     return plan_sql_question(question, CATALOG, client, value_probe=probe_returning(*values))
 
 
-def test_missing_value_spends_the_repair_round_without_revealing_values() -> None:
+def test_missing_value_spends_the_repair_round_then_refuses() -> None:
     sql = "SELECT COUNT(*) AS n FROM Genre WHERE Name = 'Polka'"
     client = RecordingClient(sql, sql)
-    result = _plan("How many genres are called Polka?", client, "Pop", "Rock")
-    assert result.status == "ok" and result.attempts == 2  # kept: an absent value is a valid answer
+    result = _plan("How many genres are called Polka?", client, "Pop", "Polka Dots")
+    # Kept after the repair round: the answer would rest on a guessed value, so it is refused.
+    assert result.status == "clarify" and result.clarify_code == "no_stored_value"
+    assert result.attempts == 2 and result.blocked is not None
     feedback = client.sent[-1]
     assert "no stored Genre.Name equals 'Polka'" in feedback
-    assert "Rock" not in feedback and "'Pop'" not in feedback
+    assert "Polka Dots" not in feedback and "'Pop'" not in feedback  # the model sees no stored value
+    assert "'Polka Dots'" in result.clarify_message  # the person asking does
+
+
+def test_model_is_told_which_other_column_stores_its_value() -> None:
+    wrong_column = "SELECT COUNT(*) AS n FROM Track WHERE Composer = 'Rock'"
+
+    def by_column(compiled):
+        return [("Rock",)] if '"Name"' in compiled.sql else [("Other",)]
+
+    client = RecordingClient(wrong_column, "SELECT COUNT(*) AS n FROM Track WHERE Name = 'Rock'")
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    result = plan_sql_question("How many rock tracks?", CATALOG, client, value_probe=by_column)
+    assert "It is stored in Track.Name." in client.sent[-1]
+    assert result.status == "ok" and '"Name" = \'Rock\'' in result.compiled.sql
+
+
+def test_value_compared_through_lower_is_checked_too() -> None:
+    from secure_query.planner.sql_values import unmatched_literals
+
+    absent = "SELECT COUNT(*) AS n FROM Genre WHERE LOWER(Name) = 'polka'"
+    assert unmatched_literals(absent, CATALOG, probe_returning("Pop")) == [("Genre", "Name", "polka")]
+    present = "SELECT COUNT(*) AS n FROM Genre WHERE LOWER(TRIM(Name)) = 'rock'"
+    assert unmatched_literals(present, CATALOG, probe_returning("Rock ")) == []
+    assert ground_literals(present, CATALOG, probe_returning("Rock ")) == present
+
+
+def test_excluding_a_value_nothing_has_is_answered() -> None:
+    sql = "SELECT COUNT(*) AS n FROM Genre WHERE NOT Name IN ('Polka')"
+    result = _plan("How many genres are not Polka?", RecordingClient(sql), "Pop", "Rock")
+    assert result.status == "ok" and result.attempts == 1
 
 
 def test_corrected_value_after_feedback_is_used() -> None:
