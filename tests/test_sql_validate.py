@@ -319,6 +319,55 @@ def test_self_consistency_gate_runs_each_reading_once() -> None:
     assert len(result.gate_fingerprints) == 1
 
 
+def test_database_error_spends_the_repair_round_without_values() -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    broken = json.dumps({"sql": "SELECT COUNT(*) FROM Track WHERE CAST(Composer AS DOUBLE) > 1"})
+    fixed = json.dumps({"sql": "SELECT COUNT(*) FROM Track"})
+    sent: list[str] = []
+
+    class Recording(MockLLMClient):
+        def complete(self, messages, *args, **kwargs):
+            sent.extend(m["content"] for m in messages)
+            return super().complete(messages)
+
+    def probe(query):
+        if "CAST" in query.sql:
+            raise RuntimeError("Conversion Error: Could not convert string 'AC/DC' to DOUBLE\nLINE 1: ...")
+        return [(3503,)]
+
+    result = plan_sql_question(
+        "How many tracks?", CATALOG, Recording([broken, fixed]), value_probe=probe,
+        check_client=MockLLMClient([fixed]),
+    )
+    assert result.status == "ok" and result.attempts == 2
+    assert "Conversion Error" in sent[-1] and "AC/DC" not in sent[-1]
+
+
+def test_identical_query_agrees_even_when_capped_rows_differ() -> None:
+    import itertools
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    same = json.dumps({"sql": "SELECT TrackId FROM Track"})
+    runs = itertools.count()
+
+    def capped_unordered(query):  # a different sample of a large result on each run
+        start = next(runs)
+        return [(n,) for n in range(start, start + 10)]
+
+    result = plan_sql_question(
+        "List the track ids", CATALOG, MockLLMClient([same]), value_probe=capped_unordered,
+        check_client=MockLLMClient([same]),
+    )
+    assert result.status == "ok"
+
+
 def test_sql_path_applies_row_filters() -> None:
     import json
 

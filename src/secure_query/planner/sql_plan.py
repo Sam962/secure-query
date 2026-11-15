@@ -100,6 +100,17 @@ def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
         return None
 
 
+def _execution_message(exc: Exception) -> str:
+    """The engine's error for the model's own query, first line only, quoted values removed."""
+    text = str(exc).strip()
+    first = text.splitlines()[0] if text else type(exc).__name__
+    first = re.sub(r"'[^']*'", "'…'", first)[:240]
+    return (
+        f"execution: the database rejected the query: {first}. Fix the query, for example "
+        "by converting values safely or leaving out values that do not convert."
+    )
+
+
 def _no_stored_value(table: str, column: str, value: str, similar: Sequence[str]) -> str:
     """What the person asking is told; `similar` are stored values they are allowed to read."""
     close = f" Stored values close to it: {', '.join(repr(s) for s in similar)}." if similar else ""
@@ -110,6 +121,10 @@ class _NoStoredValue(Exception):
     def __init__(self, messages: list[str]) -> None:
         super().__init__("; ".join(messages))
         self.messages = messages
+
+
+class _ExecutionFailed(_NoStoredValue):
+    """The database rejected a query the validator allowed."""
 
 
 def plan_sql_question(
@@ -155,7 +170,7 @@ def plan_sql_question(
         answer_probe=answer_probe or value_probe,
     )
     if check_client is None or value_probe is None:
-        return reading(client)
+        return reading(client, answer_probe=None)
     pool = ThreadPoolExecutor(max_workers=1)
     second = pool.submit(reading, check_client)
     try:
@@ -244,13 +259,21 @@ def _plan_one_reading(
                         for m in missing
                     ]
                 )
-            gate_fps: list[str] = []
-            if second_reading is not None and answer_probe is not None:
-                second = second_reading()
+            own_fp: str | None = None
+            if answer_probe is not None:
                 # Each reading runs once: its fingerprint is both the comparison and the evidence.
-                first_fp = _probe_fingerprint(answer_probe, validated.compiled)
-                second_fp = _probe_fingerprint(answer_probe, second.compiled)
-                if first_fp is None or first_fp != second_fp:
+                # A query the database rejects costs the repair round, like a validator error.
+                try:
+                    own_fp = answer_fingerprint(answer_probe(validated.compiled))
+                except Exception as exc:  # noqa: BLE001 — any engine error; the message is sanitised
+                    raise _ExecutionFailed([_execution_message(exc)]) from exc
+            if second_reading is not None and own_fp is not None:
+                second = second_reading()
+                # The same query is the same answer: a capped, unordered result may come back
+                # as a different sample of rows, which is not a disagreement.
+                same_query = second.compiled is not None and second.compiled.sql == validated.compiled.sql
+                second_fp = (second.gate_fingerprints or (_probe_fingerprint(answer_probe, second.compiled),))[0]
+                if not same_query and second_fp != own_fp:
                     return PlannerResult(
                         status="clarify",
                         question=question,
@@ -262,7 +285,6 @@ def _plan_one_reading(
                         clarify_code="unstable_answer",
                         blocked=validated.compiled,
                     )
-                gate_fps.append(first_fp)
             return PlannerResult(
                 status="ok",
                 question=question,
@@ -270,11 +292,11 @@ def _plan_one_reading(
                 source_sql=sql,
                 attempts=attempt,
                 raw_responses=raw_responses,
-                gate_fingerprints=tuple(gate_fps),
+                gate_fingerprints=(own_fp,) if own_fp is not None else (),
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]
-        except _NoStoredValue as exc:
+        except (_NoStoredValue, _ExecutionFailed) as exc:
             batch = exc.messages
         except (json.JSONDecodeError, KeyError, ValueError) as exc:
             batch = [f"output: {exc}"]

@@ -66,6 +66,25 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — the two-readings gate stopped mislabelling broken queries as
+  disagreement.** Diagnosis on the 35 Spider dev questions the gate refused, with both
+  readings logged: 12 never ran (the database rejected a query the validator allowed,
+  mostly a text column holding `'null'` cast to a number; the model was never shown the
+  error, and a failed run counted as "readings differ"), and 1 had both readings write the
+  identical query over a result larger than the 1,000-row comparison, which came back as a
+  different sample each run. The rest were real disagreements (inner vs outer join,
+  DISTINCT, a different condition). Now (`planner/sql_plan.py`): a database error costs
+  the repair round like a validator error (the model sees the first line with quoted
+  values replaced by '…'), a query still failing refuses as `validation_failed`, the same
+  query from both readings counts as agreement, and each reading's single run serves both
+  the error check and the comparison.
+  - Spider dev 400, 3 repeats, exact match, against the run before (value lists on):
+    right 303 → 305, wrong 45 → 51, refused 52 → 44; `unstable_answer` refusals 35 → 24.
+    Five of the new wrong answers are `car_1` questions where the gold is wrong and the
+    new answer right: SQLite compares the text `'null'` above any number, so the gold
+    counts 281 cars with horsepower over 150 where 49 have it, and returns the string
+    `'null'` as the highest MPG. Without those five, wrong is 46 against 45.
+  - File: `docs/baselines/spider-dev400-gpt6luna-gate-r3-execfix-2026-11-15.json`.
 - **2026-11-15 — head-to-head re-run after the two changes below (`no_stored_value`,
   value lists): 6 real errors against Genie's 18 on 238 questions.** Both systems re-run,
   3 repeats, same three Spider test databases; `bakery_1` with the approved join; the
