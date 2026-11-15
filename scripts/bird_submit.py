@@ -153,7 +153,6 @@ def main() -> int:
             refused += status == "refused"
             errors += status == "error"
             elapsed = time.time() - started
-            finished = sum(1 for i in range(total) if i in done)
             print(
                 f"{index + 1}/{total} {status} {db_id} {record['seconds']}s "
                 f"answered={answered} refused={refused} errors={errors} "

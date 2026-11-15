@@ -132,3 +132,9 @@ python scripts/databricks_smoke.py                          # exits 2 (skip) wit
   harness: on 2026-11-13 the harness ran the consistency gate and the API did not.
 - A change to what an answer shows can break the grader. After one, re-check the tie rule
   and the column flags (`extra_columns_ok`, `subset_columns_ok`) on a full run.
+- Claude Code enforces some of these by hook (`.claude/hooks/guard.sh`): a force-push, a push
+  of the backup branch and an AI co-author line are blocked, and a commit runs ruff, pytest
+  and the mock holdout first and is blocked if any fails.
+- One working copy per agent: `scripts/agent_worktree.sh <name>` makes `../secure-query-<name>`
+  on branch `agent/<name>`, linking `.venv`, `data/` and `.env`. Run with `PYTHONPATH=src` there:
+  the shared `.venv` otherwise imports the main checkout's code.
