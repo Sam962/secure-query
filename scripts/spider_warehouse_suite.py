@@ -6,7 +6,8 @@ kinds of question are left out because exact match cannot grade them: an answer 
 than the smallest row cap of the systems compared, a gold query that selects a column its
 GROUP BY does not determine (SQLite picks an arbitrary row), and a gold query whose LIMIT
 cuts through a tie (a system that returns every tied row is not wrong). The tables must already
-be in SECURE_QUERY_DATABRICKS_SCHEMA (see .env.example).
+be in SECURE_QUERY_DATABRICKS_SCHEMA (see .env.example). The catalog gets value lists for
+its category columns (engine.catalog_draft.with_value_lists).
 
 Usage:
     python scripts/spider_warehouse_suite.py aan_1 data/h2h/aan_1
@@ -20,9 +21,11 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import duckdb
 import sqlglot
 from sqlglot import exp
 
+from secure_query.engine.catalog_draft import with_value_lists
 from secure_query.engine.env import load_dotenv
 from secure_query.evals.spider import load_spider
 
@@ -81,11 +84,13 @@ def norm(rows):
         out.append(tuple(t))
     return sorted(out, key=repr)
 
-items = [(c, catalog) for c, catalog, _ in load_spider("test") if f"db:{DB}" in c.tags]
-catalog = items[0][1]
+items = [(c, catalog, db) for c, catalog, db in load_spider("test") if f"db:{DB}" in c.tags]
+local = duckdb.connect(str(items[0][2]), read_only=True)  # the same rows as the warehouse tables
+catalog = with_value_lists(items[0][1], lambda q: local.execute(q).fetchall())  # stands in for the owner's review
+local.close()
 columns = {col.name.lower() for t in catalog.tables for col in t.columns}
 cases, bad = [], []
-for case, _ in items:
+for case, _, _ in items:
     gold = sqlite3.connect(f"file:{case.reference_db}?mode=ro", uri=True)
     gold.text_factory = lambda b: b.decode("utf-8", "replace")
     local = norm(gold.execute(case.reference_sql).fetchall()); gold.close()

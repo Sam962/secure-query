@@ -34,7 +34,19 @@ class ColumnSpec(BaseModel):
         description="Catalog-owned display unit (e.g. USD). Never inferred by the LLM.",
     )
 
+    values: tuple[str, ...] = Field(
+        default=(),
+        description="Stored values the owner approves showing to the model: the codes of a "
+        "category column. Without them the model guesses spellings. Never on a PII column.",
+    )
+
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @model_validator(mode="after")
+    def _no_values_on_pii(self) -> ColumnSpec:
+        if self.values and self.pii_risk != "none":
+            raise ValueError(f"column {self.name}: `values` is not allowed on a PII column")
+        return self
 
     def numeric(self) -> bool:
         if self.is_numeric is not None:
@@ -231,7 +243,8 @@ class Catalog(BaseModel):
                 desc = f" — {col.description}" if col.description else ""
                 hint = f" → label via {col.label_for}" if col.label_for else ""
                 unit = f" [{col.unit}]" if col.unit else ""
-                lines.append(f"      {col.name}: {col.dtype}{pii}{unit}{desc}{hint}")
+                stored = f" values: {', '.join(repr(v) for v in col.values)}" if col.values else ""
+                lines.append(f"      {col.name}: {col.dtype}{pii}{unit}{desc}{hint}{stored}")
         if self.synonyms:
             lines.append("synonyms (use these mappings):")
             for syn in self.synonyms:

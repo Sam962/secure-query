@@ -2,7 +2,8 @@
 
 Creates schema <catalog>.<db> (catalog from SECURE_QUERY_DATABRICKS_SCHEMA), one table per
 SQLite table with lowercase names, and a Genie space that holds what the Secure Query
-catalog holds and nothing more: the tables, the column descriptions and the joins. No
+catalog holds and nothing more: the tables, the column descriptions and the joins, with
+Genie's value matching switched on for the columns whose values the catalog lists. No
 instructions and no example questions. Needs a token that may create schemas, tables and
 Genie spaces. Prints the two settings a scorecard run on this database needs.
 
@@ -17,6 +18,9 @@ import urllib.error
 import urllib.request
 import uuid
 
+import duckdb
+
+from secure_query.engine.catalog_draft import with_value_lists
 from secure_query.engine.env import load_dotenv
 from secure_query.evals.spider import load_spider
 
@@ -44,7 +48,10 @@ def literal(v):
     if isinstance(v, bytes): v = v.decode("utf-8", "replace")
     return "'" + str(v).replace("\\", "\\\\").replace("'", "\\'") + "'"
 
-case, catalog = next((c, k) for c, k, _ in load_spider("test") if f"db:{DB}" in c.tags)
+case, catalog, copy = next(i for i in load_spider("test") if f"db:{DB}" in i[0].tags)
+local = duckdb.connect(str(copy), read_only=True)
+catalog = with_value_lists(catalog, lambda q: local.execute(q).fetchall())
+local.close()
 src = sqlite3.connect(f"file:{case.reference_db}?mode=ro", uri=True)
 src.text_factory = lambda b: b.decode("utf-8", "replace")
 run(f"CREATE SCHEMA IF NOT EXISTS {schema}")
@@ -65,7 +72,8 @@ for table in catalog.tables:
 def ident(table): return f"{schema}.{table.lower()}"
 def text(s): return {"description": [s]} if s else {}
 tables = sorted(({"identifier": ident(t.name), **text(t.description), "column_configs": sorted(
-    ({"column_name": c.name, **text(c.description)} for c in t.columns), key=lambda c: c["column_name"])}
+    ({"column_name": c.name, **text(c.description), **({"enable_entity_matching": True} if c.values else {})}
+     for c in t.columns), key=lambda c: c["column_name"])}
     for t in catalog.tables), key=lambda t: t["identifier"])
 joins = sorted(({"id": uuid.uuid4().hex, "left": {"identifier": ident(j.left_table)}, "right": {"identifier": ident(j.right_table)},
                  "sql": [f"{ident(j.left_table)}.{j.left_column} = {ident(j.right_table)}.{j.right_column}",

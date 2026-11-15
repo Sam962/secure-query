@@ -66,6 +66,16 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — a catalog column can list its stored values for the model (`values`).**
+  The model cannot see data, so it guesses how a code is stored (`'Cookies'` for
+  `'Cookie'`). A column's `values` list is shown to the model with the column; a list on a
+  PII column is rejected. `catalog_draft --values` drafts lists for category columns only
+  (string, not PII, at most 25 distinct values of at most 40 characters, each stored twice
+  on average); the owner reviews them with the rest of the catalog. Off unless the catalog
+  has lists. Spider dev 400, 3 repeats, `evals.run --values`: right 303, wrong 45, refused
+  52, against 310 / 43 / 47 without; three runs of the same setup range from 300 to 310
+  right, so dev shows no effect either way (its questions spell values as stored). File:
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-values-2026-11-15.json`.
 - **2026-11-15 — a filter on a value that is not stored is refused, not answered
   (`no_stored_value`).** Cause of the repeated real errors in the head-to-head
   (`'Stanford'` for `'Stanford University'`, a food type filtered in the flavor column):

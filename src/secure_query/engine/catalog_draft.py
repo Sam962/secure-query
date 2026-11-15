@@ -9,7 +9,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import Any
+
+from sqlglot import exp
 
 from secure_query.engine.databricks import draft_catalog, fetch_unity_catalog_draft, map_uc_dtype
 from secure_query.kernel.catalog import Catalog
@@ -52,6 +56,42 @@ def draft_from_duckdb(db_path: str | Path, *, tenant_id: str) -> dict:
     return json.loads(catalog.model_dump_json())
 
 
+MAX_VALUES = 25
+MAX_VALUE_LENGTH = 40
+
+
+def with_value_lists(catalog: Catalog, run: Callable[[str], Sequence[Sequence[Any]]]) -> Catalog:
+    """`catalog` with `values` drafted for its category columns, for the owner to review.
+
+    A category column is a non-PII string column with at most MAX_VALUES distinct short
+    values, each stored twice on average: a set of codes, not names of people or things.
+    `run` executes one read-only query in the catalog's dialect and returns its rows.
+    """
+    tables = []
+    for table in catalog.tables:
+        columns = []
+        for col in table.columns:
+            if col.dtype == "str" and col.pii_risk == "none":
+                ident = exp.column(col.name, quoted=True)
+                query = (
+                    exp.select(ident, exp.Count(this=exp.Star()))
+                    .from_(exp.table_(table.name, quoted=True))
+                    .where(ident.copy().is_(exp.null()).not_())
+                    .group_by(ident.copy())
+                    .limit(MAX_VALUES + 1)
+                )
+                rows = [r for r in run(query.sql(dialect=catalog.sql_dialect)) if isinstance(r[0], str)]
+                if (
+                    0 < len(rows) <= MAX_VALUES
+                    and sum(r[1] for r in rows) >= 2 * len(rows)
+                    and all(0 < len(r[0]) <= MAX_VALUE_LENGTH for r in rows)
+                ):
+                    col = col.model_copy(update={"values": tuple(sorted(r[0] for r in rows))})
+            columns.append(col)
+        tables.append(table.model_copy(update={"columns": columns}))
+    return catalog.model_copy(update={"tables": tables})
+
+
 def catalog_drift(approved: Catalog, actual: Catalog) -> tuple[list[str], list[str]]:
     """Compare the approved catalog with what the warehouse holds now.
 
@@ -86,15 +126,33 @@ def catalog_drift(approved: Catalog, actual: Catalog) -> tuple[list[str], list[s
 
 def _warehouse_catalog(args: argparse.Namespace) -> Catalog:
     if args.duckdb:
-        return Catalog.model_validate(draft_from_duckdb(args.duckdb, tenant_id=args.tenant_id))
+        import duckdb
+
+        catalog = Catalog.model_validate(draft_from_duckdb(args.duckdb, tenant_id=args.tenant_id))
+        if not args.values:
+            return catalog
+        con = duckdb.connect(str(args.duckdb), read_only=True)
+        try:
+            return with_value_lists(catalog, lambda sql: con.execute(sql).fetchall())
+        finally:
+            con.close()
     from secure_query.engine.databricks import _connect, _safe_close, databricks_settings_from_env
 
     settings = databricks_settings_from_env()
     connection = _connect(**settings)
     try:
-        return fetch_unity_catalog_draft(
+        catalog = fetch_unity_catalog_draft(
             connection, tenant_id=args.tenant_id, catalog_name=settings["catalog"], schema_name=settings["schema"]
         )
+        if not args.values:
+            return catalog
+
+        def run(sql: str) -> Sequence[Sequence[Any]]:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                return cursor.fetchall()
+
+        return with_value_lists(catalog, run)
     finally:
         _safe_close(connection)
 
@@ -109,6 +167,10 @@ def main(argv: list[str] | None = None) -> int:
         "--databricks", action="store_true", help="Use DATABRICKS_* and SECURE_QUERY_DATABRICKS_SCHEMA"
     )
     parser.add_argument("--tenant-id", default="draft")
+    parser.add_argument(
+        "--values", action="store_true",
+        help="Draft `values` for category columns (non-PII, few distinct, repeated). They are sent to the model.",
+    )
     parser.add_argument("-o", "--output", default="-", help="Write path or - for stdout")
     parser.add_argument(
         "--check", metavar="CATALOG.json", help="Report drift from this approved catalog; exit 1 if it breaks"
@@ -130,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.output).write_text(text + "\n", encoding="utf-8")
         print(f"wrote unapproved draft to {args.output}", file=sys.stderr)
         print(
-            "Review PII flags and join keys, then add an `approval` record "
+            "Review PII flags, join keys and any `values` lists, then add an `approval` record "
             "(version, approved_by, approved_at) before using it as SECURE_QUERY_CATALOG_FILE.",
             file=sys.stderr,
         )
