@@ -100,17 +100,6 @@ def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
         return None
 
 
-def _execution_message(exc: Exception) -> str:
-    """The engine's error for the model's own query, first line only, quoted values removed."""
-    text = str(exc).strip()
-    first = text.splitlines()[0] if text else type(exc).__name__
-    first = re.sub(r"'[^']*'", "'…'", first)[:240]
-    return (
-        f"execution: the database rejected the query: {first}. Fix the query, for example "
-        "by converting values safely or leaving out values that do not convert."
-    )
-
-
 def _no_stored_value(table: str, column: str, value: str, similar: Sequence[str]) -> str:
     """What the person asking is told; `similar` are stored values they are allowed to read."""
     close = f" Stored values close to it: {', '.join(repr(s) for s in similar)}." if similar else ""
@@ -121,10 +110,6 @@ class _NoStoredValue(Exception):
     def __init__(self, messages: list[str]) -> None:
         super().__init__("; ".join(messages))
         self.messages = messages
-
-
-class _ExecutionFailed(_NoStoredValue):
-    """The database rejected a query the validator allowed."""
 
 
 def plan_sql_question(
@@ -262,11 +247,20 @@ def _plan_one_reading(
             own_fp: str | None = None
             if answer_probe is not None:
                 # Each reading runs once: its fingerprint is both the comparison and the evidence.
-                # A query the database rejects costs the repair round, like a validator error.
-                try:
-                    own_fp = answer_fingerprint(answer_probe(validated.compiled))
-                except Exception as exc:  # noqa: BLE001 — any engine error; the message is sanitised
-                    raise _ExecutionFailed([_execution_message(exc)]) from exc
+                # A query the database rejects is refused as invalid, not repaired: on BIRD dev
+                # both readings repaired the same error the same way and agreed on wrong
+                # answers (26 right, 63 wrong of 89 released), so the repair defeats the gate.
+                own_fp = _probe_fingerprint(answer_probe, validated.compiled)
+                if own_fp is None:
+                    return PlannerResult(
+                        status="clarify",
+                        question=question,
+                        attempts=attempt,
+                        errors=[*errors, "execution: the database rejected the query"],
+                        clarify_message="Could not produce a valid query. Please rephrase or narrow the question.",
+                        raw_responses=raw_responses,
+                        clarify_code="validation_failed",
+                    )
             if second_reading is not None and own_fp is not None:
                 second = second_reading()
                 # The same query is the same answer: a capped, unordered result may come back
@@ -296,7 +290,7 @@ def _plan_one_reading(
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]
-        except (_NoStoredValue, _ExecutionFailed) as exc:
+        except _NoStoredValue as exc:
             batch = exc.messages
         except (json.JSONDecodeError, KeyError, ValueError) as exc:
             batch = [f"output: {exc}"]

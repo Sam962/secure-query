@@ -63,7 +63,7 @@ The principals file is re-read when it changes, so access can be changed without
 |------|----------|
 | The question, as typed | Rows, query results, or any stored value the catalog does not list |
 | Names, types and descriptions of the tables and columns this person may see; a column's `values` list where the catalog owner approved one (category codes, never a PII column); approved join keys; synonyms; metric ids; house rules | Who is asking (no principal, tenant or token) |
-| On a repair: the validator's error messages; the database's error for the model's own query (first line, quoted values replaced by '…'); a value from the model's own SQL that matched nothing stored, and the name of another column of that table that stores it | Tables and columns outside this person's catalog slice |
+| On a repair: the validator's error messages; a value from the model's own SQL that matched nothing stored, and the name of another column of that table that stores it | Tables and columns outside this person's catalog slice |
 
 Table and column names can themselves be sensitive. To keep them inside your network, point
 `SECURE_QUERY_BASE_URL` at a private OpenAI-compatible endpoint (Azure OpenAI, Databricks

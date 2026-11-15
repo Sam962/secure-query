@@ -319,32 +319,22 @@ def test_self_consistency_gate_runs_each_reading_once() -> None:
     assert len(result.gate_fingerprints) == 1
 
 
-def test_database_error_spends_the_repair_round_without_values() -> None:
+def test_database_error_refuses_as_invalid_not_unstable() -> None:
     import json
 
     from secure_query.planner import MockLLMClient
     from secure_query.planner.sql_plan import plan_sql_question
 
     broken = json.dumps({"sql": "SELECT COUNT(*) FROM Track WHERE CAST(Composer AS DOUBLE) > 1"})
-    fixed = json.dumps({"sql": "SELECT COUNT(*) FROM Track"})
-    sent: list[str] = []
-
-    class Recording(MockLLMClient):
-        def complete(self, messages, *args, **kwargs):
-            sent.extend(m["content"] for m in messages)
-            return super().complete(messages)
 
     def probe(query):
-        if "CAST" in query.sql:
-            raise RuntimeError("Conversion Error: Could not convert string 'AC/DC' to DOUBLE\nLINE 1: ...")
-        return [(3503,)]
+        raise RuntimeError("Conversion Error: Could not convert string 'AC/DC' to DOUBLE")
 
     result = plan_sql_question(
-        "How many tracks?", CATALOG, Recording([broken, fixed]), value_probe=probe,
-        check_client=MockLLMClient([fixed]),
+        "How many tracks?", CATALOG, MockLLMClient([broken]), value_probe=probe,
+        check_client=MockLLMClient([broken]),
     )
-    assert result.status == "ok" and result.attempts == 2
-    assert "Conversion Error" in sent[-1] and "AC/DC" not in sent[-1]
+    assert result.status == "clarify" and result.clarify_code == "validation_failed"
 
 
 def test_identical_query_agrees_even_when_capped_rows_differ() -> None:
