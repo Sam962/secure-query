@@ -39,9 +39,11 @@ Open, all waiting for Sam:
    personal detail was removed. Never push it; Sam deletes it when satisfied. Older
    published branches still hold that detail; rewriting them is Sam's decision.
 
-A workspace exists since 2026-11-14 (Chinook tables in `workspace.default`, a Genie space
-over them); a trial head-to-head ran on it (STATUS changelog). `.env` has the host, token
-and Genie space id but not `DATABRICKS_HTTP_PATH` or `SECURE_QUERY_DATABRICKS_SCHEMA`.
+A workspace exists since 2026-11-14: Chinook in `workspace.default` and Spider `aan_1` in
+`workspace.aan_1`, each with a Genie space. Two head-to-heads ran on it (STATUS
+changelog): a Chinook trial and `aan_1`, which showed no clear winner. `.env` points at
+`aan_1`; it has no `SECURE_QUERY_SMOKE_WAREHOUSE_TOKEN`, so pass the main token for a run.
+`bakery_1` and `art_1` are exported in `data/databricks_upload/` and not uploaded.
 
 Built but never run against the real thing: the Docker image (never built), OIDC sign-in
 (no real identity provider), the catalog draft from Unity Catalog, the drift check and

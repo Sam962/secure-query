@@ -1,0 +1,154 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The request doesn’t specify whether to return unique venue-year pairs or one row per paper, so omitting DISTINCT (and just listing each paper’s venue and year) is a reasonable interpretation."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify exact affiliation name matching, so counting papers where the affiliation name contains “Stanford University” (system) is a reasonable interpretation versus the gold’s exact match."
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system returns per-paper duplicates and imposes a 10,000-row limit, so it neither provides the distinct venue–year pairs nor lists all results as requested."
+ },
+ "p004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts rows in Author_list (COUNT(*)) instead of distinct papers, which can overcount authors with multiple affiliations per paper; the system correctly uses COUNT(DISTINCT paper_id) for “only 1 paper.”"
+ },
+ "p005:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filtered on affiliation name = 'Stanford' (and case-sensitive), while the question implies Stanford University and the gold correctly matches 'Stanford University'; this mismatch causes missing true results."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system’s outer join to Author_list/Paper filters out authors with no papers, but the question (and gold) require all authors who have not published in ACL, including those with no publications."
+ },
+ "p007:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by affiliation name instead of affiliation_id, conflating distinct affiliations with the same name and returning fewer groups than the true per-affiliation counts."
+ },
+ "p008:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question’s institution name matching is underspecified; using a substring match for “Stanford University” (ILIKE '%...%') is a reasonable interpretation, whereas the gold uses exact equality."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by affiliation name instead of affiliation_id, merging distinct affiliations (e.g., empty names) and producing incorrect counts and fewer groups than “each affiliation” requires."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by author name (and counts per name) instead of by author_id, conflating different authors who share a name and thus misreporting which authors have exactly one paper."
+ },
+ "p011:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by affiliation name (and filters NULLs), conflating different affiliations that share a name and omitting some rows, so it does not list all affiliations as requested."
+ },
+ "p012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query selects ANY_VALUE(paper_id) instead of the cited paper identifier (cited_paper_id), while the system correctly joins to Paper and returns the most-cited papers and their citation counts as requested."
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system adds unwarranted non-null filters (especially on title), excluding uncited papers with NULL titles that the question still asks to return."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Two papers are tied with the maximum citation count (1064), so returning either paper id fits the request for 'the most cited paper'."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t require an exact affiliation name match, so using ILIKE to include affiliations containing “Harvard University” is a reasonable reading, whereas the gold enforces strict equality."
+ },
+ "p016:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query incorrectly filters out authors with NULL names, reducing the result set, whereas the question and gold query do not exclude NULL names."
+ },
+ "p017:answered_wrong": {
+  "label": "real_error",
+  "reason": "It groups by title instead of cited_paper_id, potentially merging different papers sharing a title and inflating counts, whereas the question requires counting citations per paper."
+ },
+ "p018:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL returns ANY_VALUE(paper_id), a random citing paper within the group, instead of the cited_paper_id; the system correctly returns the most-cited paper’s id and its citation count."
+ },
+ "p019:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system output returns only about half as many authors as the gold (and adds an extra id column), so it fails to list each author as asked and would mislead a user."
+ },
+ "p020:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system query matches the gold’s logic for excluding ACL authors but adds DISTINCT and omits NULL names—reasonable interpretations when asked for “names,” making the difference acceptable under ambiguity about duplicates and NULLs."
+ },
+ "p021:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts author_list rows and omits affiliations with no papers, whereas the question asks for names of all affiliations ordered by number of papers—implying distinct paper counts and inclusion of zero-paper affiliations—which the system query follows."
+ },
+ "p022:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL orders by count descending and counts author_list rows (not distinct papers), whereas the question asks for ascending order by number of papers, which the system query satisfies by ordering ASC and counting DISTINCT paper_id."
+ },
+ "p023:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by affiliation name instead of affiliation_id, merging distinct affiliations with the same name and producing fewer, incorrect per-affiliation totals."
+ },
+ "p024:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question “only 1 paper” reasonably implies counting distinct papers, while the gold counts rows (potentially inflated by multiple affiliations), and the system also filters NULL names; both readings are plausible from the wording."
+ },
+ "p025:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by title instead of cited_paper_id, conflating different papers with the same title (and adds an extra count column), whereas the question requires per-paper citation counts."
+ },
+ "p026:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query selects ANY_VALUE(paper_id) from Citation (a citing paper) while grouping by cited_paper_id, yielding arbitrary/mismatched IDs, whereas the system correctly reports the cited papers and their citation counts."
+ },
+ "p027:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system wrongly filters out papers with NULL titles (and NULL ids), excluding valid uncited papers that the question still asks to return."
+ },
+ "p028:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL selects ANY_VALUE(paper_id) (a citing paper) instead of the cited_paper_id for the most-cited paper, whereas the system correctly returns cited_paper_id with its max count."
+ },
+ "p029:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query adds DISTINCT on name (collapsing different authors who share a name) and a LIMIT 10000, so it can omit valid authors, whereas the question asks for all such authors."
+ },
+ "p030:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query selects ANY_VALUE(paper_id) (a citing paper) instead of the cited paper (or title), leading to arbitrary/duplicate IDs, while the system correctly counts by cited_paper_id and returns the top cited papers with their citation counts."
+ },
+ "p031:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly returns authors with exactly one paper (using DISTINCT) and only differs by adding an extra count column and unspecified ordering, which are formatting/artifact differences rather than semantic errors."
+ },
+ "p032:answered_wrong": {
+  "label": "real_error",
+  "reason": "It groups by author name instead of author_id (and also uses COUNT DISTINCT), which can merge different authors and change counts, so it’s not a faithful answer to “each author.”"
+ },
+ "p033:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "There is a tie for the maximum citation count (1064), so returning any one of the tied paper IDs satisfies the request for “the most cited paper.”"
+ },
+ "p034:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query selects ANY_VALUE(paper_id) while grouping by cited_paper_id, yielding arbitrary (and duplicate) citing IDs, whereas the system correctly groups by the cited paper and returns the most-cited papers with their citation counts."
+ },
+ "p035:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by affiliation name instead of affiliation_id, merging different affiliations with the same name (evidenced by a large blank-name group) and thus not reporting totals for each affiliation entity as asked."
+ },
+ "p036:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by author name (and filters NULL names) rather than by author_id, merging distinct authors who share a name and altering counts/row count, whereas the question expects per-author totals."
+ },
+ "p037:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query orders by count descending, excludes affiliations with zero papers, and counts authorships instead of distinct papers, whereas the system query correctly lists all affiliations and orders ascending by distinct paper count."
+ },
+ "p038:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by author name instead of author_id, which can merge distinct authors sharing a name and thus misstate counts for “all authors” given the schema."
+ }
+}

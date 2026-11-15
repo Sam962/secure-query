@@ -354,6 +354,11 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
 - **P9. NULL ordering on Databricks.** `ORDER BY x LIMIT 1` for "the lowest X" returns a
   NULL row on Databricks when the column has one (NULL sorts first ascending there, last on
   DuckDB). Check on the real warehouse in 3.3 before changing anything; Genie may do the same.
+- **P10. Row caps in the head-to-head.** A question whose answer is larger than a cap
+  cannot be graded by exact match: the reference and Secure Query stop at 10,000 rows, the
+  Genie API at 5,000 (14 of 38 disputed answers on `aan_1`, STATUS 2026-11-14). Decide
+  before 3.4: leave such questions out of the holdout, or grade them by row count and a
+  sample. Related product question: neither system told the user its answer was cut.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
   tags and column names only. Add value sampling only if the owner's review in 3.2 finds
   personal data in columns that neither a tag nor the name gave away.

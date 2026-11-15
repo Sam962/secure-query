@@ -65,6 +65,51 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-14 — first head-to-head on a set we did not develop on: Spider test `aan_1` on
+  Databricks. No clear winner.** 242,907 rows in `workspace.aan_1`; a Genie space with the
+  5 tables, 5 joins and a one-line description, no example questions. 68 questions (of
+  Spider's 90: 20 have an empty or zero gold answer and are skipped by the loader, 2 have a
+  gold query with no single answer), 3 repeats, `gpt-6-luna`, everything read from the
+  warehouse. Accuracy only: Spider has no should-refuse cases.
+
+  | | Secure Query | Genie |
+  |---|---|---|
+  | Right by exact match | 49 | 46 |
+  | Wrong by exact match | 16 | 22 |
+  | Refused | 3 | 0 |
+  | Answer differed between repeats | 8 | 13 |
+  | Real errors, either rater says so | 8 (11.8%, CI 6.1–21.5%) | 11 (16.2%, CI 9.3–26.7%) |
+  | Real errors, gpt-5 alone | 8 | 11 |
+  | Real errors, Claude alone | 2 | 2 |
+
+  - **The intervals overlap; this does not show Secure Query is wrong less often.** 68
+    questions is a third of the plan's minimum, and no person rated anything.
+  - **The raters disagree widely** (same label on 16 of 38, error-or-not on 23 of 38).
+    Both saw shuffled packets with no system name. Most of the gap is two things gpt-5
+    could not see from a packet: author names are unique in this data, so grouping by name
+    is not an error; and a count that differs only because the result was cut at a row cap.
+  - **The row caps make 14 of the 38 packets ungradable.** The reference and Secure Query
+    stop at 10,000 rows, the Genie API returns at most 5,000, and several questions here
+    have larger answers. Exact match then compares two samples (PLAN P10).
+  - **8 of the 38 are the benchmark's fault:** for "the most cited paper" the gold returns
+    the id of an arbitrary citing paper. Both systems answer with the cited paper.
+  - Real errors both raters accept. Secure Query: `name = 'Stanford'` for the stored
+    'Stanford University' (an empty answer); needless inner joins that drop the 1,174
+    authors with no paper. Genie: grouping by title, which adds up the citations of
+    different papers that share one (twice).
+  - Secure Query answered from the SELECT below 10,000 rows with a silent cut; so did
+    Genie at 5,000. Neither tells the user the answer is incomplete in this harness.
+  - Fixed, both in the grader: when the gate refused an answer on the warehouse the
+    blocked SQL was parsed as DuckDB and the attempt was recorded as a harness error (6
+    questions in the first run; Secure Query was re-run after the fix, Genie was not).
+    Tests no longer inherit the developer's `.env`: an entrypoint under test loaded it and
+    switched later tests to the warehouse.
+  - New: `scripts/spider_warehouse_suite.py DB DIR` converts a Spider database's gold SQL
+    to Databricks and keeps a question only when it returns the gold's rows on the
+    warehouse.
+  - Files: `docs/baselines/genie-h2h-spider-aan1-2026-11-14.json`,
+    `docs/adjudication/genie-h2h-spider-aan1-2026-11-14-*`.
+
 - **2026-11-14 — first live run against Databricks and Genie (a trial, not a result).**
   Sam's workspace: the 11 Chinook tables in `workspace.default` on a serverless warehouse,
   and a Genie space over them with instructions, 3 measures, 10 joins and 2 example
