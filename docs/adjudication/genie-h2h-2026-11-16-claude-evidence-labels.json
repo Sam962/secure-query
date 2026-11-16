@@ -1,0 +1,1124 @@
+{
+ "r001": {
+  "label": "ambiguous",
+  "evidence": "Ran both: gold lists 50 (city1,city2) pairs; system returns the 19 distinct codes appearing in any above-average pair (union of both columns). 'City codes' as a set of codes is a legitimate reading and the set is correct.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0820_address_1"
+ },
+ "r002": {
+  "label": "ambiguous",
+  "evidence": "Probed customer_payment_methods: customer 15 has 'Direct Debit' twice (one distinct method), customer 13 has two distinct methods. System counts distinct methods (3 orders of customer 13); gold counts rows (adds customer 15's 2 orders). Distinct-method reading is defensible.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0109_e_commerce"
+ },
+ "r003": {
+  "label": "benchmark_fault",
+  "evidence": "Grouped Behaviour_Monitoring by details: 'A' occurs 6 times across 5 distinct students. The question asks for the count of the most common result, which is 6 (the system's answer). The reference returns distinct students instead.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0460_cre_Students_Information_Systems"
+ },
+ "r004": {
+  "label": "ambiguous",
+  "evidence": "Ran both: gold (inner join) returns the 11 orders that have items; system LEFT JOIN returns all 20 orders, the 9 extra with 0 products and matching counts for the rest. 'For every order' supports including zero-item orders.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0043_e_commerce"
+ },
+ "r005": {
+  "label": "ambiguous",
+  "evidence": "Gold returns all 15 meeting rows; system returns the 6 distinct (type, details) combos, which equal the set of distinct values in the full gold result. 'What are all meeting types and other details' allows listing the distinct values.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2100_advertising_agencies"
+ },
+ "r006": {
+  "label": "benchmark_fault",
+  "evidence": "Gold joins without DISTINCT, repeating agencies with multiple clients (e.g. agency 9 x4); system's 8 distinct agencies equal the distinct gold set. The IS NOT NULL filter removes nothing.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2080_advertising_agencies"
+ },
+ "r007": {
+  "label": "ambiguous",
+  "evidence": "Ran both: system's 30 rows = gold's 19 cities with identical counts plus 11 cities with 0 students (LEFT JOIN). Merging by name affects only Newark; just NAR has a student (1), so the counts are unchanged. 'Each city' allows including zero-student cities.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0795_address_1"
+ },
+ "r008": {
+  "label": "real_error",
+  "evidence": "Affiliation has 2431 ids but only 2310 distinct names (e.g. 'Google Inc.' appears under 7 ids, '' under 45). The system groups by name, the reference by id. Both count distinct papers correctly under their own grain, and merging same-named affiliations is a defensible reading.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_1044_aan_1",
+  "agent_label": "ambiguous",
+  "review_note": "Overruled on review: grouping by affiliation name merges distinct affiliations (one blank-name row gets 8,273 papers); applied to both systems alike."
+ },
+ "r009": {
+  "label": "ambiguous",
+  "evidence": "Probed affiliation names ILIKE '%stanford%': exact 'Stanford University' gives 164 papers; 7 more come from joint affiliation strings like 'University of Oslo; Stanford University'. Counting those as Stanford papers is a defensible reading.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_1028_aan_1"
+ },
+ "r010": {
+  "label": "real_error",
+  "evidence": "Gold returns all 57 city pairs under 1000; system applied LIMIT 2 and returned BAL-ATL and BAL-BAL, and BAL-BAL has distance 0 (a city paired with itself). The question asks which pairs of cities qualify, so 2 arbitrary rows mislead.",
+  "confidence": "low",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0821_address_1"
+ },
+ "r011": {
+  "label": "ambiguous",
+  "evidence": "Gold returns 57 pairs; system returns the 19 distinct codes from either column with distance<1000. Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance), so the code set is complete; set-of-codes reading is reasonable.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0822_address_1"
+ },
+ "r012": {
+  "label": "real_error",
+  "evidence": "Data: most common result A (6 rows); results held by 3 students are B and C. System requires one row to be both A and B/C, which is impossible, so it returns 0 rows; the correct answer is Dino and Arturo (who have both A and C).",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0461_cre_Students_Information_Systems"
+ },
+ "r013": {
+  "label": "real_error",
+  "evidence": "The system groups by name (2260 rows) and orders by distinct papers. The reference groups by id and orders by COUNT(*) of author-list rows, which counts authorships, not papers. The ordering differs only because of those grain choices; neither reading misleads.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_0992_aan_1",
+  "agent_label": "ambiguous",
+  "review_note": "Overruled on review: grouping by affiliation name merges distinct affiliations (one blank-name row gets 8,273 papers); applied to both systems alike."
+ },
+ "r014": {
+  "label": "benchmark_fault",
+  "evidence": "Grouped behaviour_monitoring: 'A' is most common with 6 rows from 5 distinct students. The system returns A with count 6 (frequency of the result); the gold's COUNT(DISTINCT student_id)=5 is a less literal 'count of this result'; column order differs only.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0460_cre_Students_Information_Systems"
+ },
+ "r015": {
+  "label": "real_error",
+  "evidence": "Probe: Citation has no duplicate rows. Och has 3650 citations (citation rows) but 1894 distinct citing papers. Manning has 2975 citations and 2183 citing papers. The system counted distinct citing papers, which named the wrong top author and gave a non-citation count.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_1016_aan_1"
+ },
+ "r016": {
+  "label": "benchmark_fault",
+  "evidence": "Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance); BOS-PAR and PAR-BOS both 3448 is the max, so system shows 'Paris' twice. Same answer as gold, only a harmless duplicate.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0830_address_1"
+ },
+ "r017": {
+  "label": "ambiguous",
+  "evidence": "Full results: identical pair sets; gold has (Jamel, Dell monitor) twice from two order lines, and the system uses DISTINCT. Distinct pairs is a legitimate reading of 'pairs'.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0098_e_commerce"
+ },
+ "r018": {
+  "label": "benchmark_fault",
+  "evidence": "There are 15 agencies. The reference lists only the 8 that have clients; the system's LEFT JOIN also gives 0 for the other 7, which answers 'each agency'. Counts for the 8 match.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2066_advertising_agencies"
+ },
+ "r019": {
+  "label": "ambiguous",
+  "evidence": "Gold returns all 15 meeting rows; system DISTINCT returns the 8 unique outcome/purpose pairs, all present in gold. Listing the distinct combinations is a reasonable reading of 'show all outcomes and purposes'.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2101_advertising_agencies"
+ },
+ "r020": {
+  "label": "ambiguous",
+  "evidence": "Shipment_Items has 6 rows covering 4 order items and 3 distinct products (order item 14 is in 3 shipments). The system's 3 distinct products shipped is a valid reading of 'how many products'. The gold counts shipment rows.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0101_e_commerce"
+ },
+ "r021": {
+  "label": "benchmark_fault",
+  "evidence": "Question asks for counts 'for each client'; gold groups only by meeting_type, ignoring client. System groups by client and type (15 rows, correct per data). Gold does not answer the question as written.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2127_advertising_agencies"
+ },
+ "r022": {
+  "label": "real_error",
+  "evidence": "paper has 26112 rows; the system lists every paper row without DISTINCT and is cut at LIMIT 10000, so it stops at year 2005 (data runs to 2017) and is full of repeated rows. Gold gives 667 distinct venue/year pairs. A user would get an incomplete, truncated list.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_0975_aan_1"
+ },
+ "r023": {
+  "label": "real_error",
+  "evidence": "Customer 13 has 3 orders (one, order 2, has no items) and 4 items. The system counts orders only after joining Order_items, so it sees 2 orders and returns an empty set instead of customer 13.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0041_e_commerce"
+ },
+ "r024": {
+  "label": "ambiguous",
+  "evidence": "Gold groups Invoices (10 clients); system LEFT JOINs Clients giving 15 rows, same counts for the 10 and 0 for 5 clients with no invoices. Including zero-invoice clients is valid under 'for each client'.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2087_advertising_agencies"
+ },
+ "r025": {
+  "label": "benchmark_fault",
+  "evidence": "Ran gold and system SQL plus Staff_in_Meetings for staff 2,11,14: Marques (14) attended no meeting, so the gold (which never checks attendance) is wrong; the system's 2 rows (Clarissa, Sheridan) are correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2142_advertising_agencies"
+ },
+ "r026": {
+  "label": "benchmark_fault",
+  "evidence": "Gold repeats receipt 86085 (two croissant items on one receipt); system's 4 distinct receipts equal the gold set.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1513_bakery_1"
+ },
+ "r027": {
+  "label": "ambiguous",
+  "evidence": "meetings has 15 rows with no NULLs; the system's DISTINCT collapses them into 6 distinct (type, details) combinations, and the NOT NULL filter removes nothing. With no meeting id requested, distinct combinations are a plausible reading of 'list codes and details'.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2099_advertising_agencies"
+ },
+ "r028": {
+  "label": "real_error",
+  "evidence": "Ran the system's logic: 7 of its 9 papers qualify only because two different affiliation strings both contain 'Stanford University' (or both 'Columbia'), e.g. C90-2072. Only P06-2102 and N06-2039 involve both universities.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_0982_aan_1"
+ },
+ "r029": {
+  "label": "benchmark_fault",
+  "evidence": "Per-student counts show 287,325,567,777,824 have 0 detentions (<2) and qualify; gold's inner join to Detention drops them (7 rows). System's 12 rows are exactly gold plus these 5, which is correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0442_cre_Students_Information_Systems"
+ },
+ "r030": {
+  "label": "ambiguous",
+  "evidence": "System returns all 15 customers, including 5 with 0 orders. The 10 customers with orders match the gold exactly. 'Show all customer names' supports including the zero-order customers.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "customers_and_orders",
+  "case_id": "test_0293_customers_and_orders"
+ },
+ "r031": {
+  "label": "real_error",
+  "evidence": "City table has two cities named Newark (EWR, NJ avg 1326.2; NAR, DE avg 71.0). System groups by city_name, merging them into one row (30 rows vs 31), giving a blended average that matches neither city.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0834_address_1"
+ },
+ "r032": {
+  "label": "benchmark_fault",
+  "evidence": "avg price 4.118, so twice the average is 8.236. Gold omits the 2x factor and includes 90-APIE-10 (5.25); the system's 7 ids are correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1574_bakery_1"
+ },
+ "r033": {
+  "label": "real_error",
+  "evidence": "City has two distinct cities named Newark (EWR, 9 distances, avg 1326.2; NAR, 1 distance, avg 71). Grouping by city_name merges them into one blended 'Newark' average (30 rows instead of 31).",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0833_address_1"
+ },
+ "r034": {
+  "label": "real_error",
+  "evidence": "Ran system SQL: 26112 non-distinct rows (one per paper), and the delivered answer is capped at 5000 rows, ending at EMNLP 1997 and covering only 107 of the 667 distinct venue/year pairs; the user does not see venues/years after 1997.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_0975_aan_1"
+ },
+ "r035": {
+  "label": "real_error",
+  "evidence": "Most common detail is 'A' (6 times). Vanessa (435) has only A,A results but the system dropped her: it compares COUNT(DISTINCT)=1 with SUM=2. The gold's Felipa, Pansy and Vanessa is the correct answer.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0463_cre_Students_Information_Systems"
+ },
+ "r036": {
+  "label": "benchmark_fault",
+  "evidence": "Gold repeats Dell monitor per shipment item; system's 3 distinct (name,color) equal gold's distinct set. Dropping the Shipments join loses nothing (0 shipment_items without a shipment).",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0071_e_commerce"
+ },
+ "r037": {
+  "label": "real_error",
+  "evidence": "The 7 Bad-sic clients are the same, but the system returns only client_details and omits client_id, which the question asks for ('ideas' is a typo for ids).",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2078_advertising_agencies"
+ },
+ "r038": {
+  "label": "ambiguous",
+  "evidence": "Tart prices range from 3.25 to higher values. The reference uses < MAX (SQL '< ANY'); the system uses < MIN, the common English sense of 'cheaper than any tart', and returns the 19 goods priced below 3.25. Both readings are legitimate.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1530_bakery_1"
+ },
+ "r039": {
+  "label": "benchmark_fault",
+  "evidence": "Same data as r029: 5 students with zero detentions satisfy 'less than 2 detentions' but gold's join excludes them; system's 12 rows = gold 7 + those 5, correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0441_cre_Students_Information_Systems"
+ },
+ "r040": {
+  "label": "benchmark_fault",
+  "evidence": "Ran gold and system SQL plus Staff_in_Meetings for staff 2,11,14: Marques (14) attended no meeting, so the gold (which never checks attendance) is wrong; the system's 2 rows (Clarissa, Sheridan) are correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2141_advertising_agencies"
+ },
+ "r041": {
+  "label": "benchmark_fault",
+  "evidence": "Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance); CHI-BAL and BAL-CHI both 621 so system lists Baltimore twice with extra code/distance columns. Answer (Baltimore) matches gold; duplicate/extra columns are harmless.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0827_address_1"
+ },
+ "r042": {
+  "label": "benchmark_fault",
+  "evidence": "Per-student counts show Dino, Pansy, Arturo, Houston and Stephon have 0 detentions (fewer than 2). The system's 12 students are exactly the correct union; the gold inner join to detention drops students with no detentions.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0442_cre_Students_Information_Systems"
+ },
+ "r043": {
+  "label": "real_error",
+  "evidence": "Same as r008: the system groups by affiliation name (2260 rows), the reference by id (2380). 2431 ids share only 2310 distinct names. Distinct paper counts are correct under each grain, and merging same-named affiliations is defensible.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_1043_aan_1",
+  "agent_label": "ambiguous",
+  "review_note": "Overruled on review: grouping by affiliation name merges distinct affiliations (one blank-name row gets 8,273 papers); applied to both systems alike."
+ },
+ "r044": {
+  "label": "ambiguous",
+  "evidence": "Gold 15 rows vs system DISTINCT 8 unique outcome/purpose pairs, all contained in gold; distinct listing is a reasonable reading.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2101_advertising_agencies"
+ },
+ "r045": {
+  "label": "benchmark_fault",
+  "evidence": "Linda Smith is in BAL and Tracy Kim in HKG. The system matches both directions and returns 8409 twice, the same value as the gold. The duplicate row is harmless and does not change the answer.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0835_address_1"
+ },
+ "r046": {
+  "label": "benchmark_fault",
+  "evidence": "Both identify JOSETTE SLINGLAND; system concatenates first and last name into one 'full name' column. Format-only difference.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1552_bakery_1"
+ },
+ "r047": {
+  "label": "benchmark_fault",
+  "evidence": "Linda lives in BAL and Tracy in HKG; direct_distance stores both directions, so the system returns 8409 twice. It is the same value, and the user reads the correct distance.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0836_address_1"
+ },
+ "r048": {
+  "label": "benchmark_fault",
+  "evidence": "Ran the system SQL: 4 rows, each pairing the earliest date (2017-05-02 00:04:13) with one of the 4 multi-item order dates. That is the same information as the reference's 5-row UNION, only laid out differently.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0045_e_commerce"
+ },
+ "r049": {
+  "label": "benchmark_fault",
+  "evidence": "Gold orders by COUNT(*) DESC although the question asks ascending, and counts author rows not papers; system orders ascending by distinct paper count and includes the 51 affiliations with 0 papers (2431 total affiliations).",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_0991_aan_1"
+ },
+ "r050": {
+  "label": "benchmark_fault",
+  "evidence": "Direct_distance stores both BOS-EWR and EWR-BOS (200 each). The system's symmetric match returns 200 twice, the same value as the gold. The duplicate is harmless.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0813_address_1"
+ },
+ "r051": {
+  "label": "ambiguous",
+  "evidence": "System omits gold's DISTINCT: 15 rows, one per student-address record (e.g. Houston has 3 Home + 1 College address). Rows are factually correct per address; dedup vs per-address listing is a reading choice.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0454_cre_Students_Information_Systems"
+ },
+ "r052": {
+  "label": "benchmark_fault",
+  "evidence": "Same 15 customers; the system concatenates first and last name into one full-name column, which is a format difference only.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1568_bakery_1"
+ },
+ "r053": {
+  "label": "real_error",
+  "evidence": "There is one product named Monitor, ordered on 2 order items with quantities 7 and 9 (16 units). The system answers 1 (distinct products), a trivial count that misleads someone asking how many Monitors were ordered.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "customers_and_orders",
+  "case_id": "test_0305_customers_and_orders"
+ },
+ "r054": {
+  "label": "ambiguous",
+  "evidence": "Gold inner join gives 12 students; system LEFT JOIN gives all 15 with identical counts plus 0 for 415, 648, 777, which have no classes. 'For each student' supports including them.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0504_cre_Students_Information_Systems"
+ },
+ "r055": {
+  "label": "ambiguous",
+  "evidence": "Customer 15's two payment-method rows are identical ('Direct Debit' twice). The gold counts rows and keeps customer 15's two orders; the system counts distinct methods and drops them. Both readings are defensible, and the 3 dates are correct under the system's reading.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0108_e_commerce"
+ },
+ "r056": {
+  "label": "ambiguous",
+  "evidence": "Same as r011: system returns 19 distinct codes from either column (union); Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance). Correct under the set-of-codes reading.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0822_address_1"
+ },
+ "r057": {
+  "label": "ambiguous",
+  "evidence": "Chocolate goods: 20-BC-C-10 was bought 0 times and 50-CH 6 times. The system includes the never-bought cake, which literally was 'not bought more than 10 times'; gold only considers items that appear in purchases.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1579_bakery_1"
+ },
+ "r058": {
+  "label": "benchmark_fault",
+  "evidence": "There are 15 invoices, and 5 of them have no shipment. The reference's inner join drops those 5 (and doubles invoices with 2 shipments). The system's LEFT JOIN covers all invoices (20 rows), as the question asks.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0065_e_commerce"
+ },
+ "r059": {
+  "label": "benchmark_fault",
+  "evidence": "Gold has an AND/OR precedence bug and returns all cookies (prices 0.79-1.25). Goods data: no Cookie or Cake priced between 3 and 7 (cakes start at 8.95), so the system's empty result is correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1549_bakery_1"
+ },
+ "r060": {
+  "label": "ambiguous",
+  "evidence": "System lists all 15 meetings, including 5 with 0 staff. The 10 meetings with staff match the gold exactly. 'Number of staff in each meeting' supports including the zeros.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2131_advertising_agencies"
+ },
+ "r061": {
+  "label": "ambiguous",
+  "evidence": "Gold lists all 15 meetings' (outcome,purpose); system returns 8 distinct combinations, which equal the distinct gold set. 'All outcomes and purposes' reasonably read as distinct combinations.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2102_advertising_agencies"
+ },
+ "r062": {
+  "label": "benchmark_fault",
+  "evidence": "All Cookies cost 0.79-1.25 and all Cakes 8.95-15.95, so no Cookie or Cake costs 3-7 and the empty answer is correct. Gold's AND/OR precedence bug returns every cookie.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1550_bakery_1"
+ },
+ "r063": {
+  "label": "benchmark_fault",
+  "evidence": "Staff_in_meetings lists staff 3 twice for meeting 14. COUNT(DISTINCT staff_id) = 1 is the correct staff count; the reference's 2 counts the duplicate row.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2132_advertising_agencies"
+ },
+ "r064": {
+  "label": "real_error",
+  "evidence": "Customer 13 has 3 orders and 4 order items, so qualifies. System inner-joins Order_Items before counting orders, so COUNT(DISTINCT order_id)=2 (one order has no items) and the result is wrongly empty.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0040_e_commerce"
+ },
+ "r065": {
+  "label": "benchmark_fault",
+  "evidence": "Gold repeats an agency once per client (15 rows); the system returns the 8 distinct agencies. 'Agencies who have a client' wants each agency once, so the gold's duplicates are its fault.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2080_advertising_agencies"
+ },
+ "r066": {
+  "label": "ambiguous",
+  "evidence": "Gold counts order-item rows (Male 12); system counts distinct product_ids per gender (Male 5). Verified both on data; 'how many products' supports either distinct products or items bought.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0059_e_commerce"
+ },
+ "r067": {
+  "label": "real_error",
+  "evidence": "System returns the union (students with A, or with any result held by 3 students) instead of students with both: 13 rows, including duplicates, an extra column, and students with only B (Keshawn, Leonard, Houston). Correct answer is Dino and Arturo.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0462_cre_Students_Information_Systems"
+ },
+ "r068": {
+  "label": "ambiguous",
+  "evidence": "The 5 ordered products have order-item counts 4, 4, 3, 3, 1. Weighted by order lines the average is 519.04 (reference); per distinct ordered product it is 442.47 (system). The question allows either.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0104_e_commerce"
+ },
+ "r069": {
+  "label": "real_error",
+  "evidence": "Same as r064: customer 13 placed 3 orders (>2) and bought 4 items; the system's join to order_items hides the itemless order, so it returns no rows.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0041_e_commerce"
+ },
+ "r070": {
+  "label": "benchmark_fault",
+  "evidence": "Gold omits the 'twice' factor (price > AVG). The system uses price > 2*AVG and returns 7 ids, which is correct for the question.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1574_bakery_1"
+ },
+ "r071": {
+  "label": "real_error",
+  "evidence": "System counts DISTINCT city_name, giving USA 21; City has 22 USA rows including two different cities named Newark (EWR NJ, NAR DE). Undercounts cities.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0780_address_1"
+ },
+ "r072": {
+  "label": "real_error",
+  "evidence": "City has two Newarks (EWR NJ, NAR DE). Grouping by city_name merges them into one Newark row averaging 1200.7, which is neither city's true average (1326.2 and 71.0). Other rows match.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0834_address_1"
+ },
+ "r073": {
+  "label": "benchmark_fault",
+  "evidence": "The reference join repeats each agency once per client (15 rows). The system's DISTINCT returns the same 8 agencies once each, which is what the question asks.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2079_advertising_agencies"
+ },
+ "r074": {
+  "label": "ambiguous",
+  "evidence": "Gold groups Payments (9 invoices); system LEFT JOINs Invoices giving 15 rows, same counts for the 9 and 0 for 6 invoices with no payments. Valid under 'for each invoice'.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2113_advertising_agencies"
+ },
+ "r075": {
+  "label": "ambiguous",
+  "evidence": "Achievements has 20 rows; the system DISTINCT collapses them to the 6 (detail, type) combos, which equal the distinct set of the gold's rows. 'How are achievements described' allows the distinct descriptions, though the per-achievement list is lost.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0469_cre_Students_Information_Systems"
+ },
+ "r076": {
+  "label": "real_error",
+  "evidence": "Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance); summing rows where BAL is city1 OR city2 counts every pair twice: 149332 vs true 74666.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0823_address_1"
+ },
+ "r077": {
+  "label": "real_error",
+  "evidence": "direct_distance stores each pair in both directions (31 rows with city1=BAL and 31 with city2=BAL). The system's OR double-counts every distance: 149332 = 2 x 74666.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0823_address_1"
+ },
+ "r078": {
+  "label": "ambiguous",
+  "evidence": "The system's 15 rows are one per student-address record (e.g. student 777 has 3 Home addresses, and student 415 has address 76 listed twice). The reference DISTINCT collapses these to 10 pairs. The set of values is the same; only the row grain differs.",
+  "confidence": "low",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0453_cre_Students_Information_Systems"
+ },
+ "r079": {
+  "label": "benchmark_fault",
+  "evidence": "Same as r059: gold precedence bug returns cookies priced ~1; no Cookie/Cake costs 3-7, so the empty answer is correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1550_bakery_1"
+ },
+ "r080": {
+  "label": "ambiguous",
+  "evidence": "Shipment_Items has 6 rows but only 4 distinct order items (item 14 shipped 3 times). 'How many items are shipped' = 4 distinct items is a valid reading.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0100_e_commerce"
+ },
+ "r081": {
+  "label": "real_error",
+  "evidence": "System filters LastName = 'Logan' but data stores 'LOGAN' (only spelling present); query returns 0 rows when 4 receipts exist.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1514_bakery_1"
+ },
+ "r082": {
+  "label": "benchmark_fault",
+  "evidence": "Same 4 students; the system concatenates the name into one full_name column, which is a format difference only.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0788_address_1"
+ },
+ "r083": {
+  "label": "benchmark_fault",
+  "evidence": "There are 2431 affiliations; 2380 appear in author_list. The system lists all affiliations (zero-paper ones at count 0), grouped by id and ordered by distinct papers. The reference drops 51 affiliations and orders by authorship rows rather than papers.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_0992_aan_1"
+ },
+ "r084": {
+  "label": "ambiguous",
+  "evidence": "Products with 'Dell': Dell monitor and Dell keyboard, both 'Medium'. System returns DISTINCT 'Medium' once vs gold twice; the same information, not misleading.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0086_e_commerce"
+ },
+ "r085": {
+  "label": "real_error",
+  "evidence": "Ran the system SQL: 7 rows for 4 clients. Clients 14 and 7 repeat once per invoice (14 has 3 invoices, 7 has 2). The client set is right but the duplicates inflate the list a user reads.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2143_advertising_agencies"
+ },
+ "r086": {
+  "label": "real_error",
+  "evidence": "Citation has 124842 unique (paper_id,cited_paper_id) rows. Counting citations: Och 3650 is top; system counts DISTINCT citing papers, picking Manning with 2183 (Manning has 2975 citations). Wrong person and number.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_1015_aan_1"
+ },
+ "r087": {
+  "label": "ambiguous",
+  "evidence": "System rows = gold's 10 customers with identical counts plus 5 customers with 0 orders (LEFT JOIN). 'For each customer' supports including zero-order customers.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "customers_and_orders",
+  "case_id": "test_0294_customers_and_orders"
+ },
+ "r088": {
+  "label": "benchmark_fault",
+  "evidence": "Staff with an 's' in their details: Clarissa (1 meeting), Sheridan (1), Marques (0 meetings). The reference never checks meetings, so it includes Marques; the system correctly returns 2.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2142_advertising_agencies"
+ },
+ "r089": {
+  "label": "ambiguous",
+  "evidence": "Shipment_items has 6 rows mapping to order items whose products are 1,1,5,3,1,1, i.e. 3 distinct products. 'How many products' can mean distinct products (3) or shipped item units (6).",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0101_e_commerce"
+ },
+ "r090": {
+  "label": "benchmark_fault",
+  "evidence": "Gold omits the 'twice' factor. The system's price > 2*AVG returns 7 ids, which is correct.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1573_bakery_1"
+ },
+ "r091": {
+  "label": "benchmark_fault",
+  "evidence": "Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance); system returns Paris twice (BOS-PAR and PAR-BOS 3448). Same answer as gold, harmless duplicate.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0829_address_1"
+ },
+ "r092": {
+  "label": "benchmark_fault",
+  "evidence": "staff_in_meetings has (14,3) duplicated. System COUNT(DISTINCT staff_id) gives 1 staff for meeting 14, which is correct; gold counts the duplicate row as 2. All other meetings match.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2131_advertising_agencies"
+ },
+ "r093": {
+  "label": "ambiguous",
+  "evidence": "The meetings table has 15 rows and no NULLs. The system returns the 8 distinct (outcome, purpose) pairs, the reference all 15 rows with repeats. Listing the distinct combinations is a reasonable reading of 'all outcomes and purposes'.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2102_advertising_agencies"
+ },
+ "r094": {
+  "label": "ambiguous",
+  "evidence": "System returns the right 15 payment/invoice id pairs but invoice_details ('good'/'excellent') instead of payment_details (card type). 'its corresponding invoice ids and details' grammatically allows invoice details.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2109_advertising_agencies"
+ },
+ "r095": {
+  "label": "ambiguous",
+  "evidence": "Gold averages price over order lines (519.04, weighted by times ordered); the system averages over the distinct ordered products (442.47). 'Price of all products being ordered on average' allows either.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0105_e_commerce"
+ },
+ "r096": {
+  "label": "benchmark_fault",
+  "evidence": "Gold repeats receipt 86085; system's 4 DISTINCT receipts (LOGAN matched exactly) equal the gold set.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1514_bakery_1"
+ },
+ "r097": {
+  "label": "benchmark_fault",
+  "evidence": "avg price 4.118, so twice the average is 8.236. Gold omits the 2x factor and includes 90-APIE-10 (5.25); the system's 7 ids are correct.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1573_bakery_1"
+ },
+ "r098": {
+  "label": "real_error",
+  "evidence": "The invoice join fans out: client 14 has 3 invoices and client 7 has 2, so the system returns 7 rows with clients 14 (x3) and 7 (x2) repeated. The distinct set matches the reference's 4 clients, but the duplicates misstate the list.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2144_advertising_agencies"
+ },
+ "r099": {
+  "label": "ambiguous",
+  "evidence": "Same as r054: system LEFT JOIN returns all 15 students with identical class counts plus 0 for 415, 648, 777 (no classes); gold's inner join drops them. 'For each student' supports including them.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0504_cre_Students_Information_Systems"
+ },
+ "r100": {
+  "label": "real_error",
+  "evidence": "System returns 81 rows vs the gold's 67 distinct papers: papers with several Harvard-affiliated authors repeat. The duplicates inflate the paper list a user reads.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_0978_aan_1"
+ },
+ "r101": {
+  "label": "real_error",
+  "evidence": "Invoices have no order_id; linking only via Shipments. System LEFT JOINs invoices through the missing shipment, so all 9 unshipped orders show NULL status. Gold (invoices 1,6,8,10,12 not in Shipments: Paid x4, Issued) gives real statuses.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0074_e_commerce"
+ },
+ "r102": {
+  "label": "benchmark_fault",
+  "evidence": "Gold repeats each agency once per client (15 rows). The system's DISTINCT gives the same 8 agencies once each, which is the right answer for 'agencies with a client'.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2079_advertising_agencies"
+ },
+ "r103": {
+  "label": "ambiguous",
+  "evidence": "The meetings table has no NULLs. The system returns the 6 distinct (type, other_details) pairs, the reference all 15 rows with repeats. Distinct combinations are a reasonable reading.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2100_advertising_agencies"
+ },
+ "r104": {
+  "label": "ambiguous",
+  "evidence": "Gold groups only by meeting_type (3 rows), ignoring 'for each client'; system groups by client and meeting type (15 rows) which matches the literal question. Phrasing is muddled.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2127_advertising_agencies"
+ },
+ "r105": {
+  "label": "real_error",
+  "evidence": "Gold: customers 4 (avg 5.35) and 10 (avg 5.45). The system groups by good, where 'average price per good' is just the price, so it requires every good bought to cost >5 and returns nothing. Telling the user no customers qualify misleads.",
+  "confidence": "low",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1587_bakery_1"
+ },
+ "r106": {
+  "label": "ambiguous",
+  "evidence": "Same 15 student-address rows as r051 plus student_id and bio_data columns; bio_data filter drops nothing. Per-address listing with extra identifying columns is a defensible reading; data correct.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0454_cre_Students_Information_Systems"
+ },
+ "r107": {
+  "label": "real_error",
+  "evidence": "2431 affiliations but 2310 distinct names (e.g. 'Google Inc.' x7, many blank names). The system groups by name, merging same-named affiliations (blank names become one row of 8273 papers); gold groups by id. Name-level grouping is a defensible reading, but the merged blank row could mislead.",
+  "confidence": "low",
+  "system": "secure_query",
+  "db": "aan_1",
+  "case_id": "test_1044_aan_1",
+  "agent_label": "ambiguous",
+  "review_note": "Overruled on review: grouping by affiliation name merges distinct affiliations (one blank-name row gets 8,273 papers); applied to both systems alike."
+ },
+ "r108": {
+  "label": "benchmark_fault",
+  "evidence": "Direct_distance stores BOS->EWR = 200 and EWR->BOS = 200. The system matches both directions and returns 200 twice; the value is the same and correct, so a user is not misled.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0814_address_1"
+ },
+ "r109": {
+  "label": "real_error",
+  "evidence": "System groups by customer AND good, so AVG(price)>5 just means 'bought any good costing >5', returning all 20 customers; per-customer average price >5 holds only for customers 4 and 10.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1588_bakery_1"
+ },
+ "r110": {
+  "label": "real_error",
+  "evidence": "Date is stored as text, so ORDER BY Date DESC sorts it alphabetically and picks 9-Oct-2007. Parsing the dates shows the true latest is 31-Oct-2007, with 6 receipts. The system's single receipt (11923) is wrong; the gold is also wrong.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1546_bakery_1"
+ },
+ "r111": {
+  "label": "ambiguous",
+  "evidence": "System returns DISTINCT city1_code only; Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance), so it equals the union of both columns (19 codes, verified). Correct under set-of-codes reading.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0820_address_1"
+ },
+ "r112": {
+  "label": "benchmark_fault",
+  "evidence": "Gold repeats products per shipped item (6 rows). The system's DISTINCT yields the same 3 (name, color) products, the right answer to 'products that have been shipped'.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0071_e_commerce"
+ },
+ "r113": {
+  "label": "benchmark_fault",
+  "evidence": "There are 15 invoices, and some have no payments. The system's LEFT JOIN shows every invoice id (zeros included), as 'all invoice ids' asks. Counts for invoices that have payments match the reference.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2113_advertising_agencies"
+ },
+ "r114": {
+  "label": "real_error",
+  "evidence": "System groups by affiliation name rather than id, merging duplicate-name rows (e.g. 45 blank, 7 'Google Inc.'), giving 2260 rows vs 2380. Same-named affiliations are plausibly the same organisation; per-id counts are otherwise identical.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_1043_aan_1",
+  "agent_label": "ambiguous",
+  "review_note": "Overruled on review: grouping by affiliation name merges distinct affiliations (one blank-name row gets 8,273 papers); applied to both systems alike."
+ },
+ "r115": {
+  "label": "ambiguous",
+  "evidence": "Same data as r055: customer 15 has a duplicated 'Direct Debit' row. The system counts distinct methods and returns 3 orders, plus a harmless count column. Defensible reading.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0109_e_commerce"
+ },
+ "r116": {
+  "label": "benchmark_fault",
+  "evidence": "Gold duplicates Louvenia (361) and Stephon (824) because each has two above-average loans; system's 9 DISTINCT rows equal gold's distinct student set.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0492_cre_Students_Information_Systems"
+ },
+ "r117": {
+  "label": "real_error",
+  "evidence": "Most common result is A, received by students 287, 325, 435, 567 and 811. The system's student set is literally right (gold's EXCEPT is over-narrow), but Vanessa (435) appears twice because she has two A rows, so the list shows 6 rows for 5 students.",
+  "confidence": "low",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0464_cre_Students_Information_Systems"
+ },
+ "r118": {
+  "label": "real_error",
+  "evidence": "The question asks for client ids and details. The system returns only client_details (7 names) and omits the requested client_id column.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "advertising_agencies",
+  "case_id": "test_2078_advertising_agencies"
+ },
+ "r119": {
+  "label": "benchmark_fault",
+  "evidence": "Direct_distance stores both BAL->CHI and CHI->BAL (621 each); system returns 621 twice. Same value, so the user reads the right distance; only a duplicate row.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0812_address_1"
+ },
+ "r120": {
+  "label": "real_error",
+  "evidence": "Under DuckDB parsing all 7 days exceed $100 (matching the gold). The system's actual answer lists only 4 days (10, 12, 16, 19 Oct): its try_to_date 'dd-MMM-yyyy' format failed on single-digit days and silently dropped 4, 7 and 9 Oct.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1589_bakery_1"
+ },
+ "r121": {
+  "label": "ambiguous",
+  "evidence": "Dell monitor and Dell keyboard both 'Medium'; system returns DISTINCT 'Medium' vs gold's two rows. Distinct sizes is a natural reading; no information lost on sizes.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0087_e_commerce"
+ },
+ "r122": {
+  "label": "ambiguous",
+  "evidence": "ILIKE matches only Blackberry and Blueberry. The system gives a per-flavor average (3.25, 2.2) instead of one combined average (2.55); the plural 'average prices' allows the per-flavor reading.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1554_bakery_1"
+ },
+ "r123": {
+  "label": "benchmark_fault",
+  "evidence": "The reference repeats receipt 86085 because it has 2 croissant items. The system's DISTINCT returns the same 4 receipts once each.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1513_bakery_1"
+ },
+ "r124": {
+  "label": "real_error",
+  "evidence": "System joins invoices to shipments then filters order_id NOT IN shipments, which is always false, returning empty. Gold shows 5 invoices with no shipment (statuses Paid/Issued).",
+  "confidence": "high",
+  "system": "genie",
+  "db": "e_commerce",
+  "case_id": "test_0075_e_commerce"
+ },
+ "r125": {
+  "label": "benchmark_fault",
+  "evidence": "Ran gold and system SQL plus Staff_in_Meetings for staff 2,11,14: Marques (14) attended no meeting, so the gold (which never checks attendance) is wrong; the system's 2 rows (Clarissa, Sheridan) are correct.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "advertising_agencies",
+  "case_id": "test_2141_advertising_agencies"
+ },
+ "r126": {
+  "label": "benchmark_fault",
+  "evidence": "Probe: Direct_distance is fully symmetric (119/119 rows have a mirrored row with equal distance); system matches both directions and returns 200 twice; gold returns 200. Same value, harmless duplicate.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "address_1",
+  "case_id": "test_0814_address_1"
+ },
+ "r127": {
+  "label": "ambiguous",
+  "evidence": "Only one Cheese good exists (50-CHS, 1.75), so there are no ties. The system names the good rather than its price, and 'what is the cheapest good' asks for the good.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "bakery_1",
+  "case_id": "test_1556_bakery_1"
+ },
+ "r128": {
+  "label": "benchmark_fault",
+  "evidence": "Customer 15's 2 payment-method rows are both 'Direct Debit' (1 distinct method); customers 13 and 14 have 2 distinct methods. The system returns customer 13's 3 orders (customer 14 has no orders), plus a harmless count column. The reference counts the duplicate row.",
+  "confidence": "medium",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0108_e_commerce"
+ },
+ "r129": {
+  "label": "real_error",
+  "evidence": "Verified all 119 Direct_distance rows have a mirror row with the same distance, so the system's UNION ALL of both directions doubles every total exactly (BAL 149332 vs 74666).",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0831_address_1"
+ },
+ "r130": {
+  "label": "ambiguous",
+  "evidence": "ILIKE '%Stanford University%' also matches joint affiliations such as 'Stanford University, Stanford CA; SRI International'. Those papers are reasonably counted as Stanford papers, giving 171 vs the exact-name gold's 164.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_1027_aan_1"
+ },
+ "r131": {
+  "label": "benchmark_fault",
+  "evidence": "Gold has an OR/AND precedence bug and returns cookies priced 0.79-1.25. Data: cookies 0.79-1.25, cakes 8.95-15.95, so no Cookie/Cake costs 3-7; system's empty result is correct.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1549_bakery_1"
+ },
+ "r132": {
+  "label": "real_error",
+  "evidence": "direct_distance is symmetric (BAL appears 31 times as city1 and 31 times as city2); the OR condition double-counts, giving 149332 = 2 x the true 74666.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0824_address_1"
+ },
+ "r133": {
+  "label": "real_error",
+  "evidence": "Author names are spelled 'McKeown, ...'. The system's case-sensitive LIKE '%Mckeown%' matches nothing, so it returns 0 papers instead of the reference's 100.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "aan_1",
+  "case_id": "test_0986_aan_1"
+ },
+ "r134": {
+  "label": "ambiguous",
+  "evidence": "Shipped items map to Dell monitor x4, Lenovo keyboard, iPhone6s; system returns the 3 distinct name/color pairs. Same information without duplicates.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0070_e_commerce"
+ },
+ "r135": {
+  "label": "real_error",
+  "evidence": "City has two different Newarks (EWR in NJ, NAR in DE; averages 1326.2 and 71.0). The system groups by name and merges them into a single 'Newark' with 1200.7, which matches neither city.",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "address_1",
+  "case_id": "test_0833_address_1"
+ },
+ "r136": {
+  "label": "real_error",
+  "evidence": "System inner-joins Shipments then requires NOT EXISTS a shipment for the same order: contradictory, always 0 rows. Five unshipped invoices exist (1,6,8,10,12: Paid x4, Issued).",
+  "confidence": "high",
+  "system": "secure_query",
+  "db": "e_commerce",
+  "case_id": "test_0074_e_commerce"
+ },
+ "r137": {
+  "label": "ambiguous",
+  "evidence": "Same pair set; gold has (Beverly, Suite 303) twice because student 471 takes two classes with Beverly. The system's DISTINCT pairs is a valid reading of 'pairs'.",
+  "confidence": "medium",
+  "system": "genie",
+  "db": "cre_Students_Information_Systems",
+  "case_id": "test_0482_cre_Students_Information_Systems"
+ },
+ "r138": {
+  "label": "real_error",
+  "evidence": "Date is VARCHAR like '1-Oct-2007'. The system's try_to_date(..., 'dd-MMM-yyyy') fails on single-digit days, so 'earliest' becomes 10-Oct. That adds 7 wrong 10-Oct receipts and drops 73437 (1-Oct): 61 + 7 = 68, versus the correct 62.",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1547_bakery_1"
+ },
+ "r139": {
+  "label": "real_error",
+  "evidence": "Goods has Flavor 'Apple' (capitalised); the system filters Flavor='apple', which matches nothing in a case-sensitive engine, so it returns only customer 12's 7 receipts and misses 13 apple-pie receipts (gold 20).",
+  "confidence": "high",
+  "system": "genie",
+  "db": "bakery_1",
+  "case_id": "test_1543_bakery_1"
+ }
+}

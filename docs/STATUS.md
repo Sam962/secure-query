@@ -66,6 +66,18 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-16 — evidence-checked third rating of the head-to-head (Claude, not human).**
+  All 139 flagged answers (Secure Query 65 after P12-P16, Genie 74), shuffled and blind,
+  rated by five Claude agents that ran the reference SQL, the system SQL and probe queries
+  on the DuckDB copies for every packet; then reviewed: 5 labels overruled the same way
+  for both systems (grouping "each affiliation" by name merges distinct affiliations).
+  Real errors of 532: Secure Query 16 (3.0%, 95% 1.9-4.8%), Genie 28 (5.3%, 3.7-7.5%).
+  The earlier two-rater merge gave 20 vs 38: those raters called harmless duplicates
+  (a distance table stored both ways) and defensible readings (average per product vs
+  per order line) real errors more often. Ratio about the same (0.57 vs 0.53); intervals
+  overlap. Still model ratings: a person's rating is owed, and a rating page with the same
+  blind packets is published for it (private claude.ai artifact). Files:
+  `docs/adjudication/genie-h2h-2026-11-16-{blind-packets,blind-packets.key,claude-evidence-labels}.json`.
 - **2026-11-16 — measured, not built: a prompt rule on what to count (P17).** Rule tried:
   "count or average exactly what the question names; COUNT(DISTINCT key) for a thing a
   join repeats, every row for events or links". Spider dev 400, 3 repeats: 321/47/32 ->

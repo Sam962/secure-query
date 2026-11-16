@@ -13,7 +13,9 @@ adjudicated wrong-rate (PLAN.md, Goal).
 
 ## Where things stand (2026-11-15)
 
-- Head-to-head with Genie, 7 Spider test databases, 532 questions, model-rated (gpt-5 plus
+- Latest (2026-11-16, after P12-P16): evidence-checked Claude rating 16 vs Genie 28 real
+  errors of 532 (two-rater merge 20 vs 38). A blind rating page for a person exists (STATUS).
+- Earlier: head-to-head with Genie, 7 Spider test databases, 532 questions, model-rated (gpt-5 plus
   a blind Claude agent): real errors 17 (3.2%, 95% 2.0-5.1%) vs Genie 38 (7.1%, 5.2-9.7%).
   Genie answers more (88% vs 73% on the last four). A human rating of the packets in
   `docs/adjudication/` is still owed before this is quoted.
