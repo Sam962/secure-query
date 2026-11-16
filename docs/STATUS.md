@@ -66,6 +66,17 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — head-to-head on four more Spider test databases (532 questions in all).**
+  `e_commerce`, `customers_and_orders`, `cre_Students_Information_Systems`, `address_1`
+  loaded to Databricks with a Genie space each (tables, descriptions, joins, value matching;
+  no instructions), 3 repeats, both systems. Blind packets rated by gpt-5 and by a separate
+  Claude agent that saw only packets, rubric and data (both model raters, no human yet;
+  agreement 49 of 68), merged conservatively. Real errors, Secure Query vs Genie: 4 vs 4,
+  2 vs 0, 0 vs 4, 5 vs 12; with the earlier 238 questions (6 vs 18): 17 vs 38 of 532,
+  3.2% (95% 2.0-5.1%) vs 7.1% (5.2-9.7%). Answer rate on the four: 214 vs 260 of 294 (73%
+  vs 88%), so Genie answers more and is wrong more. Genie returned customer passwords
+  (the benchmark catalogs carry no PII flags); Secure Query refused. Files:
+  `docs/baselines/genie-h2h-spider-*-v3-2026-11-15.json`, `docs/adjudication/*-v3-*`.
 - **2026-11-15 — measured, not built: send a refusal's named column back to the model.**
   Idea: when the model refuses and its reason names a column the catalog lists, send that
   column back once. On BIRD dev 57 of 133 model refusals name a catalog column, but most

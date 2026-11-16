@@ -11,7 +11,17 @@ that runs. Model SQL never runs as written. Every answer or refusal writes a tra
 and returns a signed Evidence Bundle. The goal is to beat Databricks Genie on
 adjudicated wrong-rate (PLAN.md, Goal).
 
-## Where things stand (2026-11-14)
+## Where things stand (2026-11-15)
+
+- Head-to-head with Genie, 7 Spider test databases, 532 questions, model-rated (gpt-5 plus
+  a blind Claude agent): real errors 17 (3.2%, 95% 2.0-5.1%) vs Genie 38 (7.1%, 5.2-9.7%).
+  Genie answers more (88% vs 73% on the last four). A human rating of the packets in
+  `docs/adjudication/` is still owed before this is quoted.
+- Root-cause tracing (Spider dev, BIRD dev; STATUS 2026-11-15) points at the kernel first:
+  the unused-join rule rejects bridge and filter joins and its "remove the join" advice
+  causes wrong answers; the gate's fingerprint counts kernel-added columns. Fixes proposed
+  as P12-P14, waiting on Sam's go-ahead because they change kernel rules.
+
 
 - Branch `trusted-core`, pushed to `origin`, 41 commits ahead of `main`, CI green. No pull
   request is open; Sam decides when to open and merge one.

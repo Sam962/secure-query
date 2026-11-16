@@ -1,0 +1,66 @@
+{
+ "p001:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query’s inner join on Detention excludes students with zero detentions, but “less than two detentions” should include zero; the system correctly includes them via NOT EXISTS."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system deduplicated students (DISTINCT) while the gold returns one row per qualifying loan; since the question asks for students and doesn’t specify handling of duplicates, both interpretations are valid."
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system compares distinct behavior types to the count of common rows, excluding students with multiple occurrences of the most common detail, while the question/gold require students whose every behavior entry is a most-common detail."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system omitted DISTINCT and returned duplicate student/address-type pairs, but the question doesn’t specify deduplication, making duplicates vs. distinct an acceptable ambiguity."
+ },
+ "p005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query should include all students (even with zero courses), but the gold uses an inner join that omits zero-course students; the system’s LEFT JOIN with 0 counts aligns with the request."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system returns extra columns (student_id, bio_data), imposes an unjustified NOT NULL filter on bio_data, and omits DISTINCT, so it doesn’t answer just “personal details and address type descriptions” for each student as asked."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query returns COUNT(DISTINCT student_id) while determining the most common detail by raw row counts, whereas the question asks for the count of occurrences of the most common detail, which the system correctly provides."
+ },
+ "p008:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system used DISTINCT to remove duplicate address–student pairs, and the question does not specify whether duplicates from multiple address records should be included, so both interpretations are reasonable."
+ },
+ "p009:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system adds DISTINCT (collapsing duplicate students with multiple above‑average loans) while the question doesn’t specify whether to deduplicate, so both interpretations are reasonable."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query should list all achievement rows with their type descriptions, but the system used DISTINCT (and unnecessary NULL filters), returning only unique pairs instead of all 20 records."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system deduplicates the teacher–student detail pairs (and filters nulls) while the question doesn’t specify handling of duplicates, so returning unique pairs is a reasonable interpretation rather than a wrong join."
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used OR (either condition) instead of requiring students who satisfy both conditions (most common result AND a result obtained by 3 students), yielding many extra rows."
+ },
+ "p013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query excludes students with zero detentions due to an inner join, but “less than two detentions” includes zero, which the system correctly handles with a left join/NULL-as-zero logic."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify tie-breaking or uniqueness, so returning all tied most-common categories (and duplicate students) is a reasonable reading, while the gold query arbitrarily picks one category via LIMIT 1."
+ },
+ "p015:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for each student (including those with zero courses), but the gold uses an inner join that excludes students without classes; the system’s left join with zero counts matches the request."
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to count total rows or distinct students, so returning row counts (system) vs distinct-student counts (gold) are both reasonable interpretations."
+ }
+}

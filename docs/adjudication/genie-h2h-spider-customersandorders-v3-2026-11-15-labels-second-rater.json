@@ -1,0 +1,18 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counting distinct products named Monitor (1) is not how many Monitors were ordered; the ordered quantity (16) is what the question asks."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Listing all customers with zero-order customers shown as 0 is a valid reading of 'all customer names'; rows for customers with orders match gold."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Including customers with zero orders as 0 is a valid reading of 'for each customer'; counts for ordering customers match gold."
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "reason": "Counting order lines (2) instead of summing order_quantity (16) misstates the total number of Monitor products ordered."
+ }
+}

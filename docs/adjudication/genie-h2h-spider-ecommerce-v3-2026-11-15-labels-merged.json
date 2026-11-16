@@ -1,0 +1,266 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to list each shipped order item or only unique product/color pairs, so returning DISTINCT results is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System lists the distinct product name/color pairs that were shipped; gold repeats rows once per shipment line (item 14 sits in three shipments), and the question does not clearly ask for per-shipment duplicates."
+  }
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "By counting DISTINCT orders only after an inner join to order_items, the system excludes orders without items, tightening the \u2018>2 orders\u2019 condition beyond the question (and gold) which counts all orders and separately requires \u22653 items."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Inner-joining order items before counting orders drops customer 13's order with no items, so the 'more than two orders' condition fails and the answer is empty instead of customer 13."
+  }
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The prompt does not specify whether to include duplicate (first-name, product) pairs, and the system used DISTINCT while the gold did not, so both readings are reasonable."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'All the pairs' reads naturally as distinct buyer/product pairs; system returns 14 distinct pairs while gold keeps one repeated purchase."
+  }
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question could mean total shipped items (shipment_items rows) or the number of distinct products shipped; the gold counts items while the system counts distinct products, both reasonable interpretations."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'How many products have been shipped' can mean distinct products (3) or shipped units; system's distinct-product count is a reasonable reading."
+  }
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The request for 'sizes of all products' is unclear about whether to list one row per product or only distinct sizes, so returning a deduplicated size is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System returns the distinct size 'Medium' while gold repeats it per Dell product; DISTINCT vs duplicates is unclear from the question."
+  }
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It counts DISTINCT orders only after joining to Order_Items, excluding orders without items and imposing a stricter condition than the question/gold, which count all orders and items separately."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Inner-joining order items before counting orders drops customer 13's empty order, so the result is empty instead of customer 13."
+  }
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query counts payment method rows (COUNT(*)) instead of distinct methods, while the question asks for customers with at least 2 payment methods; the system correctly uses COUNT(DISTINCT payment_method_code)."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity, and the extra count column is harmless."
+  }
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The question asks for the average price of products being ordered, requiring a join to Order_Items, but the system averaged over all products including those not ordered."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "System averages over all products and drops the 'being ordered' condition entirely; it matches the distinct-ordered-product average only because every product happens to be ordered here."
+  }
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "By joining Orders to Order_Items before counting orders, the system only counts orders with items toward the >2 orders condition, whereas the question (and gold) count all orders placed; this stricter logic wrongly excludes valid customers."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Inner-joining order items before counting orders drops customer 13's empty order, so the result is empty instead of customer 13."
+  }
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query incorrectly filters shipments with a NOT IN on the same shipments table (always false), returning no rows, whereas the question requires invoice statuses for invoices/orders not linked to any shipment as in the gold query."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "The query joins shipments and then requires the order not be in shipments, a contradiction that always returns nothing."
+  }
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question could reasonably ask for the unique set of shipped products, and the system\u2019s DISTINCT result matches that reading, whereas the gold returns duplicates per shipment."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Gold repeats Dell monitor for each shipment row of the same item; the question asks for the names and colors of products shipped, which the system's distinct list answers correctly."
+  }
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question could mean total shipped line items or number of distinct products shipped; the gold counts shipment items, while the system counts distinct product_ids, which is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'How many products have been shipped' can mean distinct products (3) or shipped units; system's distinct-product count is a reasonable reading."
+  }
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query lists order_ids with NULL invoice_status due to joining through missing shipments, instead of returning the actual invoice_status values for invoices not linked to any shipment as the question requests."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Invoices link to orders only through shipments, so unshipped orders have no invoice; system's reading (unshipped orders with null status) is faithful, while gold reinterprets it as invoices without shipments."
+  }
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to count each shipment-item row or unique order items shipped; the gold counts all rows while the system counts DISTINCT order_item_id, both plausible interpretations."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Order item 14 appears in three shipments; counting distinct shipped items (4) vs shipment-item rows (6) is a genuine ambiguity."
+  }
+ },
+ "p015:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system returned unique product sizes (DISTINCT) while the question did not specify whether duplicates should be included, making both interpretations reasonable."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "The question asks for names containing the substring 'Dell' but the system restricts to whole-word matches (with a non-LIKE bracket pattern), matching here only because both Dell names start with 'Dell '."
+  }
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether duplicate customer\u2013product pairs across multiple orders should be included, so using DISTINCT (fewer rows) is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Listing buyer/product pairs as distinct pairs is a natural reading; system returns 14 distinct pairs while gold keeps one repeated purchase."
+  }
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question implies at least two distinct payment methods, but the gold query uses COUNT(*) instead of COUNT(DISTINCT payment_method_code), whereas the system correctly counts distinct methods."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity."
+  }
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether \u201cat least 2 payment methods\u201d means distinct methods; the system required COUNT(DISTINCT payment_method_code) >= 2 while the gold uses COUNT(*) >= 2, and both interpretations are reasonable."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity."
+  }
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to return duplicates, so returning distinct product name/color pairs for items present in Shipment_Items (without explicitly joining Shipments) is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Gold repeats Dell monitor for each shipment row of the same item; the question asks for the names and colors of products shipped, which the system's distinct list answers correctly."
+  }
+ },
+ "p020:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query joins Orders to Shipments (selecting only shipped orders) and then filters for orders not in Shipments, yielding an empty set and failing to return invoice statuses for unshipped orders."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "The query joins shipments and then requires the order not be in shipments, a contradiction that always returns nothing."
+  }
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question\u2019s \u201cat least 2 payment methods\u201d can reasonably mean distinct methods; the system used COUNT(DISTINCT) while the gold counts rows (including duplicates), so both readings are valid."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity."
+  }
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify output shape; returning the earliest date alongside each multi-item order date (two columns with the earliest repeated) still provides the requested information, though the gold uses a single-column union."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System gives the same facts (earliest date plus the four multi-item order dates) in a two-column shape instead of gold's single-column union, which the question's wording allows."
+  }
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to count total purchased items or distinct product types; the system counts DISTINCT product_id while the gold counts all order items, both valid interpretations."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'How many products' per gender can mean distinct products or items bought; system's distinct-product count is a reasonable reading."
+  }
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for every order (including those with zero products), but the gold query\u2019s inner join omits orders without items; the system\u2019s LEFT JOIN with COUNT(product_id) correctly includes zero-count orders."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "The question says 'for every order', and the system correctly includes orders with zero items via LEFT JOIN, while gold drops them."
+  }
+ }
+}

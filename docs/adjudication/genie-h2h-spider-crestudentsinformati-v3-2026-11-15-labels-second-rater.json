@@ -1,0 +1,66 @@
+{
+ "p001:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Students with zero detentions do have fewer than two; the gold inner join drops them, and the system's 12 students are the correct set."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System lists each qualifying student once with DISTINCT while gold repeats students with several above-average loans; either is a fair reading of 'students'."
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The check compares distinct detail count to row count, so Vanessa (two 'A' records, only 'A') is wrongly excluded."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System keeps one row per student address while gold applies DISTINCT; same pairs, differing only in duplicates."
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System includes students with zero classes as 0 under 'for each student'; counts for others match gold."
+ },
+ "p006:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Same student/address-type pairs with extra id and bio columns and per-address duplicates instead of DISTINCT; a valid reading."
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System reports 6 occurrences of 'A' while gold reports 5 distinct students; 'count of this result' allows either."
+ },
+ "p008:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System DISTINCT collapses one student listed twice at the same address; differs only in duplicates."
+ },
+ "p009:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System lists each qualifying student once with DISTINCT while gold repeats students with several above-average loans; either is fair."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System lists distinct detail/type combinations rather than one row per achievement; 'how are achievements described' permits either."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System returns distinct teacher-student pairs, collapsing one pair that shares two classes; 'pairs' permits DISTINCT."
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question requires students with both the most common result and a 3-student result, but the system uses OR and returns per-record rows."
+ },
+ "p013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Students with zero detentions do have fewer than two; the gold inner join drops them, and the system's 12 students are the correct set."
+ },
+ "p014:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "This question asks for students who got the most common result (no 'only'), which the system answers (with Vanessa repeated), while gold wrongly restricts to students with only that result."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System includes students with zero classes as 0 under 'for each student'; counts for others match gold."
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System reports 6 occurrences of 'A' while gold reports 5 distinct students; 'count of this result' allows either."
+ }
+}

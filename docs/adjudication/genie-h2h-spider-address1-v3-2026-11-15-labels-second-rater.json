@@ -1,0 +1,98 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "COUNT(DISTINCT city_name) merges two different Newarks (NJ and DE), undercounting USA cities as 21 instead of 22."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Listing the distinct city codes involved rather than the pairs is a fair reading of 'city codes of cities'; the table is symmetric so the set is complete."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Baltimore is correct; it is repeated only because both directions of the CHI-BAL distance are stored."
+ },
+ "p005:answered_wrong": {
+  "label": "real_error",
+  "reason": "Direct_distance stores both directions, so summing rows with BAL on either side double-counts to 149332."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+ },
+ "p007:answered_wrong": {
+  "label": "real_error",
+  "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "reason": "Direct_distance stores both directions, so the UNION ALL of both columns doubles every city's total."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for city-code pairs within 1000; LIMIT 2 arbitrarily truncates the answer and one of the two rows is BAL with itself."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "reason": "Direct_distance stores both directions, so summing rows with BAL on either side double-counts to 149332."
+ },
+ "p013:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Listing distinct city codes rather than pairs is a fair reading; because the table is symmetric, city1 codes alone cover every city."
+ },
+ "p014:answered_wrong": {
+  "label": "real_error",
+  "reason": "Direct_distance stores both directions, so summing rows with BAL on either side double-counts to 149332."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Listing the distinct city codes involved rather than the pairs is a fair reading of 'city codes corresponding to cities'."
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Listing the distinct city codes involved rather than the pairs is a fair reading of 'city codes corresponding to cities'."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Paris is correct; it is repeated only because both directions of the BOS-PAR distance are stored."
+ },
+ "p018:answered_wrong": {
+  "label": "real_error",
+  "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ },
+ "p020:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Paris is correct; it is repeated only because both directions of the BOS-PAR distance are stored."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ },
+ "p024:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+ }
+}

@@ -1,0 +1,18 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query should sum ordered quantities of the product 'Monitor', but the system counted distinct product IDs instead, giving 1 instead of the total units (16)."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The request to show all customers and their number of orders can reasonably include customers with zero orders; the system’s LEFT JOIN includes them while the gold’s INNER JOIN excludes them, both fitting plausible interpretations."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“For each customer” can reasonably include customers with zero orders (LEFT JOIN), while the gold query only includes customers who have orders (INNER JOIN)."
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for total quantity of Monitor units ordered (SUM(order_quantity)), but the system counted line items (COUNT(*)), yielding 2 instead of the correct 16."
+ }
+}

@@ -1,0 +1,266 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question asks for the distance between two cities (an unordered pair), and the system reasonably included both directions, yielding duplicate identical distances; the query\u2019s interpretation is plausible though it didn\u2019t deduplicate."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query should count cities (rows) per country; using COUNT(DISTINCT city_name) wrongly merges different cities sharing a name, undercounting (e.g., USA 21 vs 22)."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "COUNT(DISTINCT city_name) merges two different Newarks (NJ and DE), undercounting USA cities as 21 instead of 22."
+  }
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question can mean either city-code pairs with above-average distance (gold) or the unique city codes appearing in any above-average pair (system), and the system\u2019s interpretation is reasonable."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Listing the distinct city codes involved rather than the pairs is a fair reading of 'city codes of cities'; the table is symmetric so the set is complete."
+  }
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system returns two duplicate rows (and extra columns) instead of a single city name, failing to deduplicate symmetric edges and not matching the question\u2019s singular request."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Baltimore is correct; it is repeated only because both directions of the CHI-BAL distance are stored."
+  }
+ },
+ "p005:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system double-counts by summing rows where BAL appears in either city column, while the table has symmetric entries; the question implies counting each BAL\u2013other city pair once, as done by the gold query."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Direct_distance stores both directions, so summing rows with BAL on either side double-counts to 149332."
+  }
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system grouped by city_name instead of city1_code, merging distinct cities with the same name (e.g., two Newarks), reducing row count and altering averages, whereas the question asks per city (code) as in the gold."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+  }
+ },
+ "p007:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system grouped by city_name, merging distinct cities that share a name (e.g., two Newarks), whereas the query should compute averages per city (city_code), so the result is misleading."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+  }
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system sums distances from both city1 and city2, double-counting each undirected pair and yielding roughly 2x totals, while the question implies counting each other city once (as in the gold)."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Direct_distance stores both directions, so the UNION ALL of both columns doubles every city's total."
+  }
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system grouped by city_name instead of city_code, collapsing distinct cities that share a name (e.g., Newark) and returning fewer rows than all cities\u2019 averages."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+  }
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query adds an unwarranted LIMIT 2 and returns only two pairs, while the question asks for all city-code pairs with distance < 1000 (no limit specified)."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "The question asks for city-code pairs within 1000; LIMIT 2 arbitrarily truncates the answer and one of the two rows is BAL with itself."
+  }
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system handled both city orderings and returned duplicate identical distances; since the distance is symmetric and the question didn\u2019t require deduplication, this reading is reasonable."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system double-counts distances by summing rows where BAL appears in either city1 or city2, whereas the question implies counting each BAL\u2013city pair once, which the gold query does."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Direct_distance stores both directions, so summing rows with BAL on either side double-counts to 149332."
+  }
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The question implies city pairs with distance > average (or at least both cities involved), but the system returned only distinct city1_code values, omitting city2_code and thus misanswering the request."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Listing distinct city codes rather than pairs is a fair reading; because the table is symmetric, city1 codes alone cover every city."
+  }
+ },
+ "p014:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system double-counts by summing rows where BAL is either city1 or city2, while the question implies counting each other city once (as the gold does by using only city1_code='BAL')."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Direct_distance stores both directions, so summing rows with BAL on either side double-counts to 149332."
+  }
+ },
+ "p015:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query asks for city code pairs for distances < 1000, but the system returned a single-column deduplicated list of codes, changing the result shape and semantics."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Listing the distinct city codes involved rather than the pairs is a fair reading of 'city codes corresponding to cities'."
+  }
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to return city1\u2013city2 pairs or a distinct list of city codes; the system reasonably returned the set of codes involved in <1000 distances while the gold returns all pairs."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Listing the distinct city codes involved rather than the pairs is a fair reading of 'city codes corresponding to cities'."
+  }
+ },
+ "p017:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system returns duplicate rows (Paris twice) by counting both directions, whereas the question asks for the single city name farthest from Boston."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Paris is correct; it is repeated only because both directions of the BOS-PAR distance are stored."
+  }
+ },
+ "p018:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system grouped by city_name instead of city_code, collapsing distinct cities with the same name (e.g., multiple Newarks) and producing incorrect averages and row count."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Grouping by city name merges two different cities named Newark (NJ and DE) into one blended average."
+  }
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question is undirected and does not specify uniqueness, so returning both directional rows (two identical distances) is a reasonable reading, whereas the gold picks just one."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ },
+ "p020:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system correctly found the 200-mile distance but returned it for both city orderings, producing duplicate rows; the question didn\u2019t specify deduplication."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ },
+ "p021:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query returns the correct city but duplicates it (two identical rows) due to handling both directions without deduplication, while the question expects a single city name."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Paris is correct; it is repeated only because both directions of the BOS-PAR distance are stored."
+  }
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify direction or deduplication, so returning the distance for both (BAL, CHI) and (CHI, BAL)\u2014yielding duplicate 621s\u2014is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ },
+ "p023:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system returns duplicate rows by matching both directions, whereas the question asks for a single distance, so providing two rows is misleading."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ },
+ "p024:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system query returns duplicate rows by matching both directional pairs, while the question seeks a single distance between the two students and the gold correctly returns one value."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The value is correct but repeated because Direct_distance stores both directions; a duplicate of the right single answer, not a wrong reading."
+  }
+ }
+}

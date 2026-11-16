@@ -1,0 +1,1156 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the biographical data and student id of the students who either took two or more classes and or have less than two detentions?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) >= 2 UNION SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Detention AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) < 2",
+  "gold_result": {
+   "count": 7,
+   "first": [
+    [
+     "Brenden",
+     669
+    ],
+    [
+     "Antone",
+     471
+    ],
+    [
+     "Edison",
+     762
+    ],
+    [
+     "Felipa",
+     811
+    ],
+    [
+     "Vanessa",
+     435
+    ],
+    [
+     "Camila",
+     276
+    ],
+    [
+     "Keshawn",
+     984
+    ]
+   ]
+  },
+  "system_sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(*) >= 2) OR `students`.`student_id` IN (SELECT `detention`.`student_id` AS `student_id` FROM `Detention` AS `detention` GROUP BY `detention`.`student_id` HAVING COUNT(*) < 2) OR NOT EXISTS(SELECT 1 AS `1` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) LIMIT 10000",
+  "system_result": {
+   "count": 12,
+   "first": [
+    [
+     "Camila",
+     276
+    ],
+    [
+     "Dino",
+     287
+    ],
+    [
+     "Pansy",
+     325
+    ],
+    [
+     "Vanessa",
+     435
+    ],
+    [
+     "Antone",
+     471
+    ],
+    [
+     "Arturo",
+     567
+    ],
+    [
+     "Brenden",
+     669
+    ],
+    [
+     "Edison",
+     762
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the biographical data and details for students whose student loan is above the average amount.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Student_Loans AS T2 ON T1.student_id = T2.student_id WHERE T2.amount_of_loan > (SELECT AVG(amount_of_loan) FROM Student_Loans)",
+  "gold_result": {
+   "count": 11,
+   "first": [
+    [
+     "Dino",
+     "Suite 970"
+    ],
+    [
+     "Louvenia",
+     "Suite 218"
+    ],
+    [
+     "Leora",
+     "Apt. 748"
+    ],
+    [
+     "Vanessa",
+     "Suite 684"
+    ],
+    [
+     "Arturo",
+     "Apt. 491"
+    ],
+    [
+     "Brenden",
+     "Apt. 305"
+    ],
+    [
+     "Edison",
+     "Apt. 763"
+    ],
+    [
+     "Stephon",
+     "Suite 839"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+  "system_result": {
+   "count": 9,
+   "first": [
+    [
+     "Louvenia",
+     "Suite 218"
+    ],
+    [
+     "Dino",
+     "Suite 970"
+    ],
+    [
+     "Edison",
+     "Apt. 763"
+    ],
+    [
+     "Stephon",
+     "Suite 839"
+    ],
+    [
+     "Vanessa",
+     "Suite 684"
+    ],
+    [
+     "Keshawn",
+     "Suite 889"
+    ],
+    [
+     "Arturo",
+     "Apt. 491"
+    ],
+    [
+     "Leora",
+     "Apt. 748"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Which students only got the most common result for his or her all behaviour monitoring details? List the students' biographical information.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.bio_data FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1) EXCEPT SELECT T1.bio_data FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE NOT T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1)",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Felipa"
+    ],
+    [
+     "Vanessa"
+    ],
+    [
+     "Pansy"
+    ]
+   ]
+  },
+  "system_sql": "WITH most_common AS (\n  SELECT `behaviour_monitoring_details`, RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk\n  FROM `workspace`.`cre_students_information_systems`.`behaviour_monitoring`\n  WHERE `behaviour_monitoring_details` IS NOT NULL\n  GROUP BY `behaviour_monitoring_details`\n),\ncommon_detail AS (\n  SELECT `behaviour_monitoring_details`\n  FROM most_common\n  WHERE rnk = 1\n),\nstudent_behaviour AS (\n  SELECT bm.`student_id`, s.`bio_data`, bm.`behaviour_monitoring_details`\n  FROM `workspace`.`cre_students_information_systems`.`behaviour_monitoring` bm\n  JOIN `workspace`.`cre_students_information_systems`.`students` s\n    ON bm.`student_id` = s.`student_id`\n  WHERE bm.`behaviour_monitoring_details` IS NOT NULL AND s.`bio_data` IS NOT NULL\n),\nstudent_check AS (\n  SELECT sb.`student_id`, sb.`bio_data`, COUNT(DISTINCT sb.`behaviour_monitoring_details`) AS num_details,\n         SUM(CASE WHEN sb.`behaviour_monitoring_details` IN (SELECT `behaviour_monitoring_details` FROM common_detail) THEN 1 ELSE 0 END) AS num_common\n  FROM student_behaviour sb\n  GROUP BY sb.`student_id`, sb.`bio_data`\n)\nSELECT `student_id`, `bio_data`\nFROM student_check\nWHERE num_details = num_common",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     811,
+     "Felipa"
+    ],
+    [
+     325,
+     "Pansy"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List the personal details and the address type descriptions of all the students.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT DISTINCT T1.student_details, T3.address_type_description FROM Students AS T1 JOIN Students_Addresses AS T2 ON T1.student_id = T2.student_id JOIN Ref_Address_Types AS T3 ON T2.address_type_code = T3.address_type_code",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Suite 303",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "Home"
+    ],
+    [
+     "Apt. 748",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "College"
+    ],
+    [
+     "Apt. 763",
+     "Home"
+    ],
+    [
+     "Suite 889",
+     "Home"
+    ],
+    [
+     "Suite 076",
+     "Home"
+    ],
+    [
+     "Suite 303",
+     "College"
+    ]
+   ]
+  },
+  "system_sql": "SELECT s.`student_details`, rat.`address_type_description`\nFROM `workspace`.`cre_students_information_systems`.`students_addresses` sa\nJOIN `workspace`.`cre_students_information_systems`.`students` s ON sa.`student_id` = s.`student_id`\nJOIN `workspace`.`cre_students_information_systems`.`ref_address_types` rat ON sa.`address_type_code` = rat.`address_type_code`\nWHERE s.`student_details` IS NOT NULL AND rat.`address_type_description` IS NOT NULL",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "Suite 076",
+     "Home"
+    ],
+    [
+     "Suite 218",
+     "Home"
+    ],
+    [
+     "Apt. 748",
+     "Home"
+    ],
+    [
+     "Suite 303",
+     "Home"
+    ],
+    [
+     "Apt. 763",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "Home"
+    ],
+    [
+     "Suite 889",
+     "Home"
+    ],
+    [
+     "Suite 218",
+     "Home"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "For each student, find the student id, student biographical data, and the number of courses he or she takes.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.student_id, ANY_VALUE(T1.bio_data), COUNT(*) FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id",
+  "gold_result": {
+   "count": 12,
+   "first": [
+    [
+     325,
+     "Pansy",
+     1
+    ],
+    [
+     669,
+     "Brenden",
+     2
+    ],
+    [
+     811,
+     "Felipa",
+     3
+    ],
+    [
+     287,
+     "Dino",
+     1
+    ],
+    [
+     824,
+     "Stephon",
+     1
+    ],
+    [
+     984,
+     "Keshawn",
+     1
+    ],
+    [
+     435,
+     "Vanessa",
+     2
+    ],
+    [
+     762,
+     "Edison",
+     3
+    ]
+   ]
+  },
+  "system_sql": "SELECT s.student_id, s.bio_data, COUNT(c.class_id) AS number_of_courses\nFROM `workspace`.`cre_students_information_systems`.`students` s\nLEFT JOIN `workspace`.`cre_students_information_systems`.`classes` c\n  ON s.student_id = c.student_id\nWHERE s.student_id IS NOT NULL AND s.bio_data IS NOT NULL\nGROUP BY s.student_id, s.bio_data",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     777,
+     "Houston",
+     0
+    ],
+    [
+     669,
+     "Brenden",
+     2
+    ],
+    [
+     824,
+     "Stephon",
+     1
+    ],
+    [
+     361,
+     "Louvenia",
+     1
+    ],
+    [
+     276,
+     "Camila",
+     1
+    ],
+    [
+     287,
+     "Dino",
+     1
+    ],
+    [
+     415,
+     "Leora",
+     0
+    ],
+    [
+     811,
+     "Felipa",
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the personal details and the address type descriptions of each student?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT DISTINCT T1.student_details, T3.address_type_description FROM Students AS T1 JOIN Students_Addresses AS T2 ON T1.student_id = T2.student_id JOIN Ref_Address_Types AS T3 ON T2.address_type_code = T3.address_type_code",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Suite 303",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "Home"
+    ],
+    [
+     "Apt. 748",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "College"
+    ],
+    [
+     "Apt. 763",
+     "Home"
+    ],
+    [
+     "Suite 889",
+     "Home"
+    ],
+    [
+     "Suite 076",
+     "Home"
+    ],
+    [
+     "Suite 303",
+     "College"
+    ]
+   ]
+  },
+  "system_sql": "SELECT s.student_id, s.student_details, s.bio_data, rat.address_type_description\nFROM `workspace`.`cre_students_information_systems`.`students_addresses` sa\nJOIN `workspace`.`cre_students_information_systems`.`students` s ON sa.student_id = s.student_id\nJOIN `workspace`.`cre_students_information_systems`.`ref_address_types` rat ON sa.address_type_code = rat.address_type_code\nWHERE s.student_details IS NOT NULL AND s.bio_data IS NOT NULL AND rat.address_type_description IS NOT NULL",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     276,
+     "Suite 076",
+     "Camila",
+     "Home"
+    ],
+    [
+     361,
+     "Suite 218",
+     "Louvenia",
+     "Home"
+    ],
+    [
+     415,
+     "Apt. 748",
+     "Leora",
+     "Home"
+    ],
+    [
+     471,
+     "Suite 303",
+     "Antone",
+     "Home"
+    ],
+    [
+     762,
+     "Apt. 763",
+     "Edison",
+     "Home"
+    ],
+    [
+     777,
+     "Apt. 040",
+     "Houston",
+     "Home"
+    ],
+    [
+     984,
+     "Suite 889",
+     "Keshawn",
+     "Home"
+    ],
+    [
+     361,
+     "Suite 218",
+     "Louvenia",
+     "Home"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p007",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the most common result in the behavioral monitoring details. What are the count and the details of this result?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT COUNT(DISTINCT student_id), behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     5,
+     "A"
+    ]
+   ]
+  },
+  "system_sql": "WITH ranked_details AS (\n  SELECT \n    `behaviour_monitoring_details`, \n    COUNT(*) AS detail_count,\n    RANK() OVER (ORDER BY COUNT(*) DESC) AS rank\n  FROM `workspace`.`cre_students_information_systems`.`behaviour_monitoring`\n  WHERE `behaviour_monitoring_details` IS NOT NULL\n  GROUP BY `behaviour_monitoring_details`\n)\nSELECT `behaviour_monitoring_details`, detail_count\nFROM ranked_details\nWHERE rank = 1;",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "A",
+     6
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p008",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the address details and biographical information of each student?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.address_details, T3.bio_data FROM Addresses AS T1 JOIN Students_Addresses AS T2 ON T1.address_id = T2.address_id JOIN Students AS T3 ON T2.student_id = T3.student_id",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "607 Nikita Cape Suite 449",
+     "Louvenia"
+    ],
+    [
+     "423 Rosenbaum Shores Apt. 812",
+     "Antone"
+    ],
+    [
+     "33376 Terry Mews Suite 922",
+     "Camila"
+    ],
+    [
+     "90147 Greenholt Springs Apt. 497",
+     "Louvenia"
+    ],
+    [
+     "41082 Calista Mountains",
+     "Leora"
+    ],
+    [
+     "4240 Enrico Grove",
+     "Antone"
+    ],
+    [
+     "7127 Ressie Plains",
+     "Houston"
+    ],
+    [
+     "222 Chase Union Apt. 747",
+     "Houston"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Addresses` AS `addresses` ON `students_addresses`.`address_id` = `addresses`.`address_id` LIMIT 10000",
+  "system_result": {
+   "count": 14,
+   "first": [
+    [
+     "564 Aaliyah Trace",
+     "Edison"
+    ],
+    [
+     "033 Robel Courts Apt. 312",
+     "Edison"
+    ],
+    [
+     "33376 Terry Mews Suite 922",
+     "Camila"
+    ],
+    [
+     "564 Aaliyah Trace",
+     "Houston"
+    ],
+    [
+     "033 Robel Courts Apt. 312",
+     "Houston"
+    ],
+    [
+     "90147 Greenholt Springs Apt. 497",
+     "Louvenia"
+    ],
+    [
+     "41082 Calista Mountains",
+     "Leora"
+    ],
+    [
+     "222 Chase Union Apt. 747",
+     "Houston"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p009",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Which students have a student loan more than the average amount? List the students' biographical data and the details.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Student_Loans AS T2 ON T1.student_id = T2.student_id WHERE T2.amount_of_loan > (SELECT AVG(amount_of_loan) FROM Student_Loans)",
+  "gold_result": {
+   "count": 11,
+   "first": [
+    [
+     "Dino",
+     "Suite 970"
+    ],
+    [
+     "Louvenia",
+     "Suite 218"
+    ],
+    [
+     "Leora",
+     "Apt. 748"
+    ],
+    [
+     "Vanessa",
+     "Suite 684"
+    ],
+    [
+     "Arturo",
+     "Apt. 491"
+    ],
+    [
+     "Brenden",
+     "Apt. 305"
+    ],
+    [
+     "Edison",
+     "Apt. 763"
+    ],
+    [
+     "Stephon",
+     "Suite 839"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+  "system_result": {
+   "count": 9,
+   "first": [
+    [
+     "Louvenia",
+     "Suite 218"
+    ],
+    [
+     "Dino",
+     "Suite 970"
+    ],
+    [
+     "Edison",
+     "Apt. 763"
+    ],
+    [
+     "Stephon",
+     "Suite 839"
+    ],
+    [
+     "Vanessa",
+     "Suite 684"
+    ],
+    [
+     "Keshawn",
+     "Suite 889"
+    ],
+    [
+     "Arturo",
+     "Apt. 491"
+    ],
+    [
+     "Leora",
+     "Apt. 748"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p010",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How are all the achievements described? List the achievement detail and the type description.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.achievement_details, T2.achievement_type_description FROM Achievements AS T1 JOIN Ref_Achievement_Type AS T2 ON T1.achievement_type_code = T2.achievement_type_code",
+  "gold_result": {
+   "count": 20,
+   "first": [
+    [
+     "Gold",
+     "Athletic"
+    ],
+    [
+     "Gold",
+     "Athletic"
+    ],
+    [
+     "Gold",
+     "Scholastic"
+    ],
+    [
+     "Silver",
+     "Scholastic"
+    ],
+    [
+     "Gold",
+     "Scholastic"
+    ],
+    [
+     "Bronze",
+     "Scholastic"
+    ],
+    [
+     "Bronze",
+     "Athletic"
+    ],
+    [
+     "Silver",
+     "Scholastic"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `achievements`.`achievement_details`, `ref_achievement_type`.`achievement_type_description`\nFROM `workspace`.`cre_students_information_systems`.`achievements`\nJOIN `workspace`.`cre_students_information_systems`.`ref_achievement_type`\n  ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code`\nWHERE `achievements`.`achievement_details` IS NOT NULL\n  AND `ref_achievement_type`.`achievement_type_description` IS NOT NULL",
+  "system_result": {
+   "count": 6,
+   "first": [
+    [
+     "Gold",
+     "Scholastic"
+    ],
+    [
+     "Gold",
+     "Athletic"
+    ],
+    [
+     "Bronze",
+     "Athletic"
+    ],
+    [
+     "Silver",
+     "Scholastic"
+    ],
+    [
+     "Silver",
+     "Athletic"
+    ],
+    [
+     "Bronze",
+     "Scholastic"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p011",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the pairs of teachers and students who are in the same class? Give me the pairs of their details.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.teacher_details, T3.student_details FROM Teachers AS T1 JOIN Classes AS T2 ON T1.teacher_id = T2.teacher_id JOIN Students AS T3 ON T2.student_id = T3.student_id",
+  "gold_result": {
+   "count": 20,
+   "first": [
+    [
+     "Tyson",
+     "Apt. 491"
+    ],
+    [
+     "Osvaldo",
+     "Suite 218"
+    ],
+    [
+     "Isabel",
+     "Suite 684"
+    ],
+    [
+     "Adella",
+     "Apt. 763"
+    ],
+    [
+     "Chasity",
+     "Apt. 253"
+    ],
+    [
+     "Wilfredo",
+     "Suite 839"
+    ],
+    [
+     "Marielle",
+     "Suite 684"
+    ],
+    [
+     "Beverly",
+     "Suite 303"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT t.teacher_details, s.student_details\nFROM `workspace`.`cre_students_information_systems`.`classes` c\nJOIN `workspace`.`cre_students_information_systems`.`teachers` t ON c.teacher_id = t.teacher_id\nJOIN `workspace`.`cre_students_information_systems`.`students` s ON c.student_id = s.student_id\nWHERE t.teacher_details IS NOT NULL AND s.student_details IS NOT NULL",
+  "system_result": {
+   "count": 19,
+   "first": [
+    [
+     "Adella",
+     "Apt. 763"
+    ],
+    [
+     "Osvaldo",
+     "Apt. 305"
+    ],
+    [
+     "Nicholaus",
+     "Apt. 253"
+    ],
+    [
+     "Hertha",
+     "Apt. 149"
+    ],
+    [
+     "Chasity",
+     "Apt. 253"
+    ],
+    [
+     "Isabel",
+     "Suite 684"
+    ],
+    [
+     "Wilfredo",
+     "Suite 839"
+    ],
+    [
+     "Angie",
+     "Suite 970"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p012",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the biographical data and details of students who got not only the most common result but also a result that is obtained by 3 students in behaviour monitoring.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1) INTERSECT SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details HAVING COUNT(*) = 3)",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "Dino",
+     "Suite 970"
+    ],
+    [
+     "Arturo",
+     "Apt. 491"
+    ]
+   ]
+  },
+  "system_sql": "WITH behaviour_counts AS (\n  SELECT \n    behaviour_monitoring.behaviour_monitoring_details, \n    COUNT(DISTINCT behaviour_monitoring.student_id) AS student_count,\n    RANK() OVER (ORDER BY COUNT(DISTINCT behaviour_monitoring.student_id) DESC) AS rank_most_common\n  FROM workspace.cre_students_information_systems.behaviour_monitoring\n  WHERE behaviour_monitoring.behaviour_monitoring_details IS NOT NULL\n  GROUP BY behaviour_monitoring.behaviour_monitoring_details\n)\nSELECT students.bio_data, students.student_details, behaviour_monitoring.behaviour_monitoring_details\nFROM workspace.cre_students_information_systems.behaviour_monitoring\nJOIN behaviour_counts ON behaviour_monitoring.behaviour_monitoring_details = behaviour_counts.behaviour_monitoring_details\nJOIN workspace.cre_students_information_systems.students ON behaviour_monitoring.student_id = students.student_id\nWHERE (behaviour_counts.rank_most_common = 1 OR behaviour_counts.student_count = 3)\n  AND behaviour_monitoring.behaviour_monitoring_details IS NOT NULL;",
+  "system_result": {
+   "count": 13,
+   "first": [
+    [
+     "Vanessa",
+     "Suite 684",
+     "A"
+    ],
+    [
+     "Felipa",
+     "Apt. 253",
+     "A"
+    ],
+    [
+     "Arturo",
+     "Apt. 491",
+     "A"
+    ],
+    [
+     "Keshawn",
+     "Suite 889",
+     "B"
+    ],
+    [
+     "Leonard",
+     "Suite 505",
+     "B"
+    ],
+    [
+     "Houston",
+     "Apt. 040",
+     "B"
+    ],
+    [
+     "Arturo",
+     "Apt. 491",
+     "C"
+    ],
+    [
+     "Dino",
+     "Suite 970",
+     "C"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p013",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the biographical data and student id of the students who either took two or more classes and or have less than two detentions?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) >= 2 UNION SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Detention AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) < 2",
+  "gold_result": {
+   "count": 7,
+   "first": [
+    [
+     "Brenden",
+     669
+    ],
+    [
+     "Antone",
+     471
+    ],
+    [
+     "Edison",
+     762
+    ],
+    [
+     "Felipa",
+     811
+    ],
+    [
+     "Vanessa",
+     435
+    ],
+    [
+     "Camila",
+     276
+    ],
+    [
+     "Keshawn",
+     984
+    ]
+   ]
+  },
+  "system_sql": "WITH class_counts AS (\n  SELECT `student_id`, COUNT(`class_id`) AS num_classes\n  FROM `workspace`.`cre_students_information_systems`.`classes`\n  WHERE `student_id` IS NOT NULL AND `class_id` IS NOT NULL\n  GROUP BY `student_id`\n),\ndetention_counts AS (\n  SELECT `student_id`, COUNT(`detention_id`) AS num_detentions\n  FROM `workspace`.`cre_students_information_systems`.`detention`\n  WHERE `student_id` IS NOT NULL AND `detention_id` IS NOT NULL\n  GROUP BY `student_id`\n)\nSELECT s.`student_id`, s.`bio_data`\nFROM `workspace`.`cre_students_information_systems`.`students` s\nLEFT JOIN class_counts cc ON s.`student_id` = cc.`student_id`\nLEFT JOIN detention_counts dc ON s.`student_id` = dc.`student_id`\nWHERE (cc.num_classes >= 2 OR dc.num_detentions < 2 OR dc.num_detentions IS NULL)\nAND s.`student_id` IS NOT NULL AND s.`bio_data` IS NOT NULL",
+  "system_result": {
+   "count": 12,
+   "first": [
+    [
+     276,
+     "Camila"
+    ],
+    [
+     287,
+     "Dino"
+    ],
+    [
+     325,
+     "Pansy"
+    ],
+    [
+     435,
+     "Vanessa"
+    ],
+    [
+     471,
+     "Antone"
+    ],
+    [
+     567,
+     "Arturo"
+    ],
+    [
+     669,
+     "Brenden"
+    ],
+    [
+     762,
+     "Edison"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p014",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the biographical information of the students who got the most common result for their behaviour monitoring details ?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT t1.bio_data FROM students AS t1 JOIN behaviour_monitoring AS t2 ON t1.student_id = t2.student_id WHERE t2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM behaviour_monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1) EXCEPT SELECT t1.bio_data FROM students AS t1 JOIN behaviour_monitoring AS t2 ON t1.student_id = t2.student_id WHERE NOT t2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM behaviour_monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1)",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Felipa"
+    ],
+    [
+     "Vanessa"
+    ],
+    [
+     "Pansy"
+    ]
+   ]
+  },
+  "system_sql": "WITH mode_behaviour AS (SELECT `behaviour_monitoring_details`, RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk FROM `workspace`.`cre_students_information_systems`.`behaviour_monitoring` WHERE `behaviour_monitoring_details` IS NOT NULL GROUP BY `behaviour_monitoring_details`) SELECT s.`student_id`, s.`bio_data` FROM `workspace`.`cre_students_information_systems`.`behaviour_monitoring` bm JOIN mode_behaviour mb ON bm.`behaviour_monitoring_details` = mb.`behaviour_monitoring_details` JOIN `workspace`.`cre_students_information_systems`.`students` s ON bm.`student_id` = s.`student_id` WHERE mb.rnk = 1",
+  "system_result": {
+   "count": 6,
+   "first": [
+    [
+     435,
+     "Vanessa"
+    ],
+    [
+     811,
+     "Felipa"
+    ],
+    [
+     567,
+     "Arturo"
+    ],
+    [
+     287,
+     "Dino"
+    ],
+    [
+     435,
+     "Vanessa"
+    ],
+    [
+     325,
+     "Pansy"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p015",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "For each student, find the student id, student biographical data, and the number of courses he or she takes.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT T1.student_id, ANY_VALUE(T1.bio_data), COUNT(*) FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id",
+  "gold_result": {
+   "count": 12,
+   "first": [
+    [
+     325,
+     "Pansy",
+     1
+    ],
+    [
+     669,
+     "Brenden",
+     2
+    ],
+    [
+     811,
+     "Felipa",
+     3
+    ],
+    [
+     287,
+     "Dino",
+     1
+    ],
+    [
+     824,
+     "Stephon",
+     1
+    ],
+    [
+     984,
+     "Keshawn",
+     1
+    ],
+    [
+     435,
+     "Vanessa",
+     2
+    ],
+    [
+     762,
+     "Edison",
+     3
+    ]
+   ]
+  },
+  "system_sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`bio_data` AS `bio_data`, COUNT(`classes`.`class_id`) AS `course_count` FROM `Students` AS `students` LEFT JOIN `Classes` AS `classes` ON `students`.`student_id` = `classes`.`student_id` GROUP BY `students`.`student_id`, `students`.`bio_data` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     777,
+     "Houston",
+     0
+    ],
+    [
+     669,
+     "Brenden",
+     2
+    ],
+    [
+     824,
+     "Stephon",
+     1
+    ],
+    [
+     361,
+     "Louvenia",
+     1
+    ],
+    [
+     276,
+     "Camila",
+     1
+    ],
+    [
+     287,
+     "Dino",
+     1
+    ],
+    [
+     415,
+     "Leora",
+     0
+    ],
+    [
+     811,
+     "Felipa",
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p016",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the most common result in the behavioral monitoring details. What are the count and the details of this result?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int — achievement id\n      achievement_type_code: str — achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int — student id\n      date_achievement: int — date achievement\n      achievement_details: str — achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str — other details\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int — behaviour monitoring id\n      student_id: int — student id\n      behaviour_monitoring_details: str — behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int — class id\n      student_id: int — student id\n      teacher_id: int — teacher id\n      class_details: str — class details\n  - Detention\n      detention_id: int — detention id\n      detention_type_code: str — detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int — student id\n      datetime_detention_start: str — datetime detention start\n      datetime_detention_end: str — datetime detention end\n      detention_summary: str — detention summary\n      other_details: str — other details\n  - Ref_Achievement_Type\n      achievement_type_code: str — achievement type code\n      achievement_type_description: str — achievement type description\n  - Ref_Address_Types\n      address_type_code: str — address type code\n      address_type_description: str — address type description\n  - Ref_Detention_Type\n      detention_type_code: str — detention type code\n      detention_type_description: str — detention type description\n  - Ref_Event_Types\n      event_type_code: str — event type code\n      event_type_description: str — event type description\n  - Student_Events\n      event_id: int — event id\n      event_type_code: str — event type code values: 'Exam', 'Registration'\n      student_id: int — student id\n      event_date: str — event date\n      other_details: str — other details\n  - Student_Loans\n      student_loan_id: int — student loan id\n      student_id: int — student id\n      date_of_loan: str — date of loan\n      amount_of_loan: float — amount of loan\n      other_details: str — other details\n  - Students\n      student_id: int — student id\n      bio_data: str — bio data\n      student_details: str — student details\n  - Students_Addresses\n      student_address_id: int — student address id\n      address_id: int — address id\n      address_type_code: str — address type code values: 'CO', 'HM'\n      student_id: int — student id\n      date_from: str — date from\n      date_to: str — date to\n  - Teachers\n      teacher_id: int — teacher id\n      teacher_details: str — teacher details\n  - Transcripts\n      transcript_id: int — transcript id\n      student_id: int — student id\n      date_of_transcript: str — date of transcript\n      transcript_details: str — transcript details values: 'Good', 'Pass'\nrelationships (many → one; joins are added automatically):\n  - Transcripts.student_id → Students.student_id\n  - Behaviour_Monitoring.student_id → Students.student_id\n  - Student_Events.event_type_code → Ref_Event_Types.event_type_code\n  - Student_Events.student_id → Students.student_id\n  - Student_Loans.student_id → Students.student_id\n  - Classes.teacher_id → Teachers.teacher_id\n  - Classes.student_id → Students.student_id\n  - Students_Addresses.address_type_code → Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id → Addresses.address_id\n  - Students_Addresses.student_id → Students.student_id\n  - Detention.detention_type_code → Ref_Detention_Type.detention_type_code\n  - Detention.student_id → Students.student_id\n  - Achievements.achievement_type_code → Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id → Students.student_id",
+  "gold_sql": "SELECT COUNT(DISTINCT student_id), behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     5,
+     "A"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(*) AS `count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "A",
+     6
+    ]
+   ]
+  }
+ }
+]
