@@ -13,6 +13,9 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any
 
+import sqlglot
+from sqlglot import exp
+
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import Filter
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
@@ -90,14 +93,35 @@ _UNSTABLE_MESSAGE = (
 )
 
 
-def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
-    """Fingerprint of one probe run; None when there is nothing to run or it fails."""
+_NUMBER = re.compile(r"^\s*-?\d+(\.\d+)?\s*$")
+
+
+def _model_width(sql: str, dialect: str) -> int | None:
+    """How many columns the model's own SELECT has; the kernel only appends after them."""
+    try:
+        tree = sqlglot.parse_one(sql, read=dialect)
+    except sqlglot.errors.ParseError:
+        return None
+    if not isinstance(tree, exp.Select) or any(isinstance(e, exp.Star) for e in tree.expressions):
+        return None
+    return len(tree.expressions)
+
+
+def _probe_fingerprint(probe: ValueProbe, compiled: Any, width: int | None = None) -> str | None:
+    """Fingerprint of one probe run; None when there is nothing to run or it fails.
+
+    The gate compares what each reading answered: its own first `width` columns (a ranking
+    measure the kernel appended is evidence, not the answer), with a number stored as text
+    equal to the number. Two readings that name the same winner by different measures agree.
+    """
     if compiled is None:
         return None
     try:
-        return answer_fingerprint(probe(compiled))
+        rows = probe(compiled)
     except Exception:  # noqa: BLE001 — a query that cannot run is not a confirmed answer
         return None
+    cell = lambda v: float(v) if isinstance(v, str) and _NUMBER.match(v) else v  # noqa: E731
+    return answer_fingerprint([tuple(cell(v) for v in row[:width]) for row in rows])
 
 
 def _no_stored_value(table: str, column: str, value: str, similar: Sequence[str]) -> str:
@@ -207,6 +231,7 @@ def _plan_one_reading(
                 )
             sql = str(data["sql"])
             validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
+            width = _model_width(sql, catalog.sql_dialect)
             sql = show_ranking_measure(case_insensitive_like(sql, catalog), catalog)
             if value_probe is not None:
                 sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
@@ -250,7 +275,7 @@ def _plan_one_reading(
                 # A query the database rejects is refused as invalid, not repaired: on BIRD dev
                 # both readings repaired the same error the same way and agreed on wrong
                 # answers (26 right, 63 wrong of 89 released), so the repair defeats the gate.
-                own_fp = _probe_fingerprint(answer_probe, validated.compiled)
+                own_fp = _probe_fingerprint(answer_probe, validated.compiled, width)
                 if own_fp is None:
                     return PlannerResult(
                         status="clarify",

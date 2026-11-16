@@ -66,6 +66,16 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — the two-readings gate compares what each reading answered (P13).** It
+  fingerprinted the kernel-appended ranking measure too, so two readings naming the same
+  winner by different measures (COUNT vs SUM) disagreed, and '9' stored as text differed
+  from 9. Now each reading is compared on its own SELECT columns, numeric text as numbers;
+  the measure is still shown in the answer. Spider dev 400, 3 repeats: right 315 -> 316,
+  wrong 50 -> 47, refused 35 -> 37 (noise); BIRD dev: right 816 -> 824, wrong 398 -> 384,
+  refused 320 -> 326. Most "both readings right yet refused" cases in the earlier trace
+  were run-to-run variation, not the comparison, so the gain is smaller than the trace
+  suggested. Checked live through `/ask` on DuckDB. Files:
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-p13-2026-11-15.json`.
 - **2026-11-15 — the unused-join rule no longer rejects bridge tables or set filters (P12).**
   Root-cause tracing found the rule rejected a table whose columns only link the next join
   (client -> disp -> account), and joins inside IN / EXISTS / INTERSECT / EXCEPT / UNION,

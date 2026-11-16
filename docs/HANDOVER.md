@@ -19,8 +19,8 @@ adjudicated wrong-rate (PLAN.md, Goal).
   `docs/adjudication/` is still owed before this is quoted.
 - Root-cause tracing (Spider dev, BIRD dev; STATUS 2026-11-15) points at the kernel first:
   the unused-join rule rejects bridge and filter joins and its "remove the join" advice
-  causes wrong answers; the gate's fingerprint counts kernel-added columns. Fixes proposed
-  as P12-P14, waiting on Sam's go-ahead because they change kernel rules.
+  causes wrong answers; the gate's fingerprint counts kernel-added columns. Sam approved
+  P12-P15 on 2026-11-15 (PLAN parking lot); P12 and P13 are committed, P14 and P15 next.
 
 
 - Branch `trusted-core`, pushed to `origin`, 41 commits ahead of `main`, CI green. No pull

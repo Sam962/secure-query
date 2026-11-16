@@ -387,6 +387,43 @@ def test_identical_query_agrees_even_when_capped_rows_differ() -> None:
     assert result.status == "ok"
 
 
+def test_gate_compares_each_readings_own_columns() -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    ranked = json.dumps({"sql": "SELECT Name FROM Genre GROUP BY Name ORDER BY COUNT(*) DESC LIMIT 1"})
+    plain = json.dumps({"sql": "SELECT Name FROM Genre WHERE GenreId = 1"})
+
+    def probe(query):  # the kernel appends the count to the ranked reading only
+        return [("Rock", 1297)] if "COUNT" in query.sql.upper() else [("Rock",)]
+
+    agreed = plan_sql_question(
+        "Which genre has the most tracks?", CATALOG, MockLLMClient([ranked]), value_probe=probe,
+        check_client=MockLLMClient([plain]),
+    )
+    assert agreed.status == "ok" and "COUNT" in agreed.compiled.sql.upper()  # the measure is still shown
+
+    def text_or_number(query):  # the same number, once stored as text
+        return [("9",)] if "= 1" in query.sql else [(9,)]
+
+    two = json.dumps({"sql": "SELECT GenreId FROM Genre WHERE GenreId = 2"})
+    assert plan_sql_question(
+        "Which genre id?", CATALOG, MockLLMClient([plain.replace("Name", "GenreId")]), value_probe=text_or_number,
+        check_client=MockLLMClient([two]),
+    ).status == "ok"
+
+    def differ(query):
+        return [("Rock",)] if "= 1" in query.sql else [("Jazz",)]
+
+    disagree = plan_sql_question(
+        "Which genre?", CATALOG, MockLLMClient([plain]), value_probe=differ,
+        check_client=MockLLMClient([plain.replace("= 1", "= 2")]),
+    )
+    assert disagree.clarify_code == "unstable_answer"
+
+
 def test_sql_path_applies_row_filters() -> None:
     import json
 
