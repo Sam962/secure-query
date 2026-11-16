@@ -260,7 +260,7 @@ class Catalog(BaseModel):
             for rule in self.instructions:
                 lines.append(f"  - {rule}")
         if self.join_keys:
-            lines.append("relationships (many → one; joins are added automatically):")
+            lines.append("relationships (many rows on the left per row on the right; join either way, chain through tables):")
             for jk in self.join_keys:
                 lines.append(
                     f"  - {jk.left_table}.{jk.left_column} → "

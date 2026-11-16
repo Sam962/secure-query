@@ -66,6 +66,22 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-16 — relationships read as usable both ways and chainable; sibling joins (P15).**
+  The catalog text still said "many → one; joins are added automatically" (left from the
+  LogicalPlan planner), and the SQL prompt's "no listed relationship connects the tables"
+  invited a refusal when the path went through a middle table. Now relationships read
+  "join either way, chain through tables", and the prompt says a path counts. The kernel
+  accepts a.x = b.y when both point at the same approved key; the fan-out check now treats
+  such a join as many-to-many both ways (before, any non-forward step counted as to-one in
+  reverse). BIRD dev, regraded on DuckDB: right 827 -> 852, wrong 388 -> 403, refused
+  319 -> 279 (model refusals 136 -> 101); share of answers right 68.1% -> 67.9%. Spider
+  dev 400, 3 repeats: 315/51/34 -> 318/44/38. Checked live through `/ask` (two multi-hop
+  questions, the count checked against the data).
+  P12-P15 together against the regraded baseline: BIRD right 827 -> 852, wrong 394 -> 403,
+  refused 313 -> 279; Spider dev 308/46/46 -> 318/44/38.
+  BIRD grading note: `docs/baselines` BIRD numbers before this entry used the SQLite
+  translation; that undercounts right answers using YEAR() by 11-21 per run.
+  Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-p15-2026-11-16.json`.
 - **2026-11-15 — CURRENT_DATE and the clock are allowed (P14).** They were forbidden with
   the who/where functions, so every "how old" / "this year" question failed validation
   (46 kernel rejections in the BIRD trace). They read no data; CURRENT_USER, CURRENT_SCHEMA

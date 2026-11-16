@@ -42,6 +42,8 @@ or, when the catalog cannot answer the question exactly:
 Rules:
 - Use only the tables and columns listed in the catalog. {quoting}
 - Join only along the listed relationships, with explicit JOIN ... ON a.key = b.key.
+  A path through other tables counts (a -> b -> c). Two tables that point to the same
+  column may be joined on their pointing columns.
 - Never read columns marked [pii=high], not even in WHERE or ORDER BY. If the question
   needs one, refuse.
 - Return exactly the columns the question asks for. Use DISTINCT when it asks for
@@ -49,7 +51,7 @@ Rules:
 - For "which X has the most/least ...", return that one X (ORDER BY ... LIMIT 1).
 - For "each"/"every"/"all" groups, return every group (no small LIMIT).
 - Refuse only when the catalog truly lacks what the question needs: no listed table or
-  column holds it, or no listed relationship connects the tables. Then return
+  column holds it, or no chain of listed relationships connects the tables. Then return
   cannot_answer instead of a nearby query.
 - Do not refuse over wording or types. A column whose name is a synonym or abbreviation
   of the question's word is that column. A number or date stored as text can be CAST.

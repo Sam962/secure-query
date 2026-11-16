@@ -830,3 +830,20 @@ def test_current_date_is_allowed_but_not_who_or_where() -> None:
     validate_sql("SELECT COUNT(*) FROM Invoice WHERE InvoiceDate < CURRENT_TIMESTAMP", CATALOG)
     assert "sql.forbidden" in codes("SELECT CURRENT_USER FROM Genre")
     assert codes("SELECT CURRENT_SCHEMA FROM Genre")  # rejected (parsed here as an unknown column)
+
+
+def test_two_tables_pointing_at_the_same_key_may_join_but_not_be_summed() -> None:
+    # InvoiceLine.TrackId and PlaylistTrack.TrackId both point at Track.TrackId.
+    validate_sql(
+        "SELECT DISTINCT pt.PlaylistId FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.TrackId = il.TrackId",
+        CATALOG,
+    )
+    # Many-to-many both ways: a total over either side is inflated.
+    for summed in ("il.UnitPrice", "pt.PlaylistId"):
+        assert "sql.fan_out" in codes(
+            f"SELECT SUM({summed}) FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.TrackId = il.TrackId"
+        )
+    # Columns that do not point at the same key stay unapproved.
+    assert "sql.join_not_allowed" in codes(
+        "SELECT DISTINCT pt.PlaylistId FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.PlaylistId = il.TrackId"
+    )

@@ -658,8 +658,9 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
                     and jk.right_column.lower() == rc.lower()
                     for jk in catalog.join_keys
                 )
+            sibling = not forward and _siblings(catalog, lt, lc, rt, rc)
             to_one.setdefault(left.table, {})[right.table] = forward
-            to_one.setdefault(right.table, {})[left.table] = not forward
+            to_one.setdefault(right.table, {})[left.table] = not forward and not sibling
 
     errors: list[ValidationError] = []
     for agg in aggs:
@@ -774,11 +775,25 @@ def _check_aggregate_over_joined_derived(scope, base: dict, catalog: Catalog) ->
 
 def _join_allowed(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:
     key = {(lt.lower(), lc.lower()), (rt.lower(), rc.lower())}
-    return any(
+    return _siblings(catalog, lt, lc, rt, rc) or any(
         {(jk.left_table.lower(), jk.left_column.lower()), (jk.right_table.lower(), jk.right_column.lower())}
         == key
         for jk in catalog.join_keys
     )
+
+
+def _siblings(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:
+    """Both columns point at the same approved key (a.parent_id = b.parent_id): a join
+    of two many sides through their shared parent, many-to-many in both directions."""
+
+    def parents(table: str, column: str) -> set[tuple[str, str]]:
+        return {
+            (jk.right_table.lower(), jk.right_column.lower())
+            for jk in catalog.join_keys
+            if jk.left_table.lower() == table.lower() and jk.left_column.lower() == column.lower()
+        }
+
+    return (lt.lower(), lc.lower()) != (rt.lower(), rc.lower()) and bool(parents(lt, lc) & parents(rt, rc))
 
 
 def _limit_value(query: exp.Expression) -> int | None:
