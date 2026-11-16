@@ -374,7 +374,13 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   - P14: CURRENT_DATE and the clock are allowed; who/where functions stay forbidden.
   - P15: relationships shown as usable both ways and chainable; a join of two tables on the
     same parent key allowed (the fan-out check still applies).
-  - Then: sort the BIRD fan-out rejections into true and false alarms before any change.
+  - Done 2026-11-16: P12-P15 committed (STATUS). Fan-out sort (BIRD trace, 25 readings,
+    13 questions): true alarms kept (an atoms x bonds count; totals through a table with
+    several rows per account). False alarms in 6 questions, three causes, proposed as
+    **P16, waiting on Sam**: (1) a grouped subquery that joins tables counts as unknown
+    grain, though it is unique on its group keys and the error advises exactly that shape;
+    (2) columns only in a CASE condition count as summed; (3) a cross join of two
+    single-row subqueries is refused.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
   tags and column names only. Add value sampling only if the owner's review in 3.2 finds
   personal data in columns that neither a tag nor the name gave away.
