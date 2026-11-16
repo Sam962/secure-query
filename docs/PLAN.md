@@ -386,6 +386,9 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   patients. The kernel cannot tell intent from SQL; a prompt rule ("count the entity the
   question names with COUNT(DISTINCT its key)") or a check that a counted ratio names a
   table on the one side would. Measure on Spider dev and BIRD dev before building.
+  Measured 2026-11-16 as a prompt rule and rejected (STATUS): it adds DISTINCT broadly and
+  raises gate refusals. Left: the kernel-side check, or showing the counted grain in the
+  answer so the person asking can see what was counted.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
   tags and column names only. Add value sampling only if the owner's review in 3.2 finds
   personal data in columns that neither a tag nor the name gave away.

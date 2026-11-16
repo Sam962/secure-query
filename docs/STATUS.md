@@ -66,6 +66,14 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-16 — measured, not built: a prompt rule on what to count (P17).** Rule tried:
+  "count or average exactly what the question names; COUNT(DISTINCT key) for a thing a
+  join repeats, every row for events or links". Spider dev 400, 3 repeats: 321/47/32 ->
+  324/45/31 (noise). BIRD dev, regraded on DuckDB: right 869 -> 851, wrong 411 -> 408,
+  refused 254 -> 275. The model added COUNT(DISTINCT) to 74 counting queries that had
+  none, with almost no change in outcome (3 right -> wrong, 1 wrong -> right); the
+  head-to-head errors it was meant for were the opposite (DISTINCT where every row
+  counts). Refusals rose mostly at the two-readings gate. Reverted.
 - **2026-11-16 — head-to-head re-run after P12-P16 (Secure Query side; Genie unchanged).**
   Same 7 Spider test databases, 532 questions, 3 repeats, same catalogs; Genie's saved
   answers reused. Grader: right 402 -> 416, flagged wrong 61 -> 65, refused 69 -> 51.
