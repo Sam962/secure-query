@@ -1,0 +1,831 @@
+[
+ {
+  "id": "aan_1|p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the name and number of citations of the author with the greatest number of citations among authors?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int \u2014 affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int \u2014 author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str \u2014 paper id\n      author_id: int \u2014 author id\n      affiliation_id: int \u2014 affiliation id\n  - Citation\n      paper_id: str \u2014 paper id\n      cited_paper_id: str \u2014 cited paper id\n  - Paper\n      paper_id: str \u2014 paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id \u2192 Affiliation.affiliation_id\n  - Author_list.author_id \u2192 Author.author_id\n  - Author_list.paper_id \u2192 Paper.paper_id\n  - Citation.cited_paper_id \u2192 Paper.paper_id\n  - Citation.paper_id \u2192 Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T3.name), COUNT(*) FROM Citation AS T1 JOIN Author_list AS T2 ON T1.cited_paper_id = T2.paper_id JOIN Author AS T3 ON T2.author_id = T3.author_id GROUP BY T2.author_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Och, Franz Josef",
+     3650
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Manning, Christopher D.",
+     2183
+    ]
+   ]
+  }
+ },
+ {
+  "id": "aan_1|p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the name and number of citations of the author who has most citations among all authors?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int \u2014 affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int \u2014 author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str \u2014 paper id\n      author_id: int \u2014 author id\n      affiliation_id: int \u2014 affiliation id\n  - Citation\n      paper_id: str \u2014 paper id\n      cited_paper_id: str \u2014 cited paper id\n  - Paper\n      paper_id: str \u2014 paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id \u2192 Affiliation.affiliation_id\n  - Author_list.author_id \u2192 Author.author_id\n  - Author_list.paper_id \u2192 Paper.paper_id\n  - Citation.cited_paper_id \u2192 Paper.paper_id\n  - Citation.paper_id \u2192 Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T3.name), COUNT(*) FROM Citation AS T1 JOIN Author_list AS T2 ON T1.cited_paper_id = T2.paper_id JOIN Author AS T3 ON T2.author_id = T3.author_id GROUP BY T2.author_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Och, Franz Josef",
+     3650
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Manning, Christopher D.",
+     2183
+    ]
+   ]
+  }
+ },
+ {
+  "id": "advertising_agencies|p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show the meeting ids and the number of staff in each meeting.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int \u2014 agency id\n      agency_details: str \u2014 agency details\n  - Clients\n      client_id: int \u2014 client id\n      agency_id: int \u2014 agency id\n      sic_code: str \u2014 sic code values: 'Bad', 'Mutual'\n      client_details: str \u2014 client details\n  - Invoices\n      invoice_id: int \u2014 invoice id\n      client_id: int \u2014 client id\n      invoice_status: str \u2014 invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str \u2014 invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int \u2014 meeting id\n      client_id: int \u2014 client id\n      meeting_outcome: str \u2014 meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str \u2014 meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str \u2014 billable yn values: '0', '1'\n      start_date_time: str \u2014 start date time\n      end_date_time: str \u2014 end date time\n      purpose_of_meeting: str \u2014 purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str \u2014 other details\n  - Payments\n      payment_id: int \u2014 payment id\n      invoice_id: int \u2014 invoice id\n      payment_details: str \u2014 payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int \u2014 staff id\n      agency_id: int \u2014 agency id\n      staff_details: str \u2014 staff details\n  - Staff_in_Meetings\n      meeting_id: int \u2014 meeting id\n      staff_id: int \u2014 staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id \u2192 Agencies.agency_id\n  - Invoices.client_id \u2192 Clients.client_id\n  - Meetings.client_id \u2192 Clients.client_id\n  - Payments.invoice_id \u2192 Invoices.invoice_id\n  - Staff_in_Meetings.staff_id \u2192 Staff.staff_id\n  - Staff_in_Meetings.meeting_id \u2192 Meetings.meeting_id",
+  "gold_sql": "SELECT meeting_id, COUNT(*) FROM Staff_in_meetings GROUP BY meeting_id",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     6,
+     2
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     3,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `meetings`.`meeting_id` AS `meeting_id`, COUNT(`staff_in_meetings`.`staff_id`) AS `staff_count` FROM `Meetings` AS `meetings` LEFT JOIN `Staff_in_Meetings` AS `staff_in_meetings` ON `meetings`.`meeting_id` = `staff_in_meetings`.`meeting_id` GROUP BY `meetings`.`meeting_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     9,
+     1
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     2,
+     2
+    ]
+   ]
+  }
+ },
+ {
+  "id": "advertising_agencies|p010",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all client ids and the number of invoices for each client.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int \u2014 agency id\n      agency_details: str \u2014 agency details\n  - Clients\n      client_id: int \u2014 client id\n      agency_id: int \u2014 agency id\n      sic_code: str \u2014 sic code values: 'Bad', 'Mutual'\n      client_details: str \u2014 client details\n  - Invoices\n      invoice_id: int \u2014 invoice id\n      client_id: int \u2014 client id\n      invoice_status: str \u2014 invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str \u2014 invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int \u2014 meeting id\n      client_id: int \u2014 client id\n      meeting_outcome: str \u2014 meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str \u2014 meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str \u2014 billable yn values: '0', '1'\n      start_date_time: str \u2014 start date time\n      end_date_time: str \u2014 end date time\n      purpose_of_meeting: str \u2014 purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str \u2014 other details\n  - Payments\n      payment_id: int \u2014 payment id\n      invoice_id: int \u2014 invoice id\n      payment_details: str \u2014 payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int \u2014 staff id\n      agency_id: int \u2014 agency id\n      staff_details: str \u2014 staff details\n  - Staff_in_Meetings\n      meeting_id: int \u2014 meeting id\n      staff_id: int \u2014 staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id \u2192 Agencies.agency_id\n  - Invoices.client_id \u2192 Clients.client_id\n  - Meetings.client_id \u2192 Clients.client_id\n  - Payments.invoice_id \u2192 Invoices.invoice_id\n  - Staff_in_Meetings.staff_id \u2192 Staff.staff_id\n  - Staff_in_Meetings.meeting_id \u2192 Meetings.meeting_id",
+  "gold_sql": "SELECT client_id, COUNT(*) FROM Invoices GROUP BY client_id",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     5,
+     1
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     15,
+     1
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `clients`.`client_id` AS `client_id`, COUNT(`invoices`.`invoice_id`) AS `invoice_count` FROM `Clients` AS `clients` LEFT JOIN `Invoices` AS `invoices` ON `clients`.`client_id` = `invoices`.`client_id` GROUP BY `clients`.`client_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     9,
+     2
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     2,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "e_commerce|p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the average price of the products being ordered?",
+  "schema": "tenant=spider_e_commerce\ntables:\n  - Customer_Payment_Methods\n      customer_id: int \u2014 customer id\n      payment_method_code: str \u2014 payment method code values: 'Cheque', 'Credit Card', 'Direct Debit'\n  - Customers\n      customer_id: int \u2014 customer id\n      gender_code: str \u2014 gender code values: 'Female', 'Male', 'Unknown'\n      customer_first_name: str \u2014 customer first name\n      customer_middle_initial: str \u2014 customer middle initial\n      customer_last_name: str \u2014 customer last name\n      email_address: str \u2014 email address\n      login_name: str \u2014 login name\n      login_password: str \u2014 login password\n      phone_number: str \u2014 phone number\n      address_line_1: str \u2014 address line 1\n      town_city: str \u2014 town city\n      county: str\n      country: str values: 'USA'\n  - Invoices\n      invoice_number: int \u2014 invoice number\n      invoice_status_code: str \u2014 invoice status code values: 'Issued', 'Paid'\n      invoice_date: str \u2014 invoice date\n  - Order_Items\n      order_item_id: int \u2014 order item id\n      product_id: int \u2014 product id\n      order_id: int \u2014 order id\n      order_item_status_code: str \u2014 order item status code values: 'Delivered', 'Out of Stock'\n  - Orders\n      order_id: int \u2014 order id\n      customer_id: int \u2014 customer id\n      order_status_code: str \u2014 order status code values: 'Cancelled', 'Delivered', 'Part Completed'\n      date_order_placed: str \u2014 date order placed\n  - Products\n      product_id: int \u2014 product id\n      parent_product_id: int \u2014 parent product id\n      product_name: str \u2014 product name\n      product_price: float \u2014 product price\n      product_color: str \u2014 product color values: 'Red', 'Yellow'\n      product_size: str \u2014 product size values: 'Medium', 'Small'\n      product_description: str \u2014 product description\n  - Shipment_Items\n      shipment_id: int \u2014 shipment id\n      order_item_id: int \u2014 order item id\n  - Shipments\n      shipment_id: int \u2014 shipment id\n      order_id: int \u2014 order id\n      invoice_number: int \u2014 invoice number\n      shipment_tracking_number: str \u2014 shipment tracking number\n      shipment_date: str \u2014 shipment date\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Customer_Payment_Methods.customer_id \u2192 Customers.customer_id\n  - Orders.customer_id \u2192 Customers.customer_id\n  - Order_Items.order_id \u2192 Orders.order_id\n  - Order_Items.product_id \u2192 Products.product_id\n  - Shipments.order_id \u2192 Orders.order_id\n  - Shipments.invoice_number \u2192 Invoices.invoice_number\n  - Shipment_Items.order_item_id \u2192 Order_Items.order_item_id\n  - Shipment_Items.shipment_id \u2192 Shipments.shipment_id",
+  "gold_sql": "SELECT AVG(T1.product_price) FROM Products AS T1 JOIN Order_items AS T2 ON T1.product_id = T2.product_id",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     519.036
+    ]
+   ]
+  },
+  "system_sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_id` IN (SELECT `order_items`.`product_id` AS `product_id` FROM `Order_Items` AS `order_items`) LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     442.466
+    ]
+   ]
+  }
+ },
+ {
+  "id": "e_commerce|p010",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the statuses, dates, and shipment dates for all invoices?",
+  "schema": "tenant=spider_e_commerce\ntables:\n  - Customer_Payment_Methods\n      customer_id: int \u2014 customer id\n      payment_method_code: str \u2014 payment method code values: 'Cheque', 'Credit Card', 'Direct Debit'\n  - Customers\n      customer_id: int \u2014 customer id\n      gender_code: str \u2014 gender code values: 'Female', 'Male', 'Unknown'\n      customer_first_name: str \u2014 customer first name\n      customer_middle_initial: str \u2014 customer middle initial\n      customer_last_name: str \u2014 customer last name\n      email_address: str \u2014 email address\n      login_name: str \u2014 login name\n      login_password: str \u2014 login password\n      phone_number: str \u2014 phone number\n      address_line_1: str \u2014 address line 1\n      town_city: str \u2014 town city\n      county: str\n      country: str values: 'USA'\n  - Invoices\n      invoice_number: int \u2014 invoice number\n      invoice_status_code: str \u2014 invoice status code values: 'Issued', 'Paid'\n      invoice_date: str \u2014 invoice date\n  - Order_Items\n      order_item_id: int \u2014 order item id\n      product_id: int \u2014 product id\n      order_id: int \u2014 order id\n      order_item_status_code: str \u2014 order item status code values: 'Delivered', 'Out of Stock'\n  - Orders\n      order_id: int \u2014 order id\n      customer_id: int \u2014 customer id\n      order_status_code: str \u2014 order status code values: 'Cancelled', 'Delivered', 'Part Completed'\n      date_order_placed: str \u2014 date order placed\n  - Products\n      product_id: int \u2014 product id\n      parent_product_id: int \u2014 parent product id\n      product_name: str \u2014 product name\n      product_price: float \u2014 product price\n      product_color: str \u2014 product color values: 'Red', 'Yellow'\n      product_size: str \u2014 product size values: 'Medium', 'Small'\n      product_description: str \u2014 product description\n  - Shipment_Items\n      shipment_id: int \u2014 shipment id\n      order_item_id: int \u2014 order item id\n  - Shipments\n      shipment_id: int \u2014 shipment id\n      order_id: int \u2014 order id\n      invoice_number: int \u2014 invoice number\n      shipment_tracking_number: str \u2014 shipment tracking number\n      shipment_date: str \u2014 shipment date\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Customer_Payment_Methods.customer_id \u2192 Customers.customer_id\n  - Orders.customer_id \u2192 Customers.customer_id\n  - Order_Items.order_id \u2192 Orders.order_id\n  - Order_Items.product_id \u2192 Products.product_id\n  - Shipments.order_id \u2192 Orders.order_id\n  - Shipments.invoice_number \u2192 Invoices.invoice_number\n  - Shipment_Items.order_item_id \u2192 Order_Items.order_item_id\n  - Shipment_Items.shipment_id \u2192 Shipments.shipment_id",
+  "gold_sql": "SELECT T1.invoice_status_code, T1.invoice_date, T2.shipment_date FROM Invoices AS T1 JOIN Shipments AS T2 ON T1.invoice_number = T2.invoice_number",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "Issued",
+     "2018-01-28 20:08:22",
+     "2018-02-25 19:24:52"
+    ],
+    [
+     "Paid",
+     "2018-02-13 02:16:55",
+     "2018-03-14 16:21:03"
+    ],
+    [
+     "Issued",
+     "2018-03-11 02:04:42",
+     "2018-03-18 22:23:19"
+    ],
+    [
+     "Paid",
+     "2018-03-14 11:58:55",
+     "2018-03-12 01:44:44"
+    ],
+    [
+     "Paid",
+     "2018-02-14 02:48:48",
+     "2018-03-20 01:23:34"
+    ],
+    [
+     "Issued",
+     "2018-02-17 13:52:46",
+     "2018-03-25 15:37:44"
+    ],
+    [
+     "Issued",
+     "2018-03-04 18:54:34",
+     "2018-03-09 07:24:28"
+    ],
+    [
+     "Issued",
+     "2018-01-26 02:23:32",
+     "2018-03-20 21:01:04"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `invoices`.`invoice_status_code` AS `invoice_status_code`, `invoices`.`invoice_date` AS `invoice_date`, `shipments`.`shipment_date` AS `shipment_date` FROM `Invoices` AS `invoices` LEFT JOIN `Shipments` AS `shipments` ON `invoices`.`invoice_number` = `shipments`.`invoice_number` LIMIT 10000",
+  "system_result": {
+   "count": 20,
+   "first": [
+    [
+     "Paid",
+     "2018-03-09 07:16:07",
+     null
+    ],
+    [
+     "Issued",
+     "2018-01-28 20:08:22",
+     "2018-02-25 19:24:52"
+    ],
+    [
+     "Paid",
+     "2018-02-13 02:16:55",
+     "2018-03-14 16:21:03"
+    ],
+    [
+     "Issued",
+     "2018-03-11 02:04:42",
+     "2018-03-18 22:23:19"
+    ],
+    [
+     "Paid",
+     "2018-03-14 11:58:55",
+     "2018-03-12 01:44:44"
+    ],
+    [
+     "Paid",
+     "2018-02-19 22:12:45",
+     null
+    ],
+    [
+     "Paid",
+     "2018-02-14 02:48:48",
+     "2018-03-20 01:23:34"
+    ],
+    [
+     "Paid",
+     "2018-03-20 00:29:12",
+     null
+    ]
+   ]
+  }
+ },
+ {
+  "id": "e_commerce|p012",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the date of all orders that have been placed by customers with at least 2 payment methods?",
+  "schema": "tenant=spider_e_commerce\ntables:\n  - Customer_Payment_Methods\n      customer_id: int \u2014 customer id\n      payment_method_code: str \u2014 payment method code values: 'Cheque', 'Credit Card', 'Direct Debit'\n  - Customers\n      customer_id: int \u2014 customer id\n      gender_code: str \u2014 gender code values: 'Female', 'Male', 'Unknown'\n      customer_first_name: str \u2014 customer first name\n      customer_middle_initial: str \u2014 customer middle initial\n      customer_last_name: str \u2014 customer last name\n      email_address: str \u2014 email address\n      login_name: str \u2014 login name\n      login_password: str \u2014 login password\n      phone_number: str \u2014 phone number\n      address_line_1: str \u2014 address line 1\n      town_city: str \u2014 town city\n      county: str\n      country: str values: 'USA'\n  - Invoices\n      invoice_number: int \u2014 invoice number\n      invoice_status_code: str \u2014 invoice status code values: 'Issued', 'Paid'\n      invoice_date: str \u2014 invoice date\n  - Order_Items\n      order_item_id: int \u2014 order item id\n      product_id: int \u2014 product id\n      order_id: int \u2014 order id\n      order_item_status_code: str \u2014 order item status code values: 'Delivered', 'Out of Stock'\n  - Orders\n      order_id: int \u2014 order id\n      customer_id: int \u2014 customer id\n      order_status_code: str \u2014 order status code values: 'Cancelled', 'Delivered', 'Part Completed'\n      date_order_placed: str \u2014 date order placed\n  - Products\n      product_id: int \u2014 product id\n      parent_product_id: int \u2014 parent product id\n      product_name: str \u2014 product name\n      product_price: float \u2014 product price\n      product_color: str \u2014 product color values: 'Red', 'Yellow'\n      product_size: str \u2014 product size values: 'Medium', 'Small'\n      product_description: str \u2014 product description\n  - Shipment_Items\n      shipment_id: int \u2014 shipment id\n      order_item_id: int \u2014 order item id\n  - Shipments\n      shipment_id: int \u2014 shipment id\n      order_id: int \u2014 order id\n      invoice_number: int \u2014 invoice number\n      shipment_tracking_number: str \u2014 shipment tracking number\n      shipment_date: str \u2014 shipment date\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Customer_Payment_Methods.customer_id \u2192 Customers.customer_id\n  - Orders.customer_id \u2192 Customers.customer_id\n  - Order_Items.order_id \u2192 Orders.order_id\n  - Order_Items.product_id \u2192 Products.product_id\n  - Shipments.order_id \u2192 Orders.order_id\n  - Shipments.invoice_number \u2192 Invoices.invoice_number\n  - Shipment_Items.order_item_id \u2192 Order_Items.order_item_id\n  - Shipment_Items.shipment_id \u2192 Shipments.shipment_id",
+  "gold_sql": "SELECT date_order_placed FROM Orders WHERE customer_id IN (SELECT T1.customer_id FROM Customers AS T1 JOIN Customer_Payment_Methods AS T2 ON T1.customer_id = T2.customer_id GROUP BY T1.customer_id HAVING COUNT(*) >= 2)",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "2017-10-14 12:05:48"
+    ],
+    [
+     "2017-09-10 08:27:04"
+    ],
+    [
+     "2018-03-01 04:18:28"
+    ],
+    [
+     "2017-09-25 14:30:23"
+    ],
+    [
+     "2017-12-10 23:45:42"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `orders`.`date_order_placed` AS `date_order_placed`, COUNT(DISTINCT `customer_payment_methods`.`payment_method_code`) AS `count_payment_method_code` FROM `Orders` AS `orders` JOIN `Customer_Payment_Methods` AS `customer_payment_methods` ON `orders`.`customer_id` = `customer_payment_methods`.`customer_id` GROUP BY `orders`.`order_id`, `orders`.`date_order_placed`, `orders`.`customer_id` HAVING COUNT(DISTINCT `customer_payment_methods`.`payment_method_code`) >= 2 LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "2017-10-14 12:05:48",
+     2
+    ],
+    [
+     "2017-12-10 23:45:42",
+     2
+    ],
+    [
+     "2017-09-10 08:27:04",
+     2
+    ]
+   ]
+  }
+ },
+ {
+  "id": "e_commerce|p015",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List the order date of the orders who are placed by customers with at least 2 payment methods.",
+  "schema": "tenant=spider_e_commerce\ntables:\n  - Customer_Payment_Methods\n      customer_id: int \u2014 customer id\n      payment_method_code: str \u2014 payment method code values: 'Cheque', 'Credit Card', 'Direct Debit'\n  - Customers\n      customer_id: int \u2014 customer id\n      gender_code: str \u2014 gender code values: 'Female', 'Male', 'Unknown'\n      customer_first_name: str \u2014 customer first name\n      customer_middle_initial: str \u2014 customer middle initial\n      customer_last_name: str \u2014 customer last name\n      email_address: str \u2014 email address\n      login_name: str \u2014 login name\n      login_password: str \u2014 login password\n      phone_number: str \u2014 phone number\n      address_line_1: str \u2014 address line 1\n      town_city: str \u2014 town city\n      county: str\n      country: str values: 'USA'\n  - Invoices\n      invoice_number: int \u2014 invoice number\n      invoice_status_code: str \u2014 invoice status code values: 'Issued', 'Paid'\n      invoice_date: str \u2014 invoice date\n  - Order_Items\n      order_item_id: int \u2014 order item id\n      product_id: int \u2014 product id\n      order_id: int \u2014 order id\n      order_item_status_code: str \u2014 order item status code values: 'Delivered', 'Out of Stock'\n  - Orders\n      order_id: int \u2014 order id\n      customer_id: int \u2014 customer id\n      order_status_code: str \u2014 order status code values: 'Cancelled', 'Delivered', 'Part Completed'\n      date_order_placed: str \u2014 date order placed\n  - Products\n      product_id: int \u2014 product id\n      parent_product_id: int \u2014 parent product id\n      product_name: str \u2014 product name\n      product_price: float \u2014 product price\n      product_color: str \u2014 product color values: 'Red', 'Yellow'\n      product_size: str \u2014 product size values: 'Medium', 'Small'\n      product_description: str \u2014 product description\n  - Shipment_Items\n      shipment_id: int \u2014 shipment id\n      order_item_id: int \u2014 order item id\n  - Shipments\n      shipment_id: int \u2014 shipment id\n      order_id: int \u2014 order id\n      invoice_number: int \u2014 invoice number\n      shipment_tracking_number: str \u2014 shipment tracking number\n      shipment_date: str \u2014 shipment date\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Customer_Payment_Methods.customer_id \u2192 Customers.customer_id\n  - Orders.customer_id \u2192 Customers.customer_id\n  - Order_Items.order_id \u2192 Orders.order_id\n  - Order_Items.product_id \u2192 Products.product_id\n  - Shipments.order_id \u2192 Orders.order_id\n  - Shipments.invoice_number \u2192 Invoices.invoice_number\n  - Shipment_Items.order_item_id \u2192 Order_Items.order_item_id\n  - Shipment_Items.shipment_id \u2192 Shipments.shipment_id",
+  "gold_sql": "SELECT date_order_placed FROM Orders WHERE customer_id IN (SELECT T1.customer_id FROM Customers AS T1 JOIN Customer_Payment_Methods AS T2 ON T1.customer_id = T2.customer_id GROUP BY T1.customer_id HAVING COUNT(*) >= 2)",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "2017-10-14 12:05:48"
+    ],
+    [
+     "2017-09-10 08:27:04"
+    ],
+    [
+     "2018-03-01 04:18:28"
+    ],
+    [
+     "2017-09-25 14:30:23"
+    ],
+    [
+     "2017-12-10 23:45:42"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `orders`.`date_order_placed` AS `date_order_placed`, COUNT(DISTINCT `customer_payment_methods`.`payment_method_code`) AS `count_payment_method_code` FROM `Orders` AS `orders` JOIN `Customer_Payment_Methods` AS `customer_payment_methods` ON `orders`.`customer_id` = `customer_payment_methods`.`customer_id` GROUP BY `orders`.`order_id`, `orders`.`date_order_placed`, `orders`.`customer_id` HAVING COUNT(DISTINCT `customer_payment_methods`.`payment_method_code`) >= 2 LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "2017-10-14 12:05:48",
+     2
+    ],
+    [
+     "2017-12-10 23:45:42",
+     2
+    ],
+    [
+     "2017-09-10 08:27:04",
+     2
+    ]
+   ]
+  }
+ },
+ {
+  "id": "cre_Students_Information_Systems|p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Which students not only got the most common result but also got a result obtained by 3 students in behaviour monitoring? List the student's biographical data and details.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int \u2014 achievement id\n      achievement_type_code: str \u2014 achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int \u2014 student id\n      date_achievement: int \u2014 date achievement\n      achievement_details: str \u2014 achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str \u2014 other details\n  - Addresses\n      address_id: int \u2014 address id\n      address_details: str \u2014 address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int \u2014 behaviour monitoring id\n      student_id: int \u2014 student id\n      behaviour_monitoring_details: str \u2014 behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int \u2014 class id\n      student_id: int \u2014 student id\n      teacher_id: int \u2014 teacher id\n      class_details: str \u2014 class details\n  - Detention\n      detention_id: int \u2014 detention id\n      detention_type_code: str \u2014 detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int \u2014 student id\n      datetime_detention_start: str \u2014 datetime detention start\n      datetime_detention_end: str \u2014 datetime detention end\n      detention_summary: str \u2014 detention summary\n      other_details: str \u2014 other details\n  - Ref_Achievement_Type\n      achievement_type_code: str \u2014 achievement type code\n      achievement_type_description: str \u2014 achievement type description\n  - Ref_Address_Types\n      address_type_code: str \u2014 address type code\n      address_type_description: str \u2014 address type description\n  - Ref_Detention_Type\n      detention_type_code: str \u2014 detention type code\n      detention_type_description: str \u2014 detention type description\n  - Ref_Event_Types\n      event_type_code: str \u2014 event type code\n      event_type_description: str \u2014 event type description\n  - Student_Events\n      event_id: int \u2014 event id\n      event_type_code: str \u2014 event type code values: 'Exam', 'Registration'\n      student_id: int \u2014 student id\n      event_date: str \u2014 event date\n      other_details: str \u2014 other details\n  - Student_Loans\n      student_loan_id: int \u2014 student loan id\n      student_id: int \u2014 student id\n      date_of_loan: str \u2014 date of loan\n      amount_of_loan: float \u2014 amount of loan\n      other_details: str \u2014 other details\n  - Students\n      student_id: int \u2014 student id\n      bio_data: str \u2014 bio data\n      student_details: str \u2014 student details\n  - Students_Addresses\n      student_address_id: int \u2014 student address id\n      address_id: int \u2014 address id\n      address_type_code: str \u2014 address type code values: 'CO', 'HM'\n      student_id: int \u2014 student id\n      date_from: str \u2014 date from\n      date_to: str \u2014 date to\n  - Teachers\n      teacher_id: int \u2014 teacher id\n      teacher_details: str \u2014 teacher details\n  - Transcripts\n      transcript_id: int \u2014 transcript id\n      student_id: int \u2014 student id\n      date_of_transcript: str \u2014 date of transcript\n      transcript_details: str \u2014 transcript details values: 'Good', 'Pass'\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Transcripts.student_id \u2192 Students.student_id\n  - Behaviour_Monitoring.student_id \u2192 Students.student_id\n  - Student_Events.event_type_code \u2192 Ref_Event_Types.event_type_code\n  - Student_Events.student_id \u2192 Students.student_id\n  - Student_Loans.student_id \u2192 Students.student_id\n  - Classes.teacher_id \u2192 Teachers.teacher_id\n  - Classes.student_id \u2192 Students.student_id\n  - Students_Addresses.address_type_code \u2192 Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id \u2192 Addresses.address_id\n  - Students_Addresses.student_id \u2192 Students.student_id\n  - Detention.detention_type_code \u2192 Ref_Detention_Type.detention_type_code\n  - Detention.student_id \u2192 Students.student_id\n  - Achievements.achievement_type_code \u2192 Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id \u2192 Students.student_id",
+  "gold_sql": "SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1) INTERSECT SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details HAVING COUNT(*) = 3)",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "Dino",
+     "Suite 970"
+    ],
+    [
+     "Arturo",
+     "Apt. 491"
+    ]
+   ]
+  },
+  "system_sql": "WITH `result_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `most_common` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `result_counts` AS `result_counts` ORDER BY `result_counts`.`student_count` DESC LIMIT 1), `results_with_three` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `result_counts` AS `result_counts` WHERE `result_counts`.`student_count` = 3) SELECT DISTINCT `s`.`bio_data` AS `bio_data`, `s`.`student_details` AS `student_details` FROM `Students` AS `s` JOIN `Behaviour_Monitoring` AS `b` ON `s`.`student_id` = `b`.`student_id` WHERE `b`.`behaviour_monitoring_details` IN (SELECT `most_common`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `most_common` AS `most_common`) AND `b`.`behaviour_monitoring_details` IN (SELECT `results_with_three`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `results_with_three` AS `results_with_three`) LIMIT 10000",
+  "system_result": {
+   "count": 0,
+   "first": []
+  }
+ },
+ {
+  "id": "cre_Students_Information_Systems|p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the personal details and the address type descriptions of each student?",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int \u2014 achievement id\n      achievement_type_code: str \u2014 achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int \u2014 student id\n      date_achievement: int \u2014 date achievement\n      achievement_details: str \u2014 achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str \u2014 other details\n  - Addresses\n      address_id: int \u2014 address id\n      address_details: str \u2014 address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int \u2014 behaviour monitoring id\n      student_id: int \u2014 student id\n      behaviour_monitoring_details: str \u2014 behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int \u2014 class id\n      student_id: int \u2014 student id\n      teacher_id: int \u2014 teacher id\n      class_details: str \u2014 class details\n  - Detention\n      detention_id: int \u2014 detention id\n      detention_type_code: str \u2014 detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int \u2014 student id\n      datetime_detention_start: str \u2014 datetime detention start\n      datetime_detention_end: str \u2014 datetime detention end\n      detention_summary: str \u2014 detention summary\n      other_details: str \u2014 other details\n  - Ref_Achievement_Type\n      achievement_type_code: str \u2014 achievement type code\n      achievement_type_description: str \u2014 achievement type description\n  - Ref_Address_Types\n      address_type_code: str \u2014 address type code\n      address_type_description: str \u2014 address type description\n  - Ref_Detention_Type\n      detention_type_code: str \u2014 detention type code\n      detention_type_description: str \u2014 detention type description\n  - Ref_Event_Types\n      event_type_code: str \u2014 event type code\n      event_type_description: str \u2014 event type description\n  - Student_Events\n      event_id: int \u2014 event id\n      event_type_code: str \u2014 event type code values: 'Exam', 'Registration'\n      student_id: int \u2014 student id\n      event_date: str \u2014 event date\n      other_details: str \u2014 other details\n  - Student_Loans\n      student_loan_id: int \u2014 student loan id\n      student_id: int \u2014 student id\n      date_of_loan: str \u2014 date of loan\n      amount_of_loan: float \u2014 amount of loan\n      other_details: str \u2014 other details\n  - Students\n      student_id: int \u2014 student id\n      bio_data: str \u2014 bio data\n      student_details: str \u2014 student details\n  - Students_Addresses\n      student_address_id: int \u2014 student address id\n      address_id: int \u2014 address id\n      address_type_code: str \u2014 address type code values: 'CO', 'HM'\n      student_id: int \u2014 student id\n      date_from: str \u2014 date from\n      date_to: str \u2014 date to\n  - Teachers\n      teacher_id: int \u2014 teacher id\n      teacher_details: str \u2014 teacher details\n  - Transcripts\n      transcript_id: int \u2014 transcript id\n      student_id: int \u2014 student id\n      date_of_transcript: str \u2014 date of transcript\n      transcript_details: str \u2014 transcript details values: 'Good', 'Pass'\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Transcripts.student_id \u2192 Students.student_id\n  - Behaviour_Monitoring.student_id \u2192 Students.student_id\n  - Student_Events.event_type_code \u2192 Ref_Event_Types.event_type_code\n  - Student_Events.student_id \u2192 Students.student_id\n  - Student_Loans.student_id \u2192 Students.student_id\n  - Classes.teacher_id \u2192 Teachers.teacher_id\n  - Classes.student_id \u2192 Students.student_id\n  - Students_Addresses.address_type_code \u2192 Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id \u2192 Addresses.address_id\n  - Students_Addresses.student_id \u2192 Students.student_id\n  - Detention.detention_type_code \u2192 Ref_Detention_Type.detention_type_code\n  - Detention.student_id \u2192 Students.student_id\n  - Achievements.achievement_type_code \u2192 Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id \u2192 Students.student_id",
+  "gold_sql": "SELECT DISTINCT T1.student_details, T3.address_type_description FROM Students AS T1 JOIN Students_Addresses AS T2 ON T1.student_id = T2.student_id JOIN Ref_Address_Types AS T3 ON T2.address_type_code = T3.address_type_code",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Suite 303",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "Home"
+    ],
+    [
+     "Apt. 748",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "College"
+    ],
+    [
+     "Apt. 763",
+     "Home"
+    ],
+    [
+     "Suite 889",
+     "Home"
+    ],
+    [
+     "Suite 076",
+     "Home"
+    ],
+    [
+     "Suite 303",
+     "College"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `students`.`student_details` AS `student_details`, `ref_address_types`.`address_type_description` AS `address_type_description` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "Suite 076",
+     "Home"
+    ],
+    [
+     "Suite 218",
+     "Home"
+    ],
+    [
+     "Apt. 748",
+     "Home"
+    ],
+    [
+     "Suite 303",
+     "Home"
+    ],
+    [
+     "Apt. 763",
+     "Home"
+    ],
+    [
+     "Apt. 040",
+     "Home"
+    ],
+    [
+     "Suite 889",
+     "Home"
+    ],
+    [
+     "Suite 218",
+     "Home"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "cre_Students_Information_Systems|p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List the biographical data and student id for the students who take 2 or more classes and the students who have less than 2 detentions.",
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int \u2014 achievement id\n      achievement_type_code: str \u2014 achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int \u2014 student id\n      date_achievement: int \u2014 date achievement\n      achievement_details: str \u2014 achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str \u2014 other details\n  - Addresses\n      address_id: int \u2014 address id\n      address_details: str \u2014 address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int \u2014 behaviour monitoring id\n      student_id: int \u2014 student id\n      behaviour_monitoring_details: str \u2014 behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int \u2014 class id\n      student_id: int \u2014 student id\n      teacher_id: int \u2014 teacher id\n      class_details: str \u2014 class details\n  - Detention\n      detention_id: int \u2014 detention id\n      detention_type_code: str \u2014 detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int \u2014 student id\n      datetime_detention_start: str \u2014 datetime detention start\n      datetime_detention_end: str \u2014 datetime detention end\n      detention_summary: str \u2014 detention summary\n      other_details: str \u2014 other details\n  - Ref_Achievement_Type\n      achievement_type_code: str \u2014 achievement type code\n      achievement_type_description: str \u2014 achievement type description\n  - Ref_Address_Types\n      address_type_code: str \u2014 address type code\n      address_type_description: str \u2014 address type description\n  - Ref_Detention_Type\n      detention_type_code: str \u2014 detention type code\n      detention_type_description: str \u2014 detention type description\n  - Ref_Event_Types\n      event_type_code: str \u2014 event type code\n      event_type_description: str \u2014 event type description\n  - Student_Events\n      event_id: int \u2014 event id\n      event_type_code: str \u2014 event type code values: 'Exam', 'Registration'\n      student_id: int \u2014 student id\n      event_date: str \u2014 event date\n      other_details: str \u2014 other details\n  - Student_Loans\n      student_loan_id: int \u2014 student loan id\n      student_id: int \u2014 student id\n      date_of_loan: str \u2014 date of loan\n      amount_of_loan: float \u2014 amount of loan\n      other_details: str \u2014 other details\n  - Students\n      student_id: int \u2014 student id\n      bio_data: str \u2014 bio data\n      student_details: str \u2014 student details\n  - Students_Addresses\n      student_address_id: int \u2014 student address id\n      address_id: int \u2014 address id\n      address_type_code: str \u2014 address type code values: 'CO', 'HM'\n      student_id: int \u2014 student id\n      date_from: str \u2014 date from\n      date_to: str \u2014 date to\n  - Teachers\n      teacher_id: int \u2014 teacher id\n      teacher_details: str \u2014 teacher details\n  - Transcripts\n      transcript_id: int \u2014 transcript id\n      student_id: int \u2014 student id\n      date_of_transcript: str \u2014 date of transcript\n      transcript_details: str \u2014 transcript details values: 'Good', 'Pass'\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Transcripts.student_id \u2192 Students.student_id\n  - Behaviour_Monitoring.student_id \u2192 Students.student_id\n  - Student_Events.event_type_code \u2192 Ref_Event_Types.event_type_code\n  - Student_Events.student_id \u2192 Students.student_id\n  - Student_Loans.student_id \u2192 Students.student_id\n  - Classes.teacher_id \u2192 Teachers.teacher_id\n  - Classes.student_id \u2192 Students.student_id\n  - Students_Addresses.address_type_code \u2192 Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id \u2192 Addresses.address_id\n  - Students_Addresses.student_id \u2192 Students.student_id\n  - Detention.detention_type_code \u2192 Ref_Detention_Type.detention_type_code\n  - Detention.student_id \u2192 Students.student_id\n  - Achievements.achievement_type_code \u2192 Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id \u2192 Students.student_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) >= 2 UNION SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Detention AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) < 2",
+  "gold_result": {
+   "count": 7,
+   "first": [
+    [
+     "Brenden",
+     669
+    ],
+    [
+     "Antone",
+     471
+    ],
+    [
+     "Edison",
+     762
+    ],
+    [
+     "Felipa",
+     811
+    ],
+    [
+     "Vanessa",
+     435
+    ],
+    [
+     "Camila",
+     276
+    ],
+    [
+     "Keshawn",
+     984
+    ]
+   ]
+  },
+  "system_sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(*) >= 2) OR `students`.`student_id` IN (SELECT `detention`.`student_id` AS `student_id` FROM `Detention` AS `detention` GROUP BY `detention`.`student_id` HAVING COUNT(*) < 2) OR NOT EXISTS(SELECT 1 AS `1` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) LIMIT 10000",
+  "system_result": {
+   "count": 12,
+   "first": [
+    [
+     "Camila",
+     276
+    ],
+    [
+     "Dino",
+     287
+    ],
+    [
+     "Pansy",
+     325
+    ],
+    [
+     "Vanessa",
+     435
+    ],
+    [
+     "Antone",
+     471
+    ],
+    [
+     "Arturo",
+     567
+    ],
+    [
+     "Brenden",
+     669
+    ],
+    [
+     "Edison",
+     762
+    ]
+   ]
+  }
+ },
+ {
+  "id": "address_1|p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the number of students living in each city.",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str \u2014 city code\n      city_name: str \u2014 city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str \u2014 city1 code\n      city2_code: str \u2014 city2 code\n      distance: int\n  - Student\n      StuID: int \u2014 student id\n      LName: str \u2014 last name\n      Fname: str \u2014 first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str \u2014 city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code \u2192 City.city_code\n  - Direct_distance.city2_code \u2192 City.city_code\n  - Direct_distance.city1_code \u2192 City.city_code",
+  "gold_sql": "SELECT ANY_VALUE(T1.city_name), COUNT(*) FROM City AS T1 JOIN Student AS T2 ON T1.city_code = T2.city_code GROUP BY T1.city_code",
+  "gold_result": {
+   "count": 19,
+   "first": [
+    [
+     "Newark",
+     1
+    ],
+    [
+     "Boston",
+     1
+    ],
+    [
+     "Rochester",
+     1
+    ],
+    [
+     "Chicago",
+     1
+    ],
+    [
+     "Washington",
+     3
+    ],
+    [
+     "Houston",
+     1
+    ],
+    [
+     "Los Angeles",
+     1
+    ],
+    [
+     "Philadelphia",
+     3
+    ]
+   ]
+  },
+  "system_sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `City` AS `city` LEFT JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+  "system_result": {
+   "count": 30,
+   "first": [
+    [
+     "Providence",
+     0
+    ],
+    [
+     "Delhi",
+     0
+    ],
+    [
+     "San Diego",
+     0
+    ],
+    [
+     "London",
+     1
+    ],
+    [
+     "New York",
+     3
+    ],
+    [
+     "Paris",
+     0
+    ],
+    [
+     "Washington",
+     3
+    ],
+    [
+     "Newark",
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "address_1|p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the city codes corresponding to cities with distances less than 1000?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str \u2014 city code\n      city_name: str \u2014 city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str \u2014 city1 code\n      city2_code: str \u2014 city2 code\n      distance: int\n  - Student\n      StuID: int \u2014 student id\n      LName: str \u2014 last name\n      Fname: str \u2014 first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str \u2014 city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code \u2192 City.city_code\n  - Direct_distance.city2_code \u2192 City.city_code\n  - Direct_distance.city1_code \u2192 City.city_code",
+  "gold_sql": "SELECT city1_code, city2_code FROM Direct_distance WHERE distance < 1000",
+  "gold_result": {
+   "count": 57,
+   "first": [
+    [
+     "BAL",
+     "ATL"
+    ],
+    [
+     "BAL",
+     "BAL"
+    ],
+    [
+     "BAL",
+     "BOS"
+    ],
+    [
+     "BAL",
+     "CHI"
+    ],
+    [
+     "BAL",
+     "CPK"
+    ],
+    [
+     "BAL",
+     "DET"
+    ],
+    [
+     "BAL",
+     "EWR"
+    ],
+    [
+     "BAL",
+     "FRE"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `direct_distance`.`city1_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 UNION SELECT `direct_distance`.`city2_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+  "system_result": {
+   "count": 19,
+   "first": [
+    [
+     "BAL"
+    ],
+    [
+     "ATL"
+    ],
+    [
+     "BOS"
+    ],
+    [
+     "CHI"
+    ],
+    [
+     "CPK"
+    ],
+    [
+     "DET"
+    ],
+    [
+     "EWR"
+    ],
+    [
+     "FRE"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "address_1|p009",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the full names of students living in MD?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str \u2014 city code\n      city_name: str \u2014 city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str \u2014 city1 code\n      city2_code: str \u2014 city2 code\n      distance: int\n  - Student\n      StuID: int \u2014 student id\n      LName: str \u2014 last name\n      Fname: str \u2014 first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str \u2014 city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code \u2192 City.city_code\n  - Direct_distance.city2_code \u2192 City.city_code\n  - Direct_distance.city1_code \u2192 City.city_code",
+  "gold_sql": "SELECT T2.Fname, T2.Lname FROM City AS T1 JOIN Student AS T2 ON T1.city_code = T2.city_code WHERE T1.state = 'MD'",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "Linda",
+     "Smith"
+    ],
+    [
+     "Andy",
+     "Schultz"
+    ],
+    [
+     "Jandy",
+     "Nelson"
+    ],
+    [
+     "Stacy",
+     "Prater"
+    ]
+   ]
+  },
+  "system_sql": "SELECT CONCAT(`student`.`Fname`, ' ', `student`.`LName`) AS `full_name` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "Linda Smith"
+    ],
+    [
+     "Andy Schultz"
+    ],
+    [
+     "Jandy Nelson"
+    ],
+    [
+     "Stacy Prater"
+    ]
+   ]
+  }
+ }
+]

@@ -1,0 +1,3907 @@
+{
+  "secure_query": {
+    "name": "secure_query",
+    "total": 74,
+    "correct": 53,
+    "wrong": 11,
+    "abstained": 10,
+    "error": 0,
+    "unsafe": 0,
+    "answer_rate": 0.7162162162162162,
+    "wrong_rate": 0.14864864864864866,
+    "wrong_rate_ci95": [
+      0.08507972301585125,
+      0.24689700921986846
+    ],
+    "flip_rate": 0.12162162162162163,
+    "over_refusal": 0.13513513513513514
+  },
+  "genie": null,
+  "gate": null,
+  "suite": "data/h2h/address_1/cases.json",
+  "backend": "databricks",
+  "repeat": 3,
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str \u2014 city code\n      city_name: str \u2014 city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str \u2014 city1 code\n      city2_code: str \u2014 city2 code\n      distance: int\n  - Student\n      StuID: int \u2014 student id\n      LName: str \u2014 last name\n      Fname: str \u2014 first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str \u2014 city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code \u2192 City.city_code\n  - Direct_distance.city2_code \u2192 City.city_code\n  - Direct_distance.city1_code \u2192 City.city_code",
+  "systems": {
+    "secure_query": {
+      "cases": [
+        {
+          "id": "test_0761_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "894ef8bb81980709",
+          "outcomes": [
+            "894ef8bb81980709",
+            "894ef8bb81980709",
+            "894ef8bb81980709"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "894ef8bb81980709",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "894ef8bb81980709",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "894ef8bb81980709",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0762_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "894ef8bb81980709",
+          "outcomes": [
+            "894ef8bb81980709",
+            "894ef8bb81980709",
+            "894ef8bb81980709"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "894ef8bb81980709",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "894ef8bb81980709",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "894ef8bb81980709",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0763_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "545cf48c3610d560",
+          "outcomes": [
+            "545cf48c3610d560",
+            "545cf48c3610d560",
+            "545cf48c3610d560"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "545cf48c3610d560",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "545cf48c3610d560",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "545cf48c3610d560",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0764_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "545cf48c3610d560",
+          "outcomes": [
+            "545cf48c3610d560",
+            "545cf48c3610d560",
+            "545cf48c3610d560"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "545cf48c3610d560",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "545cf48c3610d560",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `city`.`state` AS `state` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "545cf48c3610d560",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0765_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3c05d2794f40fc44",
+          "outcomes": [
+            "3c05d2794f40fc44",
+            "3c05d2794f40fc44",
+            "3c05d2794f40fc44"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `country_count` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `country_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3c05d2794f40fc44",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `_col_0` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3c05d2794f40fc44",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `_col_0` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3c05d2794f40fc44",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0766_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3c05d2794f40fc44",
+          "outcomes": [
+            "3c05d2794f40fc44",
+            "3c05d2794f40fc44",
+            "3c05d2794f40fc44"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `country_count` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `country_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3c05d2794f40fc44",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `_col_0` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3c05d2794f40fc44",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `city`.`country`) AS `country_count` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3c05d2794f40fc44",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0767_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3763ee77e23b2b9f",
+          "outcomes": [
+            "3763ee77e23b2b9f",
+            "3763ee77e23b2b9f",
+            "3763ee77e23b2b9f"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3763ee77e23b2b9f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3763ee77e23b2b9f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3763ee77e23b2b9f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0768_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3763ee77e23b2b9f",
+          "outcomes": [
+            "3763ee77e23b2b9f",
+            "3763ee77e23b2b9f",
+            "3763ee77e23b2b9f"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3763ee77e23b2b9f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3763ee77e23b2b9f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, `city`.`city_code` AS `city_code`, `city`.`state` AS `state`, `city`.`country` AS `country` FROM `City` AS `city` LIMIT 10000",
+              "fingerprint": "3763ee77e23b2b9f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0769_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6953a9622b138652",
+          "outcomes": [
+            "6953a9622b138652",
+            "6953a9622b138652",
+            "6953a9622b138652"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "6953a9622b138652",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "6953a9622b138652",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "6953a9622b138652",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0770_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6953a9622b138652",
+          "outcomes": [
+            "6953a9622b138652",
+            "6953a9622b138652",
+            "6953a9622b138652"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "6953a9622b138652",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "6953a9622b138652",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`latitude` AS `latitude`, `city`.`longitude` AS `longitude` FROM `City` AS `city` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "6953a9622b138652",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0771_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8795b85a2de78b9c",
+          "outcomes": [
+            "8795b85a2de78b9c",
+            "8795b85a2de78b9c",
+            "8795b85a2de78b9c"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "8795b85a2de78b9c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "8795b85a2de78b9c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "8795b85a2de78b9c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0772_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8795b85a2de78b9c",
+          "outcomes": [
+            "8795b85a2de78b9c",
+            "8795b85a2de78b9c",
+            "8795b85a2de78b9c"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "8795b85a2de78b9c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "8795b85a2de78b9c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "8795b85a2de78b9c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0773_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "64e4b892473fb47a",
+          "outcomes": [
+            "64e4b892473fb47a",
+            "64e4b892473fb47a",
+            "64e4b892473fb47a"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `city_count` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0774_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "64e4b892473fb47a",
+          "outcomes": [
+            "64e4b892473fb47a",
+            "64e4b892473fb47a",
+            "64e4b892473fb47a"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `_col_0` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `City` AS `city` WHERE `city`.`country` = 'CANADA' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0775_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f3556da3b1f13b37",
+          "outcomes": [
+            "f3556da3b1f13b37",
+            "f3556da3b1f13b37",
+            "f3556da3b1f13b37"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+              "fingerprint": "f3556da3b1f13b37",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+              "fingerprint": "f3556da3b1f13b37",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+              "fingerprint": "f3556da3b1f13b37",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0776_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f3556da3b1f13b37",
+          "outcomes": [
+            "f3556da3b1f13b37",
+            "f3556da3b1f13b37",
+            "f3556da3b1f13b37"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+              "fingerprint": "f3556da3b1f13b37",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+              "fingerprint": "f3556da3b1f13b37",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `City` AS `city` WHERE `city`.`country` = 'USA' ORDER BY `city`.`latitude` LIMIT 10000",
+              "fingerprint": "f3556da3b1f13b37",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0777_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7fc6f5cb9dca3ea4",
+          "outcomes": [
+            "7fc6f5cb9dca3ea4",
+            "7fc6f5cb9dca3ea4",
+            "7fc6f5cb9dca3ea4"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+              "fingerprint": "7fc6f5cb9dca3ea4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+              "fingerprint": "7fc6f5cb9dca3ea4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+              "fingerprint": "7fc6f5cb9dca3ea4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0778_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7fc6f5cb9dca3ea4",
+          "outcomes": [
+            "7fc6f5cb9dca3ea4",
+            "7fc6f5cb9dca3ea4",
+            "7fc6f5cb9dca3ea4"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+              "fingerprint": "7fc6f5cb9dca3ea4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+              "fingerprint": "7fc6f5cb9dca3ea4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`state` LIMIT 10000",
+              "fingerprint": "7fc6f5cb9dca3ea4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0779_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ab9afb3edf9a2c13",
+          "outcomes": [
+            "ab9afb3edf9a2c13",
+            "ab9afb3edf9a2c13",
+            "ab9afb3edf9a2c13"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "ab9afb3edf9a2c13",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "ab9afb3edf9a2c13",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "ab9afb3edf9a2c13",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0780_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ab9afb3edf9a2c13",
+          "outcomes": [
+            "ab9afb3edf9a2c13",
+            "ab9afb3edf9a2c13",
+            "ab9afb3edf9a2c13"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "ab9afb3edf9a2c13",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "ab9afb3edf9a2c13",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `city_count` FROM `City` AS `city` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "ab9afb3edf9a2c13",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0781_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fde6aa57c51576d0",
+          "outcomes": [
+            "fde6aa57c51576d0",
+            "fde6aa57c51576d0",
+            "fde6aa57c51576d0"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+              "fingerprint": "fde6aa57c51576d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+              "fingerprint": "fde6aa57c51576d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+              "fingerprint": "fde6aa57c51576d0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0782_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fde6aa57c51576d0",
+          "outcomes": [
+            "fde6aa57c51576d0",
+            "fde6aa57c51576d0",
+            "fde6aa57c51576d0"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+              "fingerprint": "fde6aa57c51576d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(DISTINCT `city`.`city_code`) AS `count_city_code` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(DISTINCT `city`.`city_code`) >= 2 LIMIT 10000",
+              "fingerprint": "fde6aa57c51576d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "fde6aa57c51576d0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0783_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "b0302eb828a47b69",
+          "outcomes": [
+            "b0302eb828a47b69",
+            "b0302eb828a47b69",
+            "b0302eb828a47b69"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "b0302eb828a47b69",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "b0302eb828a47b69",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "b0302eb828a47b69",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0784_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "b0302eb828a47b69",
+          "outcomes": [
+            "b0302eb828a47b69",
+            "b0302eb828a47b69",
+            "b0302eb828a47b69"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "b0302eb828a47b69",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "b0302eb828a47b69",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `City` AS `city` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "b0302eb828a47b69",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0787_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c6651dce94d77c0d",
+          "outcomes": [
+            "c6651dce94d77c0d",
+            "c6651dce94d77c0d",
+            "c6651dce94d77c0d"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`LName` AS `lname` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`LName` AS `lname` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+              "fingerprint": "c6651dce94d77c0d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`LName` AS `lname` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+              "fingerprint": "c6651dce94d77c0d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`LName` AS `lname` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+              "fingerprint": "c6651dce94d77c0d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0788_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "planner_refusal",
+          "detail": "expected [('Linda', 'Smith'), ('Andy', 'Schultz')] (+2 more), got [('Linda Smith',), ('Andy Schultz',)] (+2 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "43aaf635b0867723",
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "43aaf635b0867723"
+          ],
+          "samples": [],
+          "sql": "SELECT CONCAT(`student`.`Fname`, ' ', `student`.`LName`) AS `full_name` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column identifying a state abbreviation of MD for students' residences.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column identifying a state abbreviation such as MD.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Linda', 'Smith'), ('Andy', 'Schultz')] (+2 more), got [('Linda Smith',), ('Andy Schultz',)] (+2 more)",
+              "sql": "SELECT CONCAT(`student`.`Fname`, ' ', `student`.`LName`) AS `full_name` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+              "fingerprint": "43aaf635b0867723",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the full names of students living in MD?",
+            "reference_sql": "SELECT T2.Fname, T2.Lname FROM City AS T1 JOIN Student AS T2 ON T1.city_code = T2.city_code WHERE T1.state = 'MD'",
+            "reference_result": {
+              "count": 4,
+              "first": [
+                [
+                  "Linda",
+                  "Smith"
+                ],
+                [
+                  "Andy",
+                  "Schultz"
+                ],
+                [
+                  "Jandy",
+                  "Nelson"
+                ],
+                [
+                  "Stacy",
+                  "Prater"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 4,
+              "first": [
+                [
+                  "Linda Smith"
+                ],
+                [
+                  "Andy Schultz"
+                ],
+                [
+                  "Jandy Nelson"
+                ],
+                [
+                  "Stacy Prater"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0789_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7eee9525c86f546d",
+          "outcomes": [
+            "7eee9525c86f546d",
+            "7eee9525c86f546d",
+            "7eee9525c86f546d"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+              "fingerprint": "7eee9525c86f546d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+              "fingerprint": "7eee9525c86f546d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+              "fingerprint": "7eee9525c86f546d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0790_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7eee9525c86f546d",
+          "outcomes": [
+            "7eee9525c86f546d",
+            "7eee9525c86f546d",
+            "7eee9525c86f546d"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `_col_0` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+              "fingerprint": "7eee9525c86f546d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+              "fingerprint": "7eee9525c86f546d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` = 'CHINA' LIMIT 10000",
+              "fingerprint": "7eee9525c86f546d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0791_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8a14662b615ace45",
+          "outcomes": [
+            "8a14662b615ace45",
+            "8a14662b615ace45",
+            "8a14662b615ace45"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "8a14662b615ace45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "8a14662b615ace45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "8a14662b615ace45",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0792_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8a14662b615ace45",
+          "outcomes": [
+            "8a14662b615ace45",
+            "8a14662b615ace45",
+            "8a14662b615ace45"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "8a14662b615ace45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "8a14662b615ace45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`Fname` AS `fname`, `student`.`Major` AS `major` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Baltimore' LIMIT 10000",
+              "fingerprint": "8a14662b615ace45",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0793_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4841cf801f359b5c",
+          "outcomes": [
+            "4841cf801f359b5c",
+            "4841cf801f359b5c",
+            "4841cf801f359b5c"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`country` AS `country`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "4841cf801f359b5c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "4841cf801f359b5c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "4841cf801f359b5c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0794_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4841cf801f359b5c",
+          "outcomes": [
+            "4841cf801f359b5c",
+            "4841cf801f359b5c",
+            "4841cf801f359b5c"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`country` AS `country`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "4841cf801f359b5c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "4841cf801f359b5c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` LIMIT 10000",
+              "fingerprint": "4841cf801f359b5c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0795_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('Newark', 1), ('Boston', 1)] (+17 more), got [('Providence', 0), ('Delhi', 0)] (+28 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "dc521a004498cbde",
+          "outcomes": [
+            "abstained",
+            "dc521a004498cbde",
+            "dc521a004498cbde"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `City` AS `city` LEFT JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Newark', 1), ('Boston', 1)] (+17 more), got [('Providence', 0), ('Delhi', 0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `City` AS `city` LEFT JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "dc521a004498cbde",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Newark', 1), ('Boston', 1)] (+17 more), got [('Providence', 0), ('Delhi', 0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `City` AS `city` LEFT JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "dc521a004498cbde",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Find the number of students living in each city.",
+            "reference_sql": "SELECT ANY_VALUE(T1.city_name), COUNT(*) FROM City AS T1 JOIN Student AS T2 ON T1.city_code = T2.city_code GROUP BY T1.city_code",
+            "reference_result": {
+              "count": 19,
+              "first": [
+                [
+                  "Newark",
+                  1
+                ],
+                [
+                  "Boston",
+                  1
+                ],
+                [
+                  "Rochester",
+                  1
+                ],
+                [
+                  "Chicago",
+                  1
+                ],
+                [
+                  "Washington",
+                  3
+                ],
+                [
+                  "Houston",
+                  1
+                ],
+                [
+                  "Los Angeles",
+                  1
+                ],
+                [
+                  "Philadelphia",
+                  3
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 30,
+              "first": [
+                [
+                  "Providence",
+                  0
+                ],
+                [
+                  "Delhi",
+                  0
+                ],
+                [
+                  "San Diego",
+                  0
+                ],
+                [
+                  "London",
+                  1
+                ],
+                [
+                  "New York",
+                  3
+                ],
+                [
+                  "Paris",
+                  0
+                ],
+                [
+                  "Washington",
+                  3
+                ],
+                [
+                  "Newark",
+                  1
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0796_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "6e68088f0f942da1",
+            "abstained",
+            "6e68088f0f942da1"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "6e68088f0f942da1",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "6e68088f0f942da1",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0797_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ffb40a55a31b5987",
+          "outcomes": [
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0798_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ffb40a55a31b5987",
+          "outcomes": [
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0799_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "47ef80ff9456a730",
+          "outcomes": [
+            "47ef80ff9456a730",
+            "47ef80ff9456a730",
+            "47ef80ff9456a730"
+          ],
+          "samples": [],
+          "sql": "SELECT `c`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `s` JOIN `City` AS `c` ON `s`.`city_code` = `c`.`city_code` GROUP BY `c`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `c`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `s` JOIN `City` AS `c` ON `s`.`city_code` = `c`.`city_code` GROUP BY `c`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "47ef80ff9456a730",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "47ef80ff9456a730",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "47ef80ff9456a730",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0800_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "47ef80ff9456a730",
+          "outcomes": [
+            "47ef80ff9456a730",
+            "47ef80ff9456a730",
+            "47ef80ff9456a730"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "47ef80ff9456a730",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `c`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `s` JOIN `City` AS `c` ON `s`.`city_code` = `c`.`city_code` GROUP BY `c`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "47ef80ff9456a730",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`country` AS `country`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`country` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "47ef80ff9456a730",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0801_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ae2e32d9129d44b9",
+          "outcomes": [
+            "ae2e32d9129d44b9",
+            "ae2e32d9129d44b9",
+            "ae2e32d9129d44b9"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_code`, `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_code`, `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+              "fingerprint": "ae2e32d9129d44b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+              "fingerprint": "ae2e32d9129d44b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_code`, `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+              "fingerprint": "ae2e32d9129d44b9",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0802_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ae2e32d9129d44b9",
+          "outcomes": [
+            "ae2e32d9129d44b9",
+            "ae2e32d9129d44b9",
+            "ae2e32d9129d44b9"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+              "fingerprint": "ae2e32d9129d44b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+              "fingerprint": "ae2e32d9129d44b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(*) AS `count` FROM `City` AS `city` JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` HAVING COUNT(*) >= 3 LIMIT 10000",
+              "fingerprint": "ae2e32d9129d44b9",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0803_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ffb40a55a31b5987",
+          "outcomes": [
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0804_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ffb40a55a31b5987",
+          "outcomes": [
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987",
+            "ffb40a55a31b5987"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state`, COUNT(*) AS `count` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` GROUP BY `city`.`state` HAVING COUNT(*) > 5 LIMIT 10000",
+              "fingerprint": "ffb40a55a31b5987",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0805_address_1",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6259a7aa01c16c33",
+          "outcomes": [
+            "6259a7aa01c16c33",
+            "6259a7aa01c16c33",
+            "6259a7aa01c16c33"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "6259a7aa01c16c33",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "6259a7aa01c16c33",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "6259a7aa01c16c33",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0806_address_1",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6259a7aa01c16c33",
+          "outcomes": [
+            "6259a7aa01c16c33",
+            "6259a7aa01c16c33",
+            "6259a7aa01c16c33"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "6259a7aa01c16c33",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "6259a7aa01c16c33",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "6259a7aa01c16c33",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0807_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "df1f3c8b056d1ee7",
+          "outcomes": [
+            "df1f3c8b056d1ee7",
+            "df1f3c8b056d1ee7",
+            "df1f3c8b056d1ee7"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "df1f3c8b056d1ee7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "df1f3c8b056d1ee7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "df1f3c8b056d1ee7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0808_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "df1f3c8b056d1ee7",
+          "outcomes": [
+            "df1f3c8b056d1ee7",
+            "df1f3c8b056d1ee7",
+            "df1f3c8b056d1ee7"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "df1f3c8b056d1ee7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "df1f3c8b056d1ee7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'F' AND `city`.`state` = 'PA' LIMIT 10000",
+              "fingerprint": "df1f3c8b056d1ee7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0809_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "1452aa00124b65ab",
+          "outcomes": [
+            "1452aa00124b65ab",
+            "1452aa00124b65ab",
+            "1452aa00124b65ab"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "1452aa00124b65ab",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "1452aa00124b65ab",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "1452aa00124b65ab",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0810_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "1452aa00124b65ab",
+          "outcomes": [
+            "1452aa00124b65ab",
+            "1452aa00124b65ab",
+            "1452aa00124b65ab"
+          ],
+          "samples": [],
+          "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "1452aa00124b65ab",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "1452aa00124b65ab",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student`.`StuID` AS `stuid` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Sex` = 'M' AND `city`.`country` <> 'USA' LIMIT 10000",
+              "fingerprint": "1452aa00124b65ab",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0811_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "848a5f0b3915ea47",
+          "outcomes": [
+            "848a5f0b3915ea47",
+            "848a5f0b3915ea47",
+            "848a5f0b3915ea47"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' AND `direct_distance`.`city2_code` = 'CHI' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' AND `direct_distance`.`city2_code` = 'CHI' LIMIT 10000",
+              "fingerprint": "848a5f0b3915ea47",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' AND `direct_distance`.`city2_code` = 'CHI' LIMIT 10000",
+              "fingerprint": "848a5f0b3915ea47",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' AND `direct_distance`.`city2_code` = 'CHI' LIMIT 10000",
+              "fingerprint": "848a5f0b3915ea47",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0812_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' AND `direct_distance`.`city2_code` = 'CHI' LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "848a5f0b3915ea47"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' AND `direct_distance`.`city2_code` = 'CHI' LIMIT 10000",
+              "fingerprint": "848a5f0b3915ea47",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0813_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [(200,)], got [(200,), (200,)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "17c909ca51d8d8de",
+          "outcomes": [
+            "abstained",
+            "d9077babd8632d8d",
+            "17c909ca51d8d8de"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE (`city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark') OR (`city1`.`city_name` = 'Newark' AND `city2`.`city_name` = 'Boston') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE `city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark' LIMIT 10000",
+              "fingerprint": "d9077babd8632d8d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(200,)], got [(200,), (200,)]",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE (`city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark') OR (`city1`.`city_name` = 'Newark' AND `city2`.`city_name` = 'Boston') LIMIT 10000",
+              "fingerprint": "17c909ca51d8d8de",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Show me the distance between Boston and Newark.",
+            "reference_sql": "SELECT distance FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code JOIN City AS T3 ON T1.city2_code = T3.city_code WHERE T2.city_name = 'Boston' AND T3.city_name = 'Newark'",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  200
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 2,
+              "first": [
+                [
+                  200
+                ],
+                [
+                  200
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0814_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [(200,)], got [(200,), (200,)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "17c909ca51d8d8de",
+          "outcomes": [
+            "17c909ca51d8d8de",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE (`city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark') OR (`city1`.`city_name` = 'Newark' AND `city2`.`city_name` = 'Boston') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(200,)], got [(200,), (200,)]",
+              "sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE (`city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark') OR (`city1`.`city_name` = 'Newark' AND `city2`.`city_name` = 'Boston') LIMIT 10000",
+              "fingerprint": "17c909ca51d8d8de",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ],
+          "adjudication": {
+            "question": "What is the distance between Boston and Newark?",
+            "reference_sql": "SELECT distance FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code JOIN City AS T3 ON T1.city2_code = T3.city_code WHERE T2.city_name = 'Boston' AND T3.city_name = 'Newark'",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  200
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 2,
+              "first": [
+                [
+                  200
+                ],
+                [
+                  200
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0815_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ea8da3b26fdc1004",
+          "outcomes": [
+            "ea8da3b26fdc1004",
+            "ea8da3b26fdc1004",
+            "ea8da3b26fdc1004"
+          ],
+          "samples": [],
+          "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+              "fingerprint": "ea8da3b26fdc1004",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+              "fingerprint": "ea8da3b26fdc1004",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`direct_distance`.`distance`) AS `_col_0`, MIN(`direct_distance`.`distance`) AS `_col_1`, MAX(`direct_distance`.`distance`) AS `_col_2` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+              "fingerprint": "ea8da3b26fdc1004",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0816_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ea8da3b26fdc1004",
+          "outcomes": [
+            "ea8da3b26fdc1004",
+            "ea8da3b26fdc1004",
+            "ea8da3b26fdc1004"
+          ],
+          "samples": [],
+          "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+              "fingerprint": "ea8da3b26fdc1004",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+              "fingerprint": "ea8da3b26fdc1004",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance`, MIN(`direct_distance`.`distance`) AS `minimum_distance`, MAX(`direct_distance`.`distance`) AS `maximum_distance` FROM `Direct_distance` AS `direct_distance` LIMIT 10000",
+              "fingerprint": "ea8da3b26fdc1004",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0819_address_1",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3b647d7e82e36461",
+          "outcomes": [
+            "3b647d7e82e36461",
+            "3b647d7e82e36461",
+            "3b647d7e82e36461"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+              "fingerprint": "3b647d7e82e36461",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+              "fingerprint": "3b647d7e82e36461",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+              "fingerprint": "3b647d7e82e36461",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0820_address_1",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('BAL', 'BKK'), ('BAL', 'DEL')] (+48 more), got [('BOS',), ('EWR',)] (+17 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "49ee9cb3c4ebddc9",
+          "outcomes": [
+            "49ee9cb3c4ebddc9",
+            "49ee9cb3c4ebddc9",
+            "49ee9cb3c4ebddc9"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) UNION SELECT `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 'BKK'), ('BAL', 'DEL')] (+48 more), got [('BOS',), ('EWR',)] (+17 more)",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) UNION SELECT `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+              "fingerprint": "49ee9cb3c4ebddc9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 'BKK'), ('BAL', 'DEL')] (+48 more), got [('BOS',), ('EWR',)] (+17 more)",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) UNION SELECT `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+              "fingerprint": "49ee9cb3c4ebddc9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 'BKK'), ('BAL', 'DEL')] (+48 more), got [('BOS',), ('EWR',)] (+17 more)",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) UNION SELECT `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+              "fingerprint": "49ee9cb3c4ebddc9",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the city codes of cities with distance greater than average?",
+            "reference_sql": "SELECT city1_code, city2_code FROM Direct_distance WHERE distance > (SELECT AVG(distance) FROM Direct_distance)",
+            "reference_result": {
+              "count": 50,
+              "first": [
+                [
+                  "BAL",
+                  "BKK"
+                ],
+                [
+                  "BAL",
+                  "DEL"
+                ],
+                [
+                  "BAL",
+                  "HKG"
+                ],
+                [
+                  "BAL",
+                  "HON"
+                ],
+                [
+                  "BAL",
+                  "JNB"
+                ],
+                [
+                  "BAL",
+                  "LON"
+                ],
+                [
+                  "BAL",
+                  "LOS"
+                ],
+                [
+                  "BAL",
+                  "PAR"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 19,
+              "first": [
+                [
+                  "BOS"
+                ],
+                [
+                  "EWR"
+                ],
+                [
+                  "DEL"
+                ],
+                [
+                  "PAR"
+                ],
+                [
+                  "SAN"
+                ],
+                [
+                  "LOS"
+                ],
+                [
+                  "WAS"
+                ],
+                [
+                  "JNB"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0821_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3d2ba0c3e664e3c4",
+          "outcomes": [
+            "3d2ba0c3e664e3c4",
+            "3d2ba0c3e664e3c4",
+            "3d2ba0c3e664e3c4"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+              "fingerprint": "3d2ba0c3e664e3c4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+              "fingerprint": "3d2ba0c3e664e3c4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code`, `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+              "fingerprint": "3d2ba0c3e664e3c4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0822_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('BAL', 'ATL'), ('BAL', 'BAL')] (+55 more), got [('BAL',), ('ATL',)] (+17 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0108afd4975b6a79",
+          "outcomes": [
+            "0108afd4975b6a79",
+            "0108afd4975b6a79",
+            "0108afd4975b6a79"
+          ],
+          "samples": [],
+          "sql": "SELECT `direct_distance`.`city1_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 UNION SELECT `direct_distance`.`city2_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 'ATL'), ('BAL', 'BAL')] (+55 more), got [('BAL',), ('ATL',)] (+17 more)",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 UNION SELECT `direct_distance`.`city2_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+              "fingerprint": "0108afd4975b6a79",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 'ATL'), ('BAL', 'BAL')] (+55 more), got [('BAL',), ('ATL',)] (+17 more)",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 UNION SELECT `direct_distance`.`city2_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+              "fingerprint": "0108afd4975b6a79",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 'ATL'), ('BAL', 'BAL')] (+55 more), got [('BAL',), ('ATL',)] (+17 more)",
+              "sql": "SELECT `direct_distance`.`city1_code` AS `city1_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 UNION SELECT `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+              "fingerprint": "0108afd4975b6a79",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the city codes corresponding to cities with distances less than 1000?",
+            "reference_sql": "SELECT city1_code, city2_code FROM Direct_distance WHERE distance < 1000",
+            "reference_result": {
+              "count": 57,
+              "first": [
+                [
+                  "BAL",
+                  "ATL"
+                ],
+                [
+                  "BAL",
+                  "BAL"
+                ],
+                [
+                  "BAL",
+                  "BOS"
+                ],
+                [
+                  "BAL",
+                  "CHI"
+                ],
+                [
+                  "BAL",
+                  "CPK"
+                ],
+                [
+                  "BAL",
+                  "DET"
+                ],
+                [
+                  "BAL",
+                  "EWR"
+                ],
+                [
+                  "BAL",
+                  "FRE"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 19,
+              "first": [
+                [
+                  "BAL"
+                ],
+                [
+                  "ATL"
+                ],
+                [
+                  "BOS"
+                ],
+                [
+                  "CHI"
+                ],
+                [
+                  "CPK"
+                ],
+                [
+                  "DET"
+                ],
+                [
+                  "EWR"
+                ],
+                [
+                  "FRE"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0823_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [(74666,)], got [(149332,)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e34e596ef2f0aa63",
+          "outcomes": [
+            "e34e596ef2f0aa63",
+            "e34e596ef2f0aa63",
+            "e34e596ef2f0aa63"
+          ],
+          "samples": [],
+          "sql": "SELECT SUM(`direct_distance`.`distance`) AS `total_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(74666,)], got [(149332,)]",
+              "sql": "SELECT SUM(`direct_distance`.`distance`) AS `total_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+              "fingerprint": "e34e596ef2f0aa63",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(74666,)], got [(149332,)]",
+              "sql": "SELECT SUM(`direct_distance`.`distance`) AS `total_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+              "fingerprint": "e34e596ef2f0aa63",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(74666,)], got [(149332,)]",
+              "sql": "SELECT SUM(`direct_distance`.`distance`) AS `total_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+              "fingerprint": "e34e596ef2f0aa63",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What is the total distance between city BAL and all other cities.",
+            "reference_sql": "SELECT SUM(distance) FROM Direct_distance WHERE city1_code = 'BAL'",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  74666
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 1,
+              "first": [
+                [
+                  149332
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0824_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [(74666,)], got [(149332,)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e34e596ef2f0aa63",
+          "outcomes": [
+            "e34e596ef2f0aa63",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": "SELECT SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(74666,)], got [(149332,)]",
+              "sql": "SELECT SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+              "fingerprint": "e34e596ef2f0aa63",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ],
+          "adjudication": {
+            "question": "What is the sum of distances between BAL and other cities?",
+            "reference_sql": "SELECT SUM(distance) FROM Direct_distance WHERE city1_code = 'BAL'",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  74666
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 1,
+              "first": [
+                [
+                  149332
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0825_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT AVG(`direct_distance`.`distance`) AS `average_distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city` ON `direct_distance`.`city1_code` = `city`.`city_code` WHERE `city`.`city_name` = 'Boston' LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a way to select its city code.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a way to select it by city name.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0826_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not identify Boston or provide a way to select it by city name.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a way to select it by city name.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a way to select it as a city.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0827_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not identify Chicago or provide a way to determine which city code represents it.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Chicago or provide a way to determine which city code represents it.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Chicago or provide a way to determine which city code represents it.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no information identifying Chicago or its distance to other cities.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0828_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog has no data identifying Chicago or its city code.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no data identifying Chicago or its city code.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Chicago or provide a city-name-to-city-code lookup for it.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no data identifying Chicago or its distances to other cities.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0829_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not identify Boston or provide a way to determine which city is furthest from it.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a way to determine which city is furthest from it.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column identifying Boston or indicating which city is furthest from it.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a distance from Boston to other cities.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0830_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not identify Boston or provide a way to determine which city code corresponds to it.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "5dd272b4f316b776",
+            "5dd272b4f316b776",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city` ON `direct_distance`.`city2_code` = `city`.`city_code` WHERE `direct_distance`.`city1_code` = (SELECT `city`.`city_code` AS `city_code` FROM `City` AS `city` WHERE `city`.`city_name` = 'Boston') ORDER BY `direct_distance`.`distance` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "5dd272b4f316b776",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_name` AS `city_name` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city` ON `direct_distance`.`city2_code` = `city`.`city_code` WHERE `direct_distance`.`city1_code` = (SELECT `city`.`city_code` AS `city_code` FROM `City` AS `city` WHERE `city`.`city_name` = 'Boston') ORDER BY `direct_distance`.`distance` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "5dd272b4f316b776",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify Boston or provide a way to determine which city code corresponds to it.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0831_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('BAL', 74666), ('ATL', 1241)] (+29 more), got [('BAL', 149332), ('ATL', 2482)] (+29 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "46455a83d17c44e3",
+          "outcomes": [
+            "46455a83d17c44e3",
+            "46455a83d17c44e3",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": "SELECT `city_distances`.`city_code` AS `city_code`, SUM(`city_distances`.`distance`) AS `total_distance` FROM (SELECT `direct_distance`.`city1_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` UNION ALL SELECT `direct_distance`.`city2_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance`) AS `city_distances` GROUP BY `city_distances`.`city_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 74666), ('ATL', 1241)] (+29 more), got [('BAL', 149332), ('ATL', 2482)] (+29 more)",
+              "sql": "SELECT `city_distances`.`city_code` AS `city_code`, SUM(`city_distances`.`distance`) AS `total_distance` FROM (SELECT `direct_distance`.`city1_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` UNION ALL SELECT `direct_distance`.`city2_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance`) AS `city_distances` GROUP BY `city_distances`.`city_code` LIMIT 10000",
+              "fingerprint": "46455a83d17c44e3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('BAL', 74666), ('ATL', 1241)] (+29 more), got [('BAL', 149332), ('ATL', 2482)] (+29 more)",
+              "sql": "SELECT `city_distances`.`city_code` AS `city_code`, SUM(`city_distances`.`distance`) AS `total_distance` FROM (SELECT `direct_distance`.`city1_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` UNION ALL SELECT `direct_distance`.`city2_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance`) AS `city_distances` GROUP BY `city_distances`.`city_code` LIMIT 10000",
+              "fingerprint": "46455a83d17c44e3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ],
+          "adjudication": {
+            "question": "Show all city codes and the total distance to all other cities.",
+            "reference_sql": "SELECT city1_code, SUM(distance) FROM Direct_distance GROUP BY city1_code",
+            "reference_result": {
+              "count": 31,
+              "first": [
+                [
+                  "BAL",
+                  74666
+                ],
+                [
+                  "ATL",
+                  1241
+                ],
+                [
+                  "BKK",
+                  9631
+                ],
+                [
+                  "BOS",
+                  4298
+                ],
+                [
+                  "CHI",
+                  1299
+                ],
+                [
+                  "CPK",
+                  21
+                ],
+                [
+                  "DAL",
+                  1217
+                ],
+                [
+                  "DEL",
+                  7469
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 31,
+              "first": [
+                [
+                  "BAL",
+                  149332
+                ],
+                [
+                  "ATL",
+                  2482
+                ],
+                [
+                  "BKK",
+                  19262
+                ],
+                [
+                  "BOS",
+                  8596
+                ],
+                [
+                  "CHI",
+                  2598
+                ],
+                [
+                  "CPK",
+                  42
+                ],
+                [
+                  "DAL",
+                  2434
+                ],
+                [
+                  "DEL",
+                  14938
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0832_address_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7f218de2d51ac631",
+          "outcomes": [
+            "7f218de2d51ac631",
+            "7f218de2d51ac631",
+            "7f218de2d51ac631"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_code` AS `city_code`, SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_code` AS `city_code`, SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_code` LIMIT 10000",
+              "fingerprint": "7f218de2d51ac631",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_code` AS `city_code`, SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_code` LIMIT 10000",
+              "fingerprint": "7f218de2d51ac631",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`city_code` AS `city_code`, SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_code` LIMIT 10000",
+              "fingerprint": "7f218de2d51ac631",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0833_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4bd6e87e97e1179e",
+          "outcomes": [
+            "4bd6e87e97e1179e",
+            "4bd6e87e97e1179e",
+            "4bd6e87e97e1179e"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "4bd6e87e97e1179e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "4bd6e87e97e1179e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "4bd6e87e97e1179e",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Show all city names and the average distance to all other cities.",
+            "reference_sql": "SELECT ANY_VALUE(T2.city_name), AVG(distance) FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code GROUP BY T1.city1_code",
+            "reference_result": {
+              "count": 31,
+              "first": [
+                [
+                  "Boston",
+                  1074.5
+                ],
+                [
+                  "Newark",
+                  71.0
+                ],
+                [
+                  "Miami",
+                  946.0
+                ],
+                [
+                  "Newark",
+                  1326.2222222222222
+                ],
+                [
+                  "Rochester",
+                  286.5
+                ],
+                [
+                  "Chicago",
+                  649.5
+                ],
+                [
+                  "Delhi",
+                  7469.0
+                ],
+                [
+                  "Paris",
+                  3624.0
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 30,
+              "first": [
+                [
+                  "Delhi",
+                  7469.0
+                ],
+                [
+                  "Providence",
+                  328.0
+                ],
+                [
+                  "London",
+                  3955.5
+                ],
+                [
+                  "San Diego",
+                  1762.3333333333333
+                ],
+                [
+                  "New York",
+                  1818.5
+                ],
+                [
+                  "Paris",
+                  3624.0
+                ],
+                [
+                  "Newark",
+                  1200.7
+                ],
+                [
+                  "Hong Kong",
+                  8409.0
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0834_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4bd6e87e97e1179e",
+          "outcomes": [
+            "4bd6e87e97e1179e",
+            "4bd6e87e97e1179e",
+            "4bd6e87e97e1179e"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "4bd6e87e97e1179e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "4bd6e87e97e1179e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Boston', 1074.5), ('Newark', 71.0)] (+29 more), got [('Delhi', 7469.0), ('Providence', 328.0)] (+28 more)",
+              "sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+              "fingerprint": "4bd6e87e97e1179e",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the city name and average distances from each city?",
+            "reference_sql": "SELECT ANY_VALUE(T2.city_name), AVG(distance) FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code GROUP BY T1.city1_code",
+            "reference_result": {
+              "count": 31,
+              "first": [
+                [
+                  "Boston",
+                  1074.5
+                ],
+                [
+                  "Newark",
+                  71.0
+                ],
+                [
+                  "Miami",
+                  946.0
+                ],
+                [
+                  "Newark",
+                  1326.2222222222222
+                ],
+                [
+                  "Rochester",
+                  286.5
+                ],
+                [
+                  "Chicago",
+                  649.5
+                ],
+                [
+                  "Delhi",
+                  7469.0
+                ],
+                [
+                  "Paris",
+                  3624.0
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 30,
+              "first": [
+                [
+                  "Delhi",
+                  7469.0
+                ],
+                [
+                  "Providence",
+                  328.0
+                ],
+                [
+                  "London",
+                  3955.5
+                ],
+                [
+                  "San Diego",
+                  1762.3333333333333
+                ],
+                [
+                  "New York",
+                  1818.5
+                ],
+                [
+                  "Paris",
+                  3624.0
+                ],
+                [
+                  "Newark",
+                  1200.7
+                ],
+                [
+                  "Hong Kong",
+                  8409.0
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0835_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "validation_failed",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "wrong",
+          "blocked_sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Student` AS `s1` JOIN `City` AS `c1` ON `s1`.`city_code` = `c1`.`city_code` JOIN `Direct_distance` AS `direct_distance` ON `direct_distance`.`city1_code` = `c1`.`city_code` JOIN `City` AS `c2` ON `direct_distance`.`city2_code` = `c2`.`city_code` JOIN `Student` AS `s2` ON `s2`.`city_code` = `c2`.`city_code` WHERE `s1`.`Fname` = 'Linda' AND `s1`.`LName` = 'Smith' AND `s2`.`Fname` = 'Tracy' AND `s2`.`LName` = 'Kim' UNION ALL SELECT `direct_distance`.`distance` AS `distance` FROM `Student` AS `s1` JOIN `City` AS `c1` ON `s1`.`city_code` = `c1`.`city_code` JOIN `Direct_distance` AS `direct_distance` ON `direct_distance`.`city2_code` = `c1`.`city_code` JOIN `City` AS `c2` ON `direct_distance`.`city1_code` = `c2`.`city_code` JOIN `Student` AS `s2` ON `s2`.`city_code` = `c2`.`city_code` WHERE `s1`.`Fname` = 'Linda' AND `s1`.`LName` = 'Smith' AND `s2`.`Fname` = 'Tracy' AND `s2`.`LName` = 'Kim' LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Could not produce a valid query. Please rephrase or narrow the question.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "validation_failed"
+            }
+          ]
+        },
+        {
+          "id": "test_0836_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `d`.`distance` AS `distance` FROM `Student` AS `s1` JOIN `City` AS `c1` ON `s1`.`city_code` = `c1`.`city_code` JOIN `Direct_distance` AS `d` ON `d`.`city1_code` = `c1`.`city_code` JOIN `City` AS `c2` ON `d`.`city2_code` = `c2`.`city_code` JOIN `Student` AS `s2` ON `s2`.`city_code` = `c2`.`city_code` WHERE `s1`.`Fname` = 'Linda' AND `s1`.`LName` = 'Smith' AND `s2`.`Fname` = 'Tracy' AND `s2`.`LName` = 'Kim' LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not include student full names or a way to identify Linda Smith and Tracy Kim.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0839_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7abcf6dac49247ef",
+          "outcomes": [
+            "7abcf6dac49247ef",
+            "7abcf6dac49247ef",
+            "7abcf6dac49247ef"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+              "fingerprint": "7abcf6dac49247ef",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+              "fingerprint": "7abcf6dac49247ef",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+              "fingerprint": "7abcf6dac49247ef",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0840_address_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:address_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7abcf6dac49247ef",
+          "outcomes": [
+            "7abcf6dac49247ef",
+            "7abcf6dac49247ef",
+            "7abcf6dac49247ef"
+          ],
+          "samples": [],
+          "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+              "fingerprint": "7abcf6dac49247ef",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+              "fingerprint": "7abcf6dac49247ef",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `city`.`state` AS `state` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `student`.`Fname` = 'Linda' LIMIT 10000",
+              "fingerprint": "7abcf6dac49247ef",
+              "refusal_code": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

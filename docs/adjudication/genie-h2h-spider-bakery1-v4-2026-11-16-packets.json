@@ -1,0 +1,428 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Give the ids of goods that are more than twice as expensive as the average good.",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT id FROM goods WHERE price > (SELECT AVG(price) FROM goods)",
+  "gold_result": {
+   "count": 8,
+   "first": [
+    [
+     "20-BC-C-10"
+    ],
+    [
+     "20-BC-L-10"
+    ],
+    [
+     "20-CA-7.5"
+    ],
+    [
+     "24-8x10"
+    ],
+    [
+     "25-STR-9"
+    ],
+    [
+     "26-8x10"
+    ],
+    [
+     "46-11"
+    ],
+    [
+     "90-APIE-10"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `goods`.`Id` AS `id` FROM `goods` AS `goods` WHERE `goods`.`Price` > 2 * (SELECT AVG(`goods`.`Price`) AS `_col_0` FROM `goods` AS `goods`) LIMIT 10000",
+  "system_result": {
+   "count": 7,
+   "first": [
+    [
+     "20-BC-C-10"
+    ],
+    [
+     "20-BC-L-10"
+    ],
+    [
+     "20-CA-7.5"
+    ],
+    [
+     "24-8x10"
+    ],
+    [
+     "25-STR-9"
+    ],
+    [
+     "26-8x10"
+    ],
+    [
+     "46-11"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the full names of customers who bought apple flavored Tarts?",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT DISTINCT T4.FirstName, T4.LastName FROM goods AS T1 JOIN items AS T2 ON T1.id = T2.item JOIN receipts AS T3 ON T2.receipt = T3.ReceiptNumber JOIN customers AS T4 ON T3.CustomerId = T4.id WHERE T1.flavor = 'Apple' AND T1.food = 'Tart'",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "NATACHA",
+     "STENZ"
+    ],
+    [
+     "KIP",
+     "ARNN"
+    ],
+    [
+     "ALMETA",
+     "DOMKOWSKI"
+    ],
+    [
+     "ARIANE",
+     "CRUZEN"
+    ],
+    [
+     "CHARLENE",
+     "MESDAQ"
+    ],
+    [
+     "CORETTA",
+     "DUKELOW"
+    ],
+    [
+     "RAYFORD",
+     "SOPKO"
+    ],
+    [
+     "STEPHEN",
+     "ZEME"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT CONCAT(`customers`.`FirstName`, ' ', `customers`.`LastName`) AS `fullname` FROM `customers` AS `customers` JOIN `receipts` AS `receipts` ON `customers`.`Id` = `receipts`.`CustomerId` JOIN `items` AS `items` ON `receipts`.`ReceiptNumber` = `items`.`Receipt` JOIN `goods` AS `goods` ON `items`.`Item` = `goods`.`Id` WHERE `goods`.`Flavor` = 'Apple' AND `goods`.`Food` = 'Tart' LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "JULIET LOGAN"
+    ],
+    [
+     "CORETTA DUKELOW"
+    ],
+    [
+     "ARIANE CRUZEN"
+    ],
+    [
+     "CHARLENE MESDAQ"
+    ],
+    [
+     "SHARRON TOUSSAND"
+    ],
+    [
+     "OSVALDO DUNLOW"
+    ],
+    [
+     "ALMETA DOMKOWSKI"
+    ],
+    [
+     "DAVID CALLENDAR"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the receipt numbers for a customer with the last name Logan who purchased a croissant?",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT T1.ReceiptNumber FROM receipts AS T1 JOIN items AS T2 ON T1.ReceiptNumber = T2.receipt JOIN goods AS T3 ON T2.item = T3.id JOIN customers AS T4 ON T4.Id = T1.CustomerId WHERE T3.food = 'Croissant' AND T4.LastName = 'LOGAN'",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     86085
+    ],
+    [
+     86085
+    ],
+    [
+     39685
+    ],
+    [
+     38849
+    ],
+    [
+     45062
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `r`.`ReceiptNumber` AS `receiptnumber` FROM `receipts` AS `r` JOIN `customers` AS `c` ON `r`.`CustomerId` = `c`.`Id` JOIN `items` AS `i` ON `i`.`Receipt` = `r`.`ReceiptNumber` JOIN `goods` AS `g` ON `i`.`Item` = `g`.`Id` WHERE `c`.`LastName` = 'LOGAN' AND `g`.`Food` = 'Croissant' LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     38849
+    ],
+    [
+     45062
+    ],
+    [
+     86085
+    ],
+    [
+     39685
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Give the ids of Cookies or Cakes that cost between 3 and 7 dollars.",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT id FROM goods WHERE food = 'Cookie' OR food = 'Cake' AND price BETWEEN 3 AND 7",
+  "gold_result": {
+   "count": 7,
+   "first": [
+    [
+     "70-GA"
+    ],
+    [
+     "70-GON"
+    ],
+    [
+     "70-R"
+    ],
+    [
+     "70-LEM"
+    ],
+    [
+     "70-MAR"
+    ],
+    [
+     "70-TU"
+    ],
+    [
+     "70-W"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `goods`.`Id` AS `id` FROM `goods` AS `goods` WHERE `goods`.`Food` IN ('Cookie', 'Cake') AND `goods`.`Price` BETWEEN 3 AND 7 LIMIT 10000",
+  "system_result": {
+   "count": 0,
+   "first": []
+  }
+ },
+ {
+  "id": "p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the cheapest good with cheese flavor?",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT MIN(price) FROM goods WHERE flavor = 'Cheese'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     1.75
+    ]
+   ]
+  },
+  "system_sql": "SELECT `goods`.`Id` AS `id` FROM `goods` AS `goods` WHERE `goods`.`Flavor` = 'Cheese' ORDER BY `goods`.`Price` ASC, 1 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "50-CHS"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the ids of Cookie and Cake that cost between 3 and 7 dollars.",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT id FROM goods WHERE food = 'Cookie' OR food = 'Cake' AND price BETWEEN 3 AND 7",
+  "gold_result": {
+   "count": 7,
+   "first": [
+    [
+     "70-GA"
+    ],
+    [
+     "70-GON"
+    ],
+    [
+     "70-R"
+    ],
+    [
+     "70-LEM"
+    ],
+    [
+     "70-MAR"
+    ],
+    [
+     "70-TU"
+    ],
+    [
+     "70-W"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `goods`.`Id` AS `id` FROM `goods` AS `goods` WHERE `goods`.`Food` IN ('Cookie', 'Cake') AND `goods`.`Price` BETWEEN 3 AND 7 LIMIT 10000",
+  "system_result": {
+   "count": 0,
+   "first": []
+  }
+ },
+ {
+  "id": "p007",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find all the receipt numbers in which customer with last name LOGAN purchased Croissant.",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT T1.ReceiptNumber FROM receipts AS T1 JOIN items AS T2 ON T1.ReceiptNumber = T2.receipt JOIN goods AS T3 ON T2.item = T3.id JOIN customers AS T4 ON T4.Id = T1.CustomerId WHERE T3.food = 'Croissant' AND T4.LastName = 'LOGAN'",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     86085
+    ],
+    [
+     86085
+    ],
+    [
+     39685
+    ],
+    [
+     38849
+    ],
+    [
+     45062
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `receipts`.`ReceiptNumber` AS `receiptnumber` FROM `receipts` AS `receipts` JOIN `customers` AS `customers` ON `receipts`.`CustomerId` = `customers`.`Id` JOIN `items` AS `items` ON `items`.`Receipt` = `receipts`.`ReceiptNumber` JOIN `goods` AS `goods` ON `items`.`Item` = `goods`.`Id` WHERE `customers`.`LastName` = 'LOGAN' AND `goods`.`Food` = 'Croissant' LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     38849
+    ],
+    [
+     45062
+    ],
+    [
+     86085
+    ],
+    [
+     39685
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p008",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find all the items that have chocolate flavor but were not bought more than 10 times.",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT DISTINCT ANY_VALUE(T1.item) FROM items AS T1 JOIN goods AS T2 ON T1.item = T2.id WHERE T2.flavor = 'Chocolate' GROUP BY item HAVING COUNT(*) <= 10",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "50-CH"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `goods`.`Id` AS `id` FROM `goods` AS `goods` WHERE `goods`.`Flavor` = 'Chocolate' AND (SELECT COUNT(*) AS `_col_0` FROM `items` AS `items` WHERE `items`.`Item` = `goods`.`Id`) <= 10 LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     "20-BC-C-10"
+    ],
+    [
+     "50-CH"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p009",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the ids of goods whose price is above twice the average price of all goods?",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str values: 'Bear Claw', 'Cake', 'Cookie', 'Croissant', 'Danish', 'Eclair', 'Meringue', 'Pie', 'Tart', 'Twist'\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id\n  - items.Receipt → receipts.ReceiptNumber",
+  "gold_sql": "SELECT id FROM goods WHERE price > (SELECT AVG(price) FROM goods)",
+  "gold_result": {
+   "count": 8,
+   "first": [
+    [
+     "20-BC-C-10"
+    ],
+    [
+     "20-BC-L-10"
+    ],
+    [
+     "20-CA-7.5"
+    ],
+    [
+     "24-8x10"
+    ],
+    [
+     "25-STR-9"
+    ],
+    [
+     "26-8x10"
+    ],
+    [
+     "46-11"
+    ],
+    [
+     "90-APIE-10"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `goods`.`Id` AS `id` FROM `goods` AS `goods` WHERE `goods`.`Price` > 2 * (SELECT AVG(`goods`.`Price`) AS `_col_0` FROM `goods` AS `goods`) LIMIT 10000",
+  "system_result": {
+   "count": 7,
+   "first": [
+    [
+     "20-BC-C-10"
+    ],
+    [
+     "20-BC-L-10"
+    ],
+    [
+     "20-CA-7.5"
+    ],
+    [
+     "24-8x10"
+    ],
+    [
+     "25-STR-9"
+    ],
+    [
+     "26-8x10"
+    ],
+    [
+     "46-11"
+    ]
+   ]
+  }
+ }
+]

@@ -1,0 +1,3336 @@
+{
+  "secure_query": {
+    "name": "secure_query",
+    "total": 64,
+    "correct": 45,
+    "wrong": 7,
+    "abstained": 12,
+    "error": 0,
+    "unsafe": 0,
+    "answer_rate": 0.703125,
+    "wrong_rate": 0.109375,
+    "wrong_rate_ci95": [
+      0.054000447526830544,
+      0.20898863291938535
+    ],
+    "flip_rate": 0.15625,
+    "over_refusal": 0.1875
+  },
+  "genie": null,
+  "gate": null,
+  "suite": "data/h2h/cre_Students_Information_Systems/cases.json",
+  "backend": "databricks",
+  "repeat": 3,
+  "schema": "tenant=spider_cre_Students_Information_Systems\ntables:\n  - Achievements\n      achievement_id: int \u2014 achievement id\n      achievement_type_code: str \u2014 achievement type code values: 'Athletic', 'Scholastic'\n      student_id: int \u2014 student id\n      date_achievement: int \u2014 date achievement\n      achievement_details: str \u2014 achievement details values: 'Bronze', 'Gold', 'Silver'\n      other_details: str \u2014 other details\n  - Addresses\n      address_id: int \u2014 address id\n      address_details: str \u2014 address details\n  - Behaviour_Monitoring\n      behaviour_monitoring_id: int \u2014 behaviour monitoring id\n      student_id: int \u2014 student id\n      behaviour_monitoring_details: str \u2014 behaviour monitoring details values: 'A', 'B', 'C', 'D', 'E'\n  - Classes\n      class_id: int \u2014 class id\n      student_id: int \u2014 student id\n      teacher_id: int \u2014 teacher id\n      class_details: str \u2014 class details\n  - Detention\n      detention_id: int \u2014 detention id\n      detention_type_code: str \u2014 detention type code values: 'After School', 'Break', 'Illness', 'Lunch'\n      student_id: int \u2014 student id\n      datetime_detention_start: str \u2014 datetime detention start\n      datetime_detention_end: str \u2014 datetime detention end\n      detention_summary: str \u2014 detention summary\n      other_details: str \u2014 other details\n  - Ref_Achievement_Type\n      achievement_type_code: str \u2014 achievement type code\n      achievement_type_description: str \u2014 achievement type description\n  - Ref_Address_Types\n      address_type_code: str \u2014 address type code\n      address_type_description: str \u2014 address type description\n  - Ref_Detention_Type\n      detention_type_code: str \u2014 detention type code\n      detention_type_description: str \u2014 detention type description\n  - Ref_Event_Types\n      event_type_code: str \u2014 event type code\n      event_type_description: str \u2014 event type description\n  - Student_Events\n      event_id: int \u2014 event id\n      event_type_code: str \u2014 event type code values: 'Exam', 'Registration'\n      student_id: int \u2014 student id\n      event_date: str \u2014 event date\n      other_details: str \u2014 other details\n  - Student_Loans\n      student_loan_id: int \u2014 student loan id\n      student_id: int \u2014 student id\n      date_of_loan: str \u2014 date of loan\n      amount_of_loan: float \u2014 amount of loan\n      other_details: str \u2014 other details\n  - Students\n      student_id: int \u2014 student id\n      bio_data: str \u2014 bio data\n      student_details: str \u2014 student details\n  - Students_Addresses\n      student_address_id: int \u2014 student address id\n      address_id: int \u2014 address id\n      address_type_code: str \u2014 address type code values: 'CO', 'HM'\n      student_id: int \u2014 student id\n      date_from: str \u2014 date from\n      date_to: str \u2014 date to\n  - Teachers\n      teacher_id: int \u2014 teacher id\n      teacher_details: str \u2014 teacher details\n  - Transcripts\n      transcript_id: int \u2014 transcript id\n      student_id: int \u2014 student id\n      date_of_transcript: str \u2014 date of transcript\n      transcript_details: str \u2014 transcript details values: 'Good', 'Pass'\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Transcripts.student_id \u2192 Students.student_id\n  - Behaviour_Monitoring.student_id \u2192 Students.student_id\n  - Student_Events.event_type_code \u2192 Ref_Event_Types.event_type_code\n  - Student_Events.student_id \u2192 Students.student_id\n  - Student_Loans.student_id \u2192 Students.student_id\n  - Classes.teacher_id \u2192 Teachers.teacher_id\n  - Classes.student_id \u2192 Students.student_id\n  - Students_Addresses.address_type_code \u2192 Ref_Address_Types.address_type_code\n  - Students_Addresses.address_id \u2192 Addresses.address_id\n  - Students_Addresses.student_id \u2192 Students.student_id\n  - Detention.detention_type_code \u2192 Ref_Detention_Type.detention_type_code\n  - Detention.student_id \u2192 Students.student_id\n  - Achievements.achievement_type_code \u2192 Ref_Achievement_Type.achievement_type_code\n  - Achievements.student_id \u2192 Students.student_id",
+  "systems": {
+    "secure_query": {
+      "cases": [
+        {
+          "id": "test_0439_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "93570b29ada1e75b",
+          "outcomes": [
+            "93570b29ada1e75b",
+            "93570b29ada1e75b",
+            "93570b29ada1e75b"
+          ],
+          "samples": [],
+          "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "93570b29ada1e75b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "93570b29ada1e75b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "93570b29ada1e75b",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0440_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "93570b29ada1e75b",
+          "outcomes": [
+            "93570b29ada1e75b",
+            "93570b29ada1e75b",
+            "93570b29ada1e75b"
+          ],
+          "samples": [],
+          "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_student_loans` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_student_loans` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "93570b29ada1e75b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_student_loans` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "93570b29ada1e75b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`student_loans`.`amount_of_loan`) AS `average_amount_of_student_loans` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "93570b29ada1e75b",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0441_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('Brenden', 669), ('Antone', 471)] (+5 more), got [('Camila', 276), ('Dino', 287)] (+10 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7d5d510428c8be94",
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "7d5d510428c8be94"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(*) >= 2) OR `students`.`student_id` IN (SELECT `detention`.`student_id` AS `student_id` FROM `Detention` AS `detention` GROUP BY `detention`.`student_id` HAVING COUNT(*) < 2) OR NOT EXISTS(SELECT 1 AS `1` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Brenden', 669), ('Antone', 471)] (+5 more), got [('Camila', 276), ('Dino', 287)] (+10 more)",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(*) >= 2) OR `students`.`student_id` IN (SELECT `detention`.`student_id` AS `student_id` FROM `Detention` AS `detention` GROUP BY `detention`.`student_id` HAVING COUNT(*) < 2) OR NOT EXISTS(SELECT 1 AS `1` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "7d5d510428c8be94",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "List the biographical data and student id for the students who take 2 or more classes and the students who have less than 2 detentions.",
+            "reference_sql": "SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) >= 2 UNION SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Detention AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) < 2",
+            "reference_result": {
+              "count": 7,
+              "first": [
+                [
+                  "Brenden",
+                  669
+                ],
+                [
+                  "Antone",
+                  471
+                ],
+                [
+                  "Edison",
+                  762
+                ],
+                [
+                  "Felipa",
+                  811
+                ],
+                [
+                  "Vanessa",
+                  435
+                ],
+                [
+                  "Camila",
+                  276
+                ],
+                [
+                  "Keshawn",
+                  984
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 12,
+              "first": [
+                [
+                  "Camila",
+                  276
+                ],
+                [
+                  "Dino",
+                  287
+                ],
+                [
+                  "Pansy",
+                  325
+                ],
+                [
+                  "Vanessa",
+                  435
+                ],
+                [
+                  "Antone",
+                  471
+                ],
+                [
+                  "Arturo",
+                  567
+                ],
+                [
+                  "Brenden",
+                  669
+                ],
+                [
+                  "Edison",
+                  762
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0442_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('Brenden', 669), ('Antone', 471)] (+5 more), got [('Camila', 276), ('Dino', 287)] (+10 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7d5d510428c8be94",
+          "outcomes": [
+            "7d5d510428c8be94",
+            "7d5d510428c8be94",
+            "7d5d510428c8be94"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE (SELECT COUNT(*) AS `_col_0` FROM `Classes` AS `classes` WHERE `classes`.`student_id` = `students`.`student_id`) >= 2 OR (SELECT COUNT(*) AS `_col_0` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) < 2 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Brenden', 669), ('Antone', 471)] (+5 more), got [('Camila', 276), ('Dino', 287)] (+10 more)",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE (SELECT COUNT(*) AS `_col_0` FROM `Classes` AS `classes` WHERE `classes`.`student_id` = `students`.`student_id`) >= 2 OR (SELECT COUNT(*) AS `_col_0` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) < 2 LIMIT 10000",
+              "fingerprint": "7d5d510428c8be94",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Brenden', 669), ('Antone', 471)] (+5 more), got [('Camila', 276), ('Dino', 287)] (+10 more)",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(*) >= 2) OR `students`.`student_id` IN (SELECT `detention`.`student_id` AS `student_id` FROM `Detention` AS `detention` GROUP BY `detention`.`student_id` HAVING COUNT(*) < 2) OR NOT EXISTS(SELECT 1 AS `1` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "7d5d510428c8be94",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Brenden', 669), ('Antone', 471)] (+5 more), got [('Camila', 276), ('Dino', 287)] (+10 more)",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_id` AS `student_id` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(*) >= 2) OR `students`.`student_id` IN (SELECT `detention`.`student_id` AS `student_id` FROM `Detention` AS `detention` GROUP BY `detention`.`student_id` HAVING COUNT(*) < 2) OR NOT EXISTS(SELECT 1 AS `1` FROM `Detention` AS `detention` WHERE `detention`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "7d5d510428c8be94",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the biographical data and student id of the students who either took two or more classes and or have less than two detentions?",
+            "reference_sql": "SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) >= 2 UNION SELECT ANY_VALUE(T1.bio_data), T1.student_id FROM Students AS T1 JOIN Detention AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id HAVING COUNT(*) < 2",
+            "reference_result": {
+              "count": 7,
+              "first": [
+                [
+                  "Brenden",
+                  669
+                ],
+                [
+                  "Antone",
+                  471
+                ],
+                [
+                  "Edison",
+                  762
+                ],
+                [
+                  "Felipa",
+                  811
+                ],
+                [
+                  "Vanessa",
+                  435
+                ],
+                [
+                  "Camila",
+                  276
+                ],
+                [
+                  "Keshawn",
+                  984
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 12,
+              "first": [
+                [
+                  "Camila",
+                  276
+                ],
+                [
+                  "Dino",
+                  287
+                ],
+                [
+                  "Pansy",
+                  325
+                ],
+                [
+                  "Vanessa",
+                  435
+                ],
+                [
+                  "Antone",
+                  471
+                ],
+                [
+                  "Arturo",
+                  567
+                ],
+                [
+                  "Brenden",
+                  669
+                ],
+                [
+                  "Edison",
+                  762
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0443_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a57827605a632372",
+          "outcomes": [
+            "a57827605a632372",
+            "a57827605a632372",
+            "a57827605a632372"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Classes` AS `c` JOIN `Teachers` AS `t` ON `c`.`teacher_id` = `t`.`teacher_id` WHERE `c`.`class_details` ILIKE '%data%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Classes` AS `c2` WHERE `c2`.`teacher_id` = `t`.`teacher_id` AND `c2`.`class_details` ILIKE 'net%') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Classes` AS `c` JOIN `Teachers` AS `t` ON `c`.`teacher_id` = `t`.`teacher_id` WHERE `c`.`class_details` ILIKE '%data%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Classes` AS `c2` WHERE `c2`.`teacher_id` = `t`.`teacher_id` AND `c2`.`class_details` ILIKE 'net%') LIMIT 10000",
+              "fingerprint": "a57827605a632372",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `teachers`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `teachers` JOIN `Classes` AS `classes` ON `teachers`.`teacher_id` = `classes`.`teacher_id` WHERE `classes`.`class_details` ILIKE '%data%' AND NOT `teachers`.`teacher_id` IN (SELECT `classes`.`teacher_id` AS `teacher_id` FROM `Classes` AS `classes` WHERE `classes`.`class_details` ILIKE 'net%') LIMIT 10000",
+              "fingerprint": "a57827605a632372",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `teachers`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `teachers` JOIN `Classes` AS `classes` ON `teachers`.`teacher_id` = `classes`.`teacher_id` WHERE `classes`.`class_details` ILIKE '%data%' AND NOT `teachers`.`teacher_id` IN (SELECT `classes`.`teacher_id` AS `teacher_id` FROM `Classes` AS `classes` WHERE `classes`.`class_details` ILIKE 'net%') LIMIT 10000",
+              "fingerprint": "a57827605a632372",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0444_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a57827605a632372",
+          "outcomes": [
+            "a57827605a632372",
+            "a57827605a632372",
+            "a57827605a632372"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `t` JOIN `Classes` AS `c` ON `t`.`teacher_id` = `c`.`teacher_id` WHERE `c`.`class_details` ILIKE '%data%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Classes` AS `c2` WHERE `c2`.`teacher_id` = `t`.`teacher_id` AND `c2`.`class_details` ILIKE 'net%') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `t` JOIN `Classes` AS `c` ON `t`.`teacher_id` = `c`.`teacher_id` WHERE `c`.`class_details` ILIKE '%data%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Classes` AS `c2` WHERE `c2`.`teacher_id` = `t`.`teacher_id` AND `c2`.`class_details` ILIKE 'net%') LIMIT 10000",
+              "fingerprint": "a57827605a632372",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Classes` AS `c` JOIN `Teachers` AS `t` ON `c`.`teacher_id` = `t`.`teacher_id` WHERE `c`.`class_details` ILIKE '%data%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Classes` AS `c2` WHERE `c2`.`teacher_id` = `t`.`teacher_id` AND `c2`.`class_details` ILIKE 'net%') LIMIT 10000",
+              "fingerprint": "a57827605a632372",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Classes` AS `c` JOIN `Teachers` AS `t` ON `c`.`teacher_id` = `t`.`teacher_id` WHERE `c`.`class_details` ILIKE '%data%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Classes` AS `c2` WHERE `c2`.`teacher_id` = `t`.`teacher_id` AND `c2`.`class_details` ILIKE 'net%') LIMIT 10000",
+              "fingerprint": "a57827605a632372",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0447_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "5f67e018eb4bf60f",
+          "outcomes": [
+            "5f67e018eb4bf60f",
+            "5f67e018eb4bf60f",
+            "5f67e018eb4bf60f"
+          ],
+          "samples": [],
+          "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+              "fingerprint": "5f67e018eb4bf60f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+              "fingerprint": "5f67e018eb4bf60f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+              "fingerprint": "5f67e018eb4bf60f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0448_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "5f67e018eb4bf60f",
+          "outcomes": [
+            "5f67e018eb4bf60f",
+            "710723ca25c95050",
+            "5f67e018eb4bf60f"
+          ],
+          "samples": [],
+          "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+              "fingerprint": "5f67e018eb4bf60f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan`, COUNT(DISTINCT `achievements`.`achievement_id`) AS `count_achievement_id` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` JOIN `Achievements` AS `achievements` ON `students`.`student_id` = `achievements`.`student_id` GROUP BY `student_loans`.`student_loan_id`, `student_loans`.`amount_of_loan`, `student_loans`.`date_of_loan` HAVING COUNT(DISTINCT `achievements`.`achievement_id`) >= 2 LIMIT 10000",
+              "fingerprint": "710723ca25c95050",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`amount_of_loan` AS `amount_of_loan`, `student_loans`.`date_of_loan` AS `date_of_loan` FROM `Student_Loans` AS `student_loans` JOIN `Students` AS `students` ON `student_loans`.`student_id` = `students`.`student_id` WHERE `students`.`student_id` IN (SELECT `achievements`.`student_id` AS `student_id` FROM `Achievements` AS `achievements` GROUP BY `achievements`.`student_id` HAVING COUNT(*) >= 2) LIMIT 10000",
+              "fingerprint": "5f67e018eb4bf60f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0451_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6fa58730eff748cf",
+          "outcomes": [
+            "6fa58730eff748cf",
+            "6fa58730eff748cf",
+            "6fa58730eff748cf"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` LIMIT 10000",
+              "fingerprint": "6fa58730eff748cf",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` LIMIT 10000",
+              "fingerprint": "6fa58730eff748cf",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` LIMIT 10000",
+              "fingerprint": "6fa58730eff748cf",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0452_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6fa58730eff748cf",
+          "outcomes": [
+            "6fa58730eff748cf",
+            "6fa58730eff748cf",
+            "6fa58730eff748cf"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` JOIN `Detention` AS `detention` ON `ref_detention_type`.`detention_type_code` = `detention`.`detention_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` JOIN `Detention` AS `detention` ON `ref_detention_type`.`detention_type_code` = `detention`.`detention_type_code` LIMIT 10000",
+              "fingerprint": "6fa58730eff748cf",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` JOIN `Detention` AS `detention` ON `ref_detention_type`.`detention_type_code` = `detention`.`detention_type_code` LIMIT 10000",
+              "fingerprint": "6fa58730eff748cf",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `ref_detention_type`.`detention_type_description` AS `detention_type_description` FROM `Ref_Detention_Type` AS `ref_detention_type` JOIN `Detention` AS `detention` ON `ref_detention_type`.`detention_type_code` = `detention`.`detention_type_code` LIMIT 10000",
+              "fingerprint": "6fa58730eff748cf",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0453_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog has no column for students' personal details.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column for students' personal details.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column for students' personal details.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column for students' personal details; bio_data and student_details are not identified as personal details.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0454_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('Suite 303', 'Home'), ('Apt. 040', 'Home')] (+8 more), got [('Suite 076', 'Home'), ('Suite 218', 'Home')] (+13 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ecd54daaa34df03e",
+          "outcomes": [
+            "abstained",
+            "ecd54daaa34df03e",
+            "ecd54daaa34df03e"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`student_details` AS `student_details`, `ref_address_types`.`address_type_description` AS `address_type_description` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Suite 303', 'Home'), ('Apt. 040', 'Home')] (+8 more), got [('Suite 076', 'Home'), ('Suite 218', 'Home')] (+13 more)",
+              "sql": "SELECT `students`.`student_details` AS `student_details`, `ref_address_types`.`address_type_description` AS `address_type_description` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` LIMIT 10000",
+              "fingerprint": "ecd54daaa34df03e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Suite 303', 'Home'), ('Apt. 040', 'Home')] (+8 more), got [('Suite 076', 'Home'), ('Suite 218', 'Home')] (+13 more)",
+              "sql": "SELECT `students`.`student_details` AS `student_details`, `ref_address_types`.`address_type_description` AS `address_type_description` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` LIMIT 10000",
+              "fingerprint": "ecd54daaa34df03e",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the personal details and the address type descriptions of each student?",
+            "reference_sql": "SELECT DISTINCT T1.student_details, T3.address_type_description FROM Students AS T1 JOIN Students_Addresses AS T2 ON T1.student_id = T2.student_id JOIN Ref_Address_Types AS T3 ON T2.address_type_code = T3.address_type_code",
+            "reference_result": {
+              "count": 10,
+              "first": [
+                [
+                  "Suite 303",
+                  "Home"
+                ],
+                [
+                  "Apt. 040",
+                  "Home"
+                ],
+                [
+                  "Apt. 748",
+                  "Home"
+                ],
+                [
+                  "Apt. 040",
+                  "College"
+                ],
+                [
+                  "Apt. 763",
+                  "Home"
+                ],
+                [
+                  "Suite 889",
+                  "Home"
+                ],
+                [
+                  "Suite 076",
+                  "Home"
+                ],
+                [
+                  "Suite 303",
+                  "College"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 15,
+              "first": [
+                [
+                  "Suite 076",
+                  "Home"
+                ],
+                [
+                  "Suite 218",
+                  "Home"
+                ],
+                [
+                  "Apt. 748",
+                  "Home"
+                ],
+                [
+                  "Suite 303",
+                  "Home"
+                ],
+                [
+                  "Apt. 763",
+                  "Home"
+                ],
+                [
+                  "Apt. 040",
+                  "Home"
+                ],
+                [
+                  "Suite 889",
+                  "Home"
+                ],
+                [
+                  "Suite 218",
+                  "Home"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0455_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "52a3a65c014431c7",
+          "outcomes": [
+            "52a3a65c014431c7",
+            "52a3a65c014431c7",
+            "52a3a65c014431c7"
+          ],
+          "samples": [],
+          "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Addresses` AS `addresses` JOIN `Students_Addresses` AS `students_addresses` ON `addresses`.`address_id` = `students_addresses`.`address_id` JOIN `Students` AS `students` ON `students_addresses`.`student_id` = `students`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Addresses` AS `addresses` JOIN `Students_Addresses` AS `students_addresses` ON `addresses`.`address_id` = `students_addresses`.`address_id` JOIN `Students` AS `students` ON `students_addresses`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "52a3a65c014431c7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Addresses` AS `addresses` JOIN `Students_Addresses` AS `students_addresses` ON `addresses`.`address_id` = `students_addresses`.`address_id` JOIN `Students` AS `students` ON `students_addresses`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "52a3a65c014431c7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Addresses` AS `addresses` JOIN `Students_Addresses` AS `students_addresses` ON `addresses`.`address_id` = `students_addresses`.`address_id` JOIN `Students` AS `students` ON `students_addresses`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "52a3a65c014431c7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0456_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "52a3a65c014431c7",
+          "outcomes": [
+            "52a3a65c014431c7",
+            "52a3a65c014431c7",
+            "52a3a65c014431c7"
+          ],
+          "samples": [],
+          "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Addresses` AS `addresses` ON `students_addresses`.`address_id` = `addresses`.`address_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Addresses` AS `addresses` ON `students_addresses`.`address_id` = `addresses`.`address_id` LIMIT 10000",
+              "fingerprint": "52a3a65c014431c7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Addresses` AS `addresses` ON `students_addresses`.`address_id` = `addresses`.`address_id` LIMIT 10000",
+              "fingerprint": "52a3a65c014431c7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_details` AS `address_details`, `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Students_Addresses` AS `students_addresses` ON `students`.`student_id` = `students_addresses`.`student_id` JOIN `Addresses` AS `addresses` ON `students_addresses`.`address_id` = `addresses`.`address_id` LIMIT 10000",
+              "fingerprint": "52a3a65c014431c7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0457_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "bb601ea48cf46912",
+          "outcomes": [
+            "bb601ea48cf46912",
+            "bb601ea48cf46912",
+            "bb601ea48cf46912"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+              "fingerprint": "bb601ea48cf46912",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+              "fingerprint": "bb601ea48cf46912",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+              "fingerprint": "bb601ea48cf46912",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0458_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "bb601ea48cf46912",
+          "outcomes": [
+            "bb601ea48cf46912",
+            "bb601ea48cf46912",
+            "bb601ea48cf46912"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+              "fingerprint": "bb601ea48cf46912",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+              "fingerprint": "bb601ea48cf46912",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `transcripts`.`date_of_transcript` AS `date_of_transcript` FROM `Students` AS `students` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` LIMIT 10000",
+              "fingerprint": "bb601ea48cf46912",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0459_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "324fcd534c4ea22a",
+          "outcomes": [
+            "324fcd534c4ea22a",
+            "324fcd534c4ea22a",
+            "324fcd534c4ea22a"
+          ],
+          "samples": [],
+          "sql": "WITH `result_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `ranked_results` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, `result_counts`.`student_count` AS `student_count`, RANK() OVER (ORDER BY `result_counts`.`student_count` DESC) AS `result_rank` FROM `result_counts` AS `result_counts`) SELECT `ranked_results`.`student_count` AS `student_count`, `ranked_results`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `ranked_results` AS `ranked_results` WHERE `ranked_results`.`result_rank` = 1 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "WITH `result_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `ranked_results` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, `result_counts`.`student_count` AS `student_count`, RANK() OVER (ORDER BY `result_counts`.`student_count` DESC) AS `result_rank` FROM `result_counts` AS `result_counts`) SELECT `ranked_results`.`student_count` AS `student_count`, `ranked_results`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `ranked_results` AS `ranked_results` WHERE `ranked_results`.`result_rank` = 1 LIMIT 10000",
+              "fingerprint": "324fcd534c4ea22a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details` ORDER BY `student_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "324fcd534c4ea22a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "WITH `result_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `ranked_results` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, `result_counts`.`student_count` AS `student_count`, RANK() OVER (ORDER BY `result_counts`.`student_count` DESC) AS `result_rank` FROM `result_counts` AS `result_counts`) SELECT `ranked_results`.`student_count` AS `student_count`, `ranked_results`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `ranked_results` AS `ranked_results` WHERE `ranked_results`.`result_rank` = 1 LIMIT 10000",
+              "fingerprint": "324fcd534c4ea22a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0460_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [(5, 'A')], got [('A', 6)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "09e7d4e80c3cee98",
+          "outcomes": [
+            "09e7d4e80c3cee98",
+            "09e7d4e80c3cee98",
+            "09e7d4e80c3cee98"
+          ],
+          "samples": [],
+          "sql": "SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(*) AS `count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(5, 'A')], got [('A', 6)]",
+              "sql": "SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(*) AS `count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "09e7d4e80c3cee98",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(5, 'A')], got [('A', 6)]",
+              "sql": "SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(*) AS `count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "09e7d4e80c3cee98",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(5, 'A')], got [('A', 6)]",
+              "sql": "SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(*) AS `count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "09e7d4e80c3cee98",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Find the most common result in the behavioral monitoring details. What are the count and the details of this result?",
+            "reference_sql": "SELECT COUNT(DISTINCT student_id), behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  5,
+                  "A"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 1,
+              "first": [
+                [
+                  "A",
+                  6
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0461_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "planner_refusal",
+          "detail": "expected [('Dino', 'Suite 970'), ('Arturo', 'Apt. 491')], got []",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e3b0c44298fc1c14",
+          "outcomes": [
+            "abstained",
+            "e3b0c44298fc1c14",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": "WITH `result_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `most_common` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `result_counts` AS `result_counts` ORDER BY `result_counts`.`student_count` DESC LIMIT 1), `results_with_three` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `result_counts` AS `result_counts` WHERE `result_counts`.`student_count` = 3) SELECT DISTINCT `s`.`bio_data` AS `bio_data`, `s`.`student_details` AS `student_details` FROM `Students` AS `s` JOIN `Behaviour_Monitoring` AS `b` ON `s`.`student_id` = `b`.`student_id` WHERE `b`.`behaviour_monitoring_details` IN (SELECT `most_common`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `most_common` AS `most_common`) AND `b`.`behaviour_monitoring_details` IN (SELECT `results_with_three`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `results_with_three` AS `results_with_three`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Behaviour_Monitoring has no result column or student biographical data identifying the requested results.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Dino', 'Suite 970'), ('Arturo', 'Apt. 491')], got []",
+              "sql": "WITH `result_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(DISTINCT `behaviour_monitoring`.`student_id`) AS `student_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `most_common` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `result_counts` AS `result_counts` ORDER BY `result_counts`.`student_count` DESC LIMIT 1), `results_with_three` AS (SELECT `result_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `result_counts` AS `result_counts` WHERE `result_counts`.`student_count` = 3) SELECT DISTINCT `s`.`bio_data` AS `bio_data`, `s`.`student_details` AS `student_details` FROM `Students` AS `s` JOIN `Behaviour_Monitoring` AS `b` ON `s`.`student_id` = `b`.`student_id` WHERE `b`.`behaviour_monitoring_details` IN (SELECT `most_common`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `most_common` AS `most_common`) AND `b`.`behaviour_monitoring_details` IN (SELECT `results_with_three`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `results_with_three` AS `results_with_three`) LIMIT 10000",
+              "fingerprint": "e3b0c44298fc1c14",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Behaviour_Monitoring has no result column; its details are not identified as results.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ],
+          "adjudication": {
+            "question": "Which students not only got the most common result but also got a result obtained by 3 students in behaviour monitoring? List the student's biographical data and details.",
+            "reference_sql": "SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details ORDER BY COUNT(*) DESC LIMIT 1) INTERSECT SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Behaviour_Monitoring AS T2 ON T1.student_id = T2.student_id WHERE T2.behaviour_monitoring_details IN (SELECT behaviour_monitoring_details FROM Behaviour_Monitoring GROUP BY behaviour_monitoring_details HAVING COUNT(*) = 3)",
+            "reference_result": {
+              "count": 2,
+              "first": [
+                [
+                  "Dino",
+                  "Suite 970"
+                ],
+                [
+                  "Arturo",
+                  "Apt. 491"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 0,
+              "first": []
+            }
+          }
+        },
+        {
+          "id": "test_0462_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not specify how behaviour monitoring results are associated with students or define the requested result condition.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not specify how behaviour monitoring results are associated with students or define the requested result condition.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Behaviour_Monitoring has no column identifying a result or recording which students obtained each result.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not specify how behaviour-monitoring results are associated with students or define the requested result criteria.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0463_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not define which behaviour monitoring details count as a result or how to identify students by biographical information.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not define which behaviour monitoring details count as a result or how to identify students by biographical information.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not define how behaviour monitoring details map to results or provide student biographical information in a usable, identifiable form.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not define how behaviour monitoring details map to results or provide student biographical information in a usable column.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0464_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "validation_failed",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "wrong",
+          "blocked_sql": "WITH `detail_counts` AS (SELECT `behaviour_monitoring`.`behaviour_monitoring_details` AS `behaviour_monitoring_details`, COUNT(*) AS `result_count` FROM `Behaviour_Monitoring` AS `behaviour_monitoring` GROUP BY `behaviour_monitoring`.`behaviour_monitoring_details`), `most_common` AS (SELECT `detail_counts`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `detail_counts` AS `detail_counts` ORDER BY `detail_counts`.`result_count` DESC LIMIT 1) SELECT DISTINCT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Behaviour_Monitoring` AS `behaviour_monitoring` ON `students`.`student_id` = `behaviour_monitoring`.`student_id` WHERE `behaviour_monitoring`.`behaviour_monitoring_details` = (SELECT `most_common`.`behaviour_monitoring_details` AS `behaviour_monitoring_details` FROM `most_common` AS `most_common`) LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Could not produce a valid query. Please rephrase or narrow the question.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "validation_failed"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Could not produce a valid query. Please rephrase or narrow the question.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "validation_failed"
+            }
+          ]
+        },
+        {
+          "id": "test_0465_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3844103e7fadeb74",
+          "outcomes": [
+            "3844103e7fadeb74",
+            "3844103e7fadeb74",
+            "3844103e7fadeb74"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+              "fingerprint": "3844103e7fadeb74",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+              "fingerprint": "3844103e7fadeb74",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+              "fingerprint": "3844103e7fadeb74",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0466_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3844103e7fadeb74",
+          "outcomes": [
+            "3844103e7fadeb74",
+            "3844103e7fadeb74",
+            "3844103e7fadeb74"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+              "fingerprint": "3844103e7fadeb74",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+              "fingerprint": "3844103e7fadeb74",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `student_events`.`event_date` AS `event_date` FROM `Students` AS `students` JOIN `Student_Events` AS `student_events` ON `students`.`student_id` = `student_events`.`student_id` LIMIT 10000",
+              "fingerprint": "3844103e7fadeb74",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0467_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "validation_failed",
+          "detail": "Could not produce a valid query. Please rephrase or narrow the question.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "926423aacb8e4c5a"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Could not produce a valid query. Please rephrase or narrow the question.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "validation_failed"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Could not produce a valid query. Please rephrase or narrow the question.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "validation_failed"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `student_events`.`student_id`) AS `number`, `student_events`.`event_type_code` AS `event_type`, `ref_event_types`.`event_type_description` AS `description` FROM `Student_Events` AS `student_events` JOIN `Ref_Event_Types` AS `ref_event_types` ON `student_events`.`event_type_code` = `ref_event_types`.`event_type_code` GROUP BY `student_events`.`event_type_code`, `ref_event_types`.`event_type_description` ORDER BY `number` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "926423aacb8e4c5a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0468_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "926423aacb8e4c5a",
+          "outcomes": [
+            "926423aacb8e4c5a",
+            "926423aacb8e4c5a",
+            "926423aacb8e4c5a"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `student_events`.`student_id`) AS `number_of_students`, `student_events`.`event_type_code` AS `event_type_code`, `ref_event_types`.`event_type_description` AS `event_type_description` FROM `Student_Events` AS `student_events` JOIN `Ref_Event_Types` AS `ref_event_types` ON `student_events`.`event_type_code` = `ref_event_types`.`event_type_code` GROUP BY `student_events`.`event_type_code`, `ref_event_types`.`event_type_description` ORDER BY `number_of_students` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `student_events`.`student_id`) AS `number_of_students`, `student_events`.`event_type_code` AS `event_type_code`, `ref_event_types`.`event_type_description` AS `event_type_description` FROM `Student_Events` AS `student_events` JOIN `Ref_Event_Types` AS `ref_event_types` ON `student_events`.`event_type_code` = `ref_event_types`.`event_type_code` GROUP BY `student_events`.`event_type_code`, `ref_event_types`.`event_type_description` ORDER BY `number_of_students` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "926423aacb8e4c5a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `student_events`.`student_id`) AS `number_of_students`, `student_events`.`event_type_code` AS `event_type_code`, `ref_event_types`.`event_type_description` AS `event_type_description` FROM `Student_Events` AS `student_events` JOIN `Ref_Event_Types` AS `ref_event_types` ON `student_events`.`event_type_code` = `ref_event_types`.`event_type_code` GROUP BY `student_events`.`event_type_code`, `ref_event_types`.`event_type_description` ORDER BY `number_of_students` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "926423aacb8e4c5a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `student_events`.`student_id`) AS `number_of_students`, `student_events`.`event_type_code` AS `event_type_code`, `ref_event_types`.`event_type_description` AS `event_type_description` FROM `Student_Events` AS `student_events` JOIN `Ref_Event_Types` AS `ref_event_types` ON `student_events`.`event_type_code` = `ref_event_types`.`event_type_code` GROUP BY `student_events`.`event_type_code`, `ref_event_types`.`event_type_description` ORDER BY `number_of_students` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "926423aacb8e4c5a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0469_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "wrong",
+          "blocked_sql": "SELECT DISTINCT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "32f6ff138b50de63",
+            "32f6ff138b50de63"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+              "fingerprint": "32f6ff138b50de63",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+              "fingerprint": "32f6ff138b50de63",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0470_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "32f6ff138b50de63",
+          "outcomes": [
+            "32f6ff138b50de63",
+            "32f6ff138b50de63",
+            "32f6ff138b50de63"
+          ],
+          "samples": [],
+          "sql": "SELECT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+              "fingerprint": "32f6ff138b50de63",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+              "fingerprint": "32f6ff138b50de63",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_details` AS `achievement_details`, `ref_achievement_type`.`achievement_type_description` AS `achievement_type_description` FROM `Achievements` AS `achievements` JOIN `Ref_Achievement_Type` AS `ref_achievement_type` ON `achievements`.`achievement_type_code` = `ref_achievement_type`.`achievement_type_code` LIMIT 10000",
+              "fingerprint": "32f6ff138b50de63",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0471_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "207cd6d1a9c38f22",
+          "outcomes": [
+            "207cd6d1a9c38f22",
+            "207cd6d1a9c38f22",
+            "207cd6d1a9c38f22"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "207cd6d1a9c38f22",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "207cd6d1a9c38f22",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "207cd6d1a9c38f22",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0472_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "207cd6d1a9c38f22",
+          "outcomes": [
+            "207cd6d1a9c38f22",
+            "207cd6d1a9c38f22",
+            "207cd6d1a9c38f22"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "207cd6d1a9c38f22",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "207cd6d1a9c38f22",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `classes`.`teacher_id`) AS `teacher_count` FROM `Classes` AS `classes` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Achievements` AS `achievements` WHERE `achievements`.`student_id` = `students`.`student_id`) LIMIT 10000",
+              "fingerprint": "207cd6d1a9c38f22",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0473_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a81b192021cd91f8",
+          "outcomes": [
+            "a81b192021cd91f8",
+            "a81b192021cd91f8",
+            "a81b192021cd91f8"
+          ],
+          "samples": [],
+          "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+              "fingerprint": "a81b192021cd91f8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+              "fingerprint": "a81b192021cd91f8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+              "fingerprint": "a81b192021cd91f8",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0474_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a81b192021cd91f8",
+          "outcomes": [
+            "a81b192021cd91f8",
+            "a81b192021cd91f8",
+            "a81b192021cd91f8"
+          ],
+          "samples": [],
+          "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+              "fingerprint": "a81b192021cd91f8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+              "fingerprint": "a81b192021cd91f8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `transcripts`.`date_of_transcript` AS `date_of_transcript`, `transcripts`.`transcript_details` AS `transcript_details` FROM `Transcripts` AS `transcripts` LIMIT 10000",
+              "fingerprint": "a81b192021cd91f8",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0475_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3a3874e213ccb30c",
+          "outcomes": [
+            "3a3874e213ccb30c",
+            "3a3874e213ccb30c",
+            "3a3874e213ccb30c"
+          ],
+          "samples": [],
+          "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+              "fingerprint": "3a3874e213ccb30c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+              "fingerprint": "3a3874e213ccb30c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+              "fingerprint": "3a3874e213ccb30c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0476_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3a3874e213ccb30c",
+          "outcomes": [
+            "3a3874e213ccb30c",
+            "3a3874e213ccb30c",
+            "3a3874e213ccb30c"
+          ],
+          "samples": [],
+          "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+              "fingerprint": "3a3874e213ccb30c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+              "fingerprint": "3a3874e213ccb30c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `achievements`.`achievement_type_code` AS `achievement_type_code`, `achievements`.`achievement_details` AS `achievement_details`, `achievements`.`date_achievement` AS `date_achievement` FROM `Achievements` AS `achievements` LIMIT 10000",
+              "fingerprint": "3a3874e213ccb30c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0477_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c62469c7918c6b7f",
+          "outcomes": [
+            "c62469c7918c6b7f",
+            "c62469c7918c6b7f",
+            "c62469c7918c6b7f"
+          ],
+          "samples": [],
+          "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "c62469c7918c6b7f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "c62469c7918c6b7f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "c62469c7918c6b7f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0478_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c62469c7918c6b7f",
+          "outcomes": [
+            "c62469c7918c6b7f",
+            "c62469c7918c6b7f",
+            "c62469c7918c6b7f"
+          ],
+          "samples": [],
+          "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "c62469c7918c6b7f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "c62469c7918c6b7f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start`, `detention`.`datetime_detention_end` AS `datetime_detention_end` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "c62469c7918c6b7f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0479_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "00edd45745ba0fc0",
+          "outcomes": [
+            "00edd45745ba0fc0",
+            "00edd45745ba0fc0",
+            "00edd45745ba0fc0"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+              "fingerprint": "00edd45745ba0fc0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+              "fingerprint": "00edd45745ba0fc0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+              "fingerprint": "00edd45745ba0fc0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0480_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "00edd45745ba0fc0",
+          "outcomes": [
+            "00edd45745ba0fc0",
+            "00edd45745ba0fc0",
+            "00edd45745ba0fc0"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+              "fingerprint": "00edd45745ba0fc0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+              "fingerprint": "00edd45745ba0fc0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` WHERE `students`.`student_details` ILIKE '%Suite%' LIMIT 10000",
+              "fingerprint": "00edd45745ba0fc0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0481_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f949bde4957cfdc7",
+          "outcomes": [
+            "f949bde4957cfdc7",
+            "f949bde4957cfdc7",
+            "f949bde4957cfdc7"
+          ],
+          "samples": [],
+          "sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "f949bde4957cfdc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "f949bde4957cfdc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "f949bde4957cfdc7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0482_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "f949bde4957cfdc7",
+            "f949bde4957cfdc7"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "f949bde4957cfdc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `teachers`.`teacher_details` AS `teacher_details`, `students`.`student_details` AS `student_details` FROM `Classes` AS `classes` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` LIMIT 10000",
+              "fingerprint": "f949bde4957cfdc7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0487_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(DISTINCT `classes`.`class_id`) = 2) LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "251f199953b23e3f",
+            "abstained",
+            "251f199953b23e3f"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(DISTINCT `classes`.`class_id`) = 2) AS `two_course_students` ON `students`.`student_id` = `two_course_students`.`student_id` LIMIT 10000",
+              "fingerprint": "251f199953b23e3f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(DISTINCT `classes`.`class_id`) = 2) LIMIT 10000",
+              "fingerprint": "251f199953b23e3f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0488_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` WHERE `students`.`student_id` IN (SELECT `classes`.`student_id` AS `student_id` FROM `Classes` AS `classes` GROUP BY `classes`.`student_id` HAVING COUNT(DISTINCT `classes`.`class_id`) = 2) LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no course table or course enrollment data to identify students taking two courses.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no course table or course enrollment data to identify students taking two courses.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0489_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3808fc3ea29b1438",
+          "outcomes": [
+            "3808fc3ea29b1438",
+            "3808fc3ea29b1438",
+            "3808fc3ea29b1438"
+          ],
+          "samples": [],
+          "sql": "SELECT `d`.`detention_type_code` AS `detention_type_code`, `r`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `d` JOIN `Ref_Detention_Type` AS `r` ON `d`.`detention_type_code` = `r`.`detention_type_code` GROUP BY `d`.`detention_type_code`, `r`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `d`.`detention_type_code` AS `detention_type_code`, `r`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `d` JOIN `Ref_Detention_Type` AS `r` ON `d`.`detention_type_code` = `r`.`detention_type_code` GROUP BY `d`.`detention_type_code`, `r`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "3808fc3ea29b1438",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `d`.`detention_type_code` AS `detention_type_code`, `r`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `d` JOIN `Ref_Detention_Type` AS `r` ON `d`.`detention_type_code` = `r`.`detention_type_code` GROUP BY `d`.`detention_type_code`, `r`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "3808fc3ea29b1438",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `d`.`detention_type_code` AS `detention_type_code`, `r`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `d` JOIN `Ref_Detention_Type` AS `r` ON `d`.`detention_type_code` = `r`.`detention_type_code` GROUP BY `d`.`detention_type_code`, `r`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "3808fc3ea29b1438",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0490_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "3808fc3ea29b1438",
+          "outcomes": [
+            "3808fc3ea29b1438",
+            "3808fc3ea29b1438",
+            "3808fc3ea29b1438"
+          ],
+          "samples": [],
+          "sql": "SELECT `d`.`detention_type_code` AS `detention_type_code`, `r`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `d` JOIN `Ref_Detention_Type` AS `r` ON `d`.`detention_type_code` = `r`.`detention_type_code` GROUP BY `d`.`detention_type_code`, `r`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `d`.`detention_type_code` AS `detention_type_code`, `r`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `d` JOIN `Ref_Detention_Type` AS `r` ON `d`.`detention_type_code` = `r`.`detention_type_code` GROUP BY `d`.`detention_type_code`, `r`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "3808fc3ea29b1438",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`detention_type_code` AS `detention_type_code`, `ref_detention_type`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `detention` JOIN `Ref_Detention_Type` AS `ref_detention_type` ON `detention`.`detention_type_code` = `ref_detention_type`.`detention_type_code` GROUP BY `detention`.`detention_type_code`, `ref_detention_type`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "3808fc3ea29b1438",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`detention_type_code` AS `detention_type_code`, `ref_detention_type`.`detention_type_description` AS `detention_type_description`, COUNT(*) AS `count` FROM `Detention` AS `detention` JOIN `Ref_Detention_Type` AS `ref_detention_type` ON `detention`.`detention_type_code` = `ref_detention_type`.`detention_type_code` GROUP BY `detention`.`detention_type_code`, `ref_detention_type`.`detention_type_description` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "3808fc3ea29b1438",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0491_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "wrong",
+          "blocked_sql": "SELECT DISTINCT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "9a34a16b07ca9f9c",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+              "fingerprint": "9a34a16b07ca9f9c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ]
+        },
+        {
+          "id": "test_0492_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "join",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('Dino', 'Suite 970'), ('Louvenia', 'Suite 218')] (+9 more), got [('Louvenia', 'Suite 218'), ('Dino', 'Suite 970')] (+7 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "b4b50461524f4958",
+          "outcomes": [
+            "9a34a16b07ca9f9c",
+            "b4b50461524f4958",
+            "9a34a16b07ca9f9c"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+              "fingerprint": "9a34a16b07ca9f9c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Dino', 'Suite 970'), ('Louvenia', 'Suite 218')] (+9 more), got [('Louvenia', 'Suite 218'), ('Dino', 'Suite 970')] (+7 more)",
+              "sql": "SELECT DISTINCT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+              "fingerprint": "b4b50461524f4958",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data`, `students`.`student_details` AS `student_details` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` WHERE `student_loans`.`amount_of_loan` > (SELECT AVG(`student_loans`.`amount_of_loan`) AS `_col_0` FROM `Student_Loans` AS `student_loans`) LIMIT 10000",
+              "fingerprint": "9a34a16b07ca9f9c",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Find the biographical data and details for students whose student loan is above the average amount.",
+            "reference_sql": "SELECT T1.bio_data, T1.student_details FROM Students AS T1 JOIN Student_Loans AS T2 ON T1.student_id = T2.student_id WHERE T2.amount_of_loan > (SELECT AVG(amount_of_loan) FROM Student_Loans)",
+            "reference_result": {
+              "count": 11,
+              "first": [
+                [
+                  "Dino",
+                  "Suite 970"
+                ],
+                [
+                  "Louvenia",
+                  "Suite 218"
+                ],
+                [
+                  "Leora",
+                  "Apt. 748"
+                ],
+                [
+                  "Vanessa",
+                  "Suite 684"
+                ],
+                [
+                  "Arturo",
+                  "Apt. 491"
+                ],
+                [
+                  "Brenden",
+                  "Apt. 305"
+                ],
+                [
+                  "Edison",
+                  "Apt. 763"
+                ],
+                [
+                  "Stephon",
+                  "Suite 839"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 9,
+              "first": [
+                [
+                  "Louvenia",
+                  "Suite 218"
+                ],
+                [
+                  "Dino",
+                  "Suite 970"
+                ],
+                [
+                  "Edison",
+                  "Apt. 763"
+                ],
+                [
+                  "Stephon",
+                  "Suite 839"
+                ],
+                [
+                  "Vanessa",
+                  "Suite 684"
+                ],
+                [
+                  "Keshawn",
+                  "Suite 889"
+                ],
+                [
+                  "Arturo",
+                  "Apt. 491"
+                ],
+                [
+                  "Leora",
+                  "Apt. 748"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0493_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fc27a30a92d8b69f",
+          "outcomes": [
+            "fc27a30a92d8b69f",
+            "fc27a30a92d8b69f",
+            "fc27a30a92d8b69f"
+          ],
+          "samples": [],
+          "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "fc27a30a92d8b69f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "fc27a30a92d8b69f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "fc27a30a92d8b69f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0494_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fc27a30a92d8b69f",
+          "outcomes": [
+            "fc27a30a92d8b69f",
+            "fc27a30a92d8b69f",
+            "fc27a30a92d8b69f"
+          ],
+          "samples": [],
+          "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "fc27a30a92d8b69f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "fc27a30a92d8b69f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`student_loans`.`date_of_loan`) AS `earliest_date_of_loan` FROM `Student_Loans` AS `student_loans` LIMIT 10000",
+              "fingerprint": "fc27a30a92d8b69f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0495_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "650934349b3fa574",
+          "outcomes": [
+            "650934349b3fa574",
+            "650934349b3fa574",
+            "650934349b3fa574"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "650934349b3fa574",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "650934349b3fa574",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "650934349b3fa574",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0496_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "650934349b3fa574",
+          "outcomes": [
+            "650934349b3fa574",
+            "650934349b3fa574",
+            "650934349b3fa574"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "650934349b3fa574",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "650934349b3fa574",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students`.`bio_data` AS `bio_data` FROM `Students` AS `students` JOIN `Student_Loans` AS `student_loans` ON `students`.`student_id` = `student_loans`.`student_id` ORDER BY `student_loans`.`amount_of_loan` ASC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "650934349b3fa574",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0499_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0944c74c5604b12b",
+          "outcomes": [
+            "0944c74c5604b12b",
+            "0944c74c5604b12b",
+            "0944c74c5604b12b"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `t` JOIN `Classes` AS `c` ON `t`.`teacher_id` = `c`.`teacher_id` JOIN `Students` AS `s` ON `c`.`student_id` = `s`.`student_id` JOIN `Transcripts` AS `tr` ON `s`.`student_id` = `tr`.`student_id` WHERE `tr`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `t` JOIN `Classes` AS `c` ON `t`.`teacher_id` = `c`.`teacher_id` JOIN `Students` AS `s` ON `c`.`student_id` = `s`.`student_id` JOIN `Transcripts` AS `tr` ON `s`.`student_id` = `tr`.`student_id` WHERE `tr`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+              "fingerprint": "0944c74c5604b12b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `t` JOIN `Classes` AS `c` ON `t`.`teacher_id` = `c`.`teacher_id` JOIN `Students` AS `s` ON `c`.`student_id` = `s`.`student_id` JOIN `Transcripts` AS `tr` ON `s`.`student_id` = `tr`.`student_id` WHERE `tr`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+              "fingerprint": "0944c74c5604b12b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `t`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `t` JOIN `Classes` AS `c` ON `t`.`teacher_id` = `c`.`teacher_id` JOIN `Students` AS `s` ON `c`.`student_id` = `s`.`student_id` JOIN `Transcripts` AS `tr` ON `s`.`student_id` = `tr`.`student_id` WHERE `tr`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+              "fingerprint": "0944c74c5604b12b",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0500_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0944c74c5604b12b",
+          "outcomes": [
+            "0944c74c5604b12b",
+            "0944c74c5604b12b",
+            "0944c74c5604b12b"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `teachers`.`teacher_details` AS `teacher_details` FROM `Transcripts` AS `transcripts` JOIN `Classes` AS `classes` ON `transcripts`.`student_id` = `classes`.`student_id` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` WHERE `transcripts`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `teachers`.`teacher_details` AS `teacher_details` FROM `Transcripts` AS `transcripts` JOIN `Classes` AS `classes` ON `transcripts`.`student_id` = `classes`.`student_id` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` WHERE `transcripts`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+              "fingerprint": "0944c74c5604b12b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `teachers`.`teacher_details` AS `teacher_details` FROM `Teachers` AS `teachers` JOIN `Classes` AS `classes` ON `teachers`.`teacher_id` = `classes`.`teacher_id` JOIN `Students` AS `students` ON `classes`.`student_id` = `students`.`student_id` JOIN `Transcripts` AS `transcripts` ON `students`.`student_id` = `transcripts`.`student_id` WHERE `transcripts`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+              "fingerprint": "0944c74c5604b12b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `teachers`.`teacher_details` AS `teacher_details` FROM `Transcripts` AS `transcripts` JOIN `Classes` AS `classes` ON `transcripts`.`student_id` = `classes`.`student_id` JOIN `Teachers` AS `teachers` ON `classes`.`teacher_id` = `teachers`.`teacher_id` WHERE `transcripts`.`date_of_transcript` = (SELECT MIN(`transcripts`.`date_of_transcript`) AS `_col_0` FROM `Transcripts` AS `transcripts`) LIMIT 10000",
+              "fingerprint": "0944c74c5604b12b",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0501_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "b4a6795f38625568",
+          "outcomes": [
+            "b4a6795f38625568",
+            "b4a6795f38625568",
+            "b4a6795f38625568"
+          ],
+          "samples": [],
+          "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+              "fingerprint": "b4a6795f38625568",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+              "fingerprint": "b4a6795f38625568",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+              "fingerprint": "b4a6795f38625568",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0502_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "b4a6795f38625568",
+          "outcomes": [
+            "b4a6795f38625568",
+            "b4a6795f38625568",
+            "b4a6795f38625568"
+          ],
+          "samples": [],
+          "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_amount_of_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_amount_of_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+              "fingerprint": "b4a6795f38625568",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_amount_of_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+              "fingerprint": "b4a6795f38625568",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `student_loans`.`student_id` AS `student_id`, SUM(`student_loans`.`amount_of_loan`) AS `total_amount_of_loan` FROM `Student_Loans` AS `student_loans` GROUP BY `student_loans`.`student_id` LIMIT 10000",
+              "fingerprint": "b4a6795f38625568",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0503_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog has no course table or column identifying courses taken by students.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no course table or column identifying courses taken by students.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no course table or column that records courses taken by students.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no course table or column identifying courses taken by students.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0504_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [(325, 'Pansy', 1), (669, 'Brenden', 2)] (+10 more), got [(777, 'Houston', 0), (669, 'Brenden', 2)] (+13 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "cf11967046aa2ed3",
+          "outcomes": [
+            "cf11967046aa2ed3",
+            "cf11967046aa2ed3",
+            "cf11967046aa2ed3"
+          ],
+          "samples": [],
+          "sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`bio_data` AS `bio_data`, COUNT(`classes`.`class_id`) AS `number_of_courses` FROM `Students` AS `students` LEFT JOIN `Classes` AS `classes` ON `students`.`student_id` = `classes`.`student_id` GROUP BY `students`.`student_id`, `students`.`bio_data` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(325, 'Pansy', 1), (669, 'Brenden', 2)] (+10 more), got [(777, 'Houston', 0), (669, 'Brenden', 2)] (+13 more)",
+              "sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`bio_data` AS `bio_data`, COUNT(`classes`.`class_id`) AS `number_of_courses` FROM `Students` AS `students` LEFT JOIN `Classes` AS `classes` ON `students`.`student_id` = `classes`.`student_id` GROUP BY `students`.`student_id`, `students`.`bio_data` LIMIT 10000",
+              "fingerprint": "cf11967046aa2ed3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(325, 'Pansy', 1), (669, 'Brenden', 2)] (+10 more), got [(777, 'Houston', 0), (669, 'Brenden', 2)] (+13 more)",
+              "sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`bio_data` AS `bio_data`, COUNT(`classes`.`class_id`) AS `number_of_courses` FROM `Students` AS `students` LEFT JOIN `Classes` AS `classes` ON `students`.`student_id` = `classes`.`student_id` GROUP BY `students`.`student_id`, `students`.`bio_data` LIMIT 10000",
+              "fingerprint": "cf11967046aa2ed3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(325, 'Pansy', 1), (669, 'Brenden', 2)] (+10 more), got [(777, 'Houston', 0), (669, 'Brenden', 2)] (+13 more)",
+              "sql": "SELECT `students`.`student_id` AS `student_id`, `students`.`bio_data` AS `bio_data`, COUNT(`classes`.`class_id`) AS `number_of_courses` FROM `Students` AS `students` LEFT JOIN `Classes` AS `classes` ON `students`.`student_id` = `classes`.`student_id` GROUP BY `students`.`student_id`, `students`.`bio_data` LIMIT 10000",
+              "fingerprint": "cf11967046aa2ed3",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "For each student, find the student id, student biographical data, and the number of courses he or she takes.",
+            "reference_sql": "SELECT T1.student_id, ANY_VALUE(T1.bio_data), COUNT(*) FROM Students AS T1 JOIN Classes AS T2 ON T1.student_id = T2.student_id GROUP BY T1.student_id",
+            "reference_result": {
+              "count": 12,
+              "first": [
+                [
+                  325,
+                  "Pansy",
+                  1
+                ],
+                [
+                  669,
+                  "Brenden",
+                  2
+                ],
+                [
+                  811,
+                  "Felipa",
+                  3
+                ],
+                [
+                  287,
+                  "Dino",
+                  1
+                ],
+                [
+                  824,
+                  "Stephon",
+                  1
+                ],
+                [
+                  984,
+                  "Keshawn",
+                  1
+                ],
+                [
+                  435,
+                  "Vanessa",
+                  2
+                ],
+                [
+                  762,
+                  "Edison",
+                  3
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 15,
+              "first": [
+                [
+                  777,
+                  "Houston",
+                  0
+                ],
+                [
+                  669,
+                  "Brenden",
+                  2
+                ],
+                [
+                  824,
+                  "Stephon",
+                  1
+                ],
+                [
+                  361,
+                  "Louvenia",
+                  1
+                ],
+                [
+                  276,
+                  "Camila",
+                  1
+                ],
+                [
+                  287,
+                  "Dino",
+                  1
+                ],
+                [
+                  415,
+                  "Leora",
+                  0
+                ],
+                [
+                  811,
+                  "Felipa",
+                  3
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0505_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fad35f27aef2bffe",
+          "outcomes": [
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0506_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fad35f27aef2bffe",
+          "outcomes": [
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `detention`.`student_id`) AS `student_count` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0507_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ca0092ff5cf33852",
+          "outcomes": [
+            "ca0092ff5cf33852",
+            "ca0092ff5cf33852",
+            "ca0092ff5cf33852"
+          ],
+          "samples": [],
+          "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "ca0092ff5cf33852",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "ca0092ff5cf33852",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "ca0092ff5cf33852",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0508_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ca0092ff5cf33852",
+          "outcomes": [
+            "ca0092ff5cf33852",
+            "ca0092ff5cf33852",
+            "ca0092ff5cf33852"
+          ],
+          "samples": [],
+          "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "ca0092ff5cf33852",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`address_type_code` AS `address_type_code`, `ref_address_types`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `students_addresses` JOIN `Ref_Address_Types` AS `ref_address_types` ON `students_addresses`.`address_type_code` = `ref_address_types`.`address_type_code` GROUP BY `students_addresses`.`address_type_code`, `ref_address_types`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "ca0092ff5cf33852",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `r`.`address_type_code` AS `address_type_code`, `r`.`address_type_description` AS `address_type_description`, COUNT(*) AS `count` FROM `Students_Addresses` AS `sa` JOIN `Ref_Address_Types` AS `r` ON `sa`.`address_type_code` = `r`.`address_type_code` GROUP BY `r`.`address_type_code`, `r`.`address_type_description` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "ca0092ff5cf33852",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0511_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "b864a2479f3316ff",
+          "outcomes": [
+            "b864a2479f3316ff",
+            "b864a2479f3316ff",
+            "b864a2479f3316ff"
+          ],
+          "samples": [],
+          "sql": "SELECT `students_addresses`.`date_from` AS `date_from`, `students_addresses`.`date_to` AS `date_to` FROM `Students_Addresses` AS `students_addresses` JOIN (SELECT `transcripts`.`student_id` AS `student_id` FROM `Transcripts` AS `transcripts` GROUP BY `transcripts`.`student_id` HAVING COUNT(`transcripts`.`transcript_id`) = 2) AS `two_transcript_students` ON `students_addresses`.`student_id` = `two_transcript_students`.`student_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`date_from` AS `date_from`, `students_addresses`.`date_to` AS `date_to` FROM `Students_Addresses` AS `students_addresses` JOIN (SELECT `transcripts`.`student_id` AS `student_id` FROM `Transcripts` AS `transcripts` GROUP BY `transcripts`.`student_id` HAVING COUNT(`transcripts`.`transcript_id`) = 2) AS `two_transcript_students` ON `students_addresses`.`student_id` = `two_transcript_students`.`student_id` LIMIT 10000",
+              "fingerprint": "b864a2479f3316ff",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`date_from` AS `date_from`, `students_addresses`.`date_to` AS `date_to` FROM `Students_Addresses` AS `students_addresses` JOIN (SELECT `transcripts`.`student_id` AS `student_id` FROM `Transcripts` AS `transcripts` GROUP BY `transcripts`.`student_id` HAVING COUNT(`transcripts`.`transcript_id`) = 2) AS `two_transcript_students` ON `students_addresses`.`student_id` = `two_transcript_students`.`student_id` LIMIT 10000",
+              "fingerprint": "b864a2479f3316ff",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `students_addresses`.`date_from` AS `date_from`, `students_addresses`.`date_to` AS `date_to` FROM `Students_Addresses` AS `students_addresses` JOIN (SELECT `transcripts`.`student_id` AS `student_id` FROM `Transcripts` AS `transcripts` GROUP BY `transcripts`.`student_id` HAVING COUNT(`transcripts`.`transcript_id`) = 2) AS `two_transcript_students` ON `students_addresses`.`student_id` = `two_transcript_students`.`student_id` LIMIT 10000",
+              "fingerprint": "b864a2479f3316ff",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0512_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT `students_addresses`.`date_from` AS `date_from`, `students_addresses`.`date_to` AS `date_to` FROM `Students_Addresses` AS `students_addresses` WHERE `students_addresses`.`student_id` IN (SELECT `transcripts`.`student_id` AS `student_id` FROM `Transcripts` AS `transcripts` GROUP BY `transcripts`.`student_id` HAVING COUNT(*) = 2) LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no address start-time or end-time columns.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no address start-time or end-time columns; Students_Addresses only provides date_from and date_to.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_0513_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0cda18c1c1162557",
+          "outcomes": [
+            "0cda18c1c1162557",
+            "0cda18c1c1162557",
+            "0cda18c1c1162557"
+          ],
+          "samples": [],
+          "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "0cda18c1c1162557",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "0cda18c1c1162557",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "0cda18c1c1162557",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0514_cre_Students_Information_Systems",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:cre_Students_Information_Systems"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0cda18c1c1162557",
+          "outcomes": [
+            "0cda18c1c1162557",
+            "0cda18c1c1162557",
+            "0cda18c1c1162557"
+          ],
+          "samples": [],
+          "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "0cda18c1c1162557",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "0cda18c1c1162557",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `detention`.`datetime_detention_start` AS `datetime_detention_start` FROM `Detention` AS `detention` LIMIT 10000",
+              "fingerprint": "0cda18c1c1162557",
+              "refusal_code": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

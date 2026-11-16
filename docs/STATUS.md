@@ -66,6 +66,21 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-16 — head-to-head re-run after P12-P16 (Secure Query side; Genie unchanged).**
+  Same 7 Spider test databases, 532 questions, 3 repeats, same catalogs; Genie's saved
+  answers reused. Grader: right 402 -> 416, flagged wrong 61 -> 65, refused 69 -> 51.
+  Adjudicated: 51 of 65 flagged answers are unchanged from rated ones and keep their
+  labels; 14 new were rated blind by gpt-5 and a separate Claude agent (both model raters;
+  agreement 8 of 14), merged conservatively. Real errors 17 -> 20 of 532 (3.8%, 95%
+  2.4-5.7%) vs Genie 38 (7.1%, 5.2-9.7%): still about half Genie's, but the intervals now
+  overlap slightly. 4 of the 5 new real errors are questions refused before and answered
+  now: two the model used to refuse (it now chains through a table and counts distinct
+  citing papers instead of citations), one the kernel used to reject (an average over
+  distinct products, not ordered items), one with two conditions on the same record. So
+  P12-P16 traded about 18 refusals for 14 right answers and 3-4 real errors on this set:
+  the newly answered questions are much less accurate than the rest.
+  Files: `docs/baselines/genie-h2h-spider-*-v4-sq-2026-11-16.json`,
+  `docs/adjudication/genie-h2h-*v4*`.
 - **2026-11-16 — three fan-out false alarms fixed (P16).** A sort of the BIRD fan-out
   rejections (25 readings, 13 questions) found true alarms (an atoms x bonds count; totals
   through a table with several rows per account), still refused, and three general false

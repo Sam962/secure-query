@@ -1,0 +1,637 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all city codes and the total distance to all other cities.",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT city1_code, SUM(distance) FROM Direct_distance GROUP BY city1_code",
+  "gold_result": {
+   "count": 31,
+   "first": [
+    [
+     "BAL",
+     74666
+    ],
+    [
+     "ATL",
+     1241
+    ],
+    [
+     "BKK",
+     9631
+    ],
+    [
+     "BOS",
+     4298
+    ],
+    [
+     "CHI",
+     1299
+    ],
+    [
+     "CPK",
+     21
+    ],
+    [
+     "DAL",
+     1217
+    ],
+    [
+     "DEL",
+     7469
+    ]
+   ]
+  },
+  "system_sql": "SELECT `city_distances`.`city_code` AS `city_code`, SUM(`city_distances`.`distance`) AS `total_distance` FROM (SELECT `direct_distance`.`city1_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` UNION ALL SELECT `direct_distance`.`city2_code` AS `city_code`, `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance`) AS `city_distances` GROUP BY `city_distances`.`city_code` LIMIT 10000",
+  "system_result": {
+   "count": 31,
+   "first": [
+    [
+     "BAL",
+     149332
+    ],
+    [
+     "ATL",
+     2482
+    ],
+    [
+     "BKK",
+     19262
+    ],
+    [
+     "BOS",
+     8596
+    ],
+    [
+     "CHI",
+     2598
+    ],
+    [
+     "CPK",
+     42
+    ],
+    [
+     "DAL",
+     2434
+    ],
+    [
+     "DEL",
+     14938
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all city names and the average distance to all other cities.",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT ANY_VALUE(T2.city_name), AVG(distance) FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code GROUP BY T1.city1_code",
+  "gold_result": {
+   "count": 31,
+   "first": [
+    [
+     "Boston",
+     1074.5
+    ],
+    [
+     "Newark",
+     71.0
+    ],
+    [
+     "Miami",
+     946.0
+    ],
+    [
+     "Newark",
+     1326.2222222222222
+    ],
+    [
+     "Rochester",
+     286.5
+    ],
+    [
+     "Chicago",
+     649.5
+    ],
+    [
+     "Delhi",
+     7469.0
+    ],
+    [
+     "Paris",
+     3624.0
+    ]
+   ]
+  },
+  "system_sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+  "system_result": {
+   "count": 30,
+   "first": [
+    [
+     "Delhi",
+     7469.0
+    ],
+    [
+     "Providence",
+     328.0
+    ],
+    [
+     "London",
+     3955.5
+    ],
+    [
+     "San Diego",
+     1762.3333333333333
+    ],
+    [
+     "New York",
+     1818.5
+    ],
+    [
+     "Paris",
+     3624.0
+    ],
+    [
+     "Newark",
+     1200.7
+    ],
+    [
+     "Hong Kong",
+     8409.0
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the number of students living in each city.",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT ANY_VALUE(T1.city_name), COUNT(*) FROM City AS T1 JOIN Student AS T2 ON T1.city_code = T2.city_code GROUP BY T1.city_code",
+  "gold_result": {
+   "count": 19,
+   "first": [
+    [
+     "Newark",
+     1
+    ],
+    [
+     "Boston",
+     1
+    ],
+    [
+     "Rochester",
+     1
+    ],
+    [
+     "Chicago",
+     1
+    ],
+    [
+     "Washington",
+     3
+    ],
+    [
+     "Houston",
+     1
+    ],
+    [
+     "Los Angeles",
+     1
+    ],
+    [
+     "Philadelphia",
+     3
+    ]
+   ]
+  },
+  "system_sql": "SELECT `city`.`city_name` AS `city_name`, COUNT(`student`.`StuID`) AS `student_count` FROM `City` AS `city` LEFT JOIN `Student` AS `student` ON `city`.`city_code` = `student`.`city_code` GROUP BY `city`.`city_name` LIMIT 10000",
+  "system_result": {
+   "count": 30,
+   "first": [
+    [
+     "Providence",
+     0
+    ],
+    [
+     "Delhi",
+     0
+    ],
+    [
+     "San Diego",
+     0
+    ],
+    [
+     "London",
+     1
+    ],
+    [
+     "New York",
+     3
+    ],
+    [
+     "Paris",
+     0
+    ],
+    [
+     "Washington",
+     3
+    ],
+    [
+     "Newark",
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show me the distance between Boston and Newark.",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT distance FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code JOIN City AS T3 ON T1.city2_code = T3.city_code WHERE T2.city_name = 'Boston' AND T3.city_name = 'Newark'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     200
+    ]
+   ]
+  },
+  "system_sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE (`city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark') OR (`city1`.`city_name` = 'Newark' AND `city2`.`city_name` = 'Boston') LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     200
+    ],
+    [
+     200
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the city codes corresponding to cities with distances less than 1000?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT city1_code, city2_code FROM Direct_distance WHERE distance < 1000",
+  "gold_result": {
+   "count": 57,
+   "first": [
+    [
+     "BAL",
+     "ATL"
+    ],
+    [
+     "BAL",
+     "BAL"
+    ],
+    [
+     "BAL",
+     "BOS"
+    ],
+    [
+     "BAL",
+     "CHI"
+    ],
+    [
+     "BAL",
+     "CPK"
+    ],
+    [
+     "BAL",
+     "DET"
+    ],
+    [
+     "BAL",
+     "EWR"
+    ],
+    [
+     "BAL",
+     "FRE"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `direct_distance`.`city1_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 UNION SELECT `direct_distance`.`city2_code` AS `city_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` < 1000 LIMIT 10000",
+  "system_result": {
+   "count": 19,
+   "first": [
+    [
+     "BAL"
+    ],
+    [
+     "ATL"
+    ],
+    [
+     "BOS"
+    ],
+    [
+     "CHI"
+    ],
+    [
+     "CPK"
+    ],
+    [
+     "DET"
+    ],
+    [
+     "EWR"
+    ],
+    [
+     "FRE"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the distance between Boston and Newark?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT distance FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code JOIN City AS T3 ON T1.city2_code = T3.city_code WHERE T2.city_name = 'Boston' AND T3.city_name = 'Newark'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     200
+    ]
+   ]
+  },
+  "system_sql": "SELECT `direct_distance`.`distance` AS `distance` FROM `Direct_distance` AS `direct_distance` JOIN `City` AS `city1` ON `direct_distance`.`city1_code` = `city1`.`city_code` JOIN `City` AS `city2` ON `direct_distance`.`city2_code` = `city2`.`city_code` WHERE (`city1`.`city_name` = 'Boston' AND `city2`.`city_name` = 'Newark') OR (`city1`.`city_name` = 'Newark' AND `city2`.`city_name` = 'Boston') LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     200
+    ],
+    [
+     200
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p007",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the sum of distances between BAL and other cities?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT SUM(distance) FROM Direct_distance WHERE city1_code = 'BAL'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     74666
+    ]
+   ]
+  },
+  "system_sql": "SELECT SUM(`direct_distance`.`distance`) AS `sum_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     149332
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p008",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the city codes of cities with distance greater than average?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT city1_code, city2_code FROM Direct_distance WHERE distance > (SELECT AVG(distance) FROM Direct_distance)",
+  "gold_result": {
+   "count": 50,
+   "first": [
+    [
+     "BAL",
+     "BKK"
+    ],
+    [
+     "BAL",
+     "DEL"
+    ],
+    [
+     "BAL",
+     "HKG"
+    ],
+    [
+     "BAL",
+     "HON"
+    ],
+    [
+     "BAL",
+     "JNB"
+    ],
+    [
+     "BAL",
+     "LON"
+    ],
+    [
+     "BAL",
+     "LOS"
+    ],
+    [
+     "BAL",
+     "PAR"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `direct_distance`.`city1_code` AS `city1_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) UNION SELECT `direct_distance`.`city2_code` AS `city2_code` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`distance` > (SELECT AVG(`direct_distance`.`distance`) AS `_col_0` FROM `Direct_distance` AS `direct_distance`) LIMIT 10000",
+  "system_result": {
+   "count": 19,
+   "first": [
+    [
+     "BOS"
+    ],
+    [
+     "EWR"
+    ],
+    [
+     "DEL"
+    ],
+    [
+     "PAR"
+    ],
+    [
+     "SAN"
+    ],
+    [
+     "LOS"
+    ],
+    [
+     "WAS"
+    ],
+    [
+     "JNB"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p009",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the full names of students living in MD?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT T2.Fname, T2.Lname FROM City AS T1 JOIN Student AS T2 ON T1.city_code = T2.city_code WHERE T1.state = 'MD'",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "Linda",
+     "Smith"
+    ],
+    [
+     "Andy",
+     "Schultz"
+    ],
+    [
+     "Jandy",
+     "Nelson"
+    ],
+    [
+     "Stacy",
+     "Prater"
+    ]
+   ]
+  },
+  "system_sql": "SELECT CONCAT(`student`.`Fname`, ' ', `student`.`LName`) AS `full_name` FROM `Student` AS `student` JOIN `City` AS `city` ON `student`.`city_code` = `city`.`city_code` WHERE `city`.`state` = 'MD' LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "Linda Smith"
+    ],
+    [
+     "Andy Schultz"
+    ],
+    [
+     "Jandy Nelson"
+    ],
+    [
+     "Stacy Prater"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p010",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the city name and average distances from each city?",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT ANY_VALUE(T2.city_name), AVG(distance) FROM Direct_distance AS T1 JOIN City AS T2 ON T1.city1_code = T2.city_code GROUP BY T1.city1_code",
+  "gold_result": {
+   "count": 31,
+   "first": [
+    [
+     "Boston",
+     1074.5
+    ],
+    [
+     "Newark",
+     71.0
+    ],
+    [
+     "Miami",
+     946.0
+    ],
+    [
+     "Newark",
+     1326.2222222222222
+    ],
+    [
+     "Rochester",
+     286.5
+    ],
+    [
+     "Chicago",
+     649.5
+    ],
+    [
+     "Delhi",
+     7469.0
+    ],
+    [
+     "Paris",
+     3624.0
+    ]
+   ]
+  },
+  "system_sql": "SELECT `city`.`city_name` AS `city_name`, AVG(`direct_distance`.`distance`) AS `average_distance` FROM `City` AS `city` JOIN `Direct_distance` AS `direct_distance` ON `city`.`city_code` = `direct_distance`.`city1_code` GROUP BY `city`.`city_name` LIMIT 10000",
+  "system_result": {
+   "count": 30,
+   "first": [
+    [
+     "Delhi",
+     7469.0
+    ],
+    [
+     "Providence",
+     328.0
+    ],
+    [
+     "London",
+     3955.5
+    ],
+    [
+     "San Diego",
+     1762.3333333333333
+    ],
+    [
+     "New York",
+     1818.5
+    ],
+    [
+     "Paris",
+     3624.0
+    ],
+    [
+     "Newark",
+     1200.7
+    ],
+    [
+     "Hong Kong",
+     8409.0
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p011",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the total distance between city BAL and all other cities.",
+  "schema": "tenant=spider_address_1\ntables:\n  - City\n      city_code: str — city code\n      city_name: str — city name\n      state: str\n      country: str values: 'CANADA', 'CHINA', 'FRANCE', 'INDIA', 'JAPAN', 'SAFRICA', 'THAILAND', 'UK', 'USA'\n      latitude: float\n      longitude: float\n  - Direct_distance\n      city1_code: str — city1 code\n      city2_code: str — city2 code\n      distance: int\n  - Student\n      StuID: int — student id\n      LName: str — last name\n      Fname: str — first name\n      Age: int\n      Sex: str values: 'F', 'M'\n      Major: int\n      Advisor: int\n      city_code: str — city code\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Student.city_code → City.city_code\n  - Direct_distance.city2_code → City.city_code\n  - Direct_distance.city1_code → City.city_code",
+  "gold_sql": "SELECT SUM(distance) FROM Direct_distance WHERE city1_code = 'BAL'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     74666
+    ]
+   ]
+  },
+  "system_sql": "SELECT SUM(`direct_distance`.`distance`) AS `total_distance` FROM `Direct_distance` AS `direct_distance` WHERE `direct_distance`.`city1_code` = 'BAL' OR `direct_distance`.`city2_code` = 'BAL' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     149332
+    ]
+   ]
+  }
+ }
+]

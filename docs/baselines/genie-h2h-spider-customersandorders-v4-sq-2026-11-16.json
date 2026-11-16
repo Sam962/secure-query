@@ -1,0 +1,3777 @@
+{
+  "secure_query": {
+    "name": "secure_query",
+    "total": 80,
+    "correct": 75,
+    "wrong": 3,
+    "abstained": 2,
+    "error": 0,
+    "unsafe": 0,
+    "answer_rate": 0.9375,
+    "wrong_rate": 0.0375,
+    "wrong_rate_ci95": [
+      0.012834336300788757,
+      0.10454891974394322
+    ],
+    "flip_rate": 0.05,
+    "over_refusal": 0.025
+  },
+  "genie": null,
+  "gate": null,
+  "suite": "data/h2h/customers_and_orders/cases.json",
+  "backend": "databricks",
+  "repeat": 3,
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int \u2014 address id\n      address_details: str \u2014 address details\n  - Customer_Orders\n      order_id: int \u2014 order id\n      customer_id: int \u2014 customer id\n      order_date: str \u2014 order date\n      order_status_code: str \u2014 order status code values: 'Completed', 'Part'\n  - Customers\n      customer_id: int \u2014 customer id\n      address_id: int \u2014 address id\n      payment_method_code: str \u2014 payment method code values: 'Credit Card', 'Direct Debit'\n      customer_number: str \u2014 customer number\n      customer_name: str \u2014 customer name\n      customer_address: str \u2014 customer address\n      customer_phone: str \u2014 customer phone\n      customer_email: str \u2014 customer email\n  - Order_Items\n      order_item_id: int \u2014 order item id\n      order_id: int \u2014 order id\n      product_id: int \u2014 product id\n      order_quantity: str \u2014 order quantity values: '1', '2', '4', '5', '7', '8', '9'\n  - Products\n      product_id: int \u2014 product id\n      product_type_code: str \u2014 product type code values: 'Clothes', 'Hardware'\n      product_name: str \u2014 product name\n      product_price: float \u2014 product price\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Customer_Orders.customer_id \u2192 Customers.customer_id\n  - Order_Items.product_id \u2192 Products.product_id\n  - Order_Items.order_id \u2192 Customer_Orders.order_id",
+  "systems": {
+    "secure_query": {
+      "cases": [
+        {
+          "id": "test_0233_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0234_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `address_count` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0235_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "d690968556d56b27",
+          "outcomes": [
+            "d690968556d56b27",
+            "d690968556d56b27",
+            "d690968556d56b27"
+          ],
+          "samples": [],
+          "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "d690968556d56b27",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "d690968556d56b27",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "d690968556d56b27",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0236_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "d690968556d56b27",
+          "outcomes": [
+            "d690968556d56b27",
+            "d690968556d56b27",
+            "d690968556d56b27"
+          ],
+          "samples": [],
+          "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "d690968556d56b27",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "d690968556d56b27",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `addresses`.`address_id` AS `address_id`, `addresses`.`address_details` AS `address_details` FROM `Addresses` AS `addresses` LIMIT 10000",
+              "fingerprint": "d690968556d56b27",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0237_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0238_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0239_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "525abfc34ca6ed54",
+          "outcomes": [
+            "525abfc34ca6ed54",
+            "525abfc34ca6ed54",
+            "525abfc34ca6ed54"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "525abfc34ca6ed54",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "525abfc34ca6ed54",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "525abfc34ca6ed54",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0240_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "525abfc34ca6ed54",
+          "outcomes": [
+            "525abfc34ca6ed54",
+            "525abfc34ca6ed54",
+            "525abfc34ca6ed54"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "525abfc34ca6ed54",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "525abfc34ca6ed54",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "525abfc34ca6ed54",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0241_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a2b13c5ff283f053",
+          "outcomes": [
+            "a2b13c5ff283f053",
+            "a2b13c5ff283f053",
+            "a2b13c5ff283f053"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a2b13c5ff283f053",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a2b13c5ff283f053",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a2b13c5ff283f053",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0242_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a2b13c5ff283f053",
+          "outcomes": [
+            "a2b13c5ff283f053",
+            "a2b13c5ff283f053",
+            "a2b13c5ff283f053"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a2b13c5ff283f053",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a2b13c5ff283f053",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a2b13c5ff283f053",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0243_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "513a93acba33301f",
+          "outcomes": [
+            "513a93acba33301f",
+            "513a93acba33301f",
+            "513a93acba33301f"
+          ],
+          "samples": [],
+          "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "513a93acba33301f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "513a93acba33301f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "513a93acba33301f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0244_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "513a93acba33301f",
+          "outcomes": [
+            "513a93acba33301f",
+            "513a93acba33301f",
+            "513a93acba33301f"
+          ],
+          "samples": [],
+          "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "513a93acba33301f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "513a93acba33301f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT MIN(`products`.`product_price`) AS `minimum_price`, AVG(`products`.`product_price`) AS `average_price`, MAX(`products`.`product_price`) AS `maximum_price` FROM `Products` AS `products` LIMIT 10000",
+              "fingerprint": "513a93acba33301f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0245_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f44ca3d328215df8",
+          "outcomes": [
+            "f44ca3d328215df8",
+            "f44ca3d328215df8",
+            "f44ca3d328215df8"
+          ],
+          "samples": [],
+          "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+              "fingerprint": "f44ca3d328215df8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+              "fingerprint": "f44ca3d328215df8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+              "fingerprint": "f44ca3d328215df8",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0246_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f44ca3d328215df8",
+          "outcomes": [
+            "f44ca3d328215df8",
+            "f44ca3d328215df8",
+            "f44ca3d328215df8"
+          ],
+          "samples": [],
+          "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+              "fingerprint": "f44ca3d328215df8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+              "fingerprint": "f44ca3d328215df8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' LIMIT 10000",
+              "fingerprint": "f44ca3d328215df8",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0247_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0be3a388295139ad",
+          "outcomes": [
+            "0be3a388295139ad",
+            "0be3a388295139ad",
+            "0be3a388295139ad"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `hardware_product_count` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `hardware_product_count` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `hardware_product_count` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `hardware_product_count` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0248_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0be3a388295139ad",
+          "outcomes": [
+            "0be3a388295139ad",
+            "0be3a388295139ad",
+            "0be3a388295139ad"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `product_count` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0249_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0eb830715e3513f3",
+          "outcomes": [
+            "0eb830715e3513f3",
+            "0eb830715e3513f3",
+            "0eb830715e3513f3"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+              "fingerprint": "0eb830715e3513f3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+              "fingerprint": "0eb830715e3513f3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+              "fingerprint": "0eb830715e3513f3",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0250_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0eb830715e3513f3",
+          "outcomes": [
+            "0eb830715e3513f3",
+            "0eb830715e3513f3",
+            "0eb830715e3513f3"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+              "fingerprint": "0eb830715e3513f3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+              "fingerprint": "0eb830715e3513f3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products`) LIMIT 10000",
+              "fingerprint": "0eb830715e3513f3",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0251_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "55c1520824a84d75",
+          "outcomes": [
+            "55c1520824a84d75",
+            "55c1520824a84d75",
+            "55c1520824a84d75"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+              "fingerprint": "55c1520824a84d75",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+              "fingerprint": "55c1520824a84d75",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+              "fingerprint": "55c1520824a84d75",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0252_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "55c1520824a84d75",
+          "outcomes": [
+            "55c1520824a84d75",
+            "55c1520824a84d75",
+            "55c1520824a84d75"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+              "fingerprint": "55c1520824a84d75",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+              "fingerprint": "55c1520824a84d75",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' AND `products`.`product_price` > (SELECT AVG(`products`.`product_price`) AS `_col_0` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware') LIMIT 10000",
+              "fingerprint": "55c1520824a84d75",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0253_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7dc11107159b5e51",
+          "outcomes": [
+            "7dc11107159b5e51",
+            "7dc11107159b5e51",
+            "7dc11107159b5e51"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "7dc11107159b5e51",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "7dc11107159b5e51",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "7dc11107159b5e51",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0254_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7dc11107159b5e51",
+          "outcomes": [
+            "7dc11107159b5e51",
+            "7dc11107159b5e51",
+            "7dc11107159b5e51"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "7dc11107159b5e51",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "7dc11107159b5e51",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Clothes' ORDER BY `products`.`product_price` DESC, 1 NULLS LAST LIMIT 1",
+              "fingerprint": "7dc11107159b5e51",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0255_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4b6f36275474552c",
+          "outcomes": [
+            "4b6f36275474552c",
+            "4b6f36275474552c",
+            "4b6f36275474552c"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "4b6f36275474552c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "4b6f36275474552c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "4b6f36275474552c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0256_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4b6f36275474552c",
+          "outcomes": [
+            "4b6f36275474552c",
+            "4b6f36275474552c",
+            "4b6f36275474552c"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "4b6f36275474552c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "4b6f36275474552c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "4b6f36275474552c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0257_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7e0052cd96b23243",
+          "outcomes": [
+            "7e0052cd96b23243",
+            "7e0052cd96b23243",
+            "7e0052cd96b23243"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+              "fingerprint": "7e0052cd96b23243",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+              "fingerprint": "7e0052cd96b23243",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+              "fingerprint": "7e0052cd96b23243",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0258_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7e0052cd96b23243",
+          "outcomes": [
+            "7e0052cd96b23243",
+            "7e0052cd96b23243",
+            "7e0052cd96b23243"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+              "fingerprint": "7e0052cd96b23243",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+              "fingerprint": "7e0052cd96b23243",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` ORDER BY `products`.`product_price` DESC LIMIT 10000",
+              "fingerprint": "7e0052cd96b23243",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0259_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6142c70f6b9d1033",
+          "outcomes": [
+            "6142c70f6b9d1033",
+            "6142c70f6b9d1033",
+            "6142c70f6b9d1033"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name`, `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `product_price` ASC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name`, `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `product_price` ASC LIMIT 10000",
+              "fingerprint": "6142c70f6b9d1033",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name`, `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `product_price` ASC LIMIT 10000",
+              "fingerprint": "6142c70f6b9d1033",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name`, `products`.`product_price` AS `product_price` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `product_price` ASC LIMIT 10000",
+              "fingerprint": "6142c70f6b9d1033",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0260_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "12556172170f3d1e",
+          "outcomes": [
+            "12556172170f3d1e",
+            "12556172170f3d1e",
+            "12556172170f3d1e"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC LIMIT 10000",
+              "fingerprint": "12556172170f3d1e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC LIMIT 10000",
+              "fingerprint": "12556172170f3d1e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` WHERE `products`.`product_type_code` = 'Hardware' ORDER BY `products`.`product_price` ASC LIMIT 10000",
+              "fingerprint": "12556172170f3d1e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0261_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "985fb2df4d2f488d",
+          "outcomes": [
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0262_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "985fb2df4d2f488d",
+          "outcomes": [
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `product_count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0263_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "93ac57f9fa4d6f49",
+          "outcomes": [
+            "93ac57f9fa4d6f49",
+            "93ac57f9fa4d6f49",
+            "93ac57f9fa4d6f49"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "93ac57f9fa4d6f49",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "93ac57f9fa4d6f49",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "93ac57f9fa4d6f49",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0264_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "93ac57f9fa4d6f49",
+          "outcomes": [
+            "93ac57f9fa4d6f49",
+            "93ac57f9fa4d6f49",
+            "93ac57f9fa4d6f49"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "93ac57f9fa4d6f49",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "93ac57f9fa4d6f49",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, AVG(`products`.`product_price`) AS `average_price` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` LIMIT 10000",
+              "fingerprint": "93ac57f9fa4d6f49",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0265_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "985fb2df4d2f488d",
+          "outcomes": [
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0266_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "985fb2df4d2f488d",
+          "outcomes": [
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d",
+            "985fb2df4d2f488d"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` HAVING COUNT(*) >= 2 LIMIT 10000",
+              "fingerprint": "985fb2df4d2f488d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0267_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a97237e758dbf97d",
+          "outcomes": [
+            "a97237e758dbf97d",
+            "a97237e758dbf97d",
+            "a97237e758dbf97d"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "a97237e758dbf97d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "a97237e758dbf97d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "a97237e758dbf97d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0268_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a97237e758dbf97d",
+          "outcomes": [
+            "a97237e758dbf97d",
+            "59f8d940f08aa64c",
+            "a97237e758dbf97d"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "a97237e758dbf97d",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "59f8d940f08aa64c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "a97237e758dbf97d",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0269_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0270_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0271_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6123a63ff3790b45",
+          "outcomes": [
+            "6123a63ff3790b45",
+            "6123a63ff3790b45",
+            "6123a63ff3790b45"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "6123a63ff3790b45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "6123a63ff3790b45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "6123a63ff3790b45",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0272_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6123a63ff3790b45",
+          "outcomes": [
+            "6123a63ff3790b45",
+            "6123a63ff3790b45",
+            "6123a63ff3790b45"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "6123a63ff3790b45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "6123a63ff3790b45",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id`, `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "6123a63ff3790b45",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0273_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c10d9c3070ca465a",
+          "outcomes": [
+            "c10d9c3070ca465a",
+            "c10d9c3070ca465a",
+            "c10d9c3070ca465a"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "c10d9c3070ca465a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "c10d9c3070ca465a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "c10d9c3070ca465a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0274_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c10d9c3070ca465a",
+          "outcomes": [
+            "c10d9c3070ca465a",
+            "c10d9c3070ca465a",
+            "c10d9c3070ca465a"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "c10d9c3070ca465a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "c10d9c3070ca465a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_address` AS `customer_address`, `customers`.`customer_phone` AS `customer_phone`, `customers`.`customer_email` AS `customer_email` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "c10d9c3070ca465a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0275_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "07eae39c619ac41e",
+          "outcomes": [
+            "07eae39c619ac41e",
+            "07eae39c619ac41e",
+            "07eae39c619ac41e"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+              "fingerprint": "07eae39c619ac41e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+              "fingerprint": "07eae39c619ac41e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+              "fingerprint": "07eae39c619ac41e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0276_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "07eae39c619ac41e",
+          "outcomes": [
+            "07eae39c619ac41e",
+            "07eae39c619ac41e",
+            "07eae39c619ac41e"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+              "fingerprint": "07eae39c619ac41e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+              "fingerprint": "07eae39c619ac41e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` LIMIT 10000",
+              "fingerprint": "07eae39c619ac41e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0277_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f2b626ed0b439a2a",
+          "outcomes": [
+            "f2b626ed0b439a2a",
+            "f2b626ed0b439a2a",
+            "f2b626ed0b439a2a"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f2b626ed0b439a2a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f2b626ed0b439a2a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f2b626ed0b439a2a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0278_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f2b626ed0b439a2a",
+          "outcomes": [
+            "f2b626ed0b439a2a",
+            "f2b626ed0b439a2a",
+            "f2b626ed0b439a2a"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f2b626ed0b439a2a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f2b626ed0b439a2a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, COUNT(*) AS `count` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f2b626ed0b439a2a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0279_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6b55b9a2b9415a4e",
+          "outcomes": [
+            "6b55b9a2b9415a4e",
+            "6b55b9a2b9415a4e",
+            "6b55b9a2b9415a4e"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(DISTINCT `customers`.`customer_id`) ASC LIMIT 1) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(DISTINCT `customers`.`customer_id`) ASC LIMIT 1) LIMIT 10000",
+              "fingerprint": "6b55b9a2b9415a4e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(*) ASC LIMIT 1) LIMIT 10000",
+              "fingerprint": "6b55b9a2b9415a4e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(DISTINCT `customers`.`customer_id`) ASC LIMIT 1) LIMIT 10000",
+              "fingerprint": "6b55b9a2b9415a4e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0280_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "81e142f23d529bb0",
+          "outcomes": [
+            "81e142f23d529bb0",
+            "81e142f23d529bb0",
+            "81e142f23d529bb0"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(*) ASC LIMIT 1) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(*) ASC LIMIT 1) LIMIT 10000",
+              "fingerprint": "81e142f23d529bb0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(*) ASC LIMIT 1) LIMIT 10000",
+              "fingerprint": "81e142f23d529bb0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`customer_name` AS `customer_name` FROM `Customers` AS `customers` WHERE `customers`.`payment_method_code` = (SELECT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` GROUP BY `customers`.`payment_method_code` ORDER BY COUNT(*) ASC LIMIT 1) LIMIT 10000",
+              "fingerprint": "81e142f23d529bb0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0281_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f9fdff7a188894b9",
+          "outcomes": [
+            "f9fdff7a188894b9",
+            "f9fdff7a188894b9",
+            "f9fdff7a188894b9"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "f9fdff7a188894b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "f9fdff7a188894b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "f9fdff7a188894b9",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0282_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f9fdff7a188894b9",
+          "outcomes": [
+            "f9fdff7a188894b9",
+            "f9fdff7a188894b9",
+            "f9fdff7a188894b9"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "f9fdff7a188894b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "f9fdff7a188894b9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`payment_method_code` AS `payment_method_code`, `customers`.`customer_number` AS `customer_number` FROM `Customers` AS `customers` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "f9fdff7a188894b9",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0283_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "be222a3ce137c666",
+          "outcomes": [
+            "be222a3ce137c666",
+            "be222a3ce137c666",
+            "be222a3ce137c666"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "be222a3ce137c666",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "be222a3ce137c666",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "be222a3ce137c666",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0284_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "be222a3ce137c666",
+          "outcomes": [
+            "be222a3ce137c666",
+            "be222a3ce137c666",
+            "be222a3ce137c666"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "be222a3ce137c666",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "be222a3ce137c666",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customers`.`payment_method_code` AS `payment_method_code` FROM `Customers` AS `customers` LIMIT 10000",
+              "fingerprint": "be222a3ce137c666",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0285_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6be20cd9ad164196",
+          "outcomes": [
+            "6be20cd9ad164196",
+            "6be20cd9ad164196",
+            "6be20cd9ad164196"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` LIMIT 10000",
+              "fingerprint": "6be20cd9ad164196",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` LIMIT 10000",
+              "fingerprint": "6be20cd9ad164196",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` LIMIT 10000",
+              "fingerprint": "6be20cd9ad164196",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0286_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6be20cd9ad164196",
+          "outcomes": [
+            "6be20cd9ad164196",
+            "6be20cd9ad164196",
+            "6be20cd9ad164196"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` ASC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` ASC LIMIT 10000",
+              "fingerprint": "6be20cd9ad164196",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` ASC LIMIT 10000",
+              "fingerprint": "6be20cd9ad164196",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_id` AS `product_id`, `products`.`product_type_code` AS `product_type_code` FROM `Products` AS `products` ORDER BY `products`.`product_name` ASC LIMIT 10000",
+              "fingerprint": "6be20cd9ad164196",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0287_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "cc1e635c9ad77ae6",
+          "outcomes": [
+            "cc1e635c9ad77ae6",
+            "cc1e635c9ad77ae6",
+            "cc1e635c9ad77ae6"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "cc1e635c9ad77ae6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "cc1e635c9ad77ae6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "cc1e635c9ad77ae6",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0288_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "cc1e635c9ad77ae6",
+          "outcomes": [
+            "cc1e635c9ad77ae6",
+            "cc1e635c9ad77ae6",
+            "cc1e635c9ad77ae6"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "cc1e635c9ad77ae6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "cc1e635c9ad77ae6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_type_code` AS `product_type_code`, COUNT(*) AS `count` FROM `Products` AS `products` GROUP BY `products`.`product_type_code` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "cc1e635c9ad77ae6",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0289_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0290_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0291_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "2552f3c0e68a2db4",
+          "outcomes": [
+            "2552f3c0e68a2db4",
+            "2552f3c0e68a2db4",
+            "2552f3c0e68a2db4"
+          ],
+          "samples": [],
+          "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "2552f3c0e68a2db4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "2552f3c0e68a2db4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "2552f3c0e68a2db4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0292_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "2552f3c0e68a2db4",
+          "outcomes": [
+            "2552f3c0e68a2db4",
+            "2552f3c0e68a2db4",
+            "2552f3c0e68a2db4"
+          ],
+          "samples": [],
+          "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "2552f3c0e68a2db4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "2552f3c0e68a2db4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_status_code` AS `order_status_code` FROM `Customer_Orders` AS `customer_orders` JOIN `Customers` AS `customers` ON `customer_orders`.`customer_id` = `customers`.`customer_id` WHERE `customers`.`customer_name` = 'Jeromy' LIMIT 10000",
+              "fingerprint": "2552f3c0e68a2db4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0293_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fba0b96436887183",
+          "outcomes": [
+            "fba0b96436887183",
+            "fba0b96436887183",
+            "fba0b96436887183"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+              "fingerprint": "fba0b96436887183",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+              "fingerprint": "fba0b96436887183",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+              "fingerprint": "fba0b96436887183",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Show all customer names, ids and the number of orders by each customer.",
+            "reference_sql": "SELECT ANY_VALUE(T2.customer_name), T1.customer_id, COUNT(*) FROM Customer_orders AS T1 JOIN Customers AS T2 ON T1.customer_id = T2.customer_id GROUP BY T1.customer_id",
+            "reference_result": {
+              "count": 10,
+              "first": [
+                [
+                  "Jeremie",
+                  9,
+                  1
+                ],
+                [
+                  "Mittie",
+                  14,
+                  2
+                ],
+                [
+                  "Twila",
+                  3,
+                  2
+                ],
+                [
+                  "Madelynn",
+                  4,
+                  1
+                ],
+                [
+                  "Kennith",
+                  13,
+                  2
+                ],
+                [
+                  "Abe",
+                  12,
+                  2
+                ],
+                [
+                  "Alexandrine",
+                  15,
+                  2
+                ],
+                [
+                  "Nya",
+                  5,
+                  1
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 15,
+              "first": [
+                [
+                  "Jeromy",
+                  1,
+                  1
+                ],
+                [
+                  "Madelynn",
+                  4,
+                  1
+                ],
+                [
+                  "Nya",
+                  5,
+                  1
+                ],
+                [
+                  "Abe",
+                  12,
+                  2
+                ],
+                [
+                  "Mittie",
+                  14,
+                  2
+                ],
+                [
+                  "Kennith",
+                  13,
+                  2
+                ],
+                [
+                  "Kenna",
+                  6,
+                  0
+                ],
+                [
+                  "Jaylan",
+                  8,
+                  1
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0294_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fba0b96436887183",
+          "outcomes": [
+            "fba0b96436887183",
+            "fba0b96436887183",
+            "fba0b96436887183"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+              "fingerprint": "fba0b96436887183",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+              "fingerprint": "fba0b96436887183",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Jeremie', 9, 1), ('Mittie', 14, 2)] (+8 more), got [('Jeromy', 1, 1), ('Madelynn', 4, 1)] (+13 more)",
+              "sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+              "fingerprint": "fba0b96436887183",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the names, ids, and number of orders made for each customer?",
+            "reference_sql": "SELECT ANY_VALUE(T2.customer_name), T1.customer_id, COUNT(*) FROM Customer_orders AS T1 JOIN Customers AS T2 ON T1.customer_id = T2.customer_id GROUP BY T1.customer_id",
+            "reference_result": {
+              "count": 10,
+              "first": [
+                [
+                  "Jeremie",
+                  9,
+                  1
+                ],
+                [
+                  "Mittie",
+                  14,
+                  2
+                ],
+                [
+                  "Twila",
+                  3,
+                  2
+                ],
+                [
+                  "Madelynn",
+                  4,
+                  1
+                ],
+                [
+                  "Kennith",
+                  13,
+                  2
+                ],
+                [
+                  "Abe",
+                  12,
+                  2
+                ],
+                [
+                  "Alexandrine",
+                  15,
+                  2
+                ],
+                [
+                  "Nya",
+                  5,
+                  1
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 15,
+              "first": [
+                [
+                  "Jeromy",
+                  1,
+                  1
+                ],
+                [
+                  "Madelynn",
+                  4,
+                  1
+                ],
+                [
+                  "Nya",
+                  5,
+                  1
+                ],
+                [
+                  "Abe",
+                  12,
+                  2
+                ],
+                [
+                  "Mittie",
+                  14,
+                  2
+                ],
+                [
+                  "Kennith",
+                  13,
+                  2
+                ],
+                [
+                  "Kenna",
+                  6,
+                  0
+                ],
+                [
+                  "Jaylan",
+                  8,
+                  1
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0297_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "eff4e783a179075f",
+          "outcomes": [
+            "eff4e783a179075f",
+            "eff4e783a179075f",
+            "eff4e783a179075f"
+          ],
+          "samples": [],
+          "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+              "fingerprint": "eff4e783a179075f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+              "fingerprint": "eff4e783a179075f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+              "fingerprint": "eff4e783a179075f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0298_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "eff4e783a179075f",
+          "outcomes": [
+            "eff4e783a179075f",
+            "eff4e783a179075f",
+            "eff4e783a179075f"
+          ],
+          "samples": [],
+          "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+              "fingerprint": "eff4e783a179075f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+              "fingerprint": "eff4e783a179075f",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(`customer_orders`.`order_id`) AS `order_count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` LIMIT 10000",
+              "fingerprint": "eff4e783a179075f",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0299_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "75299bcf9ceccb3c",
+          "outcomes": [
+            "75299bcf9ceccb3c",
+            "75299bcf9ceccb3c",
+            "75299bcf9ceccb3c"
+          ],
+          "samples": [],
+          "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "75299bcf9ceccb3c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "75299bcf9ceccb3c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "75299bcf9ceccb3c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0300_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "75299bcf9ceccb3c",
+          "outcomes": [
+            "75299bcf9ceccb3c",
+            "75299bcf9ceccb3c",
+            "75299bcf9ceccb3c"
+          ],
+          "samples": [],
+          "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "75299bcf9ceccb3c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "75299bcf9ceccb3c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customer_orders`.`order_status_code` AS `order_status_code`, COUNT(*) AS `count` FROM `Customer_Orders` AS `customer_orders` GROUP BY `customer_orders`.`order_status_code` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "75299bcf9ceccb3c",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0301_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0be3a388295139ad",
+          "outcomes": [
+            "0be3a388295139ad",
+            "0be3a388295139ad",
+            "0be3a388295139ad"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` LEFT JOIN `Customer_Orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` WHERE `o`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0302_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0be3a388295139ad",
+          "outcomes": [
+            "0be3a388295139ad",
+            "0be3a388295139ad",
+            "0be3a388295139ad"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `customer_count` FROM `Customers` AS `c` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Customer_Orders` AS `o` WHERE `o`.`customer_id` = `c`.`customer_id`) LIMIT 10000",
+              "fingerprint": "0be3a388295139ad",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0303_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a2406d1a1dec814e",
+          "outcomes": [
+            "a2406d1a1dec814e",
+            "a2406d1a1dec814e",
+            "a2406d1a1dec814e"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+              "fingerprint": "a2406d1a1dec814e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+              "fingerprint": "a2406d1a1dec814e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+              "fingerprint": "a2406d1a1dec814e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0304_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "a2406d1a1dec814e",
+          "outcomes": [
+            "a2406d1a1dec814e",
+            "a2406d1a1dec814e",
+            "a2406d1a1dec814e"
+          ],
+          "samples": [],
+          "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+              "fingerprint": "a2406d1a1dec814e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+              "fingerprint": "a2406d1a1dec814e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `products`.`product_name` AS `product_name` FROM `Products` AS `products` LEFT JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `order_items`.`product_id` IS NULL LIMIT 10000",
+              "fingerprint": "a2406d1a1dec814e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0305_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [(16.0,)], got [(1,)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "64e4b892473fb47a",
+          "outcomes": [
+            "abstained",
+            "a9317b68ac1e919e",
+            "64e4b892473fb47a"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `products`.`product_id`) AS `product_count` FROM `Products` AS `products` JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT SUM(CAST(`order_items`.`order_quantity` AS INT)) AS `products_ordered` FROM `Order_Items` AS `order_items` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a9317b68ac1e919e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(16.0,)], got [(1,)]",
+              "sql": "SELECT COUNT(DISTINCT `products`.`product_id`) AS `product_count` FROM `Products` AS `products` JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "64e4b892473fb47a",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "How many products named Monitor have been ordered?",
+            "reference_sql": "SELECT SUM(order_quantity) FROM Order_items AS T1 JOIN Products AS T2 ON T1.product_id = T2.product_id WHERE T2.product_name = 'Monitor'",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  16.0
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 1,
+              "first": [
+                [
+                  1
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0306_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "wrong",
+          "blocked_sql": "SELECT COUNT(*) AS `total_number_of_monitor_products_ordered` FROM `Order_Items` AS `oi` JOIN `Products` AS `p` ON `oi`.`product_id` = `p`.`product_id` WHERE `p`.`product_name` = 'Monitor' LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "a9317b68ac1e919e",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT SUM(CAST(`order_items`.`order_quantity` AS INT)) AS `total_number_ordered` FROM `Products` AS `products` JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "a9317b68ac1e919e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ]
+        },
+        {
+          "id": "test_0307_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "7a284f128e61ae54",
+          "outcomes": [
+            "7a284f128e61ae54",
+            "7a284f128e61ae54",
+            "7a284f128e61ae54"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "7a284f128e61ae54",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "7a284f128e61ae54",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+              "fingerprint": "7a284f128e61ae54",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0308_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "no_stored_value",
+          "detail": "The catalog does not specify how a Monitor Product is identified among the product names or types.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "7a284f128e61ae54"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not specify how a Monitor Product is identified among the product names or types.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "No stored Products.product_type_code equals 'Monitor', so I won't answer with a guess.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "no_stored_value"
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` ILIKE '%Monitor%' LIMIT 10000",
+              "fingerprint": "7a284f128e61ae54",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0309_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fad35f27aef2bffe",
+          "outcomes": [
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customers`.`customer_id`) AS `customer_count` FROM `Customers` AS `customers` JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0310_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "fad35f27aef2bffe",
+          "outcomes": [
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe",
+            "fad35f27aef2bffe"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `customer_orders`.`customer_id`) AS `customer_count` FROM `Customer_Orders` AS `customer_orders` LIMIT 10000",
+              "fingerprint": "fad35f27aef2bffe",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0311_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "096d62137b7be117",
+          "outcomes": [
+            "096d62137b7be117",
+            "096d62137b7be117",
+            "096d62137b7be117"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "096d62137b7be117",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "096d62137b7be117",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "096d62137b7be117",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0312_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "096d62137b7be117",
+          "outcomes": [
+            "096d62137b7be117",
+            "096d62137b7be117",
+            "096d62137b7be117"
+          ],
+          "samples": [],
+          "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "096d62137b7be117",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "096d62137b7be117",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `customers`.`customer_id` AS `customer_id` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` WHERE `customer_orders`.`order_id` IS NULL LIMIT 10000",
+              "fingerprint": "096d62137b7be117",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0313_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "db052c820b8b15c9",
+          "outcomes": [
+            "db052c820b8b15c9",
+            "db052c820b8b15c9",
+            "db052c820b8b15c9"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_id` AS `order_id` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` GROUP BY `customer_orders`.`order_date`, `customer_orders`.`order_id` HAVING MAX(CAST(`order_items`.`order_quantity` AS INT)) > 6 OR COUNT(DISTINCT `order_items`.`product_id`) > 3 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_id` AS `order_id` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` GROUP BY `customer_orders`.`order_date`, `customer_orders`.`order_id` HAVING MAX(CAST(`order_items`.`order_quantity` AS INT)) > 6 OR COUNT(DISTINCT `order_items`.`product_id`) > 3 LIMIT 10000",
+              "fingerprint": "db052c820b8b15c9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_id` AS `order_id` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` GROUP BY `customer_orders`.`order_date`, `customer_orders`.`order_id` HAVING MAX(CAST(`order_items`.`order_quantity` AS INT)) > 6 OR COUNT(DISTINCT `order_items`.`product_id`) > 3 LIMIT 10000",
+              "fingerprint": "db052c820b8b15c9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customer_orders`.`order_date` AS `order_date`, `customer_orders`.`order_id` AS `order_id` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` GROUP BY `customer_orders`.`order_date`, `customer_orders`.`order_id` HAVING MAX(CAST(`order_items`.`order_quantity` AS INT)) > 6 OR COUNT(DISTINCT `order_items`.`product_id`) > 3 LIMIT 10000",
+              "fingerprint": "db052c820b8b15c9",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0314_customers_and_orders",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:customers_and_orders"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "db052c820b8b15c9",
+          "outcomes": [
+            "db052c820b8b15c9",
+            "db052c820b8b15c9",
+            "db052c820b8b15c9"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` GROUP BY `customer_orders`.`order_id`, `customer_orders`.`order_date` HAVING MAX(CAST(`order_items`.`order_quantity` AS INT)) > 6 OR COUNT(DISTINCT `order_items`.`product_id`) > 3 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `customer_orders`.`order_id` AS `order_id`, `customer_orders`.`order_date` AS `order_date` FROM `Customer_Orders` AS `customer_orders` JOIN `Order_Items` AS `order_items` ON `customer_orders`.`order_id` = `order_items`.`order_id` GROUP BY `customer_orders`.`order_id`, `customer_orders`.`order_date` HAVING MAX(CAST(`order_items`.`order_quantity` AS INT)) > 6 OR COUNT(DISTINCT `order_items`.`product_id`) > 3 LIMIT 10000",
+              "fingerprint": "db052c820b8b15c9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `co`.`order_id` AS `order_id`, `co`.`order_date` AS `order_date` FROM `Customer_Orders` AS `co` JOIN `Order_Items` AS `oi` ON `co`.`order_id` = `oi`.`order_id` WHERE CAST(`oi`.`order_quantity` AS INT) > 6 OR (SELECT COUNT(*) AS `_col_0` FROM `Order_Items` AS `oi2` WHERE `oi2`.`order_id` = `co`.`order_id`) > 3 LIMIT 10000",
+              "fingerprint": "db052c820b8b15c9",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `co`.`order_id` AS `order_id`, `co`.`order_date` AS `order_date` FROM `Customer_Orders` AS `co` JOIN `Order_Items` AS `oi` ON `co`.`order_id` = `oi`.`order_id` WHERE CAST(`oi`.`order_quantity` AS INT) > 6 OR `co`.`order_id` IN (SELECT `order_items`.`order_id` AS `order_id` FROM `Order_Items` AS `order_items` GROUP BY `order_items`.`order_id` HAVING COUNT(DISTINCT `order_items`.`product_id`) > 3) LIMIT 10000",
+              "fingerprint": "db052c820b8b15c9",
+              "refusal_code": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

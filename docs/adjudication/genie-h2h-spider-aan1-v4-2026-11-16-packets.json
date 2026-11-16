@@ -1,0 +1,455 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the name and number of citations of the author with the greatest number of citations among authors?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T3.name), COUNT(*) FROM Citation AS T1 JOIN Author_list AS T2 ON T1.cited_paper_id = T2.paper_id JOIN Author AS T3 ON T2.author_id = T3.author_id GROUP BY T2.author_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Och, Franz Josef",
+     3650
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Manning, Christopher D.",
+     2183
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of all affiliations, ordered by number of papers?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     ""
+    ],
+    [
+     "Carnegie Mellon University"
+    ],
+    [
+     "University of Edinburgh"
+    ],
+    [
+     "University of Pennsylvania"
+    ],
+    [
+     "Massachusetts Institute of Technology"
+    ],
+    [
+     "University of Southern California"
+    ],
+    [
+     "BBN Technologies"
+    ],
+    [
+     "IBM T.J. Watson Research Center"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC LIMIT 10000",
+  "system_result": {
+   "count": 2431,
+   "first": [
+    [
+     "",
+     8211
+    ],
+    [
+     "University of Edinburgh",
+     498
+    ],
+    [
+     "University of Pennsylvania",
+     453
+    ],
+    [
+     "Carnegie Mellon University",
+     405
+    ],
+    [
+     "University of Southern California",
+     293
+    ],
+    [
+     "Massachusetts Institute of Technology",
+     262
+    ],
+    [
+     "Saarland University",
+     251
+    ],
+    [
+     "Columbia University",
+     220
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List all affiliations with ascending ordered number of papers.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     ""
+    ],
+    [
+     "Carnegie Mellon University"
+    ],
+    [
+     "University of Edinburgh"
+    ],
+    [
+     "University of Pennsylvania"
+    ],
+    [
+     "Massachusetts Institute of Technology"
+    ],
+    [
+     "University of Southern California"
+    ],
+    [
+     "BBN Technologies"
+    ],
+    [
+     "IBM T.J. Watson Research Center"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `number_of_papers` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `number_of_papers` ASC LIMIT 10000",
+  "system_result": {
+   "count": 2431,
+   "first": [
+    [
+     "INRIA, Le Chesnay France; New University of Lisbon",
+     0
+    ],
+    [
+     "LingIT",
+     0
+    ],
+    [
+     "Polish Academy of Sciences, Warsaw Poland; Warsaw University",
+     0
+    ],
+    [
+     "University of Texas at Dallas, Richardson TX; Baylor University",
+     0
+    ],
+    [
+     "Vietnam National University, Hanoi Vietnam; LORIA",
+     0
+    ],
+    [
+     "Nuance Communications",
+     0
+    ],
+    [
+     "STIM/AP-HP, Paris France; Institut National de l'Audiovisuel",
+     0
+    ],
+    [
+     "Swedish Institute of Computer Science, Stockholm Sweden; Norwegian University of Science and Technology",
+     0
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List all venues and years for papers ordered by year.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT DISTINCT venue, YEAR FROM paper ORDER BY YEAR",
+  "gold_result": {
+   "count": 667,
+   "first": [
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1967
+    ],
+    [
+     "COLING",
+     1969
+    ],
+    [
+     "COLING",
+     1973
+    ],
+    [
+     "TINLP",
+     1975
+    ],
+    [
+     "TINLP",
+     1978
+    ],
+    [
+     "CL",
+     1979
+    ],
+    [
+     "ACL",
+     1979
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the total number of papers for each affiliation.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     1,
+     "CNRS, France; LPL"
+    ],
+    [
+     1,
+     "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+    ],
+    [
+     23,
+     "Duke University"
+    ],
+    [
+     2,
+     "Free University of Bolzano Bozen"
+    ],
+    [
+     133,
+     "German Research Center for Artificial Intelligence"
+    ],
+    [
+     2,
+     "Hofstra University"
+    ],
+    [
+     10,
+     "Indian Institute of Technology"
+    ],
+    [
+     2,
+     "Kangnam University"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `total_papers` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "ATR Spoken Language Translation Research Laboratories",
+     42
+    ],
+    [
+     "CEDIAG-BULL A.I. Corporate Center",
+     4
+    ],
+    [
+     "CNR-Institute of Psychology",
+     6
+    ],
+    [
+     "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+     1
+    ],
+    [
+     "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+     1
+    ],
+    [
+     "Fondazione Bruno Kessler",
+     28
+    ],
+    [
+     "IFCI",
+     2
+    ],
+    [
+     "IRISA",
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the name and number of citations of the author who has most citations among all authors?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T3.name), COUNT(*) FROM Citation AS T1 JOIN Author_list AS T2 ON T1.cited_paper_id = T2.paper_id JOIN Author AS T3 ON T2.author_id = T3.author_id GROUP BY T2.author_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Och, Franz Josef",
+     3650
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Manning, Christopher D.",
+     2183
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p007",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many papers has each affiliation published?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     1,
+     "CNRS, France; LPL"
+    ],
+    [
+     1,
+     "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+    ],
+    [
+     23,
+     "Duke University"
+    ],
+    [
+     2,
+     "Free University of Bolzano Bozen"
+    ],
+    [
+     133,
+     "German Research Center for Artificial Intelligence"
+    ],
+    [
+     2,
+     "Hofstra University"
+    ],
+    [
+     10,
+     "Indian Institute of Technology"
+    ],
+    [
+     2,
+     "Kangnam University"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "ATR Spoken Language Translation Research Laboratories",
+     42
+    ],
+    [
+     "CEDIAG-BULL A.I. Corporate Center",
+     4
+    ],
+    [
+     "CNR-Institute of Psychology",
+     6
+    ],
+    [
+     "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+     1
+    ],
+    [
+     "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+     1
+    ],
+    [
+     "Fondazione Bruno Kessler",
+     28
+    ],
+    [
+     "IFCI",
+     2
+    ],
+    [
+     "IRISA",
+     3
+    ]
+   ]
+  }
+ }
+]

@@ -1,0 +1,156 @@
+{
+ "aan_1|p001": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system counts distinct citing papers per author instead of total citations to the author\u2019s papers, altering the intended metric and resulting in a different top author."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Counting distinct citing papers instead of citations collapses multiple citations and names a different author (Manning 2183 vs Och 3650)."
+  }
+ },
+ "aan_1|p006": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system counted DISTINCT citing papers instead of total citations, changing both the count and the top author, which does not answer the request for number of citations."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Counting distinct citing papers instead of citations collapses multiple citations and names a different top author."
+  }
+ },
+ "advertising_agencies|p002": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to include meetings with no staff; the system reasonably includes all meetings (showing zero counts), while the gold query only returns meetings that have staff."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'Each meeting' reasonably includes meetings with zero staff; counts for the shared meetings match gold."
+  }
+ },
+ "advertising_agencies|p010": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "\u201cAll client ids \u2026 for each client\u201d can reasonably include clients with zero invoices; the system\u2019s LEFT JOIN returns all clients with zero counts, while the gold only includes clients with invoices."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for all client ids, so clients with zero invoices belong in the answer and gold omits them."
+  }
+ },
+ "e_commerce|p005": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It averages prices over distinct ordered products instead of weighting by each ordered item, whereas the question implies averaging over all items in orders."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Average price of products being ordered can mean over distinct ordered products (system) or weighted per order line (gold)."
+  }
+ },
+ "e_commerce|p010": {
+  "label": "benchmark_fault",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for all invoices, so invoices without shipments should still appear (with NULL shipment_date); the system\u2019s LEFT JOIN matches this while the gold INNER JOIN wrongly excludes such invoices."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for all invoices; gold's inner join drops invoices without shipments, which the system keeps with null shipment dates."
+  }
+ },
+ "e_commerce|p012": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "It adds an extra count column and, by requiring DISTINCT payment methods, omits dates that the question (and gold) include for customers counted by total rows."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Counting distinct payment method codes is a defensible reading of 'at least 2 payment methods' versus gold's raw row count."
+  }
+ },
+ "e_commerce|p015": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query counts payment method rows instead of distinct methods, while the question implies distinct payment methods; the system correctly uses COUNT(DISTINCT) and thus returns the proper subset."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Counting distinct payment method codes is a defensible reading of 'at least 2 payment methods' versus gold's raw row count."
+  }
+ },
+ "cre_Students_Information_Systems|p001": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system applies both conditions to the same behaviour result (and counts DISTINCT students), rather than finding students who have a most-common result and also a separate result obtained by exactly three students as the question implies and the gold implements via INTERSECT."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "'Obtained by 3 students' read as 3 distinct students (system) versus 3 monitoring rows (gold) is a genuine wording ambiguity, and the empty result follows from that reading."
+  }
+ },
+ "cre_Students_Information_Systems|p002": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system returns duplicate student\u2013address type rows (no DISTINCT), which is a reasonable reading since the question doesn\u2019t specify uniqueness, while the gold deduplicates."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Same student/address-type pairs, differing only in duplicate rows that gold's DISTINCT removes, which is a format difference for a per-student listing."
+  }
+ },
+ "cre_Students_Information_Systems|p004": {
+  "label": "benchmark_fault",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold SQL\u2019s inner join on Detention excludes students with zero detentions, but \u201cless than 2 detentions\u201d includes zero; the system correctly includes 0-detention students."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Students with zero detentions do have fewer than 2 detentions; gold's inner join wrongly excludes them."
+  }
+ },
+ "address_1|p003": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to include cities with zero students, so the system\u2019s LEFT JOIN returning all cities is a reasonable interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Including cities with zero students is a defensible reading of 'each city', and the nonzero counts match gold."
+  }
+ },
+ "address_1|p005": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question is unclear whether to return city pairs with distance < 1000 or the set of city codes participating in such pairs; the system\u2019s single-column UNION result matches a valid interpretation."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "The question asks for city codes, so the distinct set of codes is a defensible reading next to gold's code pairs."
+  }
+ },
+ "address_1|p009": {
+  "label": "benchmark_fault",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The system returns the same four students and simply concatenates first and last names into one column, which is a formatting difference consistent with \u201cfull names.\u201d"
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Same four students; first and last name in one column instead of two is only a format difference."
+  }
+ }
+}
