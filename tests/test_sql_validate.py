@@ -824,3 +824,9 @@ def test_gate_compares_the_whole_answer_not_the_first_rows() -> None:
     )
     assert whole.status == "clarify" and whole.clarify_code == "unstable_answer"
 
+
+def test_current_date_is_allowed_but_not_who_or_where() -> None:
+    validate_sql("SELECT InvoiceId FROM Invoice WHERE YEAR(CURRENT_DATE) - YEAR(InvoiceDate) > 10", CATALOG)
+    validate_sql("SELECT COUNT(*) FROM Invoice WHERE InvoiceDate < CURRENT_TIMESTAMP", CATALOG)
+    assert "sql.forbidden" in codes("SELECT CURRENT_USER FROM Genre")
+    assert codes("SELECT CURRENT_SCHEMA FROM Genre")  # rejected (parsed here as an unknown column)

@@ -20,7 +20,7 @@ adjudicated wrong-rate (PLAN.md, Goal).
 - Root-cause tracing (Spider dev, BIRD dev; STATUS 2026-11-15) points at the kernel first:
   the unused-join rule rejects bridge and filter joins and its "remove the join" advice
   causes wrong answers; the gate's fingerprint counts kernel-added columns. Sam approved
-  P12-P15 on 2026-11-15 (PLAN parking lot); P12 and P13 are committed, P14 and P15 next.
+  P12-P15 on 2026-11-15 (PLAN parking lot); P12-P14 are committed, P15 next.
 
 
 - Branch `trusted-core`, pushed to `origin`, 41 commits ahead of `main`, CI green. No pull

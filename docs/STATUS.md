@@ -66,6 +66,18 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — CURRENT_DATE and the clock are allowed (P14).** They were forbidden with
+  the who/where functions, so every "how old" / "this year" question failed validation
+  (46 kernel rejections in the BIRD trace). They read no data; CURRENT_USER, CURRENT_SCHEMA
+  and the like stay forbidden. BIRD dev: invalid-query refusals 56 -> 34. Of the 9 clock
+  answers that were refused before, 5 match the reference on DuckDB and 4 do not: an exact
+  birthday vs the reference's days/365, two where we follow the hint and the reference does
+  not, and one missing DISTINCT (a duplicate-row slip, not the clock). Measurement fault
+  found: the BIRD experiment grades by translating our DuckDB SQL to SQLite, which has no
+  YEAR(), so right answers were scored wrong; regraded on DuckDB, P13 -> P14 is right
+  835 -> 827, wrong 373 -> 388, refused 326 -> 319 (single runs; P12 -> P13 moved as much).
+  Spider dev 400, 3 repeats: 316/47/37 -> 315/51/34 (noise). Checked live through `/ask`.
+  Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-p14-2026-11-15.json`.
 - **2026-11-15 — the two-readings gate compares what each reading answered (P13).** It
   fingerprinted the kernel-appended ranking measure too, so two readings naming the same
   winner by different measures (COUNT vs SUM) disagreed, and '9' stored as text differed

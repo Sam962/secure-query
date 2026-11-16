@@ -56,11 +56,9 @@ _FORBIDDEN_SHAPES = tuple(
         "Struct",  # STRUCT(*) / struct(c.*) packs every column including PII
         "TableSample",
         "Version",  # VERSION AS OF — time-travel / alternate snapshot
+        # Who and where the query runs (CURRENT_DATE and the clock are allowed: they read no
+        # data and "how old" / "this year" need them; the answer then depends on the day).
         "CurrentUser",
-        "CurrentDate",
-        "CurrentTime",
-        "CurrentTimestamp",
-        "CurrentDatetime",
         "CurrentSchema",
         "CurrentCatalog",
         "CurrentDatabase",
