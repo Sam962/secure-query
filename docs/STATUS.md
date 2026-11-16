@@ -66,6 +66,16 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-15 — the unused-join rule no longer rejects bridge tables or set filters (P12).**
+  Root-cause tracing found the rule rejected a table whose columns only link the next join
+  (client -> disp -> account), and joins inside IN / EXISTS / INTERSECT / EXCEPT / UNION,
+  where repeated rows cannot change the answer; its advice "remove the join" made repairs
+  drop the filter and return every row. Now a table named in another join's ON is a bridge,
+  rows used as a set are exempt, and the advice keeps a filter as WHERE EXISTS. A dangling
+  last table is still rejected. Spider dev 400, 3 repeats: right 308 -> 315, wrong 46 -> 50,
+  refused 46 -> 35 (same-setup range 303-310 / 43-51 / 44-52); BIRD dev: right 812 -> 816,
+  wrong 409 -> 398, refused 313 -> 320 (within noise). Files:
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-p12-2026-11-15.json`.
 - **2026-11-15 — head-to-head on four more Spider test databases (532 questions in all).**
   `e_commerce`, `customers_and_orders`, `cre_Students_Information_Systems`, `address_1`
   loaded to Databricks with a Genie space each (tables, descriptions, joins, value matching;

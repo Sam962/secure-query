@@ -364,6 +364,17 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   because the drafted catalog lacked one join the source schema does not declare (STATUS
   2026-11-15). In 3.2 the owner's catalog review must cover joins, and the refusal text
   should name the missing join so the owner can approve it.
+- **P12-P15. Kernel causes of refusals and wrong answers** (Sam approved 2026-11-15; root
+  cause tracing on Spider dev and BIRD dev, STATUS). One commit each, measured on Spider dev
+  400 and BIRD dev before the next.
+  - P12: the unused-join rule exempts bridge tables and rows used as a set (IN, EXISTS,
+    INTERSECT, EXCEPT, UNION), and its advice keeps a filter as EXISTS instead of "remove".
+  - P13: the gate compares each reading's own columns (not kernel-appended measures), with
+    numbers stored as text equal to the number.
+  - P14: CURRENT_DATE and the clock are allowed; who/where functions stay forbidden.
+  - P15: relationships shown as usable both ways and chainable; a join of two tables on the
+    same parent key allowed (the fan-out check still applies).
+  - Then: sort the BIRD fan-out rejections into true and false alarms before any change.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
   tags and column names only. Add value sampling only if the owner's review in 3.2 finds
   personal data in columns that neither a tag nor the name gave away.

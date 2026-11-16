@@ -155,6 +155,35 @@ def test_unused_join_is_rejected_unless_deduplicated() -> None:
     )
 
 
+def test_bridge_and_set_joins_are_not_unused() -> None:
+    # A bridge on the join path: InvoiceLine only links Track to Invoice.
+    validate_sql(
+        "SELECT t.Name, i.Total FROM Track t JOIN InvoiceLine il ON il.TrackId = t.TrackId "
+        "JOIN Invoice i ON i.InvoiceId = il.InvoiceId",
+        CATALOG,
+    )
+    # Rows used as a set: duplicates cannot change IN, EXISTS or INTERSECT.
+    validate_sql(
+        "SELECT Name FROM Track WHERE TrackId NOT IN (SELECT il.TrackId FROM InvoiceLine il "
+        "JOIN Invoice i ON i.InvoiceId = il.InvoiceId)",
+        CATALOG,
+    )
+    validate_sql(
+        "SELECT t.Name FROM Track t INTERSECT SELECT t.Name FROM Track t "
+        "JOIN InvoiceLine il ON il.TrackId = t.TrackId",
+        CATALOG,
+    )
+    # The last table of a chain is still dangling, and the advice keeps it as a filter.
+    with pytest.raises(SqlValidationFailed) as err:
+        validate_sql(
+            "SELECT t.Name FROM Track t JOIN InvoiceLine il ON il.TrackId = t.TrackId "
+            "JOIN Invoice i ON i.InvoiceId = il.InvoiceId",
+            CATALOG,
+        )
+    message = next(e.message for e in err.value.errors if e.code == "sql.unused_join")
+    assert "Invoice is joined" in message and "EXISTS" in message
+
+
 def test_untokenizable_sql_is_a_validation_error() -> None:
     assert "sql.parse" in codes("SELECT Name FROM Genre WHERE Name = 'unterminated")
 
@@ -757,3 +786,4 @@ def test_gate_compares_the_whole_answer_not_the_first_rows() -> None:
         check_client=MockLLMClient([second]),
     )
     assert whole.status == "clarify" and whole.clarify_code == "unstable_answer"
+

@@ -525,21 +525,37 @@ def _resolve_join_side(
     return (base_name, column) if column else None
 
 
-def _check_unused_joins(scope) -> list[ValidationError]:
-    """A joined table used only in its ON clause repeats or drops rows silently.
+def _as_set(select: exp.Select) -> bool:
+    """The rows of `select` are only used as a set: under IN / EXISTS, or a branch of a
+    set operation that removes duplicates. Repeated rows cannot change the answer there."""
+    parent = select.parent
+    while isinstance(parent, (exp.Subquery, exp.Paren)):
+        parent = parent.parent
+    if isinstance(parent, (exp.In, exp.Exists, exp.Intersect, exp.Except)):
+        return True
+    return isinstance(parent, exp.Union) and bool(parent.args.get("distinct"))
 
-    Allowed when the query deduplicates or aggregates (DISTINCT, GROUP BY,
-    aggregates), where the join can only act as an existence filter.
+
+def _check_unused_joins(scope) -> list[ValidationError]:
+    """A joined table none of whose columns are used repeats or drops rows silently.
+
+    Allowed when the query deduplicates or aggregates (DISTINCT, GROUP BY, aggregates)
+    or its rows are used as a set (`_as_set`), where the join can only act as an existence
+    filter. A table whose columns another join's ON uses is a bridge on the join path,
+    not unused (a -> bridge -> c).
     """
     select = scope.expression
     if not isinstance(select, exp.Select) or not select.args.get("joins"):
         return []
-    if select.args.get("distinct") or select.args.get("group") or select.find(exp.AggFunc):
+    if select.args.get("distinct") or select.args.get("group") or select.find(exp.AggFunc) or _as_set(select):
         return []
     on_columns = {
         id(col) for join in select.args["joins"] for col in (join.args.get("on") or exp.null()).find_all(exp.Column)
     }
     used = {col.table for col in scope.columns if id(col) not in on_columns}
+    for join in select.args["joins"]:  # bridges: named in the ON of a join other than their own
+        own = join.this.alias_or_name
+        used.update(c.table for c in (join.args.get("on") or exp.null()).find_all(exp.Column) if c.table != own)
     errors = []
     for join in select.args["joins"]:
         alias = join.this.alias_or_name
@@ -548,8 +564,9 @@ def _check_unused_joins(scope) -> list[ValidationError]:
                 _error(
                     "sql.unused_join",
                     f"{join.this.name} is joined but none of its columns are used, which "
-                    "repeats or drops rows; remove the join, or use EXISTS / DISTINCT if it "
-                    "is meant as a filter",
+                    f"repeats or drops rows. If it is a filter, keep the condition as WHERE "
+                    f"EXISTS (SELECT 1 FROM {join.this.name} WHERE ...); remove the join only "
+                    "if the question does not need it",
                 )
             )
     return errors
