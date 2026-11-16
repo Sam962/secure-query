@@ -66,6 +66,23 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-16 — three fan-out false alarms fixed (P16).** A sort of the BIRD fan-out
+  rejections (25 readings, 13 questions) found true alarms (an atoms x bonds count; totals
+  through a table with several rows per account), still refused, and three general false
+  alarms, now fixed: (1) a grouped or single-row subquery that joins tables has a known
+  grain (unique on its group keys; its own aggregates are checked in its own scope), the
+  very shape the error advises; (2) columns only in a CASE / IF condition select rows and
+  are not summed, so "share of revenue from customers in X" over Invoice JOIN Customer is
+  no longer refused; (3) a cross join with a single-row subquery is allowed. Also closed:
+  a grouped subquery that does not show its keys used to count as single-row; it is now
+  of unknown grain. BIRD dev, regraded on DuckDB: right 852 -> 869, wrong 403 -> 411,
+  refused 279 -> 254 (share right 67.9% both). Spider dev 400, 3 repeats: 318/44/38 ->
+  321/47/32 (noise). Known cost: a "share of patients" question whose SQL counts joined
+  lab rows was refused by accident and is now answered wrong; the kernel already allowed
+  COUNT(*) over that join (PLAN parking lot). Checked live through `/ask`.
+  P12-P16 against the regraded start: BIRD right 827 -> 869, wrong 394 -> 411, refused
+  313 -> 254; Spider dev 308/46/46 -> 321/47/32.
+  Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-p16-2026-11-16.json`.
 - **2026-11-16 — relationships read as usable both ways and chainable; sibling joins (P15).**
   The catalog text still said "many → one; joins are added automatically" (left from the
   LogicalPlan planner), and the SQL prompt's "no listed relationship connects the tables"

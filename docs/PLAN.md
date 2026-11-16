@@ -377,10 +377,15 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   - Done 2026-11-16: P12-P15 committed (STATUS). Fan-out sort (BIRD trace, 25 readings,
     13 questions): true alarms kept (an atoms x bonds count; totals through a table with
     several rows per account). False alarms in 6 questions, three causes, proposed as
-    **P16, waiting on Sam**: (1) a grouped subquery that joins tables counts as unknown
+    **P16, done 2026-11-16**: (1) a grouped subquery that joins tables counts as unknown
     grain, though it is unique on its group keys and the error advises exactly that shape;
     (2) columns only in a CASE condition count as summed; (3) a cross join of two
     single-row subqueries is refused.
+- **P17. Counting entities over a one-to-many join.** "What share of patients ..." written as
+  SUM(CASE WHEN ... THEN 1) or COUNT(*) over Patient JOIN Laboratory counts lab rows, not
+  patients. The kernel cannot tell intent from SQL; a prompt rule ("count the entity the
+  question names with COUNT(DISTINCT its key)") or a check that a counted ratio names a
+  table on the one side would. Measure on Spider dev and BIRD dev before building.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
   tags and column names only. Add value sampling only if the owner's review in 3.2 finds
   personal data in columns that neither a tag nor the name gave away.

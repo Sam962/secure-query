@@ -457,6 +457,8 @@ def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
         if on is None:
             if join.args.get("using"):
                 errors.append(_error("sql.join", "JOIN ... USING is not allowed; use ON a.key = b.key"))
+            elif (grain := derived.get(join.this.alias_or_name)) and grain[0] == "unique" and not grain[1][1]:
+                continue  # one row: pairing with it repeats nothing
             else:
                 errors.append(_error("sql.cross_join", "cross joins are not allowed"))
             continue
@@ -666,7 +668,8 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
     for agg in aggs:
         if isinstance(agg, _FAN_OUT_SAFE) or agg.find(exp.Distinct):
             continue
-        aliases = {c.table for c in agg.find_all(exp.Column)}
+        conditions = {id(c) for cond in agg.find_all(exp.If) for c in cond.this.find_all(exp.Column)}
+        aliases = {c.table for c in agg.find_all(exp.Column) if id(c) not in conditions}
         ok = (
             all(grain_ok(to_one, a) for a in aliases)
             if aliases
@@ -700,32 +703,50 @@ def _derived_grain(source, tables: dict) -> tuple[str, object] | None:
 
     ("table", (base table, {output column: base column})) for a plain
     single-table SELECT; ("unique", (base table or None, {output: base col}))
-    for a grouped / single-row aggregate subquery; None when joins make grain
-    unknown (those CTEs must not be aggregated or joined as if approved).
+    for a grouped / single-row aggregate subquery, whether or not it joins tables:
+    it is unique on its group keys, and its own aggregates are checked in its own
+    scope. The base table is the one every group-key column comes from (None when
+    they come from several). None when a non-aggregating join makes grain unknown
+    (those CTEs must not be aggregated or joined as if approved).
     """
     select = getattr(source, "expression", None)
-    if not isinstance(select, exp.Select) or select.args.get("joins"):
+    if not isinstance(select, exp.Select):
         return None
+    joined = bool(select.args.get("joins"))
     from_ = select.args.get("from_") or select.args.get("from")
     table = from_.this if from_ is not None else None
+    aliases = {
+        src.alias_or_name: tables[src.name.lower()].name
+        for src in [table, *(j.this for j in select.args.get("joins") or [])]
+        if isinstance(src, exp.Table) and src.name.lower() in tables
+    }
     base_name = (
         tables[table.name.lower()].name
-        if isinstance(table, exp.Table) and table.name.lower() in tables
+        if not joined and isinstance(table, exp.Table) and table.name.lower() in tables
         else None
     )
     if select.args.get("group"):
         keys = {e.sql().lower() for e in select.args["group"].expressions}
         mapping: dict[str, str] = {}
+        key_tables = set()
         for p in select.expressions:
             inner = p.this if isinstance(p, exp.Alias) else p
             if isinstance(inner, exp.Column) and inner.sql().lower() in keys:
                 mapping[p.alias_or_name.lower()] = inner.name
+                key_tables.add(aliases.get(inner.table) if inner.table else (base_name or None))
             elif (p.this if isinstance(p, exp.Alias) else p).sql().lower() in keys:
                 mapping[p.alias_or_name.lower()] = p.alias_or_name
+                key_tables.add(None)
+        if not mapping:
+            return None  # many rows, none of its keys shown: nothing to be unique on
+        if joined:
+            base_name = key_tables.pop() if len(key_tables) == 1 else None
         return "unique", (base_name, mapping)
-    if select.find(exp.AggFunc):
+    if select.find(exp.AggFunc) and not any(
+        a.find_ancestor(exp.Window) for a in select.find_all(exp.AggFunc) if a.find_ancestor(exp.Select) is select
+    ):
         return "unique", (base_name, {})
-    if select.args.get("distinct"):
+    if joined or select.args.get("distinct"):
         return None
     if base_name is None:
         return None

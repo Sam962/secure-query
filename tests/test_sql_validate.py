@@ -847,3 +847,43 @@ def test_two_tables_pointing_at_the_same_key_may_join_but_not_be_summed() -> Non
     assert "sql.join_not_allowed" in codes(
         "SELECT DISTINCT pt.PlaylistId FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.PlaylistId = il.TrackId"
     )
+
+
+def test_fan_out_false_alarms_pass_and_real_fan_out_still_fails() -> None:
+    # A grouped subquery is unique on its group key even when it joins tables.
+    validate_sql(
+        "SELECT SUM(t.total) FROM (SELECT il.InvoiceId AS invoice_id, SUM(il.UnitPrice) AS total "
+        "FROM InvoiceLine il JOIN Track tr ON tr.TrackId = il.TrackId GROUP BY il.InvoiceId) t "
+        "JOIN Invoice i ON i.InvoiceId = t.invoice_id",
+        CATALOG,
+    )
+    # A column only in the CASE condition selects rows; the summed column decides.
+    validate_sql(
+        "SELECT SUM(CASE WHEN c.Country = 'USA' THEN i.Total ELSE 0 END) "
+        "FROM Invoice i JOIN Customer c ON c.CustomerId = i.CustomerId",
+        CATALOG,
+    )
+    # Pairing two single-row results repeats nothing.
+    validate_sql(
+        "SELECT a.n - b.n FROM (SELECT COUNT(*) AS n FROM Track) a "
+        "CROSS JOIN (SELECT COUNT(*) AS n FROM Album al JOIN Artist ar ON ar.ArtistId = al.ArtistId) b",
+        CATALOG,
+    )
+    # Still refused: summing the one side over the many side, through a condition or not.
+    assert "sql.fan_out" in codes(
+        "SELECT SUM(CASE WHEN il.Quantity > 0 THEN i.Total ELSE 0 END) "
+        "FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId"
+    )
+    # Still refused: a cross join with a many-row subquery, grouped or not, keys shown or not.
+    assert "sql.cross_join" in codes(
+        "SELECT a.n FROM (SELECT COUNT(*) AS n FROM Track) a CROSS JOIN (SELECT GenreId FROM Genre) b"
+    )
+    assert "sql.cross_join" in codes(
+        "SELECT a.n FROM (SELECT COUNT(*) AS n FROM Track) a "
+        "CROSS JOIN (SELECT COUNT(*) AS m FROM Track GROUP BY GenreId) b"
+    )
+    # Still refused: aggregating a joined subquery that does not aggregate (fan-out launder).
+    assert "sql.fan_out" in codes(
+        "WITH j AS (SELECT i.Total AS t FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId) "
+        "SELECT SUM(t) FROM j"
+    )
