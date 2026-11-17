@@ -27,6 +27,10 @@ if printf '%s' "$cmd" | grep -Eq '(^|[;&|[:space:]])git([[:space:]]+-C[[:space:]
     echo "Blocked: commit messages carry no AI co-author or 'Generated with' lines." >&2; exit 2
   fi
   export PYTHONPATH=src
+  sqlfiles="src/secure_query/kernel/compile.py src/secure_query/kernel/sql_validate.py src/secure_query/engine/execute.py src/secure_query/engine/postgres.py src/secure_query/engine/databricks.py"
+  if grep -E 'f["'"'"'].*\b(SELECT|INSERT|UPDATE|DELETE)\b' $sqlfiles >&2; then
+    echo "Blocked: SQL keyword inside an f-string on the compile path (CI rejects it)." >&2; exit 2
+  fi
   out=$( { .venv/bin/ruff check . && .venv/bin/pytest -q -x \
            && .venv/bin/python -m secure_query.evals.run --split holdout --provider mock; } 2>&1 )
   if [ $? -ne 0 ]; then

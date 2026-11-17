@@ -567,8 +567,8 @@ def _check_unused_joins(scope) -> list[ValidationError]:
                 _error(
                     "sql.unused_join",
                     f"{join.this.name} is joined but none of its columns are used, which "
-                    f"repeats or drops rows. If it is a filter, keep the condition as WHERE "
-                    f"EXISTS (SELECT 1 FROM {join.this.name} WHERE ...); remove the join only "
+                    f"repeats or drops rows. If it is a filter, keep the condition as a WHERE "
+                    f"EXISTS subquery on {join.this.name}; remove the join only "
                     "if the question does not need it",
                 )
             )
