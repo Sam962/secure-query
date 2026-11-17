@@ -66,6 +66,13 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-17 — measured and rejected: turning model reasoning on (`SECURE_QUERY_REASONING_EFFORT`).**
+  Spider dev 400 x3 (right/wrong/refused): off 321/47/32; low 318/52/30; medium 319/45/35, all
+  within noise. BIRD dev, low, stopped after 595 of 1534 questions (8 hours, several times slower):
+  on the same 595 questions, regraded, off 318 right / 158 wrong / 119 refused, low 301 / 191 / 103.
+  Likely cause, not verified: with reasoning on, the model refuses temperature 0, so both
+  readings of the gate sample at its default and agree on more wrong answers. Reasoning stays off.
+
 - **2026-11-16 — security pass: attack battery, two kernel fixes, an egress test, a key-file guard.**
   43 hostile SQL shapes against the kernel (file and URL reads, getenv, system tables, writes,
   extensions, PII by alias/struct/sort/length, stacked statements, resource bombs): 37 blocked
