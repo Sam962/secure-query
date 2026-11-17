@@ -155,6 +155,35 @@ def test_unused_join_is_rejected_unless_deduplicated() -> None:
     )
 
 
+def test_bridge_and_set_joins_are_not_unused() -> None:
+    # A bridge on the join path: InvoiceLine only links Track to Invoice.
+    validate_sql(
+        "SELECT t.Name, i.Total FROM Track t JOIN InvoiceLine il ON il.TrackId = t.TrackId "
+        "JOIN Invoice i ON i.InvoiceId = il.InvoiceId",
+        CATALOG,
+    )
+    # Rows used as a set: duplicates cannot change IN, EXISTS or INTERSECT.
+    validate_sql(
+        "SELECT Name FROM Track WHERE TrackId NOT IN (SELECT il.TrackId FROM InvoiceLine il "
+        "JOIN Invoice i ON i.InvoiceId = il.InvoiceId)",
+        CATALOG,
+    )
+    validate_sql(
+        "SELECT t.Name FROM Track t INTERSECT SELECT t.Name FROM Track t "
+        "JOIN InvoiceLine il ON il.TrackId = t.TrackId",
+        CATALOG,
+    )
+    # The last table of a chain is still dangling, and the advice keeps it as a filter.
+    with pytest.raises(SqlValidationFailed) as err:
+        validate_sql(
+            "SELECT t.Name FROM Track t JOIN InvoiceLine il ON il.TrackId = t.TrackId "
+            "JOIN Invoice i ON i.InvoiceId = il.InvoiceId",
+            CATALOG,
+        )
+    message = next(e.message for e in err.value.errors if e.code == "sql.unused_join")
+    assert "Invoice is joined" in message and "EXISTS" in message
+
+
 def test_untokenizable_sql_is_a_validation_error() -> None:
     assert "sql.parse" in codes("SELECT Name FROM Genre WHERE Name = 'unterminated")
 
@@ -317,6 +346,82 @@ def test_self_consistency_gate_runs_each_reading_once() -> None:
     assert result.status == "ok"
     assert len(calls) == 2  # one run per reading
     assert len(result.gate_fingerprints) == 1
+
+
+def test_database_error_refuses_as_invalid_not_unstable() -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    broken = json.dumps({"sql": "SELECT COUNT(*) FROM Track WHERE CAST(Composer AS DOUBLE) > 1"})
+
+    def probe(query):
+        raise RuntimeError("Conversion Error: Could not convert string 'AC/DC' to DOUBLE")
+
+    result = plan_sql_question(
+        "How many tracks?", CATALOG, MockLLMClient([broken]), value_probe=probe,
+        check_client=MockLLMClient([broken]),
+    )
+    assert result.status == "clarify" and result.clarify_code == "validation_failed"
+
+
+def test_identical_query_agrees_even_when_capped_rows_differ() -> None:
+    import itertools
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    same = json.dumps({"sql": "SELECT TrackId FROM Track"})
+    runs = itertools.count()
+
+    def capped_unordered(query):  # a different sample of a large result on each run
+        start = next(runs)
+        return [(n,) for n in range(start, start + 10)]
+
+    result = plan_sql_question(
+        "List the track ids", CATALOG, MockLLMClient([same]), value_probe=capped_unordered,
+        check_client=MockLLMClient([same]),
+    )
+    assert result.status == "ok"
+
+
+def test_gate_compares_each_readings_own_columns() -> None:
+    import json
+
+    from secure_query.planner import MockLLMClient
+    from secure_query.planner.sql_plan import plan_sql_question
+
+    ranked = json.dumps({"sql": "SELECT Name FROM Genre GROUP BY Name ORDER BY COUNT(*) DESC LIMIT 1"})
+    plain = json.dumps({"sql": "SELECT Name FROM Genre WHERE GenreId = 1"})
+
+    def probe(query):  # the kernel appends the count to the ranked reading only
+        return [("Rock", 1297)] if "COUNT" in query.sql.upper() else [("Rock",)]
+
+    agreed = plan_sql_question(
+        "Which genre has the most tracks?", CATALOG, MockLLMClient([ranked]), value_probe=probe,
+        check_client=MockLLMClient([plain]),
+    )
+    assert agreed.status == "ok" and "COUNT" in agreed.compiled.sql.upper()  # the measure is still shown
+
+    def text_or_number(query):  # the same number, once stored as text
+        return [("9",)] if "= 1" in query.sql else [(9,)]
+
+    two = json.dumps({"sql": "SELECT GenreId FROM Genre WHERE GenreId = 2"})
+    assert plan_sql_question(
+        "Which genre id?", CATALOG, MockLLMClient([plain.replace("Name", "GenreId")]), value_probe=text_or_number,
+        check_client=MockLLMClient([two]),
+    ).status == "ok"
+
+    def differ(query):
+        return [("Rock",)] if "= 1" in query.sql else [("Jazz",)]
+
+    disagree = plan_sql_question(
+        "Which genre?", CATALOG, MockLLMClient([plain]), value_probe=differ,
+        check_client=MockLLMClient([plain.replace("= 1", "= 2")]),
+    )
+    assert disagree.clarify_code == "unstable_answer"
 
 
 def test_sql_path_applies_row_filters() -> None:
@@ -718,3 +823,75 @@ def test_gate_compares_the_whole_answer_not_the_first_rows() -> None:
         check_client=MockLLMClient([second]),
     )
     assert whole.status == "clarify" and whole.clarify_code == "unstable_answer"
+
+
+def test_current_date_is_allowed_but_not_who_or_where() -> None:
+    validate_sql("SELECT InvoiceId FROM Invoice WHERE YEAR(CURRENT_DATE) - YEAR(InvoiceDate) > 10", CATALOG)
+    validate_sql("SELECT COUNT(*) FROM Invoice WHERE InvoiceDate < CURRENT_TIMESTAMP", CATALOG)
+    assert "sql.forbidden" in codes("SELECT CURRENT_USER FROM Genre")
+    assert codes("SELECT CURRENT_SCHEMA FROM Genre")  # rejected (parsed here as an unknown column)
+
+
+def test_two_tables_pointing_at_the_same_key_may_join_but_not_be_summed() -> None:
+    # InvoiceLine.TrackId and PlaylistTrack.TrackId both point at Track.TrackId.
+    validate_sql(
+        "SELECT DISTINCT pt.PlaylistId FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.TrackId = il.TrackId",
+        CATALOG,
+    )
+    # Many-to-many both ways: a total over either side is inflated.
+    for summed in ("il.UnitPrice", "pt.PlaylistId"):
+        assert "sql.fan_out" in codes(
+            f"SELECT SUM({summed}) FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.TrackId = il.TrackId"
+        )
+    # Columns that do not point at the same key stay unapproved.
+    assert "sql.join_not_allowed" in codes(
+        "SELECT DISTINCT pt.PlaylistId FROM InvoiceLine il JOIN PlaylistTrack pt ON pt.PlaylistId = il.TrackId"
+    )
+
+
+def test_fan_out_false_alarms_pass_and_real_fan_out_still_fails() -> None:
+    # A grouped subquery is unique on its group key even when it joins tables.
+    validate_sql(
+        "SELECT SUM(t.total) FROM (SELECT il.InvoiceId AS invoice_id, SUM(il.UnitPrice) AS total "
+        "FROM InvoiceLine il JOIN Track tr ON tr.TrackId = il.TrackId GROUP BY il.InvoiceId) t "
+        "JOIN Invoice i ON i.InvoiceId = t.invoice_id",
+        CATALOG,
+    )
+    # A column only in the CASE condition selects rows; the summed column decides.
+    validate_sql(
+        "SELECT SUM(CASE WHEN c.Country = 'USA' THEN i.Total ELSE 0 END) "
+        "FROM Invoice i JOIN Customer c ON c.CustomerId = i.CustomerId",
+        CATALOG,
+    )
+    # Pairing two single-row results repeats nothing.
+    validate_sql(
+        "SELECT a.n - b.n FROM (SELECT COUNT(*) AS n FROM Track) a "
+        "CROSS JOIN (SELECT COUNT(*) AS n FROM Album al JOIN Artist ar ON ar.ArtistId = al.ArtistId) b",
+        CATALOG,
+    )
+    # Still refused: summing the one side over the many side, through a condition or not.
+    assert "sql.fan_out" in codes(
+        "SELECT SUM(CASE WHEN il.Quantity > 0 THEN i.Total ELSE 0 END) "
+        "FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId"
+    )
+    # Still refused: a cross join with a many-row subquery, grouped or not, keys shown or not.
+    assert "sql.cross_join" in codes(
+        "SELECT a.n FROM (SELECT COUNT(*) AS n FROM Track) a CROSS JOIN (SELECT GenreId FROM Genre) b"
+    )
+    assert "sql.cross_join" in codes(
+        "SELECT a.n FROM (SELECT COUNT(*) AS n FROM Track) a "
+        "CROSS JOIN (SELECT COUNT(*) AS m FROM Track GROUP BY GenreId) b"
+    )
+    # Still refused: aggregating a joined subquery that does not aggregate (fan-out launder).
+    assert "sql.fan_out" in codes(
+        "WITH j AS (SELECT i.Total AS t FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId) "
+        "SELECT SUM(t) FROM j"
+    )
+
+
+def test_time_travel_is_refused_and_comments_are_dropped() -> None:
+    with pytest.raises(SqlValidationFailed) as excinfo:
+        validate_sql("SELECT Name FROM Genre AT (VERSION => 1)", CATALOG)
+    assert excinfo.value.errors[0].code == "sql.forbidden"
+    compiled = validate_sql("SELECT Name /* a */ FROM Genre -- */ ; DELETE FROM Genre", CATALOG).compiled.sql
+    assert "/*" not in compiled and "DELETE" not in compiled

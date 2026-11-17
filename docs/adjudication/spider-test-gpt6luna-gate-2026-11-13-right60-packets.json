@@ -1,0 +1,2616 @@
+[
+ {
+  "id": "test_1418_real_estate_rentals",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Which property had the lowest price requested by the vendor? List the id and the price.",
+  "schema": "tenant=spider_real_estate_rentals\ntables:\n  - Addresses\n      address_id: int — address id\n      line_1_number_building: str — line 1 number building\n      line_2_number_street: str — line 2 number street\n      line_3_area_locality: str — line 3 area locality\n      town_city: str — town city\n      zip_postcode: str — zip postcode\n      county_state_province: str — county state province\n      country: str\n      other_address_details: str — other address details\n  - Features\n      feature_id: int — feature id\n      feature_name: str — feature name\n      feature_description: str — feature description\n  - Properties\n      property_id: int — property id\n      property_address_id: int — property address id\n      owner_user_id: int — owner user id\n      property_type_code: str — property type code\n      date_on_market: str — date on market\n      date_off_market: str — date off market\n      property_name: str — property name\n      property_description: str — property description\n      garage_yn: str — garage yn\n      parking_lots: str — parking lots\n      room_count: str — room count\n      vendor_requested_price: float — vendor requested price\n      price_min: float — price min\n      price_max: float — price max\n      other_property_details: str — other property details\n  - Property_Features\n      property_id: int — property id\n      feature_id: int — feature id\n      feature_value: str — feature value\n      property_feature_description: str — property feature description\n  - Property_Photos\n      property_id: int — property id\n      photo_seq: int — photo seq\n      photo_title: str — photo title\n      photo_description: str — photo description\n      photo_filename: str — photo filename\n  - Ref_Age_Categories\n      age_category_code: str — age category code\n      age_category_description: str — age category description\n  - Ref_Property_Types\n      property_type_code: str — property type code\n      property_type_description: str — property type description\n  - Ref_Room_Types\n      room_type_code: str — room type code\n      room_type_description: str — room type description\n  - Ref_User_Categories\n      user_category_code: str — user category code\n      user_category_description: str — user category description\n  - Rooms\n      property_id: int — property id\n      room_number: str — room number\n      room_type_code: str — room type code\n      room_size: str — room size\n      other_room_details: str — other room details\n  - User_Property_History\n      user_id: int — user id\n      property_id: int — property id\n      datestamp: str\n  - User_Searches\n      user_id: int — user id\n      search_seq: int — search seq\n      search_datetime: str — search datetime\n      search_string: str — search string\n  - Users\n      user_id: int — user id\n      age_category_code: str — age category code\n      user_category_code: str — user category code\n      user_address_id: int — user address id\n      is_buyer: str — is buyer\n      is_seller: str — is seller\n      login_name: str — login name\n      password: str\n      date_registered: str — date registered\n      first_name: str — first name\n      middle_name: str — middle name\n      last_name: str — last name\n      other_user_details: str — other user details\nrelationships (many → one; joins are added automatically):\n  - Properties.property_type_code → Ref_Property_Types.property_type_code\n  - Properties.property_address_id → Addresses.address_id\n  - Properties.owner_user_id → Users.user_id\n  - Property_Features.property_id → Properties.property_id\n  - Property_Features.feature_id → Features.feature_id\n  - Property_Photos.property_id → Properties.property_id\n  - Rooms.room_type_code → Ref_Room_Types.room_type_code\n  - Rooms.property_id → Properties.property_id\n  - User_Property_History.property_id → Properties.property_id\n  - User_Property_History.user_id → Users.user_id\n  - User_Searches.user_id → Users.user_id",
+  "gold_sql": "SELECT property_id ,  vendor_requested_price FROM Properties ORDER BY vendor_requested_price LIMIT 1;",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "15",
+     "0.0"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"properties\".\"property_id\" AS \"property_id\", \"properties\".\"vendor_requested_price\" AS \"vendor_requested_price\" FROM \"Properties\" AS \"properties\" ORDER BY \"vendor_requested_price\" ASC, 1, 2 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "15",
+     "0.0"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1528_bakery_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the distinct ids and prices for goods that cost less than the average good?",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many → one; joins are added automatically):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id",
+  "gold_sql": "SELECT DISTINCT id ,  price FROM goods WHERE price  <  (SELECT avg(price) FROM goods)",
+  "gold_result": {
+   "count": 32,
+   "first": [
+    [
+     "45-CH",
+     "3.25"
+    ],
+    [
+     "45-CO",
+     "3.5"
+    ],
+    [
+     "45-VA",
+     "3.25"
+    ],
+    [
+     "50-ALM",
+     "1.45"
+    ],
+    [
+     "50-APP",
+     "1.45"
+    ],
+    [
+     "50-APR",
+     "1.45"
+    ],
+    [
+     "50-CH",
+     "1.75"
+    ],
+    [
+     "50-CHS",
+     "1.75"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"goods\".\"Id\" AS \"id\", \"goods\".\"Price\" AS \"price\" FROM \"goods\" AS \"goods\" WHERE \"goods\".\"Price\" < (SELECT AVG(\"goods\".\"Price\") AS \"_col_0\" FROM \"goods\" AS \"goods\") LIMIT 10000",
+  "system_result": {
+   "count": 32,
+   "first": [
+    [
+     "45-CH",
+     "3.25"
+    ],
+    [
+     "45-CO",
+     "3.5"
+    ],
+    [
+     "45-VA",
+     "3.25"
+    ],
+    [
+     "90-ALM-I",
+     "3.75"
+    ],
+    [
+     "90-APP-11",
+     "3.25"
+    ],
+    [
+     "90-APR-PF",
+     "3.25"
+    ],
+    [
+     "90-BER-11",
+     "3.25"
+    ],
+    [
+     "90-BLK-PF",
+     "3.25"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0120_bbc_channels",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Return the names of directors who are older than the average age.",
+  "schema": "tenant=spider_bbc_channels\ntables:\n  - channel\n      Channel_ID: int — channel id\n      Name: str\n      Analogue_terrestrial_channel: str — analogue terrestrial channel\n      Digital_terrestrial_channel: str — digital terrestrial channel\n      Internet: str\n  - director\n      Director_ID: int — director id\n      Name: str\n      Age: int\n  - director_admin\n      Director_ID: int — director id\n      Channel_ID: int — channel id\n      Is_first_director: str — is first director\n  - program\n      Program_ID: int — program id\n      Start_Year: float — start year\n      Title: str\n      Director_ID: int — director id\n      Channel_ID: int — channel id\nrelationships (many → one; joins are added automatically):\n  - program.Channel_ID → channel.Channel_ID\n  - program.Director_ID → director.Director_ID\n  - director_admin.Channel_ID → channel.Channel_ID\n  - director_admin.Director_ID → director.Director_ID",
+  "gold_sql": "SELECT name FROM director WHERE age  >  (SELECT avg(age) FROM director)",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "DeSean Jackson"
+    ],
+    [
+     "Hank Baskett"
+    ],
+    [
+     "Greg Lewis"
+    ],
+    [
+     "Correll Buckhalter"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"director\".\"Name\" AS \"name\" FROM \"director\" AS \"director\" WHERE \"director\".\"Age\" > (SELECT AVG(\"director\".\"Age\") AS \"_col_0\" FROM \"director\" AS \"director\") LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "DeSean Jackson"
+    ],
+    [
+     "Hank Baskett"
+    ],
+    [
+     "Greg Lewis"
+    ],
+    [
+     "Correll Buckhalter"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0938_headphone_store",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the headphone classes that contain both headphones using \"Bowls\" earpads and headphones using \"Comfort Pads\" earpads.",
+  "schema": "tenant=spider_headphone_store\ntables:\n  - headphone\n      Headphone_ID: int — headphone id\n      Model: str\n      Class: str\n      Driver-matched_dB: float — driver-matched db\n      Construction: str\n      Earpads: str\n      Price: int\n  - stock\n      Store_ID: int — store id\n      Headphone_ID: int — headphone id\n      Quantity: int\n  - store\n      Store_ID: int — store id\n      Name: str\n      Neighborhood: str\n      Parking: str\n      Date_Opened: str — date opened\nrelationships (many → one; joins are added automatically):\n  - stock.Headphone_ID → headphone.Headphone_ID\n  - stock.Store_ID → store.Store_ID",
+  "gold_sql": "SELECT CLASS FROM headphone WHERE earpads  =  'Bowls' INTERSECT SELECT CLASS FROM headphone WHERE earpads  =  'Comfort Pads'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Prestige"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"headphone\".\"Class\" AS \"class\", COUNT(DISTINCT \"headphone\".\"Earpads\") AS \"count_earpads\" FROM \"headphone\" AS \"headphone\" WHERE \"headphone\".\"Earpads\" IN ('Bowls', 'Comfort Pads') GROUP BY \"headphone\".\"Class\" HAVING COUNT(DISTINCT \"headphone\".\"Earpads\") = 2 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Prestige",
+     "2"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1859_planet_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the position of Amy Wong?",
+  "schema": "tenant=spider_planet_1\ntables:\n  - Client\n      AccountNumber: int — account number\n      Name: str\n  - Employee\n      EmployeeID: int — employee id\n      Name: str\n      Position: str\n      Salary: float\n      Remarks: str\n  - Has_Clearance\n      Employee: int\n      Planet: int\n      Level: int\n  - Package\n      Shipment: int\n      PackageNumber: int — package number\n      Contents: str\n      Weight: float\n      Sender: int\n      Recipient: int\n  - Planet\n      PlanetID: int — planet id\n      Name: str\n      Coordinates: float\n  - Shipment\n      ShipmentID: int — shipment id\n      Date: str\n      Manager: int\n      Planet: int\nrelationships (many → one; joins are added automatically):\n  - Shipment.Planet → Planet.PlanetID\n  - Shipment.Manager → Employee.EmployeeID\n  - Has_Clearance.Planet → Planet.PlanetID\n  - Has_Clearance.Employee → Employee.EmployeeID\n  - Package.Recipient → Client.AccountNumber\n  - Package.Sender → Client.AccountNumber\n  - Package.Shipment → Shipment.ShipmentID",
+  "gold_sql": "SELECT POSITION FROM Employee WHERE Name  =  \"Amy Wong\";",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Intern"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"employee\".\"Position\" AS \"position\" FROM \"Employee\" AS \"employee\" WHERE \"employee\".\"Name\" = 'Amy Wong' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Intern"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1778_university_rank",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names and codes for all majors ordered by their code?",
+  "schema": "tenant=spider_university_rank\ntables:\n  - major\n      Major_ID: int — major id\n      Major_Name: str — major name\n      Major_Code: int — major code\n  - major_ranking\n      Rank: int\n      University_ID: int — university id\n      Major_ID: int — major id\n  - overall_ranking\n      Rank: int\n      University_ID: int — university id\n      Reputation_point: int — reputation point\n      Research_point: int — research point\n      Citation_point: int — citation point\n      Total: int\n  - university\n      University_ID: int — university id\n      University_Name: str — university name\n      City: str\n      State: str\n      Team_Name: str — team name\n      Affiliation: str\n      Enrollment: int\n      Home_Conference: str — home conference\nrelationships (many → one; joins are added automatically):\n  - overall_ranking.University_ID → university.University_ID\n  - major_ranking.Major_ID → major.Major_ID\n  - major_ranking.University_ID → university.University_ID",
+  "gold_sql": "SELECT major_name ,  major_code FROM Major ORDER BY major_code",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "Urban Education",
+     "1041"
+    ],
+    [
+     "Advertising",
+     "1053"
+    ],
+    [
+     "Accounting",
+     "1054"
+    ],
+    [
+     "Journalism",
+     "1059"
+    ],
+    [
+     "Healthcare Management",
+     "1154"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"major\".\"Major_Name\" AS \"major_name\", \"major\".\"Major_Code\" AS \"major_code\" FROM \"major\" AS \"major\" ORDER BY \"Major_Code\" LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "Urban Education",
+     "1041"
+    ],
+    [
+     "Advertising",
+     "1053"
+    ],
+    [
+     "Accounting",
+     "1054"
+    ],
+    [
+     "Journalism",
+     "1059"
+    ],
+    [
+     "Healthcare Management",
+     "1154"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1492_bakery_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the ids with apple flavor?",
+  "schema": "tenant=spider_bakery_1\ntables:\n  - customers\n      Id: int\n      LastName: str — last name\n      FirstName: str — first name\n  - goods\n      Id: str\n      Flavor: str\n      Food: str\n      Price: float\n  - items\n      Receipt: int\n      Ordinal: int\n      Item: str\n  - receipts\n      ReceiptNumber: int — receipt number\n      Date: str\n      CustomerId: int — customer id\nrelationships (many → one; joins are added automatically):\n  - items.Item → goods.Id\n  - receipts.CustomerId → customers.Id",
+  "gold_sql": "SELECT id FROM goods WHERE flavor  =  \"Apple\"",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "90-APIE-10"
+    ],
+    [
+     "90-APP-11"
+    ],
+    [
+     "50-APP"
+    ],
+    [
+     "51-APP"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"goods\".\"Id\" AS \"id\" FROM \"goods\" AS \"goods\" WHERE \"goods\".\"Flavor\" = 'Apple' LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "90-APIE-10"
+    ],
+    [
+     "90-APP-11"
+    ],
+    [
+     "50-APP"
+    ],
+    [
+     "51-APP"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1170_pilot_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names and ages of pilots who have planes located in Austin?",
+  "schema": "tenant=spider_pilot_1\ntables:\n  - Hangar\n      plane_name: str — plane name\n      location: str\n  - PilotSkills\n      pilot_name: str — pilot name\n      plane_name: str — plane name\n      age: int\nrelationships (many → one; joins are added automatically):\n  - PilotSkills.plane_name → Hangar.plane_name",
+  "gold_sql": "SELECT T1.pilot_name ,  T1.age FROM pilotskills AS T1 JOIN hangar AS T2 ON T1.plane_name  =  T2.plane_name WHERE T2.location  =  \"Austin\"",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "Higgins",
+     "34"
+    ],
+    [
+     "Jones",
+     "24"
+    ],
+    [
+     "Smith",
+     "26"
+    ],
+    [
+     "Wilson",
+     "34"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"pilotskills\".\"pilot_name\" AS \"pilot_name\", \"pilotskills\".\"age\" AS \"age\" FROM \"PilotSkills\" AS \"pilotskills\" JOIN \"Hangar\" AS \"hangar\" ON \"pilotskills\".\"plane_name\" = \"hangar\".\"plane_name\" WHERE \"hangar\".\"location\" = 'Austin' LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "Higgins",
+     "34"
+    ],
+    [
+     "Jones",
+     "24"
+    ],
+    [
+     "Smith",
+     "26"
+    ],
+    [
+     "Wilson",
+     "34"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1762_university_rank",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the total number of universities located in Illinois or Ohio?",
+  "schema": "tenant=spider_university_rank\ntables:\n  - major\n      Major_ID: int — major id\n      Major_Name: str — major name\n      Major_Code: int — major code\n  - major_ranking\n      Rank: int\n      University_ID: int — university id\n      Major_ID: int — major id\n  - overall_ranking\n      Rank: int\n      University_ID: int — university id\n      Reputation_point: int — reputation point\n      Research_point: int — research point\n      Citation_point: int — citation point\n      Total: int\n  - university\n      University_ID: int — university id\n      University_Name: str — university name\n      City: str\n      State: str\n      Team_Name: str — team name\n      Affiliation: str\n      Enrollment: int\n      Home_Conference: str — home conference\nrelationships (many → one; joins are added automatically):\n  - overall_ranking.University_ID → university.University_ID\n  - major_ranking.Major_ID → major.Major_ID\n  - major_ranking.University_ID → university.University_ID",
+  "gold_sql": "SELECT count(*) FROM University WHERE state  =  'Illinois' OR state  =  'Ohio'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "5"
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(*) AS \"total_universities\" FROM \"university\" AS \"university\" WHERE \"university\".\"State\" IN ('Illinois', 'Ohio') LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "5"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1331_car_road_race",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of drivers and the names of the races they took part in?",
+  "schema": "tenant=spider_car_road_race\ntables:\n  - driver\n      Driver_ID: int — driver id\n      Driver_Name: str — driver name\n      Entrant: str\n      Constructor: str\n      Chassis: str\n      Engine: str\n      Age: int\n  - race\n      Road: int\n      Driver_ID: int — driver id\n      Race_Name: str — race name\n      Pole_Position: str — pole position\n      Fastest_Lap: str — fastest lap\n      Winning_driver: str — winning driver\n      Winning_team: str — winning team\n      Report: str\nrelationships (many → one; joins are added automatically):\n  - race.Driver_ID → driver.Driver_ID",
+  "gold_sql": "SELECT T1.Driver_Name ,  T2.Race_Name FROM driver AS T1 JOIN race AS T2 ON T1.Driver_ID  =  T2.Driver_ID",
+  "gold_result": {
+   "count": 9,
+   "first": [
+    [
+     "Ernst-Günther Burggaller",
+     "Monterey Festival of Speed"
+    ],
+    [
+     "Hermann zu Leiningen",
+     "Sommet des Legends"
+    ],
+    [
+     "Ernst-Günther Burggaller",
+     "Rexall Grand Prix of Edmonton - Race 1"
+    ],
+    [
+     "Heinrich-Joachim von Morgen",
+     "Rexall Grand Prix of Edmonton - Race 2"
+    ],
+    [
+     "Rudolf Caracciola",
+     "Road Race Showcase/Road America - Race 1"
+    ],
+    [
+     "Juan Zanelli",
+     "Road Race Showcase/Road America - Race 2"
+    ],
+    [
+     "Guy Bouriat",
+     "Grand Prix de Trois-Rivières"
+    ],
+    [
+     "Ernst-Günther Burggaller",
+     "Mazda Formula Zoom Zoom"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"driver\".\"Driver_Name\" AS \"driver_name\", \"race\".\"Race_Name\" AS \"race_name\" FROM \"driver\" AS \"driver\" JOIN \"race\" AS \"race\" ON \"driver\".\"Driver_ID\" = \"race\".\"Driver_ID\" LIMIT 10000",
+  "system_result": {
+   "count": 9,
+   "first": [
+    [
+     "Ernst-Günther Burggaller",
+     "Mazda Formula Zoom Zoom"
+    ],
+    [
+     "Hermann zu Leiningen",
+     "SunRichGourmet.com 1000"
+    ],
+    [
+     "Heinrich-Joachim von Morgen",
+     "Rexall Grand Prix of Edmonton - Race 2"
+    ],
+    [
+     "Rudolf Caracciola",
+     "Road Race Showcase/Road America - Race 1"
+    ],
+    [
+     "Juan Zanelli",
+     "Road Race Showcase/Road America - Race 2"
+    ],
+    [
+     "Guy Bouriat",
+     "Grand Prix de Trois-Rivières"
+    ],
+    [
+     "Ernst-Günther Burggaller",
+     "Rexall Grand Prix of Edmonton - Race 1"
+    ],
+    [
+     "Hermann zu Leiningen",
+     "Sommet des Legends"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_2054_cre_Doc_Workflow",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Show all staff ids and the number of document processes for each staff.",
+  "schema": "tenant=spider_cre_Doc_Workflow\ntables:\n  - Authors\n      author_name: str — author name\n      other_details: str — other details\n  - Business_Processes\n      process_id: int — process id\n      next_process_id: int — next process id\n      process_name: str — process name\n      process_description: str — process description\n      other_details: str — other details\n  - Documents\n      document_id: int — document id\n      author_name: str — author name\n      document_name: str — document name\n      document_description: str — document description\n      other_details: str — other details\n  - Documents_Processes\n      document_id: int — document id\n      process_id: int — process id\n      process_outcome_code: str — process outcome code\n      process_status_code: str — process status code\n  - Process_Outcomes\n      process_outcome_code: str — process outcome code\n      process_outcome_description: str — process outcome description\n  - Process_Status\n      process_status_code: str — process status code\n      process_status_description: str — process status description\n  - Ref_Staff_Roles\n      staff_role_code: str — staff role code\n      staff_role_description: str — staff role description\n  - Staff\n      staff_id: int — staff id\n      staff_details: str — staff details\n  - Staff_in_Processes\n      document_id: int — document id\n      process_id: int — process id\n      staff_id: int — staff id\n      staff_role_code: str — staff role code\n      date_from: str — date from\n      date_to: str — date to\n      other_details: str — other details\nrelationships (many → one; joins are added automatically):\n  - Documents.author_name → Authors.author_name\n  - Documents_Processes.process_status_code → Process_Status.process_status_code\n  - Documents_Processes.process_outcome_code → Process_Outcomes.process_outcome_code\n  - Documents_Processes.process_id → Business_Processes.process_id\n  - Documents_Processes.document_id → Documents.document_id\n  - Staff_in_Processes.staff_role_code → Ref_Staff_Roles.staff_role_code\n  - Staff_in_Processes.document_id → Documents_Processes.document_id\n  - Staff_in_Processes.process_id → Documents_Processes.process_id\n  - Staff_in_Processes.staff_id → Staff.staff_id",
+  "gold_sql": "SELECT staff_id ,  count(*) FROM Staff_in_processes GROUP BY staff_id",
+  "gold_result": {
+   "count": 8,
+   "first": [
+    [
+     "3",
+     "3"
+    ],
+    [
+     "26",
+     "2"
+    ],
+    [
+     "52",
+     "2"
+    ],
+    [
+     "66",
+     "1"
+    ],
+    [
+     "67",
+     "2"
+    ],
+    [
+     "76",
+     "1"
+    ],
+    [
+     "93",
+     "1"
+    ],
+    [
+     "100",
+     "1"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"staff_in_processes\".\"staff_id\" AS \"staff_id\", COUNT(*) AS \"document_process_count\" FROM \"Staff_in_Processes\" AS \"staff_in_processes\" GROUP BY \"staff_in_processes\".\"staff_id\" LIMIT 10000",
+  "system_result": {
+   "count": 8,
+   "first": [
+    [
+     "3",
+     "3"
+    ],
+    [
+     "26",
+     "2"
+    ],
+    [
+     "52",
+     "2"
+    ],
+    [
+     "66",
+     "1"
+    ],
+    [
+     "67",
+     "2"
+    ],
+    [
+     "76",
+     "1"
+    ],
+    [
+     "93",
+     "1"
+    ],
+    [
+     "100",
+     "1"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0756_sing_contest",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the average rhythm scores for the songs in each different language?",
+  "schema": "tenant=spider_sing_contest\ntables:\n  - participants\n      id: int\n      name: str\n      popularity: float\n  - performance_score\n      participant_id: int — participant id\n      songs_id: int — songs id\n      voice_sound_quality: float — voice sound quality\n      rhythm_tempo: float — rhythm tempo\n      stage_presence: float — stage presence\n  - songs\n      id: int\n      language: str\n      original_artist: str — original artist\n      name: str\n      english_translation: str — english translation\nrelationships (many → one; joins are added automatically):\n  - performance_score.songs_id → songs.id\n  - performance_score.participant_id → participants.id",
+  "gold_sql": "SELECT avg(T2.rhythm_tempo) ,  T1.language FROM songs AS T1 JOIN performance_score AS T2 ON T2.songs_id  =  T1.id GROUP BY T1.language",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "8.0",
+     "Bosnian"
+    ],
+    [
+     "7.0",
+     "Croatian"
+    ],
+    [
+     "7.666666666666667",
+     "English"
+    ],
+    [
+     "9.0",
+     "Romanian , English"
+    ],
+    [
+     "8.0",
+     "Spanish , English"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"songs\".\"language\" AS \"language\", AVG(\"performance_score\".\"rhythm_tempo\") AS \"average_rhythm_score\" FROM \"performance_score\" AS \"performance_score\" JOIN \"songs\" AS \"songs\" ON \"performance_score\".\"songs_id\" = \"songs\".\"id\" GROUP BY \"songs\".\"language\" LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "Romanian , English",
+     "9.0"
+    ],
+    [
+     "English",
+     "7.666666666666667"
+    ],
+    [
+     "Spanish , English",
+     "8.0"
+    ],
+    [
+     "Bosnian",
+     "8.0"
+    ],
+    [
+     "Croatian",
+     "7.0"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1838_movie_2",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "How many movies exist for each rating?",
+  "schema": "tenant=spider_movie_2\ntables:\n  - MovieTheaters\n      Code: int\n      Name: str\n      Movie: int\n  - Movies\n      Code: int\n      Title: str\n      Rating: str\nrelationships (many → one; joins are added automatically):\n  - MovieTheaters.Movie → Movies.Code",
+  "gold_sql": "SELECT count(*) ,  rating FROM movies GROUP BY rating",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "3",
+     "None"
+    ],
+    [
+     "2",
+     "G"
+    ],
+    [
+     "1",
+     "NC-17"
+    ],
+    [
+     "1",
+     "PG"
+    ],
+    [
+     "1",
+     "PG-13"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"movies\".\"Rating\" AS \"rating\", COUNT(*) AS \"movie_count\" FROM \"Movies\" AS \"movies\" GROUP BY \"movies\".\"Rating\" LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "None",
+     "3"
+    ],
+    [
+     "NC-17",
+     "1"
+    ],
+    [
+     "G",
+     "2"
+    ],
+    [
+     "PG",
+     "1"
+    ],
+    [
+     "PG-13",
+     "1"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0399_vehicle_rent",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "List all distinct types of powertrain of vehicles.",
+  "schema": "tenant=spider_vehicle_rent\ntables:\n  - Customers\n      id: int\n      name: str\n      age: int\n      membership_credit: int — membership credit\n  - Discount\n      id: int\n      name: str\n      membership_credit: int — membership credit\n  - Renting_history\n      id: int\n      customer_id: int — customer id\n      discount_id: int — discount id\n      vehicles_id: int — vehicles id\n      total_hours: int — total hours\n  - Vehicles\n      id: int\n      name: str\n      Model_year: int — model year\n      Type_of_powertrain: str — type of powertrain\n      Combined_fuel_economy_rate: int — combined fuel economy rate\n      City_fuel_economy_rate: int — city fuel economy rate\n      Highway_fuel_economy_rate: int — highway fuel economy rate\n      Cost_per_25_miles: float — cost per 25 miles\n      Annual_fuel_cost: float — annual fuel cost\n      Notes: str\nrelationships (many → one; joins are added automatically):\n  - Renting_history.discount_id → Discount.id\n  - Renting_history.vehicles_id → Vehicles.id\n  - Renting_history.customer_id → Customers.id",
+  "gold_sql": "SELECT DISTINCT type_of_powertrain FROM vehicles",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Electric"
+    ],
+    [
+     "hybrid"
+    ],
+    [
+     "electric"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"vehicles\".\"Type_of_powertrain\" AS \"type_of_powertrain\" FROM \"Vehicles\" AS \"vehicles\" LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "Electric"
+    ],
+    [
+     "hybrid"
+    ],
+    [
+     "electric"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1078_conference",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of all staff members who are older than average?",
+  "schema": "tenant=spider_conference\ntables:\n  - conference\n      Conference_ID: int — conference id\n      Conference_Name: str — conference name\n      Year: int\n      Location: str\n  - conference_participation\n      Conference_ID: int — conference id\n      staff_ID: int — staff id\n      role: str\n  - institution\n      Institution_ID: int — institution id\n      Institution_Name: str — institution name\n      Location: str\n      Founded: int\n  - staff\n      staff_ID: int — staff id\n      name: str\n      Age: int\n      Nationality: str\n      Institution_ID: int — institution id\nrelationships (many → one; joins are added automatically):\n  - staff.Institution_ID → institution.Institution_ID\n  - conference_participation.Conference_ID → conference.Conference_ID\n  - conference_participation.staff_ID → staff.staff_ID",
+  "gold_sql": "SELECT name FROM staff WHERE age  >  (SELECT avg(age) FROM staff)",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Alexander Johnson"
+    ],
+    [
+     "Chris Johnson"
+    ],
+    [
+     "Damon Jones"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"staff\".\"name\" AS \"name\" FROM \"staff\" AS \"staff\" WHERE \"staff\".\"Age\" > (SELECT AVG(\"staff\".\"Age\") AS \"_col_0\" FROM \"staff\" AS \"staff\") LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "Alexander Johnson"
+    ],
+    [
+     "Chris Johnson"
+    ],
+    [
+     "Damon Jones"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0260_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of all Hardware products, sorted by price ascending?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT product_name FROM Products WHERE product_type_code  =  \"Hardware\" ORDER BY product_price ASC",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "Keyboard"
+    ],
+    [
+     "DVD"
+    ],
+    [
+     "Monitor"
+    ],
+    [
+     "Drive"
+    ],
+    [
+     "Mouse"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"products\".\"product_name\" AS \"product_name\" FROM \"Products\" AS \"products\" WHERE \"products\".\"product_type_code\" = 'Hardware' ORDER BY \"products\".\"product_price\" ASC LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "Keyboard"
+    ],
+    [
+     "DVD"
+    ],
+    [
+     "Monitor"
+    ],
+    [
+     "Drive"
+    ],
+    [
+     "Mouse"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0920_headphone_store",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Which headphone model has the highest price?",
+  "schema": "tenant=spider_headphone_store\ntables:\n  - headphone\n      Headphone_ID: int — headphone id\n      Model: str\n      Class: str\n      Driver-matched_dB: float — driver-matched db\n      Construction: str\n      Earpads: str\n      Price: int\n  - stock\n      Store_ID: int — store id\n      Headphone_ID: int — headphone id\n      Quantity: int\n  - store\n      Store_ID: int — store id\n      Name: str\n      Neighborhood: str\n      Parking: str\n      Date_Opened: str — date opened\nrelationships (many → one; joins are added automatically):\n  - stock.Headphone_ID → headphone.Headphone_ID\n  - stock.Store_ID → store.Store_ID",
+  "gold_sql": "SELECT model FROM headphone ORDER BY price DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "PS1000"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"headphone\".\"Model\" AS \"model\" FROM \"headphone\" AS \"headphone\" ORDER BY \"headphone\".\"Price\" DESC, 1 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "PS1000"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1939_video_game",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names and id of platforms whose download rank is 1?",
+  "schema": "tenant=spider_video_game\ntables:\n  - game\n      Game_ID: int — game id\n      Title: str\n      Release_Date: str — release date\n      Franchise: str\n      Developers: str\n      Platform_ID: int — platform id\n      Units_sold_Millions: float — units sold millions\n  - game_player\n      Player_ID: int — player id\n      Game_ID: int — game id\n      If_active: str — if active\n  - platform\n      Platform_ID: int — platform id\n      Platform_name: str — platform name\n      Market_district: str — market district\n      Download_rank: int — download rank\n  - player\n      Player_ID: int — player id\n      Rank_of_the_year: int — rank of the year\n      Player_name: str — player name\n      Position: str\n      College: str\nrelationships (many → one; joins are added automatically):\n  - game.Platform_ID → platform.Platform_ID\n  - game_player.Game_ID → game.Game_ID\n  - game_player.Player_ID → player.Player_ID",
+  "gold_sql": "SELECT Platform_name ,  Platform_ID FROM platform WHERE Download_rank  =  1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "PlayStation",
+     "3"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"platform\".\"Platform_name\" AS \"platform_name\", \"platform\".\"Platform_ID\" AS \"platform_id\" FROM \"platform\" AS \"platform\" WHERE \"platform\".\"Download_rank\" = 1 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "PlayStation",
+     "3"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_2130_advertising_agencies",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the meeting ids, meeting outcomes, meeting types, and client details for all meetings?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status\n      invoice_details: str — invoice details\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome\n      meeting_type: str — meeting type\n      billable_yn: str — billable yn\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many → one; joins are added automatically):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT T1.meeting_id ,  T1.meeting_outcome ,  T1.meeting_type ,  T2.client_details FROM meetings AS T1 JOIN clients AS T2 ON T1.client_id  =  T2.client_id",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "1",
+     "Report",
+     "Team",
+     "Maximo"
+    ],
+    [
+     "2",
+     "Summary",
+     "Group",
+     "Johnpaul"
+    ],
+    [
+     "3",
+     "Summary",
+     "Team",
+     "Taurean"
+    ],
+    [
+     "4",
+     "Vote results",
+     "Company",
+     "Lucie"
+    ],
+    [
+     "5",
+     "Summary",
+     "Company",
+     "Philip"
+    ],
+    [
+     "6",
+     "Vote results",
+     "Team",
+     "Vincent"
+    ],
+    [
+     "7",
+     "Vote results",
+     "Group",
+     "Eloise"
+    ],
+    [
+     "8",
+     "Report",
+     "Company",
+     "Vincent"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"meetings\".\"meeting_id\" AS \"meeting_id\", \"meetings\".\"meeting_outcome\" AS \"meeting_outcome\", \"meetings\".\"meeting_type\" AS \"meeting_type\", \"clients\".\"client_details\" AS \"client_details\" FROM \"Meetings\" AS \"meetings\" JOIN \"Clients\" AS \"clients\" ON \"meetings\".\"client_id\" = \"clients\".\"client_id\" LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "1",
+     "Report",
+     "Team",
+     "Maximo"
+    ],
+    [
+     "2",
+     "Summary",
+     "Group",
+     "Johnpaul"
+    ],
+    [
+     "3",
+     "Summary",
+     "Team",
+     "Taurean"
+    ],
+    [
+     "4",
+     "Vote results",
+     "Company",
+     "Lucie"
+    ],
+    [
+     "5",
+     "Summary",
+     "Company",
+     "Philip"
+    ],
+    [
+     "6",
+     "Vote results",
+     "Team",
+     "Vincent"
+    ],
+    [
+     "7",
+     "Vote results",
+     "Group",
+     "Eloise"
+    ],
+    [
+     "8",
+     "Report",
+     "Company",
+     "Vincent"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0403_vehicle_rent",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Show types of powertrain with vehicles both from 2014 and 2013.",
+  "schema": "tenant=spider_vehicle_rent\ntables:\n  - Customers\n      id: int\n      name: str\n      age: int\n      membership_credit: int — membership credit\n  - Discount\n      id: int\n      name: str\n      membership_credit: int — membership credit\n  - Renting_history\n      id: int\n      customer_id: int — customer id\n      discount_id: int — discount id\n      vehicles_id: int — vehicles id\n      total_hours: int — total hours\n  - Vehicles\n      id: int\n      name: str\n      Model_year: int — model year\n      Type_of_powertrain: str — type of powertrain\n      Combined_fuel_economy_rate: int — combined fuel economy rate\n      City_fuel_economy_rate: int — city fuel economy rate\n      Highway_fuel_economy_rate: int — highway fuel economy rate\n      Cost_per_25_miles: float — cost per 25 miles\n      Annual_fuel_cost: float — annual fuel cost\n      Notes: str\nrelationships (many → one; joins are added automatically):\n  - Renting_history.discount_id → Discount.id\n  - Renting_history.vehicles_id → Vehicles.id\n  - Renting_history.customer_id → Customers.id",
+  "gold_sql": "SELECT type_of_powertrain FROM vehicles WHERE model_year  =  2014 INTERSECT SELECT type_of_powertrain FROM vehicles WHERE model_year  =  2013",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Electric"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"vehicles\".\"Type_of_powertrain\" AS \"type_of_powertrain\", COUNT(DISTINCT \"vehicles\".\"Model_year\") AS \"count_model_year\" FROM \"Vehicles\" AS \"vehicles\" WHERE \"vehicles\".\"Model_year\" IN (2013, 2014) GROUP BY \"vehicles\".\"Type_of_powertrain\" HAVING COUNT(DISTINCT \"vehicles\".\"Model_year\") = 2 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Electric",
+     "2"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1196_district_spokesman",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the names of districts which have more than one spokesman.",
+  "schema": "tenant=spider_district_spokesman\ntables:\n  - district\n      District_ID: int — district id\n      Name: str\n      Area_km: float — area km\n      Population: float\n      Density_km: float — density km\n      Government_website: str — government website\n  - spokesman\n      Spokesman_ID: int — spokesman id\n      Name: str\n      Age: int\n      Speach_title: str — speach title\n      Rank_position: float — rank position\n      Points: float\n  - spokesman_district\n      Spokesman_ID: int — spokesman id\n      District_ID: int — district id\n      Start_year: str — start year\nrelationships (many → one; joins are added automatically):\n  - spokesman_district.District_ID → district.District_ID\n  - spokesman_district.Spokesman_ID → spokesman.Spokesman_ID",
+  "gold_sql": "SELECT t1.name FROM district AS t1 JOIN spokesman_district AS t2 ON t1.District_ID  =  t2.District_ID GROUP BY t2.District_ID HAVING count(*)  >  1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Pozo Almonte"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"district\".\"Name\" AS \"name\", COUNT(DISTINCT \"spokesman_district\".\"Spokesman_ID\") AS \"count_spokesman_id\" FROM \"district\" AS \"district\" JOIN \"spokesman_district\" AS \"spokesman_district\" ON \"district\".\"District_ID\" = \"spokesman_district\".\"District_ID\" GROUP BY \"district\".\"District_ID\", \"district\".\"Name\" HAVING COUNT(DISTINCT \"spokesman_district\".\"Spokesman_ID\") > 1 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Pozo Almonte",
+     "3"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0272_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the ids and names of all customers?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT customer_id ,  customer_name FROM Customers",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "1",
+     "Jeromy"
+    ],
+    [
+     "2",
+     "Edmond"
+    ],
+    [
+     "3",
+     "Twila"
+    ],
+    [
+     "4",
+     "Madelynn"
+    ],
+    [
+     "5",
+     "Nya"
+    ],
+    [
+     "6",
+     "Kenna"
+    ],
+    [
+     "7",
+     "Katrina"
+    ],
+    [
+     "8",
+     "Jaylan"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"customers\".\"customer_id\" AS \"customer_id\", \"customers\".\"customer_name\" AS \"customer_name\" FROM \"Customers\" AS \"customers\" LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "1",
+     "Jeromy"
+    ],
+    [
+     "2",
+     "Edmond"
+    ],
+    [
+     "3",
+     "Twila"
+    ],
+    [
+     "4",
+     "Madelynn"
+    ],
+    [
+     "5",
+     "Nya"
+    ],
+    [
+     "6",
+     "Kenna"
+    ],
+    [
+     "7",
+     "Katrina"
+    ],
+    [
+     "8",
+     "Jaylan"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0210_online_exams",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "For each student answer, find the first name of the student and the date of the answer.",
+  "schema": "tenant=spider_online_exams\ntables:\n  - Exams\n      Exam_ID: int — exam id\n      Subject_Code: str — subject code\n      Exam_Date: str — exam date\n      Exam_Name: str — exam name\n  - Questions\n      Question_ID: int — question id\n      Type_of_Question_Code: str — type of question code\n      Question_Text: str — question text\n  - Questions_in_Exams\n      Exam_ID: int — exam id\n      Question_ID: int — question id\n  - Student_Answers\n      Student_Answer_ID: int — student answer id\n      Exam_ID: int — exam id\n      Question_ID: int — question id\n      Student_ID: int — student id\n      Date_of_Answer: str — date of answer\n      Comments: str\n      Satisfactory_YN: str — satisfactory yn\n      Student_Answer_Text: str — student answer text\n  - Student_Assessments\n      Student_Answer_ID: str — student answer id\n      Valid_Answer_ID: int — valid answer id\n      Student_Answer_Text: str — student answer text\n      Satisfactory_YN: str — satisfactory yn\n      Assessment: str\n  - Students\n      Student_ID: int — student id\n      First_Name: str — first name\n      Middle_Name: str — middle name\n      Last_Name: str — last name\n      Gender_MFU: str — gender mfu\n      Student_Address: str — student address\n      Email_Adress: str — email adress\n      Cell_Mobile_Phone: str — cell mobile phone\n      Home_Phone: str — home phone\n  - Valid_Answers\n      Valid_Answer_ID: int — valid answer id\n      Question_ID: int — question id\n      Valid_Answer_Text: str — valid answer text\nrelationships (many → one; joins are added automatically):\n  - Questions_in_Exams.Exam_ID → Exams.Exam_ID\n  - Questions_in_Exams.Question_ID → Questions.Question_ID\n  - Valid_Answers.Question_ID → Questions.Question_ID\n  - Student_Answers.Exam_ID → Questions_in_Exams.Exam_ID\n  - Student_Answers.Question_ID → Questions_in_Exams.Question_ID\n  - Student_Answers.Student_ID → Students.Student_ID\n  - Student_Assessments.Valid_Answer_ID → Valid_Answers.Valid_Answer_ID",
+  "gold_sql": "SELECT T2.First_Name ,  T1.Date_of_Answer FROM Student_Answers AS T1 JOIN Students AS T2 ON T1.Student_ID  =  T2.Student_ID",
+  "gold_result": {
+   "count": 13,
+   "first": [
+    [
+     "Jaylen",
+     "2017-08-13 06:03:03"
+    ],
+    [
+     "Betsy",
+     "2017-07-27 06:34:17"
+    ],
+    [
+     "Cloyd",
+     "2017-07-30 12:07:59"
+    ],
+    [
+     "Deven",
+     "2018-02-21 09:14:48"
+    ],
+    [
+     "Abdul",
+     "2017-12-04 10:10:48"
+    ],
+    [
+     "Jaylen",
+     "2017-12-21 16:40:17"
+    ],
+    [
+     "Cassidy",
+     "2017-05-13 07:29:20"
+    ],
+    [
+     "Lindsey",
+     "2018-01-10 21:22:57"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"students\".\"First_Name\" AS \"first_name\", \"student_answers\".\"Date_of_Answer\" AS \"date_of_answer\" FROM \"Student_Answers\" AS \"student_answers\" JOIN \"Students\" AS \"students\" ON \"student_answers\".\"Student_ID\" = \"students\".\"Student_ID\" LIMIT 10000",
+  "system_result": {
+   "count": 13,
+   "first": [
+    [
+     "Abdul",
+     "2017-11-04 00:23:29"
+    ],
+    [
+     "Cassidy",
+     "2017-05-13 07:29:20"
+    ],
+    [
+     "Betsy",
+     "2017-07-27 18:22:08"
+    ],
+    [
+     "Deven",
+     "2018-02-21 09:14:48"
+    ],
+    [
+     "Haylie",
+     "2017-05-20 03:44:40"
+    ],
+    [
+     "Jeromy",
+     "2017-07-08 17:36:15"
+    ],
+    [
+     "Cloyd",
+     "2017-07-30 12:07:59"
+    ],
+    [
+     "Jaylen",
+     "2017-12-21 16:40:17"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1266_art_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of both paintings and sculptures created between 1900 and 1950?",
+  "schema": "tenant=spider_art_1\ntables:\n  - Artists\n      artistID: int — artist id\n      lname: str — last name\n      fname: str — first name\n      birthYear: int — birth year\n      deathYear: int — death year\n  - Paintings\n      paintingID: int — painting id\n      title: str\n      year: int\n      height_mm: int — height mm\n      width_mm: int — width mm\n      medium: str\n      mediumOn: str — medium on\n      location: str\n      painterID: int — painter id\n  - Sculptures\n      sculptureID: int — sculpture id\n      title: str\n      year: int\n      medium: str\n      location: str\n      sculptorID: int — sculptor id\nrelationships (many → one; joins are added automatically):\n  - Paintings.painterID → Artists.artistID\n  - Sculptures.sculptorID → Artists.artistID",
+  "gold_sql": "SELECT title FROM paintings WHERE YEAR BETWEEN 1900 AND 1950 UNION SELECT title FROM sculptures WHERE YEAR BETWEEN 1900 AND 1950",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "Abstraction: Background with Blue Cloudy Sky"
+    ],
+    [
+     "Female Figure"
+    ],
+    [
+     "Head of Young Girl"
+    ],
+    [
+     "Still Life"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"paintings\".\"title\" AS \"title\" FROM \"Paintings\" AS \"paintings\" WHERE \"paintings\".\"year\" BETWEEN 1900 AND 1950 UNION SELECT \"sculptures\".\"title\" AS \"title\" FROM \"Sculptures\" AS \"sculptures\" WHERE \"sculptures\".\"year\" BETWEEN 1900 AND 1950 LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "Abstraction: Background with Blue Cloudy Sky"
+    ],
+    [
+     "Head of Young Girl"
+    ],
+    [
+     "Still Life"
+    ],
+    [
+     "Female Figure"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1757_warehouse_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the total values of boxes that are not in the warehouses located at Chicago.",
+  "schema": "tenant=spider_warehouse_1\ntables:\n  - Boxes\n      Code: str\n      Contents: str\n      Value: float\n      Warehouse: int\n  - Warehouses\n      Code: int\n      Location: str\n      Capacity: int\nrelationships (many → one; joins are added automatically):\n  - Boxes.Warehouse → Warehouses.Code",
+  "gold_sql": "SELECT sum(T1.value) FROM boxes AS T1 JOIN Warehouses AS T2 ON T1.warehouse  =  T2.code WHERE T2.location != 'Chicago'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "650.0"
+    ]
+   ]
+  },
+  "system_sql": "SELECT SUM(\"boxes\".\"Value\") AS \"total_value\" FROM \"Boxes\" AS \"boxes\" JOIN \"Warehouses\" AS \"warehouses\" ON \"boxes\".\"Warehouse\" = \"warehouses\".\"Code\" WHERE \"warehouses\".\"Location\" <> 'Chicago' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "650.0"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_2009_book_press",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the name of the author of best selling book?",
+  "schema": "tenant=spider_book_press\ntables:\n  - author\n      Author_ID: int — author id\n      Name: str\n      Age: int\n      Gender: str\n  - book\n      Book_ID: int — book id\n      Title: str\n      Book_Series: str — book series\n      Author_ID: int — author id\n      Press_ID: int — press id\n      Sale_Amount: str — sale amount\n      Release_date: str — release date\n  - press\n      Press_ID: int — press id\n      Name: str\n      Month_Profits_billion: float — month profits billion\n      Year_Profits_billion: float — year profits billion\nrelationships (many → one; joins are added automatically):\n  - book.Press_ID → press.Press_ID\n  - book.Author_ID → author.Author_ID",
+  "gold_sql": "SELECT t1.name FROM author AS t1 JOIN book AS t2 ON t1.author_id  =  t2.author_id ORDER BY t2.sale_amount DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Johnny Devenanzio"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"author\".\"Name\" AS \"name\" FROM \"book\" AS \"book\" JOIN \"author\" AS \"author\" ON \"book\".\"Author_ID\" = \"author\".\"Author_ID\" ORDER BY CAST(\"book\".\"Sale_Amount\" AS DOUBLE) DESC, 1 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Derrick Kosinski"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0276_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "How many customers use each payment method?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT payment_method_code ,  count(*) FROM Customers GROUP BY payment_method_code",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "Credit Card",
+     "11"
+    ],
+    [
+     "Direct Debit",
+     "4"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"customers\".\"payment_method_code\" AS \"payment_method_code\", COUNT(*) AS \"customer_count\" FROM \"Customers\" AS \"customers\" GROUP BY \"customers\".\"payment_method_code\" LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     "Direct Debit",
+     "4"
+    ],
+    [
+     "Credit Card",
+     "11"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1321_car_road_race",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Return the different constructors of drivers, ordered by age ascending.",
+  "schema": "tenant=spider_car_road_race\ntables:\n  - driver\n      Driver_ID: int — driver id\n      Driver_Name: str — driver name\n      Entrant: str\n      Constructor: str\n      Chassis: str\n      Engine: str\n      Age: int\n  - race\n      Road: int\n      Driver_ID: int — driver id\n      Race_Name: str — race name\n      Pole_Position: str — pole position\n      Fastest_Lap: str — fastest lap\n      Winning_driver: str — winning driver\n      Winning_team: str — winning team\n      Report: str\nrelationships (many → one; joins are added automatically):\n  - race.Driver_ID → driver.Driver_ID",
+  "gold_sql": "SELECT DISTINCT CONSTRUCTOR FROM driver ORDER BY Age ASC",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Bugatti"
+    ],
+    [
+     "Mercedes-Benz"
+    ],
+    [
+     "Maserati"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"driver\".\"Constructor\" AS \"constructor\" FROM \"driver\" AS \"driver\" ORDER BY \"driver\".\"Age\" ASC LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "Bugatti"
+    ],
+    [
+     "Mercedes-Benz"
+    ],
+    [
+     "Maserati"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1663_institution_sports",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "List the names of institutions with at least one championship.",
+  "schema": "tenant=spider_institution_sports\ntables:\n  - Championship\n      Institution_ID: int — institution id\n      Nickname: str\n      Joined: float\n      Number_of_Championships: float — number of championships\n  - institution\n      Institution_ID: int — institution id\n      Name: str\n      Team: str\n      City: str\n      Province: str\n      Founded: float\n      Affiliation: str\n      Enrollment: float\n      Endowment: str\n      Stadium: str\n      Capacity: float\nrelationships (many → one; joins are added automatically):\n  - Championship.Institution_ID → institution.Institution_ID",
+  "gold_sql": "SELECT T2.Name FROM championship AS T1 JOIN institution AS T2 ON T1.Institution_ID  =  T2.Institution_ID WHERE T1.Number_of_Championships  >=  1",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "University of Alberta"
+    ],
+    [
+     "University of Saskatchewan"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"institution\".\"Name\" AS \"name\" FROM \"institution\" AS \"institution\" JOIN \"Championship\" AS \"championship\" ON \"institution\".\"Institution_ID\" = \"championship\".\"Institution_ID\" WHERE \"championship\".\"Number_of_Championships\" >= 1 LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     "University of Alberta"
+    ],
+    [
+     "University of Saskatchewan"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1210_art_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the medium types of the painting with id = 80",
+  "schema": "tenant=spider_art_1\ntables:\n  - Artists\n      artistID: int — artist id\n      lname: str — last name\n      fname: str — first name\n      birthYear: int — birth year\n      deathYear: int — death year\n  - Paintings\n      paintingID: int — painting id\n      title: str\n      year: int\n      height_mm: int — height mm\n      width_mm: int — width mm\n      medium: str\n      mediumOn: str — medium on\n      location: str\n      painterID: int — painter id\n  - Sculptures\n      sculptureID: int — sculpture id\n      title: str\n      year: int\n      medium: str\n      location: str\n      sculptorID: int — sculptor id\nrelationships (many → one; joins are added automatically):\n  - Paintings.painterID → Artists.artistID\n  - Sculptures.sculptorID → Artists.artistID",
+  "gold_sql": "SELECT medium FROM paintings WHERE paintingID  =  80",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "oil"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"paintings\".\"medium\" AS \"medium\" FROM \"Paintings\" AS \"paintings\" WHERE \"paintings\".\"paintingID\" = 80 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "oil"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0684_cre_Doc_and_collections",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the number of child documents for each parent document, and what are the ids of the parent documents?",
+  "schema": "tenant=spider_cre_Doc_and_collections\ntables:\n  - Collection_Subset_Members\n      Collection_ID: int — collection id\n      Related_Collection_ID: int — related collection id\n      Collection_Subset_ID: int — collection subset id\n  - Collection_Subsets\n      Collection_Subset_ID: int — collection subset id\n      Collection_Subset_Name: str — collection subset name\n      Collecrtion_Subset_Details: str — collecrtion subset details\n  - Collections\n      Collection_ID: int — collection id\n      Parent_Collection_ID: int — parent collection id\n      Collection_Name: str — collection name\n      Collection_Description: str — collection description\n  - Document_Objects\n      Document_Object_ID: int — document object id\n      Parent_Document_Object_ID: int — parent document object id\n      Owner: str\n      Description: str\n      Other_Details: str — other details\n  - Document_Subset_Members\n      Document_Object_ID: int — document object id\n      Related_Document_Object_ID: int — related document object id\n      Document_Subset_ID: int — document subset id\n  - Document_Subsets\n      Document_Subset_ID: int — document subset id\n      Document_Subset_Name: str — document subset name\n      Document_Subset_Details: str — document subset details\n  - Documents_in_Collections\n      Document_Object_ID: int — document object id\n      Collection_ID: int — collection id\nrelationships (many → one; joins are added automatically):\n  - Documents_in_Collections.Collection_ID → Collections.Collection_ID\n  - Documents_in_Collections.Document_Object_ID → Document_Objects.Document_Object_ID\n  - Document_Subset_Members.Document_Subset_ID → Document_Subsets.Document_Subset_ID\n  - Document_Subset_Members.Related_Document_Object_ID → Document_Objects.Document_Object_ID\n  - Document_Subset_Members.Document_Object_ID → Document_Objects.Document_Object_ID\n  - Collection_Subset_Members.Collection_Subset_ID → Collection_Subsets.Collection_Subset_ID\n  - Collection_Subset_Members.Related_Collection_ID → Collections.Collection_ID\n  - Collection_Subset_Members.Collection_ID → Collections.Collection_ID",
+  "gold_sql": "SELECT T2.Document_Object_ID ,  count(*) FROM Document_Objects AS T1 JOIN Document_Objects AS T2 ON T1.Parent_Document_Object_ID = T2.Document_Object_ID GROUP BY T2.Document_Object_ID;",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "5",
+     "1"
+    ],
+    [
+     "9",
+     "2"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"document_objects\".\"Parent_Document_Object_ID\" AS \"parent_document_object_id\", COUNT(*) AS \"child_document_count\" FROM \"Document_Objects\" AS \"document_objects\" WHERE NOT \"document_objects\".\"Parent_Document_Object_ID\" IS NULL GROUP BY \"document_objects\".\"Parent_Document_Object_ID\" LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     "5",
+     "1"
+    ],
+    [
+     "9",
+     "2"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1974_book_press",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Sorted all the press by year profits in descending order, and return press names.",
+  "schema": "tenant=spider_book_press\ntables:\n  - author\n      Author_ID: int — author id\n      Name: str\n      Age: int\n      Gender: str\n  - book\n      Book_ID: int — book id\n      Title: str\n      Book_Series: str — book series\n      Author_ID: int — author id\n      Press_ID: int — press id\n      Sale_Amount: str — sale amount\n      Release_date: str — release date\n  - press\n      Press_ID: int — press id\n      Name: str\n      Month_Profits_billion: float — month profits billion\n      Year_Profits_billion: float — year profits billion\nrelationships (many → one; joins are added automatically):\n  - book.Press_ID → press.Press_ID\n  - book.Author_ID → author.Author_ID",
+  "gold_sql": "SELECT name FROM press ORDER BY Year_Profits_billion DESC",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Total"
+    ],
+    [
+     "Air Liquide"
+    ],
+    [
+     "Unibail-Rodamco"
+    ],
+    [
+     "ArcelorMittal"
+    ],
+    [
+     "Alstom"
+    ],
+    [
+     "Technip"
+    ],
+    [
+     "Accor"
+    ],
+    [
+     "STMicroelectronics"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"press\".\"Name\" AS \"name\" FROM \"press\" AS \"press\" ORDER BY \"press\".\"Year_Profits_billion\" DESC LIMIT 10000",
+  "system_result": {
+   "count": 10,
+   "first": [
+    [
+     "Total"
+    ],
+    [
+     "Air Liquide"
+    ],
+    [
+     "Unibail-Rodamco"
+    ],
+    [
+     "ArcelorMittal"
+    ],
+    [
+     "Alstom"
+    ],
+    [
+     "Technip"
+    ],
+    [
+     "Accor"
+    ],
+    [
+     "STMicroelectronics"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1689_warehouse_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the average and total values of all boxes.",
+  "schema": "tenant=spider_warehouse_1\ntables:\n  - Boxes\n      Code: str\n      Contents: str\n      Value: float\n      Warehouse: int\n  - Warehouses\n      Code: int\n      Location: str\n      Capacity: int\nrelationships (many → one; joins are added automatically):\n  - Boxes.Warehouse → Warehouses.Code",
+  "gold_sql": "SELECT avg(value) ,  sum(value) FROM boxes",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "147.72727272727272",
+     "1625.0"
+    ]
+   ]
+  },
+  "system_sql": "SELECT AVG(\"boxes\".\"Value\") AS \"average_value\", SUM(\"boxes\".\"Value\") AS \"total_value\" FROM \"Boxes\" AS \"boxes\" LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "147.72727272727272",
+     "1625.0"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1904_planet_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the name of the planet with the most shipments?",
+  "schema": "tenant=spider_planet_1\ntables:\n  - Client\n      AccountNumber: int — account number\n      Name: str\n  - Employee\n      EmployeeID: int — employee id\n      Name: str\n      Position: str\n      Salary: float\n      Remarks: str\n  - Has_Clearance\n      Employee: int\n      Planet: int\n      Level: int\n  - Package\n      Shipment: int\n      PackageNumber: int — package number\n      Contents: str\n      Weight: float\n      Sender: int\n      Recipient: int\n  - Planet\n      PlanetID: int — planet id\n      Name: str\n      Coordinates: float\n  - Shipment\n      ShipmentID: int — shipment id\n      Date: str\n      Manager: int\n      Planet: int\nrelationships (many → one; joins are added automatically):\n  - Shipment.Planet → Planet.PlanetID\n  - Shipment.Manager → Employee.EmployeeID\n  - Has_Clearance.Planet → Planet.PlanetID\n  - Has_Clearance.Employee → Employee.EmployeeID\n  - Package.Recipient → Client.AccountNumber\n  - Package.Sender → Client.AccountNumber\n  - Package.Shipment → Shipment.ShipmentID",
+  "gold_sql": "SELECT T2.Name FROM Shipment AS T1 JOIN Planet AS T2 ON T1.Planet = T2.PlanetID GROUP BY T1.Planet ORDER BY count(*) DESC LIMIT 1;",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Tarantulon VI"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"planet\".\"Name\" AS \"name\", COUNT(*) AS \"count\" FROM \"Planet\" AS \"planet\" JOIN \"Shipment\" AS \"shipment\" ON \"planet\".\"PlanetID\" = \"shipment\".\"Planet\" GROUP BY \"planet\".\"PlanetID\", \"planet\".\"Name\" ORDER BY \"count\" DESC, 1, 2 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Decapod X",
+     "1"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0941_headphone_store",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the headphone models whose price is below the average price.",
+  "schema": "tenant=spider_headphone_store\ntables:\n  - headphone\n      Headphone_ID: int — headphone id\n      Model: str\n      Class: str\n      Driver-matched_dB: float — driver-matched db\n      Construction: str\n      Earpads: str\n      Price: int\n  - stock\n      Store_ID: int — store id\n      Headphone_ID: int — headphone id\n      Quantity: int\n  - store\n      Store_ID: int — store id\n      Name: str\n      Neighborhood: str\n      Parking: str\n      Date_Opened: str — date opened\nrelationships (many → one; joins are added automatically):\n  - stock.Headphone_ID → headphone.Headphone_ID\n  - stock.Store_ID → store.Store_ID",
+  "gold_sql": "SELECT model FROM headphone WHERE price  <  (SELECT avg(price) FROM headphone)",
+  "gold_result": {
+   "count": 6,
+   "first": [
+    [
+     "iGrado"
+    ],
+    [
+     "SR60i"
+    ],
+    [
+     "SR80i"
+    ],
+    [
+     "SR125i"
+    ],
+    [
+     "SR225i"
+    ],
+    [
+     "SR325i"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"headphone\".\"Model\" AS \"model\" FROM \"headphone\" AS \"headphone\" WHERE \"headphone\".\"Price\" < (SELECT AVG(\"headphone\".\"Price\") AS \"_col_0\" FROM \"headphone\" AS \"headphone\") LIMIT 10000",
+  "system_result": {
+   "count": 6,
+   "first": [
+    [
+     "iGrado"
+    ],
+    [
+     "SR60i"
+    ],
+    [
+     "SR80i"
+    ],
+    [
+     "SR125i"
+    ],
+    [
+     "SR225i"
+    ],
+    [
+     "SR325i"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0171_vehicle_driver",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the distinct driver names who have driven vehicles with power more than 5000 ?",
+  "schema": "tenant=spider_vehicle_driver\ntables:\n  - driver\n      Driver_ID: int — driver id\n      Name: str\n      Citizenship: str\n      Racing_Series: str — racing series\n  - vehicle\n      Vehicle_ID: int — vehicle id\n      Model: str\n      Build_Year: str — build year\n      Top_Speed: int — top speed\n      Power: int\n      Builder: str\n      Total_Production: str — total production\n  - vehicle_driver\n      Driver_ID: int — driver id\n      Vehicle_ID: int — vehicle id\nrelationships (many → one; joins are added automatically):\n  - vehicle_driver.Vehicle_ID → vehicle.Vehicle_ID\n  - vehicle_driver.Driver_ID → driver.Driver_ID",
+  "gold_sql": "select distinct t1.name from driver as t1 join vehicle_driver as t2 on t1.driver_id  =  t2.driver_id join vehicle as t3 on t2.vehicle_id  =  t3.vehicle_id where t3.power  >  5000",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Jeff Gordon"
+    ],
+    [
+     "Jimmie Johnson"
+    ],
+    [
+     "Ryan Hunter-Reay"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"driver\".\"Name\" AS \"name\" FROM \"driver\" AS \"driver\" JOIN \"vehicle_driver\" AS \"vehicle_driver\" ON \"driver\".\"Driver_ID\" = \"vehicle_driver\".\"Driver_ID\" JOIN \"vehicle\" AS \"vehicle\" ON \"vehicle_driver\".\"Vehicle_ID\" = \"vehicle\".\"Vehicle_ID\" WHERE \"vehicle\".\"Power\" > 5000 LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "Jeff Gordon"
+    ],
+    [
+     "Jimmie Johnson"
+    ],
+    [
+     "Ryan Hunter-Reay"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1965_video_game",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "List the name of players that do not play any game.",
+  "schema": "tenant=spider_video_game\ntables:\n  - game\n      Game_ID: int — game id\n      Title: str\n      Release_Date: str — release date\n      Franchise: str\n      Developers: str\n      Platform_ID: int — platform id\n      Units_sold_Millions: float — units sold millions\n  - game_player\n      Player_ID: int — player id\n      Game_ID: int — game id\n      If_active: str — if active\n  - platform\n      Platform_ID: int — platform id\n      Platform_name: str — platform name\n      Market_district: str — market district\n      Download_rank: int — download rank\n  - player\n      Player_ID: int — player id\n      Rank_of_the_year: int — rank of the year\n      Player_name: str — player name\n      Position: str\n      College: str\nrelationships (many → one; joins are added automatically):\n  - game.Platform_ID → platform.Platform_ID\n  - game_player.Game_ID → game.Game_ID\n  - game_player.Player_ID → player.Player_ID",
+  "gold_sql": "SELECT Player_name FROM player WHERE Player_ID NOT IN (SELECT Player_ID FROM game_player)",
+  "gold_result": {
+   "count": 14,
+   "first": [
+    [
+     "Ricky Bell *"
+    ],
+    [
+     "Doug Williams"
+    ],
+    [
+     "Ray Snell"
+    ],
+    [
+     "Sean Farrell"
+    ],
+    [
+     "Ron Holmes"
+    ],
+    [
+     "Vinny Testaverde *"
+    ],
+    [
+     "Paul Gruber"
+    ],
+    [
+     "Broderick Thomas"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"player\".\"Player_name\" AS \"player_name\" FROM \"player\" AS \"player\" WHERE NOT \"player\".\"Player_ID\" IN (SELECT \"game_player\".\"Player_ID\" AS \"player_id\" FROM \"game_player\" AS \"game_player\") LIMIT 10000",
+  "system_result": {
+   "count": 14,
+   "first": [
+    [
+     "Ricky Bell *"
+    ],
+    [
+     "Doug Williams"
+    ],
+    [
+     "Ray Snell"
+    ],
+    [
+     "Sean Farrell"
+    ],
+    [
+     "Ron Holmes"
+    ],
+    [
+     "Vinny Testaverde *"
+    ],
+    [
+     "Paul Gruber"
+    ],
+    [
+     "Broderick Thomas"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0028_soccer_3",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "List the manufacturers that are associated with more than one club.",
+  "schema": "tenant=spider_soccer_3\ntables:\n  - club\n      Club_ID: int — club id\n      Name: str\n      Manager: str\n      Captain: str\n      Manufacturer: str\n      Sponsor: str\n  - player\n      Player_ID: float — player id\n      Name: str\n      Country: str\n      Earnings: float\n      Events_number: int — events number\n      Wins_count: int — wins count\n      Club_ID: int — club id\nrelationships (many → one; joins are added automatically):\n  - player.Club_ID → club.Club_ID",
+  "gold_sql": "SELECT Manufacturer FROM club GROUP BY Manufacturer HAVING COUNT(*)  >  1",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Nike"
+    ],
+    [
+     "Umbro"
+    ],
+    [
+     "adidas"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"club\".\"Manufacturer\" AS \"manufacturer\", COUNT(DISTINCT \"club\".\"Club_ID\") AS \"count_club_id\" FROM \"club\" AS \"club\" GROUP BY \"club\".\"Manufacturer\" HAVING COUNT(DISTINCT \"club\".\"Club_ID\") > 1 LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "adidas",
+     "2"
+    ],
+    [
+     "Umbro",
+     "3"
+    ],
+    [
+     "Nike",
+     "3"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0258_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of the products, sorted by descending price?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT product_name FROM Products ORDER BY product_price DESC",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "Black Topping"
+    ],
+    [
+     "Mouse"
+    ],
+    [
+     "Drive"
+    ],
+    [
+     "Yellow Jeans"
+    ],
+    [
+     "Topping"
+    ],
+    [
+     "Black Jeans"
+    ],
+    [
+     "Purple Topping"
+    ],
+    [
+     "Gray Jeans"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"products\".\"product_name\" AS \"product_name\" FROM \"Products\" AS \"products\" ORDER BY \"products\".\"product_price\" DESC LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "Black Topping"
+    ],
+    [
+     "Mouse"
+    ],
+    [
+     "Drive"
+    ],
+    [
+     "Yellow Jeans"
+    ],
+    [
+     "Topping"
+    ],
+    [
+     "Black Jeans"
+    ],
+    [
+     "Purple Topping"
+    ],
+    [
+     "Gray Jeans"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1471_bike_racing",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "List the product names and weights of the bikes in ascending order of price.",
+  "schema": "tenant=spider_bike_racing\ntables:\n  - bike\n      id: int\n      product_name: str — product name\n      weight: int\n      price: float\n      material: str\n  - cyclist\n      id: int\n      heat: int\n      name: str\n      nation: str\n      result: str\n  - cyclists_own_bikes\n      cyclist_id: int — cyclist id\n      bike_id: int — bike id\n      purchase_year: int — purchase year\nrelationships (many → one; joins are added automatically):\n  - cyclists_own_bikes.bike_id → bike.id\n  - cyclists_own_bikes.cyclist_id → cyclist.id",
+  "gold_sql": "SELECT product_name ,  weight FROM bike ORDER BY price ASC",
+  "gold_result": {
+   "count": 6,
+   "first": [
+    [
+     "CANYON AEROAD CF SLX 8.0 DI2",
+     "880"
+    ],
+    [
+     "Ibis",
+     "800"
+    ],
+    [
+     "Ibis ||",
+     "760"
+    ],
+    [
+     "CANNONDALE SUPERSIX EVO HI-MOD DURA ACE",
+     "850"
+    ],
+    [
+     "GIANT TCR ADVANCED SL 0",
+     "750"
+    ],
+    [
+     "BIANCHI SPECIALISSIMA",
+     "780"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"bike\".\"product_name\" AS \"product_name\", \"bike\".\"weight\" AS \"weight\" FROM \"bike\" AS \"bike\" ORDER BY \"bike\".\"price\" ASC LIMIT 10000",
+  "system_result": {
+   "count": 6,
+   "first": [
+    [
+     "CANYON AEROAD CF SLX 8.0 DI2",
+     "880"
+    ],
+    [
+     "Ibis",
+     "800"
+    ],
+    [
+     "Ibis ||",
+     "760"
+    ],
+    [
+     "CANNONDALE SUPERSIX EVO HI-MOD DURA ACE",
+     "850"
+    ],
+    [
+     "GIANT TCR ADVANCED SL 0",
+     "750"
+    ],
+    [
+     "BIANCHI SPECIALISSIMA",
+     "780"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0000_soccer_3",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "How many clubs are there?",
+  "schema": "tenant=spider_soccer_3\ntables:\n  - club\n      Club_ID: int — club id\n      Name: str\n      Manager: str\n      Captain: str\n      Manufacturer: str\n      Sponsor: str\n  - player\n      Player_ID: float — player id\n      Name: str\n      Country: str\n      Earnings: float\n      Events_number: int — events number\n      Wins_count: int — wins count\n      Club_ID: int — club id\nrelationships (many → one; joins are added automatically):\n  - player.Club_ID → club.Club_ID",
+  "gold_sql": "SELECT count(*) FROM club",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "9"
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(*) AS \"club_count\" FROM \"club\" AS \"club\" LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "9"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1793_university_rank",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "List all university names in ascending order of their reputation points.",
+  "schema": "tenant=spider_university_rank\ntables:\n  - major\n      Major_ID: int — major id\n      Major_Name: str — major name\n      Major_Code: int — major code\n  - major_ranking\n      Rank: int\n      University_ID: int — university id\n      Major_ID: int — major id\n  - overall_ranking\n      Rank: int\n      University_ID: int — university id\n      Reputation_point: int — reputation point\n      Research_point: int — research point\n      Citation_point: int — citation point\n      Total: int\n  - university\n      University_ID: int — university id\n      University_Name: str — university name\n      City: str\n      State: str\n      Team_Name: str — team name\n      Affiliation: str\n      Enrollment: int\n      Home_Conference: str — home conference\nrelationships (many → one; joins are added automatically):\n  - overall_ranking.University_ID → university.University_ID\n  - major_ranking.Major_ID → major.Major_ID\n  - major_ranking.University_ID → university.University_ID",
+  "gold_sql": "SELECT T1.university_name FROM University AS T1 JOIN Overall_ranking AS T2 ON T1.university_id  =  T2.university_id ORDER BY T2.reputation_point",
+  "gold_result": {
+   "count": 13,
+   "first": [
+    [
+     "Milwaukee School of Engineering"
+    ],
+    [
+     "Benedictine University"
+    ],
+    [
+     "Carroll University "
+    ],
+    [
+     "Carthage College"
+    ],
+    [
+     "Concordia University Wisconsin"
+    ],
+    [
+     "Cornell College"
+    ],
+    [
+     "Defiance College"
+    ],
+    [
+     "Elmhurst College"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"university\".\"University_Name\" AS \"university_name\" FROM \"overall_ranking\" AS \"overall_ranking\" JOIN \"university\" AS \"university\" ON \"overall_ranking\".\"University_ID\" = \"university\".\"University_ID\" ORDER BY \"overall_ranking\".\"Reputation_point\" ASC LIMIT 10000",
+  "system_result": {
+   "count": 13,
+   "first": [
+    [
+     "Milwaukee School of Engineering"
+    ],
+    [
+     "Benedictine University"
+    ],
+    [
+     "Carroll University "
+    ],
+    [
+     "Carthage College"
+    ],
+    [
+     "Concordia University Wisconsin"
+    ],
+    [
+     "Cornell College"
+    ],
+    [
+     "Defiance College"
+    ],
+    [
+     "Elmhurst College"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1270_art_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the id of the artist who has the highest number of painting works before 1900?",
+  "schema": "tenant=spider_art_1\ntables:\n  - Artists\n      artistID: int — artist id\n      lname: str — last name\n      fname: str — first name\n      birthYear: int — birth year\n      deathYear: int — death year\n  - Paintings\n      paintingID: int — painting id\n      title: str\n      year: int\n      height_mm: int — height mm\n      width_mm: int — width mm\n      medium: str\n      mediumOn: str — medium on\n      location: str\n      painterID: int — painter id\n  - Sculptures\n      sculptureID: int — sculpture id\n      title: str\n      year: int\n      medium: str\n      location: str\n      sculptorID: int — sculptor id\nrelationships (many → one; joins are added automatically):\n  - Paintings.painterID → Artists.artistID\n  - Sculptures.sculptorID → Artists.artistID",
+  "gold_sql": "SELECT T1.artistID FROM artists AS T1 JOIN paintings AS T2 ON T1.artistID  =  T2.painterID WHERE T2.year  <  1900 GROUP BY T1.artistID ORDER BY count(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "333"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"paintings\".\"painterID\" AS \"painterid\", COUNT(*) AS \"count\" FROM \"Paintings\" AS \"paintings\" WHERE \"paintings\".\"year\" < 1900 GROUP BY \"paintings\".\"painterID\" ORDER BY \"count\" DESC, 1, 2 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "333",
+     "4"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0881_boat_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "what is the name and id of every sailor who has a rating greater than 2 and reserved a boat.",
+  "schema": "tenant=spider_boat_1\ntables:\n  - Boats\n      bid: int — boat id\n      name: str\n      color: str\n  - Reserves\n      sid: int — sailor id\n      bid: int — boat id\n      day: str\n  - Sailors\n      sid: int — sailor id\n      name: str\n      rating: int\n      age: int\nrelationships (many → one; joins are added automatically):\n  - Reserves.bid → Boats.bid\n  - Reserves.sid → Sailors.sid",
+  "gold_sql": "SELECT DISTINCT T1.name ,  T1.sid FROM Sailors AS T1 JOIN Reserves AS T2 ON T1.sid  =  T2.sid WHERE  T1.rating  >  2",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Eugene",
+     "1"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"sailors\".\"name\" AS \"name\", \"sailors\".\"sid\" AS \"sid\" FROM \"Sailors\" AS \"sailors\" JOIN \"Reserves\" AS \"reserves\" ON \"sailors\".\"sid\" = \"reserves\".\"sid\" WHERE \"sailors\".\"rating\" > 2 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Eugene",
+     "1"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1236_art_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the first and last names of the artists who have both works of paintings and sculptures?",
+  "schema": "tenant=spider_art_1\ntables:\n  - Artists\n      artistID: int — artist id\n      lname: str — last name\n      fname: str — first name\n      birthYear: int — birth year\n      deathYear: int — death year\n  - Paintings\n      paintingID: int — painting id\n      title: str\n      year: int\n      height_mm: int — height mm\n      width_mm: int — width mm\n      medium: str\n      mediumOn: str — medium on\n      location: str\n      painterID: int — painter id\n  - Sculptures\n      sculptureID: int — sculpture id\n      title: str\n      year: int\n      medium: str\n      location: str\n      sculptorID: int — sculptor id\nrelationships (many → one; joins are added automatically):\n  - Paintings.painterID → Artists.artistID\n  - Sculptures.sculptorID → Artists.artistID",
+  "gold_sql": "SELECT T1.lname ,  T1.fname FROM artists AS T1 JOIN sculptures AS T2 ON T1.artistID  =  T2.sculptorID INTERSECT SELECT T3.lname ,  T3.fname FROM artists AS T3 JOIN paintings AS T4 ON T3.artistID  =  T4.painterID",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "Degas",
+     "Edgar"
+    ],
+    [
+     "Picasso",
+     "Pablo"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"artists\".\"fname\" AS \"fname\", \"artists\".\"lname\" AS \"lname\" FROM \"Artists\" AS \"artists\" JOIN \"Paintings\" AS \"paintings\" ON \"artists\".\"artistID\" = \"paintings\".\"painterID\" JOIN \"Sculptures\" AS \"sculptures\" ON \"artists\".\"artistID\" = \"sculptures\".\"sculptorID\" LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     "Pablo",
+     "Picasso"
+    ],
+    [
+     "Edgar",
+     "Degas"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0186_vehicle_driver",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of drivers, returned in alphbetical order?",
+  "schema": "tenant=spider_vehicle_driver\ntables:\n  - driver\n      Driver_ID: int — driver id\n      Name: str\n      Citizenship: str\n      Racing_Series: str — racing series\n  - vehicle\n      Vehicle_ID: int — vehicle id\n      Model: str\n      Build_Year: str — build year\n      Top_Speed: int — top speed\n      Power: int\n      Builder: str\n      Total_Production: str — total production\n  - vehicle_driver\n      Driver_ID: int — driver id\n      Vehicle_ID: int — vehicle id\nrelationships (many → one; joins are added automatically):\n  - vehicle_driver.Vehicle_ID → vehicle.Vehicle_ID\n  - vehicle_driver.Driver_ID → driver.Driver_ID",
+  "gold_sql": "SELECT name FROM driver ORDER BY name",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "Jeff Gordon"
+    ],
+    [
+     "Jimmie Johnson"
+    ],
+    [
+     "Ryan Hunter-Reay"
+    ],
+    [
+     "Tony Stewart"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"driver\".\"Name\" AS \"name\" FROM \"driver\" AS \"driver\" ORDER BY \"Name\" ASC LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "Jeff Gordon"
+    ],
+    [
+     "Jimmie Johnson"
+    ],
+    [
+     "Ryan Hunter-Reay"
+    ],
+    [
+     "Tony Stewart"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0636_restaurant_bills",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Show each customer name and the total quantities of dishes ordered by that customer.",
+  "schema": "tenant=spider_restaurant_bills\ntables:\n  - branch\n      Branch_ID: int — branch id\n      Manager: str\n      Years_opened: int — years opened\n      Location_of_office: str — location of office\n  - customer\n      Customer_ID: int — customer id\n      Name: str\n      Nationality: str\n      Card_Credit: float — card credit\n      Level_of_Membership: int — level of membership\n  - customer_order\n      Customer_ID: int — customer id\n      Branch_ID: int — branch id\n      Dish_Name: str — dish name\n      Quantity: int\nrelationships (many → one; joins are added automatically):\n  - customer_order.Branch_ID → branch.Branch_ID\n  - customer_order.Customer_ID → customer.Customer_ID",
+  "gold_sql": "SELECT T1.Name ,  sum(T2.Quantity) FROM customer AS T1 JOIN customer_order AS T2 ON T1.Customer_ID  =  T2.Customer_ID GROUP BY T1.Name",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "Arthur Morris",
+     "4"
+    ],
+    [
+     "Cyril Washbrook",
+     "2"
+    ],
+    [
+     "Denis Compton",
+     "3"
+    ],
+    [
+     "Donald Bradman",
+     "1"
+    ],
+    [
+     "Len Hutton",
+     "1"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"customer\".\"Name\" AS \"name\", SUM(\"customer_order\".\"Quantity\") AS \"total_quantity\" FROM \"customer_order\" AS \"customer_order\" JOIN \"customer\" AS \"customer\" ON \"customer_order\".\"Customer_ID\" = \"customer\".\"Customer_ID\" GROUP BY \"customer\".\"Customer_ID\", \"customer\".\"Name\" LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "Donald Bradman",
+     "1"
+    ],
+    [
+     "Arthur Morris",
+     "4"
+    ],
+    [
+     "Denis Compton",
+     "3"
+    ],
+    [
+     "Cyril Washbrook",
+     "2"
+    ],
+    [
+     "Len Hutton",
+     "1"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_2020_cre_Doc_Workflow",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Show the other details for the author Addison Denesik.",
+  "schema": "tenant=spider_cre_Doc_Workflow\ntables:\n  - Authors\n      author_name: str — author name\n      other_details: str — other details\n  - Business_Processes\n      process_id: int — process id\n      next_process_id: int — next process id\n      process_name: str — process name\n      process_description: str — process description\n      other_details: str — other details\n  - Documents\n      document_id: int — document id\n      author_name: str — author name\n      document_name: str — document name\n      document_description: str — document description\n      other_details: str — other details\n  - Documents_Processes\n      document_id: int — document id\n      process_id: int — process id\n      process_outcome_code: str — process outcome code\n      process_status_code: str — process status code\n  - Process_Outcomes\n      process_outcome_code: str — process outcome code\n      process_outcome_description: str — process outcome description\n  - Process_Status\n      process_status_code: str — process status code\n      process_status_description: str — process status description\n  - Ref_Staff_Roles\n      staff_role_code: str — staff role code\n      staff_role_description: str — staff role description\n  - Staff\n      staff_id: int — staff id\n      staff_details: str — staff details\n  - Staff_in_Processes\n      document_id: int — document id\n      process_id: int — process id\n      staff_id: int — staff id\n      staff_role_code: str — staff role code\n      date_from: str — date from\n      date_to: str — date to\n      other_details: str — other details\nrelationships (many → one; joins are added automatically):\n  - Documents.author_name → Authors.author_name\n  - Documents_Processes.process_status_code → Process_Status.process_status_code\n  - Documents_Processes.process_outcome_code → Process_Outcomes.process_outcome_code\n  - Documents_Processes.process_id → Business_Processes.process_id\n  - Documents_Processes.document_id → Documents.document_id\n  - Staff_in_Processes.staff_role_code → Ref_Staff_Roles.staff_role_code\n  - Staff_in_Processes.document_id → Documents_Processes.document_id\n  - Staff_in_Processes.process_id → Documents_Processes.process_id\n  - Staff_in_Processes.staff_id → Staff.staff_id",
+  "gold_sql": "SELECT other_details FROM Authors WHERE author_name  =  \"Addison Denesik\"",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     ""
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"authors\".\"other_details\" AS \"other_details\" FROM \"Authors\" AS \"authors\" WHERE \"authors\".\"author_name\" = 'Addison Denesik' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     ""
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0760_sing_contest",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the original artists who sing songs with rhythm tempo above 5 , and list results in descending order of voice sound quality .",
+  "schema": "tenant=spider_sing_contest\ntables:\n  - participants\n      id: int\n      name: str\n      popularity: float\n  - performance_score\n      participant_id: int — participant id\n      songs_id: int — songs id\n      voice_sound_quality: float — voice sound quality\n      rhythm_tempo: float — rhythm tempo\n      stage_presence: float — stage presence\n  - songs\n      id: int\n      language: str\n      original_artist: str — original artist\n      name: str\n      english_translation: str — english translation\nrelationships (many → one; joins are added automatically):\n  - performance_score.songs_id → songs.id\n  - performance_score.participant_id → participants.id",
+  "gold_sql": "select t2.original_artist from performance_score as t1 join songs as t2 on t2.id  =  t1.songs_id where t1.rhythm_tempo  >  5 order by t1.voice_sound_quality desc",
+  "gold_result": {
+   "count": 8,
+   "first": [
+    [
+     "Nelly Ciobanu"
+    ],
+    [
+     "Elena"
+    ],
+    [
+     "Hadise"
+    ],
+    [
+     "Soraya Arnelas"
+    ],
+    [
+     "Regina"
+    ],
+    [
+     "Igor Cukrov feat. Andrea"
+    ],
+    [
+     "Yohanna"
+    ],
+    [
+     "Yohanna"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"songs\".\"original_artist\" AS \"original_artist\" FROM \"performance_score\" AS \"performance_score\" JOIN \"songs\" AS \"songs\" ON \"performance_score\".\"songs_id\" = \"songs\".\"id\" WHERE \"performance_score\".\"rhythm_tempo\" > 5 ORDER BY \"performance_score\".\"voice_sound_quality\" DESC LIMIT 10000",
+  "system_result": {
+   "count": 8,
+   "first": [
+    [
+     "Nelly Ciobanu"
+    ],
+    [
+     "Elena"
+    ],
+    [
+     "Hadise"
+    ],
+    [
+     "Soraya Arnelas"
+    ],
+    [
+     "Igor Cukrov feat. Andrea"
+    ],
+    [
+     "Regina"
+    ],
+    [
+     "Yohanna"
+    ],
+    [
+     "Yohanna"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0875_boat_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the name of the sailors who reserved boat with id 103?",
+  "schema": "tenant=spider_boat_1\ntables:\n  - Boats\n      bid: int — boat id\n      name: str\n      color: str\n  - Reserves\n      sid: int — sailor id\n      bid: int — boat id\n      day: str\n  - Sailors\n      sid: int — sailor id\n      name: str\n      rating: int\n      age: int\nrelationships (many → one; joins are added automatically):\n  - Reserves.bid → Boats.bid\n  - Reserves.sid → Sailors.sid",
+  "gold_sql": "SELECT DISTINCT T1.name FROM Sailors AS T1 JOIN Reserves AS T2 ON T1.sid  =  T2.sid WHERE  T2.bid  =  103",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Luis"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"sailors\".\"name\" AS \"name\" FROM \"Sailors\" AS \"sailors\" JOIN \"Reserves\" AS \"reserves\" ON \"sailors\".\"sid\" = \"reserves\".\"sid\" WHERE \"reserves\".\"bid\" = 103 LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Luis"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0400_vehicle_rent",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the different types of powertrains?",
+  "schema": "tenant=spider_vehicle_rent\ntables:\n  - Customers\n      id: int\n      name: str\n      age: int\n      membership_credit: int — membership credit\n  - Discount\n      id: int\n      name: str\n      membership_credit: int — membership credit\n  - Renting_history\n      id: int\n      customer_id: int — customer id\n      discount_id: int — discount id\n      vehicles_id: int — vehicles id\n      total_hours: int — total hours\n  - Vehicles\n      id: int\n      name: str\n      Model_year: int — model year\n      Type_of_powertrain: str — type of powertrain\n      Combined_fuel_economy_rate: int — combined fuel economy rate\n      City_fuel_economy_rate: int — city fuel economy rate\n      Highway_fuel_economy_rate: int — highway fuel economy rate\n      Cost_per_25_miles: float — cost per 25 miles\n      Annual_fuel_cost: float — annual fuel cost\n      Notes: str\nrelationships (many → one; joins are added automatically):\n  - Renting_history.discount_id → Discount.id\n  - Renting_history.vehicles_id → Vehicles.id\n  - Renting_history.customer_id → Customers.id",
+  "gold_sql": "SELECT DISTINCT type_of_powertrain FROM vehicles",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Electric"
+    ],
+    [
+     "hybrid"
+    ],
+    [
+     "electric"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"vehicles\".\"Type_of_powertrain\" AS \"type_of_powertrain\" FROM \"Vehicles\" AS \"vehicles\" LIMIT 10000",
+  "system_result": {
+   "count": 3,
+   "first": [
+    [
+     "Electric"
+    ],
+    [
+     "hybrid"
+    ],
+    [
+     "electric"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1962_video_game",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Which franchise has the most games?",
+  "schema": "tenant=spider_video_game\ntables:\n  - game\n      Game_ID: int — game id\n      Title: str\n      Release_Date: str — release date\n      Franchise: str\n      Developers: str\n      Platform_ID: int — platform id\n      Units_sold_Millions: float — units sold millions\n  - game_player\n      Player_ID: int — player id\n      Game_ID: int — game id\n      If_active: str — if active\n  - platform\n      Platform_ID: int — platform id\n      Platform_name: str — platform name\n      Market_district: str — market district\n      Download_rank: int — download rank\n  - player\n      Player_ID: int — player id\n      Rank_of_the_year: int — rank of the year\n      Player_name: str — player name\n      Position: str\n      College: str\nrelationships (many → one; joins are added automatically):\n  - game.Platform_ID → platform.Platform_ID\n  - game_player.Game_ID → game.Game_ID\n  - game_player.Player_ID → player.Player_ID",
+  "gold_sql": "SELECT Franchise FROM game GROUP BY Franchise ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Super Mario Bros."
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"game\".\"Franchise\" AS \"franchise\", COUNT(*) AS \"count\" FROM \"game\" AS \"game\" GROUP BY \"game\".\"Franchise\" ORDER BY \"count\" DESC, 1, 2 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Super Mario Bros.",
+     "4"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1701_warehouse_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Find the number of all distinct contents in all the boxes.",
+  "schema": "tenant=spider_warehouse_1\ntables:\n  - Boxes\n      Code: str\n      Contents: str\n      Value: float\n      Warehouse: int\n  - Warehouses\n      Code: int\n      Location: str\n      Capacity: int\nrelationships (many → one; joins are added automatically):\n  - Boxes.Warehouse → Warehouses.Code",
+  "gold_sql": "SELECT count(DISTINCT CONTENTS) FROM boxes",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "3"
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(DISTINCT \"boxes\".\"Contents\") AS \"number_of_distinct_contents\" FROM \"Boxes\" AS \"boxes\" LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "3"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0250_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the names of products that have a price above the average for all products.",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT product_name FROM Products WHERE product_price  >  (SELECT avg(product_price) FROM Products)",
+  "gold_result": {
+   "count": 4,
+   "first": [
+    [
+     "Yellow Jeans"
+    ],
+    [
+     "Mouse"
+    ],
+    [
+     "Drive"
+    ],
+    [
+     "Black Topping"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"products\".\"product_name\" AS \"product_name\" FROM \"Products\" AS \"products\" WHERE \"products\".\"product_price\" > (SELECT AVG(\"products\".\"product_price\") AS \"_col_0\" FROM \"Products\" AS \"products\") LIMIT 10000",
+  "system_result": {
+   "count": 4,
+   "first": [
+    [
+     "Yellow Jeans"
+    ],
+    [
+     "Mouse"
+    ],
+    [
+     "Drive"
+    ],
+    [
+     "Black Topping"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0241_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the price for the product with name Monitor?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT product_price FROM Products WHERE product_name  =  \"Monitor\"",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "2084.944172129"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"products\".\"product_price\" AS \"product_price\" FROM \"Products\" AS \"products\" WHERE \"products\".\"product_name\" = 'Monitor' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "2084.944172129"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1224_art_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the first name and age of the artist who had the longest life?",
+  "schema": "tenant=spider_art_1\ntables:\n  - Artists\n      artistID: int — artist id\n      lname: str — last name\n      fname: str — first name\n      birthYear: int — birth year\n      deathYear: int — death year\n  - Paintings\n      paintingID: int — painting id\n      title: str\n      year: int\n      height_mm: int — height mm\n      width_mm: int — width mm\n      medium: str\n      mediumOn: str — medium on\n      location: str\n      painterID: int — painter id\n  - Sculptures\n      sculptureID: int — sculpture id\n      title: str\n      year: int\n      medium: str\n      location: str\n      sculptorID: int — sculptor id\nrelationships (many → one; joins are added automatically):\n  - Paintings.painterID → Artists.artistID\n  - Sculptures.sculptorID → Artists.artistID",
+  "gold_sql": "SELECT fname  ,  deathYear - birthYear FROM artists ORDER BY deathYear - birthYear DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Pablo",
+     "92"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"artists\".\"fname\" AS \"fname\", (\"artists\".\"deathYear\" - \"artists\".\"birthYear\") AS \"age\" FROM \"Artists\" AS \"artists\" WHERE NOT \"artists\".\"birthYear\" IS NULL AND NOT \"artists\".\"deathYear\" IS NULL ORDER BY (\"artists\".\"deathYear\" - \"artists\".\"birthYear\") DESC, 1, 2 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Pablo",
+     "92"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1850_movie_2",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What are the different movie ratings?",
+  "schema": "tenant=spider_movie_2\ntables:\n  - MovieTheaters\n      Code: int\n      Name: str\n      Movie: int\n  - Movies\n      Code: int\n      Title: str\n      Rating: str\nrelationships (many → one; joins are added automatically):\n  - MovieTheaters.Movie → Movies.Code",
+  "gold_sql": "SELECT DISTINCT rating FROM movies",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "PG"
+    ],
+    [
+     "G"
+    ],
+    [
+     "None"
+    ],
+    [
+     "NC-17"
+    ],
+    [
+     "PG-13"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT \"movies\".\"Rating\" AS \"rating\" FROM \"Movies\" AS \"movies\" LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "PG"
+    ],
+    [
+     "G"
+    ],
+    [
+     "None"
+    ],
+    [
+     "NC-17"
+    ],
+    [
+     "PG-13"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1784_university_rank",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the name of the university with the most majors ranked number 1?",
+  "schema": "tenant=spider_university_rank\ntables:\n  - major\n      Major_ID: int — major id\n      Major_Name: str — major name\n      Major_Code: int — major code\n  - major_ranking\n      Rank: int\n      University_ID: int — university id\n      Major_ID: int — major id\n  - overall_ranking\n      Rank: int\n      University_ID: int — university id\n      Reputation_point: int — reputation point\n      Research_point: int — research point\n      Citation_point: int — citation point\n      Total: int\n  - university\n      University_ID: int — university id\n      University_Name: str — university name\n      City: str\n      State: str\n      Team_Name: str — team name\n      Affiliation: str\n      Enrollment: int\n      Home_Conference: str — home conference\nrelationships (many → one; joins are added automatically):\n  - overall_ranking.University_ID → university.University_ID\n  - major_ranking.Major_ID → major.Major_ID\n  - major_ranking.University_ID → university.University_ID",
+  "gold_sql": "SELECT T2.university_name FROM Major_Ranking AS T1 JOIN University AS T2 ON T1.university_id  =  T2.university_id WHERE T1.rank  =  1 GROUP BY T2.university_name ORDER BY count(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Beloit College"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"university\".\"University_Name\" AS \"university_name\", COUNT(*) AS \"count\" FROM \"major_ranking\" AS \"major_ranking\" JOIN \"university\" AS \"university\" ON \"major_ranking\".\"University_ID\" = \"university\".\"University_ID\" WHERE \"major_ranking\".\"Rank\" = 1 GROUP BY \"university\".\"University_ID\", \"university\".\"University_Name\" ORDER BY \"count\" DESC, 1, 2 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Augustana College",
+     "1"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_0311_customers_and_orders",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "Show all customer ids without an order.",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT customer_id FROM Customers EXCEPT SELECT customer_id FROM Customer_orders",
+  "gold_result": {
+   "count": 5,
+   "first": [
+    [
+     "2"
+    ],
+    [
+     "6"
+    ],
+    [
+     "7"
+    ],
+    [
+     "10"
+    ],
+    [
+     "11"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"customers\".\"customer_id\" AS \"customer_id\" FROM \"Customers\" AS \"customers\" LEFT JOIN \"Customer_Orders\" AS \"customer_orders\" ON \"customers\".\"customer_id\" = \"customer_orders\".\"customer_id\" WHERE \"customer_orders\".\"order_id\" IS NULL LIMIT 10000",
+  "system_result": {
+   "count": 5,
+   "first": [
+    [
+     "11"
+    ],
+    [
+     "2"
+    ],
+    [
+     "10"
+    ],
+    [
+     "7"
+    ],
+    [
+     "6"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "test_1168_pilot_1",
+  "kind": "answered_right",
+  "guard": null,
+  "question": "What is the location of the plane that was flown by the pilot with the lowest age?",
+  "schema": "tenant=spider_pilot_1\ntables:\n  - Hangar\n      plane_name: str — plane name\n      location: str\n  - PilotSkills\n      pilot_name: str — pilot name\n      plane_name: str — plane name\n      age: int\nrelationships (many → one; joins are added automatically):\n  - PilotSkills.plane_name → Hangar.plane_name",
+  "gold_sql": "SELECT T2.location FROM pilotskills AS T1 JOIN hangar AS T2 ON T1.plane_name  =  T2.plane_name WHERE T1.age  =  (SELECT min(age) FROM pilotskills)",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "Seattle"
+    ]
+   ]
+  },
+  "system_sql": "SELECT \"hangar\".\"location\" AS \"location\" FROM \"PilotSkills\" AS \"pilotskills\" JOIN \"Hangar\" AS \"hangar\" ON \"pilotskills\".\"plane_name\" = \"hangar\".\"plane_name\" ORDER BY \"pilotskills\".\"age\" ASC, 1 LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "Seattle"
+    ]
+   ]
+  }
+ }
+]

@@ -1,0 +1,2949 @@
+{
+  "secure_query": {
+    "name": "secure_query",
+    "total": 56,
+    "correct": 47,
+    "wrong": 7,
+    "abstained": 2,
+    "error": 0,
+    "unsafe": 0,
+    "answer_rate": 0.8392857142857143,
+    "wrong_rate": 0.125,
+    "wrong_rate_ci95": [
+      0.06188990138969254,
+      0.23625720697639396
+    ],
+    "flip_rate": 0.08928571428571429,
+    "over_refusal": 0.03571428571428571
+  },
+  "genie": null,
+  "gate": null,
+  "suite": "data/h2h/aan_1/cases.json",
+  "backend": "databricks",
+  "repeat": 3,
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int \u2014 affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int \u2014 author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str \u2014 paper id\n      author_id: int \u2014 author id\n      affiliation_id: int \u2014 affiliation id\n  - Citation\n      paper_id: str \u2014 paper id\n      cited_paper_id: str \u2014 cited paper id\n  - Paper\n      paper_id: str \u2014 paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Author_list.affiliation_id \u2192 Affiliation.affiliation_id\n  - Author_list.author_id \u2192 Author.author_id\n  - Author_list.paper_id \u2192 Paper.paper_id\n  - Citation.cited_paper_id \u2192 Paper.paper_id\n  - Citation.paper_id \u2192 Paper.paper_id",
+  "systems": {
+    "secure_query": {
+      "cases": [
+        {
+          "id": "test_0963_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e0ee2842f7357275",
+          "outcomes": [
+            "e0ee2842f7357275",
+            "e0ee2842f7357275",
+            "e0ee2842f7357275"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `author`.`author_id`) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author`.`author_id`) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+              "fingerprint": "e0ee2842f7357275",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author`.`author_id`) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+              "fingerprint": "e0ee2842f7357275",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author`.`author_id`) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+              "fingerprint": "e0ee2842f7357275",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0964_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e0ee2842f7357275",
+          "outcomes": [
+            "e0ee2842f7357275",
+            "e0ee2842f7357275",
+            "e0ee2842f7357275"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+              "fingerprint": "e0ee2842f7357275",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+              "fingerprint": "e0ee2842f7357275",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(`author`.`author_id`) AS `author_count` FROM `Author` AS `author` LIMIT 10000",
+              "fingerprint": "e0ee2842f7357275",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0965_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "9ca5a3db14309f2e",
+          "outcomes": [
+            "9ca5a3db14309f2e",
+            "9ca5a3db14309f2e",
+            "9ca5a3db14309f2e"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+              "fingerprint": "9ca5a3db14309f2e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+              "fingerprint": "9ca5a3db14309f2e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+              "fingerprint": "9ca5a3db14309f2e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0966_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "9ca5a3db14309f2e",
+          "outcomes": [
+            "9ca5a3db14309f2e",
+            "9ca5a3db14309f2e",
+            "9ca5a3db14309f2e"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+              "fingerprint": "9ca5a3db14309f2e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+              "fingerprint": "9ca5a3db14309f2e",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` LIMIT 10000",
+              "fingerprint": "9ca5a3db14309f2e",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0967_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f17d8203fb6e0da7",
+          "outcomes": [
+            "f17d8203fb6e0da7",
+            "f17d8203fb6e0da7",
+            "f17d8203fb6e0da7"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "f17d8203fb6e0da7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "f17d8203fb6e0da7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "f17d8203fb6e0da7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0968_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f17d8203fb6e0da7",
+          "outcomes": [
+            "f17d8203fb6e0da7",
+            "f17d8203fb6e0da7",
+            "f17d8203fb6e0da7"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "f17d8203fb6e0da7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "f17d8203fb6e0da7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `affiliation_count` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "f17d8203fb6e0da7",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0969_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "dddbd28ab0c4fdc8",
+          "outcomes": [
+            "dddbd28ab0c4fdc8",
+            "dddbd28ab0c4fdc8",
+            "dddbd28ab0c4fdc8"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `_col_0` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `_col_0` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+              "fingerprint": "dddbd28ab0c4fdc8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+              "fingerprint": "dddbd28ab0c4fdc8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+              "fingerprint": "dddbd28ab0c4fdc8",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0970_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "dddbd28ab0c4fdc8",
+          "outcomes": [
+            "dddbd28ab0c4fdc8",
+            "dddbd28ab0c4fdc8",
+            "dddbd28ab0c4fdc8"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+              "fingerprint": "dddbd28ab0c4fdc8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `_col_0` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+              "fingerprint": "dddbd28ab0c4fdc8",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `paper_count` FROM `Paper` AS `paper` WHERE `paper`.`venue` = 'NAACL' AND `paper`.`year` = 2000 LIMIT 10000",
+              "fingerprint": "dddbd28ab0c4fdc8",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0971_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "be5150467b60583a",
+          "outcomes": [
+            "be5150467b60583a",
+            "be5150467b60583a",
+            "be5150467b60583a"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `p`.`paper_id`) AS `paper_count` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `p`.`year` = 2009 AND `a`.`name` = 'Columbia University' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `p`.`paper_id`) AS `paper_count` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `p`.`year` = 2009 AND `a`.`name` = 'Columbia University' LIMIT 10000",
+              "fingerprint": "be5150467b60583a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `p`.`paper_id`) AS `paper_count` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `p`.`year` = 2009 AND `a`.`name` = 'Columbia University' LIMIT 10000",
+              "fingerprint": "be5150467b60583a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `p`.`paper_id`) AS `paper_count` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `p`.`year` = 2009 AND `a`.`name` = 'Columbia University' LIMIT 10000",
+              "fingerprint": "be5150467b60583a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0972_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "be5150467b60583a",
+          "outcomes": [
+            "be5150467b60583a",
+            "be5150467b60583a",
+            "be5150467b60583a"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `_col_0` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Columbia University' AND `paper`.`year` = 2009 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `_col_0` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Columbia University' AND `paper`.`year` = 2009 LIMIT 10000",
+              "fingerprint": "be5150467b60583a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `_col_0` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Columbia University' AND `paper`.`year` = 2009 LIMIT 10000",
+              "fingerprint": "be5150467b60583a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `paper`.`year` = 2009 AND `affiliation`.`name` = 'Columbia University' LIMIT 10000",
+              "fingerprint": "be5150467b60583a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0973_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c9f245f1da81d870",
+          "outcomes": [
+            "c9f245f1da81d870",
+            "c9f245f1da81d870",
+            "c9f245f1da81d870"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "c9f245f1da81d870",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "c9f245f1da81d870",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "c9f245f1da81d870",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0974_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c9f245f1da81d870",
+          "outcomes": [
+            "c9f245f1da81d870",
+            "c9f245f1da81d870",
+            "c9f245f1da81d870"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "c9f245f1da81d870",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "c9f245f1da81d870",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, `affiliation`.`address` AS `address` FROM `Affiliation` AS `affiliation` LIMIT 10000",
+              "fingerprint": "c9f245f1da81d870",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0975_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('COLING', 1965), ('COLING', 1967)] (+665 more), got [('COLING', 1965), ('COLING', 1965)] (+9998 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "54a22cd23cc9d497",
+          "outcomes": [
+            "54a22cd23cc9d497",
+            "54a22cd23cc9d497",
+            "54a22cd23cc9d497"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('COLING', 1965), ('COLING', 1967)] (+665 more), got [('COLING', 1965), ('COLING', 1965)] (+9998 more)",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+              "fingerprint": "54a22cd23cc9d497",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('COLING', 1965), ('COLING', 1967)] (+665 more), got [('COLING', 1965), ('COLING', 1965)] (+9998 more)",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+              "fingerprint": "54a22cd23cc9d497",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('COLING', 1965), ('COLING', 1967)] (+665 more), got [('COLING', 1965), ('COLING', 1965)] (+9998 more)",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+              "fingerprint": "54a22cd23cc9d497",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "List all venues and years for papers ordered by year.",
+            "reference_sql": "SELECT DISTINCT venue, YEAR FROM paper ORDER BY YEAR",
+            "reference_result": {
+              "count": 667,
+              "first": [
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1967
+                ],
+                [
+                  "COLING",
+                  1969
+                ],
+                [
+                  "COLING",
+                  1973
+                ],
+                [
+                  "TINLP",
+                  1975
+                ],
+                [
+                  "TINLP",
+                  1978
+                ],
+                [
+                  "CL",
+                  1979
+                ],
+                [
+                  "ACL",
+                  1979
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 10000,
+              "first": [
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ],
+                [
+                  "COLING",
+                  1965
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0976_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "1333004ad8513e37",
+          "outcomes": [
+            "1333004ad8513e37",
+            "1333004ad8513e37",
+            "1333004ad8513e37"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+              "fingerprint": "1333004ad8513e37",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+              "fingerprint": "1333004ad8513e37",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+              "fingerprint": "1333004ad8513e37",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0977_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "623a5e98b788c8d0",
+          "outcomes": [
+            "623a5e98b788c8d0",
+            "623a5e98b788c8d0",
+            "623a5e98b788c8d0"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+              "fingerprint": "623a5e98b788c8d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+              "fingerprint": "623a5e98b788c8d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+              "fingerprint": "623a5e98b788c8d0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0978_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "623a5e98b788c8d0",
+          "outcomes": [
+            "623a5e98b788c8d0",
+            "623a5e98b788c8d0",
+            "623a5e98b788c8d0"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+              "fingerprint": "623a5e98b788c8d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+              "fingerprint": "623a5e98b788c8d0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Harvard University' LIMIT 10000",
+              "fingerprint": "623a5e98b788c8d0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0979_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c6c5099b64dce2f6",
+          "outcomes": [
+            "c6c5099b64dce2f6",
+            "c6c5099b64dce2f6",
+            "c6c5099b64dce2f6"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Author` AS `author` ON `author_list`.`author_id` = `author`.`author_id` WHERE `author`.`name` ILIKE '%Mckeown%' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Author` AS `author` ON `author_list`.`author_id` = `author`.`author_id` WHERE `author`.`name` ILIKE '%Mckeown%' LIMIT 10000",
+              "fingerprint": "c6c5099b64dce2f6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Author` AS `author` ON `author_list`.`author_id` = `author`.`author_id` WHERE LOWER(`author`.`name`) ILIKE '%mckeown%' LIMIT 10000",
+              "fingerprint": "c6c5099b64dce2f6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Author` AS `author` ON `author_list`.`author_id` = `author`.`author_id` WHERE `author`.`name` ILIKE '%Mckeown%' LIMIT 10000",
+              "fingerprint": "c6c5099b64dce2f6",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0980_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c6c5099b64dce2f6",
+          "outcomes": [
+            "c6c5099b64dce2f6",
+            "c6c5099b64dce2f6",
+            "c6c5099b64dce2f6"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' LIMIT 10000",
+              "fingerprint": "c6c5099b64dce2f6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Author` AS `author` ON `author_list`.`author_id` = `author`.`author_id` WHERE `author`.`name` ILIKE '%Mckeown%' LIMIT 10000",
+              "fingerprint": "c6c5099b64dce2f6",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Author` AS `author` ON `author_list`.`author_id` = `author`.`author_id` WHERE LOWER(`author`.`name`) ILIKE '%mckeown%' LIMIT 10000",
+              "fingerprint": "c6c5099b64dce2f6",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0981_aan_1",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "6f2e15f83a6ec5b3",
+          "outcomes": [
+            "6f2e15f83a6ec5b3",
+            "6f2e15f83a6ec5b3",
+            "6f2e15f83a6ec5b3"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`paper_id` IN (SELECT `author_list`.`paper_id` AS `paper_id` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Columbia University') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`paper_id` IN (SELECT `author_list`.`paper_id` AS `paper_id` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` = 'Columbia University') LIMIT 10000",
+              "fingerprint": "6f2e15f83a6ec5b3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `author_list` ON `paper`.`paper_id` = `author_list`.`paper_id` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` WHERE `affiliation`.`name` IN ('Stanford University', 'Columbia University') GROUP BY `paper`.`title`, `paper`.`paper_id` HAVING COUNT(DISTINCT `affiliation`.`name`) = 2 LIMIT 10000",
+              "fingerprint": "6f2e15f83a6ec5b3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `a`.`name` = 'Stanford University' AND `p`.`paper_id` IN (SELECT `al2`.`paper_id` AS `paper_id` FROM `Author_list` AS `al2` JOIN `Affiliation` AS `a2` ON `al2`.`affiliation_id` = `a2`.`affiliation_id` WHERE `a2`.`name` = 'Columbia University') LIMIT 10000",
+              "fingerprint": "6f2e15f83a6ec5b3",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0982_aan_1",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:aan_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "unstable_answer",
+          "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+          "blocked": "right",
+          "blocked_sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `a`.`name` ILIKE '%Stanford%' AND EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Affiliation` AS `a2` ON `al2`.`affiliation_id` = `a2`.`affiliation_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Columbia University%') LIMIT 10000",
+          "fingerprint": null,
+          "outcomes": [
+            "6f2e15f83a6ec5b3",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Affiliation` AS `a` ON `al`.`affiliation_id` = `a`.`affiliation_id` WHERE `a`.`name` ILIKE '%Stanford%' AND EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Affiliation` AS `a2` ON `al2`.`affiliation_id` = `a2`.`affiliation_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Columbia University%') LIMIT 10000",
+              "fingerprint": "6f2e15f83a6ec5b3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ]
+        },
+        {
+          "id": "test_0985_aan_1",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0f7ce4de7a5193bb",
+          "outcomes": [
+            "0f7ce4de7a5193bb",
+            "0f7ce4de7a5193bb",
+            "0f7ce4de7a5193bb"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE LOWER(`a`.`name`) ILIKE '%mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND LOWER(`a2`.`name`) ILIKE '%rambow%') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE LOWER(`a`.`name`) ILIKE '%mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND LOWER(`a2`.`name`) ILIKE '%rambow%') LIMIT 10000",
+              "fingerprint": "0f7ce4de7a5193bb",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Rambow%') LIMIT 10000",
+              "fingerprint": "0f7ce4de7a5193bb",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Rambow%') LIMIT 10000",
+              "fingerprint": "0f7ce4de7a5193bb",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0986_aan_1",
+          "expect": "answer",
+          "tags": [
+            "setop",
+            "nested",
+            "join",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "0f7ce4de7a5193bb",
+          "outcomes": [
+            "0f7ce4de7a5193bb",
+            "0f7ce4de7a5193bb",
+            "0f7ce4de7a5193bb"
+          ],
+          "samples": [],
+          "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Rambow%') LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Rambow%') LIMIT 10000",
+              "fingerprint": "0f7ce4de7a5193bb",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Rambow%') LIMIT 10000",
+              "fingerprint": "0f7ce4de7a5193bb",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT DISTINCT `p`.`title` AS `title`, `p`.`paper_id` AS `paper_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` JOIN `Author` AS `a` ON `al`.`author_id` = `a`.`author_id` WHERE `a`.`name` ILIKE '%Mckeown%' AND NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al2` JOIN `Author` AS `a2` ON `al2`.`author_id` = `a2`.`author_id` WHERE `al2`.`paper_id` = `p`.`paper_id` AND `a2`.`name` ILIKE '%Rambow%') LIMIT 10000",
+              "fingerprint": "0f7ce4de7a5193bb",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0991_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('',), ('Carnegie Mellon University',)] (+2378 more), got [('INRIA, Le Chesnay France; New University of Lisbon', 0), ('LingIT', 0)] (+2429 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "970f689f4bab5621",
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "970f689f4bab5621"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `number_of_papers` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `number_of_papers` ASC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('',), ('Carnegie Mellon University',)] (+2378 more), got [('INRIA, Le Chesnay France; New University of Lisbon', 0), ('LingIT', 0)] (+2429 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `number_of_papers` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `number_of_papers` ASC LIMIT 10000",
+              "fingerprint": "970f689f4bab5621",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "List all affiliations with ascending ordered number of papers.",
+            "reference_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+            "reference_result": {
+              "count": 2380,
+              "first": [
+                [
+                  ""
+                ],
+                [
+                  "Carnegie Mellon University"
+                ],
+                [
+                  "University of Edinburgh"
+                ],
+                [
+                  "University of Pennsylvania"
+                ],
+                [
+                  "Massachusetts Institute of Technology"
+                ],
+                [
+                  "University of Southern California"
+                ],
+                [
+                  "BBN Technologies"
+                ],
+                [
+                  "IBM T.J. Watson Research Center"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 2431,
+              "first": [
+                [
+                  "INRIA, Le Chesnay France; New University of Lisbon",
+                  0
+                ],
+                [
+                  "LingIT",
+                  0
+                ],
+                [
+                  "Polish Academy of Sciences, Warsaw Poland; Warsaw University",
+                  0
+                ],
+                [
+                  "University of Texas at Dallas, Richardson TX; Baylor University",
+                  0
+                ],
+                [
+                  "Vietnam National University, Hanoi Vietnam; LORIA",
+                  0
+                ],
+                [
+                  "Nuance Communications",
+                  0
+                ],
+                [
+                  "STIM/AP-HP, Paris France; Institut National de l'Audiovisuel",
+                  0
+                ],
+                [
+                  "Swedish Institute of Computer Science, Stockholm Sweden; Norwegian University of Science and Technology",
+                  0
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0992_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [('',), ('Carnegie Mellon University',)] (+2378 more), got [('', 8211), ('University of Edinburgh', 498)] (+2429 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "970f689f4bab5621",
+          "outcomes": [
+            "970f689f4bab5621",
+            "970f689f4bab5621",
+            "970f689f4bab5621"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('',), ('Carnegie Mellon University',)] (+2378 more), got [('', 8211), ('University of Edinburgh', 498)] (+2429 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC LIMIT 10000",
+              "fingerprint": "970f689f4bab5621",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('',), ('Carnegie Mellon University',)] (+2378 more), got [('', 8211), ('University of Edinburgh', 498)] (+2429 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC LIMIT 10000",
+              "fingerprint": "970f689f4bab5621",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('',), ('Carnegie Mellon University',)] (+2378 more), got [('', 8211), ('University of Edinburgh', 498)] (+2429 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC LIMIT 10000",
+              "fingerprint": "970f689f4bab5621",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What are the names of all affiliations, ordered by number of papers?",
+            "reference_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+            "reference_result": {
+              "count": 2380,
+              "first": [
+                [
+                  ""
+                ],
+                [
+                  "Carnegie Mellon University"
+                ],
+                [
+                  "University of Edinburgh"
+                ],
+                [
+                  "University of Pennsylvania"
+                ],
+                [
+                  "Massachusetts Institute of Technology"
+                ],
+                [
+                  "University of Southern California"
+                ],
+                [
+                  "BBN Technologies"
+                ],
+                [
+                  "IBM T.J. Watson Research Center"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 2431,
+              "first": [
+                [
+                  "",
+                  8211
+                ],
+                [
+                  "University of Edinburgh",
+                  498
+                ],
+                [
+                  "University of Pennsylvania",
+                  453
+                ],
+                [
+                  "Carnegie Mellon University",
+                  405
+                ],
+                [
+                  "University of Southern California",
+                  293
+                ],
+                [
+                  "Massachusetts Institute of Technology",
+                  262
+                ],
+                [
+                  "Saarland University",
+                  251
+                ],
+                [
+                  "Columbia University",
+                  220
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_0993_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "5012f03ede37b220",
+          "outcomes": [
+            "5012f03ede37b220",
+            "5012f03ede37b220",
+            "5012f03ede37b220"
+          ],
+          "samples": [],
+          "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+              "fingerprint": "5012f03ede37b220",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+              "fingerprint": "5012f03ede37b220",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+              "fingerprint": "5012f03ede37b220",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0994_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "5012f03ede37b220",
+          "outcomes": [
+            "5012f03ede37b220",
+            "5012f03ede37b220",
+            "5012f03ede37b220"
+          ],
+          "samples": [],
+          "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+              "fingerprint": "5012f03ede37b220",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+              "fingerprint": "5012f03ede37b220",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) > 50 LIMIT 10000",
+              "fingerprint": "5012f03ede37b220",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0997_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c90f32780ec879a0",
+          "outcomes": [
+            "c90f32780ec879a0",
+            "c90f32780ec879a0",
+            "c90f32780ec879a0"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "c90f32780ec879a0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "c90f32780ec879a0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "c90f32780ec879a0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0998_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c90f32780ec879a0",
+          "outcomes": [
+            "c90f32780ec879a0",
+            "c90f32780ec879a0",
+            "c90f32780ec879a0"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "c90f32780ec879a0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "c90f32780ec879a0",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` ORDER BY `count` DESC, 1 NULLS LAST, 2 NULLS LAST, 3 NULLS LAST LIMIT 1",
+              "fingerprint": "c90f32780ec879a0",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_0999_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f8da289fc9611fc2",
+          "outcomes": [
+            "f8da289fc9611fc2",
+            "f8da289fc9611fc2",
+            "f8da289fc9611fc2"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f8da289fc9611fc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f8da289fc9611fc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f8da289fc9611fc2",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1000_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f8da289fc9611fc2",
+          "outcomes": [
+            "f8da289fc9611fc2",
+            "f8da289fc9611fc2",
+            "f8da289fc9611fc2"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f8da289fc9611fc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f8da289fc9611fc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, COUNT(*) AS `count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue` ORDER BY `count` ASC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f8da289fc9611fc2",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1001_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4e8d15c2fb61e335",
+          "outcomes": [
+            "4e8d15c2fb61e335",
+            "4e8d15c2fb61e335",
+            "4e8d15c2fb61e335"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `count` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `count` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+              "fingerprint": "4e8d15c2fb61e335",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `_col_0` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+              "fingerprint": "4e8d15c2fb61e335",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `_col_0` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+              "fingerprint": "4e8d15c2fb61e335",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1002_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "4e8d15c2fb61e335",
+          "outcomes": [
+            "4e8d15c2fb61e335",
+            "4e8d15c2fb61e335",
+            "4e8d15c2fb61e335"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `_col_0` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `_col_0` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+              "fingerprint": "4e8d15c2fb61e335",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `count` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+              "fingerprint": "4e8d15c2fb61e335",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`paper_id`) AS `_col_0` FROM `Citation` AS `citation` WHERE `citation`.`cited_paper_id` = 'A00-1002' LIMIT 10000",
+              "fingerprint": "4e8d15c2fb61e335",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1003_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `citation`.`cited_paper_id`) AS `reference_paper_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`cited_paper_id`) AS `reference_paper_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`cited_paper_id`) AS `reference_papers` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `citation`.`cited_paper_id`) AS `reference_paper_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1004_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "48919ab6fea164f4",
+          "outcomes": [
+            "48919ab6fea164f4",
+            "48919ab6fea164f4",
+            "48919ab6fea164f4"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(*) AS `reference_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `reference_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `reference_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(*) AS `reference_count` FROM `Citation` AS `citation` WHERE `citation`.`paper_id` = 'D12-1027' LIMIT 10000",
+              "fingerprint": "48919ab6fea164f4",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1007_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "440da03bf3c8f5c3",
+          "outcomes": [
+            "440da03bf3c8f5c3",
+            "440da03bf3c8f5c3",
+            "440da03bf3c8f5c3"
+          ],
+          "samples": [],
+          "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "440da03bf3c8f5c3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "440da03bf3c8f5c3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "440da03bf3c8f5c3",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1008_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "440da03bf3c8f5c3",
+          "outcomes": [
+            "440da03bf3c8f5c3",
+            "440da03bf3c8f5c3",
+            "440da03bf3c8f5c3"
+          ],
+          "samples": [],
+          "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "440da03bf3c8f5c3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "440da03bf3c8f5c3",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(`c`.`cited_paper_id`) AS `count_cited_paper_id` FROM `Paper` AS `p` JOIN `Citation` AS `c` ON `p`.`paper_id` = `c`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_cited_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "440da03bf3c8f5c3",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1015_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('Och, Franz Josef', 3650)], got [('Manning, Christopher D.', 2183)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ce24b0ab87ed901c",
+          "outcomes": [
+            "ce24b0ab87ed901c",
+            "ce24b0ab87ed901c",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Och, Franz Josef', 3650)], got [('Manning, Christopher D.', 2183)]",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ce24b0ab87ed901c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Och, Franz Josef', 3650)], got [('Manning, Christopher D.', 2183)]",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ce24b0ab87ed901c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            }
+          ],
+          "adjudication": {
+            "question": "Find the name and number of citations of the author who has most citations among all authors?",
+            "reference_sql": "SELECT ANY_VALUE(T3.name), COUNT(*) FROM Citation AS T1 JOIN Author_list AS T2 ON T1.cited_paper_id = T2.paper_id JOIN Author AS T3 ON T2.author_id = T3.author_id GROUP BY T2.author_id ORDER BY COUNT(*) DESC LIMIT 1",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  "Och, Franz Josef",
+                  3650
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 1,
+              "first": [
+                [
+                  "Manning, Christopher D.",
+                  2183
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_1016_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": "unstable_answer",
+          "detail": "expected [('Och, Franz Josef', 3650)], got [('Manning, Christopher D.', 2183)]",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "ce24b0ab87ed901c",
+          "outcomes": [
+            "abstained",
+            "ce24b0ab87ed901c",
+            "ce24b0ab87ed901c"
+          ],
+          "samples": [],
+          "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Och, Franz Josef', 3650)], got [('Manning, Christopher D.', 2183)]",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Citation` AS `citation` ON `author_list`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ce24b0ab87ed901c",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [('Och, Franz Josef', 3650)], got [('Manning, Christopher D.', 2183)]",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `citation`.`paper_id`) AS `citation_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "ce24b0ab87ed901c",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "What is the name and number of citations of the author with the greatest number of citations among authors?",
+            "reference_sql": "SELECT ANY_VALUE(T3.name), COUNT(*) FROM Citation AS T1 JOIN Author_list AS T2 ON T1.cited_paper_id = T2.paper_id JOIN Author AS T3 ON T2.author_id = T3.author_id GROUP BY T2.author_id ORDER BY COUNT(*) DESC LIMIT 1",
+            "reference_result": {
+              "count": 1,
+              "first": [
+                [
+                  "Och, Franz Josef",
+                  3650
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 1,
+              "first": [
+                [
+                  "Manning, Christopher D.",
+                  2183
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_1021_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8816cec448213cc2",
+          "outcomes": [
+            "8816cec448213cc2",
+            "8816cec448213cc2",
+            "8816cec448213cc2"
+          ],
+          "samples": [],
+          "sql": "SELECT `a`.`name` AS `name`, COUNT(DISTINCT `p`.`paper_id`) AS `count_paper_id` FROM `Author` AS `a` JOIN `Author_list` AS `al` ON `a`.`author_id` = `al`.`author_id` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `p`.`year` = 2009 GROUP BY `a`.`author_id`, `a`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `a`.`name` AS `name`, COUNT(DISTINCT `p`.`paper_id`) AS `count_paper_id` FROM `Author` AS `a` JOIN `Author_list` AS `al` ON `a`.`author_id` = `al`.`author_id` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `p`.`year` = 2009 GROUP BY `a`.`author_id`, `a`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "8816cec448213cc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `a`.`name` AS `name`, COUNT(DISTINCT `p`.`paper_id`) AS `count_paper_id` FROM `Author` AS `a` JOIN `Author_list` AS `al` ON `a`.`author_id` = `al`.`author_id` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `p`.`year` = 2009 GROUP BY `a`.`author_id`, `a`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "8816cec448213cc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `a`.`name` AS `name`, COUNT(DISTINCT `p`.`paper_id`) AS `count_paper_id` FROM `Author` AS `a` JOIN `Author_list` AS `al` ON `a`.`author_id` = `al`.`author_id` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `p`.`year` = 2009 GROUP BY `a`.`author_id`, `a`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "8816cec448213cc2",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1022_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8816cec448213cc2",
+          "outcomes": [
+            "8816cec448213cc2",
+            "8816cec448213cc2",
+            "8816cec448213cc2"
+          ],
+          "samples": [],
+          "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "8816cec448213cc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `author`.`author_id`, `author`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "8816cec448213cc2",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `a`.`name` AS `name`, COUNT(DISTINCT `p`.`paper_id`) AS `count_paper_id` FROM `Author` AS `a` JOIN `Author_list` AS `al` ON `a`.`author_id` = `al`.`author_id` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `p`.`year` = 2009 GROUP BY `a`.`author_id`, `a`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "8816cec448213cc2",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1023_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "65743abef054d714",
+          "outcomes": [
+            "65743abef054d714",
+            "65743abef054d714",
+            "65743abef054d714"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+              "fingerprint": "65743abef054d714",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+              "fingerprint": "65743abef054d714",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+              "fingerprint": "65743abef054d714",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1024_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "65743abef054d714",
+          "outcomes": [
+            "65743abef054d714",
+            "65743abef054d714",
+            "9df88b55091ccf04"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+              "fingerprint": "65743abef054d714",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+              "fingerprint": "65743abef054d714",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`year` = 2009 GROUP BY `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 3",
+              "fingerprint": "9df88b55091ccf04",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1027_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e8fcab2ca9766d29",
+          "outcomes": [
+            "e8fcab2ca9766d29",
+            "e8fcab2ca9766d29",
+            "e8fcab2ca9766d29"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+              "fingerprint": "e8fcab2ca9766d29",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+              "fingerprint": "e8fcab2ca9766d29",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+              "fingerprint": "e8fcab2ca9766d29",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1028_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "e8fcab2ca9766d29",
+          "outcomes": [
+            "e8fcab2ca9766d29",
+            "e8fcab2ca9766d29",
+            "e8fcab2ca9766d29"
+          ],
+          "samples": [],
+          "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+              "fingerprint": "e8fcab2ca9766d29",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+              "fingerprint": "e8fcab2ca9766d29",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author_list` AS `author_list` JOIN `Affiliation` AS `affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`name` = 'Stanford University' AND `paper`.`year` BETWEEN 2000 AND 2009 LIMIT 10000",
+              "fingerprint": "e8fcab2ca9766d29",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1029_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "888022b4ae123ccc",
+          "outcomes": [
+            "888022b4ae123ccc",
+            "888022b4ae123ccc",
+            "888022b4ae123ccc"
+          ],
+          "samples": [],
+          "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "888022b4ae123ccc",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "888022b4ae123ccc",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "888022b4ae123ccc",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1030_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "888022b4ae123ccc",
+          "outcomes": [
+            "888022b4ae123ccc",
+            "888022b4ae123ccc",
+            "888022b4ae123ccc"
+          ],
+          "samples": [],
+          "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "888022b4ae123ccc",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "888022b4ae123ccc",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `p`.`title` AS `title`, COUNT(DISTINCT `al`.`author_id`) AS `count_author_id` FROM `Paper` AS `p` JOIN `Author_list` AS `al` ON `p`.`paper_id` = `al`.`paper_id` GROUP BY `p`.`paper_id`, `p`.`title` ORDER BY `count_author_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "888022b4ae123ccc",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1035_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c3279ae5403863ea",
+          "outcomes": [
+            "c3279ae5403863ea",
+            "c3279ae5403863ea",
+            "c3279ae5403863ea"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+              "fingerprint": "c3279ae5403863ea",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+              "fingerprint": "c3279ae5403863ea",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+              "fingerprint": "c3279ae5403863ea",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1036_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "c3279ae5403863ea",
+          "outcomes": [
+            "c3279ae5403863ea",
+            "c3279ae5403863ea",
+            "c3279ae5403863ea"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+              "fingerprint": "c3279ae5403863ea",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+              "fingerprint": "c3279ae5403863ea",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` WHERE `paper`.`title` ILIKE '%translation%' LIMIT 10000",
+              "fingerprint": "c3279ae5403863ea",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1039_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f9979334747b0e1a",
+          "outcomes": [
+            "f9979334747b0e1a",
+            "f9979334747b0e1a",
+            "f9979334747b0e1a"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f9979334747b0e1a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `paper`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f9979334747b0e1a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `a`.`name` AS `name`, COUNT(DISTINCT `p`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `a` JOIN `Author_list` AS `al` ON `a`.`affiliation_id` = `al`.`affiliation_id` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `a`.`address` ILIKE '%China%' GROUP BY `a`.`affiliation_id`, `a`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f9979334747b0e1a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1040_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f9979334747b0e1a",
+          "outcomes": [
+            "f9979334747b0e1a",
+            "f9979334747b0e1a",
+            "f9979334747b0e1a"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f9979334747b0e1a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f9979334747b0e1a",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` WHERE `affiliation`.`address` ILIKE '%China%' GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+              "fingerprint": "f9979334747b0e1a",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1041_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "abstained",
+          "refusal_code": "planner_refusal",
+          "detail": "The catalog does not identify which venues are conferences.",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": null,
+          "outcomes": [
+            "abstained",
+            "abstained",
+            "abstained"
+          ],
+          "samples": [],
+          "sql": null,
+          "attempts": [
+            {
+              "verdict": "abstained",
+              "detail": "The catalog does not identify which venues are conferences.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "Two independent readings of this question returned different answers, so I won't guess. Name the exact measure, filters or time period and ask again.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "unstable_answer"
+            },
+            {
+              "verdict": "abstained",
+              "detail": "The catalog has no column identifying conferences or distinguishing conference publications.",
+              "sql": null,
+              "fingerprint": null,
+              "refusal_code": "planner_refusal"
+            }
+          ]
+        },
+        {
+          "id": "test_1042_aan_1",
+          "expect": "answer",
+          "tags": [
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "f3c1bc72d0007eef",
+          "outcomes": [
+            "f3c1bc72d0007eef",
+            "f3c1bc72d0007eef",
+            "f3c1bc72d0007eef"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(`paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(`paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` LIMIT 10000",
+              "fingerprint": "f3c1bc72d0007eef",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(`paper`.`paper_id`) AS `paper_count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` LIMIT 10000",
+              "fingerprint": "f3c1bc72d0007eef",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year`, COUNT(*) AS `paper_count` FROM `Paper` AS `paper` GROUP BY `paper`.`venue`, `paper`.`year` LIMIT 10000",
+              "fingerprint": "f3c1bc72d0007eef",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1043_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8431751a85758dc7",
+          "outcomes": [
+            "8431751a85758dc7",
+            "8431751a85758dc7",
+            "8431751a85758dc7"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `total_papers` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `total_papers` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+              "fingerprint": "8431751a85758dc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `total_papers` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+              "fingerprint": "8431751a85758dc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `total_papers` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+              "fingerprint": "8431751a85758dc7",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "Find the total number of papers for each affiliation.",
+            "reference_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+            "reference_result": {
+              "count": 2380,
+              "first": [
+                [
+                  1,
+                  "CNRS, France; LPL"
+                ],
+                [
+                  1,
+                  "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+                ],
+                [
+                  23,
+                  "Duke University"
+                ],
+                [
+                  2,
+                  "Free University of Bolzano Bozen"
+                ],
+                [
+                  133,
+                  "German Research Center for Artificial Intelligence"
+                ],
+                [
+                  2,
+                  "Hofstra University"
+                ],
+                [
+                  10,
+                  "Indian Institute of Technology"
+                ],
+                [
+                  2,
+                  "Kangnam University"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 2260,
+              "first": [
+                [
+                  "ATR Spoken Language Translation Research Laboratories",
+                  42
+                ],
+                [
+                  "CEDIAG-BULL A.I. Corporate Center",
+                  4
+                ],
+                [
+                  "CNR-Institute of Psychology",
+                  6
+                ],
+                [
+                  "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+                  1
+                ],
+                [
+                  "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+                  1
+                ],
+                [
+                  "Fondazione Bruno Kessler",
+                  28
+                ],
+                [
+                  "IFCI",
+                  2
+                ],
+                [
+                  "IRISA",
+                  3
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_1044_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "wrong",
+          "refusal_code": null,
+          "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "8431751a85758dc7",
+          "outcomes": [
+            "8431751a85758dc7",
+            "8431751a85758dc7",
+            "8431751a85758dc7"
+          ],
+          "samples": [],
+          "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "wrong",
+              "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+              "fingerprint": "8431751a85758dc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+              "fingerprint": "8431751a85758dc7",
+              "refusal_code": null
+            },
+            {
+              "verdict": "wrong",
+              "detail": "expected [(1, 'CNRS, France; LPL'), (1, 'DSO National Laboratories, Singapore; Defence Medical Research Institute')] (+2378 more), got [('ATR Spoken Language Translation Research Laboratories', 42), ('CEDIAG-BULL A.I. Corporate Center', 4)] (+2258 more)",
+              "sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+              "fingerprint": "8431751a85758dc7",
+              "refusal_code": null
+            }
+          ],
+          "adjudication": {
+            "question": "How many papers has each affiliation published?",
+            "reference_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+            "reference_result": {
+              "count": 2380,
+              "first": [
+                [
+                  1,
+                  "CNRS, France; LPL"
+                ],
+                [
+                  1,
+                  "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+                ],
+                [
+                  23,
+                  "Duke University"
+                ],
+                [
+                  2,
+                  "Free University of Bolzano Bozen"
+                ],
+                [
+                  133,
+                  "German Research Center for Artificial Intelligence"
+                ],
+                [
+                  2,
+                  "Hofstra University"
+                ],
+                [
+                  10,
+                  "Indian Institute of Technology"
+                ],
+                [
+                  2,
+                  "Kangnam University"
+                ]
+              ]
+            },
+            "system_result": {
+              "count": 2260,
+              "first": [
+                [
+                  "ATR Spoken Language Translation Research Laboratories",
+                  42
+                ],
+                [
+                  "CEDIAG-BULL A.I. Corporate Center",
+                  4
+                ],
+                [
+                  "CNR-Institute of Psychology",
+                  6
+                ],
+                [
+                  "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+                  1
+                ],
+                [
+                  "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+                  1
+                ],
+                [
+                  "Fondazione Bruno Kessler",
+                  28
+                ],
+                [
+                  "IFCI",
+                  2
+                ],
+                [
+                  "IRISA",
+                  3
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "test_1045_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "70f76d71b318904b",
+          "outcomes": [
+            "70f76d71b318904b",
+            "70f76d71b318904b",
+            "70f76d71b318904b"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+              "fingerprint": "70f76d71b318904b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+              "fingerprint": "70f76d71b318904b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+              "fingerprint": "70f76d71b318904b",
+              "refusal_code": null
+            }
+          ]
+        },
+        {
+          "id": "test_1046_aan_1",
+          "expect": "answer",
+          "tags": [
+            "join",
+            "simple",
+            "db:aan_1"
+          ],
+          "verdict": "correct",
+          "refusal_code": null,
+          "detail": "matches reference",
+          "blocked": null,
+          "blocked_sql": null,
+          "fingerprint": "70f76d71b318904b",
+          "outcomes": [
+            "70f76d71b318904b",
+            "70f76d71b318904b",
+            "70f76d71b318904b"
+          ],
+          "samples": [],
+          "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+          "attempts": [
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+              "fingerprint": "70f76d71b318904b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+              "fingerprint": "70f76d71b318904b",
+              "refusal_code": null
+            },
+            {
+              "verdict": "correct",
+              "detail": "matches reference",
+              "sql": "SELECT `paper`.`title` AS `title`, COUNT(*) AS `count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` HAVING COUNT(*) > 50 LIMIT 10000",
+              "fingerprint": "70f76d71b318904b",
+              "refusal_code": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

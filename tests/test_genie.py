@@ -118,6 +118,16 @@ def test_genie_cells_are_typed_from_the_manifest() -> None:
     assert rows == [("USA", 13, 523.06), ("Chile", None, 1.5)]
 
 
+def test_genie_utc_timestamp_equals_the_drivers_naive_one() -> None:
+    from datetime import datetime
+
+    from secure_query.evals.genie import _typed
+
+    assert _typed("2021-01-01T00:00:00.000Z", "TIMESTAMP") == datetime(2021, 1, 1)
+    assert _typed("2021-01-01T02:00:00+02:00", "TIMESTAMP") == datetime(2021, 1, 1)
+    assert _typed("2021-01-01 00:00:00", "TIMESTAMP_NTZ") == datetime(2021, 1, 1)
+
+
 def test_genie_clarifying_reply_is_a_refusal_not_wrong() -> None:
     case = LiveCase(case_id="c1", question="sales?", expect="answer", reference_sql="SELECT 1")
     reply = _answer([], sql=None, text="Do you mean gross or net sales?")

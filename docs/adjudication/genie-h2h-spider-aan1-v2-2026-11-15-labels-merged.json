@@ -1,0 +1,72 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": "benchmark_fault",
+  "second": "ambiguous"
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": "ambiguous",
+  "second": "ambiguous"
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": "benchmark_fault",
+  "second": "ambiguous"
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p007:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "real_error"
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": "ambiguous",
+  "second": "ambiguous"
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ },
+ "p013:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": "ambiguous",
+  "second": "ambiguous"
+ },
+ "p014:answered_wrong": {
+  "label": "real_error",
+  "gpt5": "real_error",
+  "second": "ambiguous"
+ }
+}

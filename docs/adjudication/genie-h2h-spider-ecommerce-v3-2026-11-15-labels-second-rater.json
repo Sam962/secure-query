@@ -1,0 +1,98 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System lists the distinct product name/color pairs that were shipped; gold repeats rows once per shipment line (item 14 sits in three shipments), and the question does not clearly ask for per-shipment duplicates."
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "Inner-joining order items before counting orders drops customer 13's order with no items, so the 'more than two orders' condition fails and the answer is empty instead of customer 13."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'All the pairs' reads naturally as distinct buyer/product pairs; system returns 14 distinct pairs while gold keeps one repeated purchase."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'How many products have been shipped' can mean distinct products (3) or shipped units; system's distinct-product count is a reasonable reading."
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System returns the distinct size 'Medium' while gold repeats it per Dell product; DISTINCT vs duplicates is unclear from the question."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "Inner-joining order items before counting orders drops customer 13's empty order, so the result is empty instead of customer 13."
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity, and the extra count column is harmless."
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "reason": "System averages over all products and drops the 'being ordered' condition entirely; it matches the distinct-ordered-product average only because every product happens to be ordered here."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "Inner-joining order items before counting orders drops customer 13's empty order, so the result is empty instead of customer 13."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query joins shipments and then requires the order not be in shipments, a contradiction that always returns nothing."
+ },
+ "p011:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold repeats Dell monitor for each shipment row of the same item; the question asks for the names and colors of products shipped, which the system's distinct list answers correctly."
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'How many products have been shipped' can mean distinct products (3) or shipped units; system's distinct-product count is a reasonable reading."
+ },
+ "p013:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Invoices link to orders only through shipments, so unshipped orders have no invoice; system's reading (unshipped orders with null status) is faithful, while gold reinterprets it as invoices without shipments."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Order item 14 appears in three shipments; counting distinct shipped items (4) vs shipment-item rows (6) is a genuine ambiguity."
+ },
+ "p015:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for names containing the substring 'Dell' but the system restricts to whole-word matches (with a non-LIKE bracket pattern), matching here only because both Dell names start with 'Dell '."
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Listing buyer/product pairs as distinct pairs is a natural reading; system returns 14 distinct pairs while gold keeps one repeated purchase."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity."
+ },
+ "p019:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "Gold repeats Dell monitor for each shipment row of the same item; the question asks for the names and colors of products shipped, which the system's distinct list answers correctly."
+ },
+ "p020:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query joins shipments and then requires the order not be in shipments, a contradiction that always returns nothing."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Customer 15 has 'Direct Debit' listed twice; counting distinct payment methods (system) vs rows (gold) is a genuine ambiguity."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "System gives the same facts (earliest date plus the four multi-item order dates) in a two-column shape instead of gold's single-column union, which the question's wording allows."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "'How many products' per gender can mean distinct products or items bought; system's distinct-product count is a reasonable reading."
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question says 'for every order', and the system correctly includes orders with zero items via LEFT JOIN, while gold drops them."
+ }
+}

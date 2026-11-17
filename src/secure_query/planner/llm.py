@@ -197,10 +197,15 @@ class OpenAIClient:
         raise PlannerError("LLM rate limit retries exhausted")
 
     def check_twin(self) -> OpenAIClient:
-        """The same model and connection, sampling at CHECK_TEMPERATURE: the gate's second reader."""
+        """The gate's second reader: the same connection, sampling at CHECK_TEMPERATURE.
+
+        SECURE_QUERY_CHECK_MODEL names another model on the same endpoint for this reading;
+        two different models agree on a wrong answer less often than one model read twice.
+        """
         if self._twin is None:
             twin = copy.copy(self)
             twin.temperature = CHECK_TEMPERATURE
+            twin._model = os.environ.get("SECURE_QUERY_CHECK_MODEL") or self._model
             twin._rejected = set(self._rejected)
             self._twin = twin
         return self._twin

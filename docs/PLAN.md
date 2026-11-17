@@ -1,6 +1,6 @@
 # Plan — Trusted Evidence Kernel
 
-**Updated:** 2026-11-13 · Measured results live in [STATUS.md](STATUS.md) · Start at [HANDOVER.md](HANDOVER.md).
+**Updated:** 2026-11-14 · Measured results live in [STATUS.md](STATUS.md) · Start at [HANDOVER.md](HANDOVER.md).
 
 ## Goal
 
@@ -275,6 +275,9 @@ runs exit 0 (`echo $?` prints `0`).
   ```
   Adjudicate every wrong answer from both systems the same way, then record the table in
   STATUS.md. The pass bar is the Goal table above.
+  Also audit a random sample of at least 60 answers scored right, per system: a match on
+  one database does not prove the query is right (SpotIt, arXiv 2510.26840; first audit
+  in STATUS.md, 2026-11-14).
 
 ---
 
@@ -344,3 +347,48 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
 - **P5. Sensitivity levels and masking.** PII is high or not, per column. Roles, masking and
   checks on returned rows need the customer's data classification.
 - **P6. Conversation.** Follow-up questions and a feedback loop from users into the dev suite.
+- **P8. A different model as the gate's second reader.** `SECURE_QUERY_CHECK_MODEL` exists
+  and is off. On Spider dev 400 with `gpt-6.1-terra` it cut wrong answers from 42 to 29 and
+  right answers from 300 to 281 (STATUS, 2026-11-14). To turn it on: one confirming run on
+  Spider test 400, adjudicated, and Sam's call on the answer-rate it costs.
+- **P9. NULL ordering on Databricks.** `ORDER BY x LIMIT 1` for "the lowest X" returns a
+  NULL row on Databricks when the column has one (NULL sorts first ascending there, last on
+  DuckDB). Check on the real warehouse in 3.3 before changing anything; Genie may do the same.
+- **P10. Row caps in the head-to-head.** Done for Spider suites on 2026-11-15: the suite
+  script leaves out an answer over 5,000 rows, an undetermined gold column and a gold LIMIT
+  that cuts a tie. Apply the same three rules when the holdout is frozen in 3.4. Still
+  open, a product question: neither system told the user its answer was cut.
+- **P11. Refusals from a missing join.** Done 2026-11-15 for joins whose names agree:
+  the catalog draft proposes them (`with_discovered_joins`, STATUS). Left: joins whose names
+  do not agree (`bakery_1` `items.item -> goods.id`) stay for the owner's review. On `bakery_1` 31 of 94 questions were refused
+  because the drafted catalog lacked one join the source schema does not declare (STATUS
+  2026-11-15). In 3.2 the owner's catalog review must cover joins, and the refusal text
+  should name the missing join so the owner can approve it.
+- **P12-P15. Kernel causes of refusals and wrong answers** (Sam approved 2026-11-15; root
+  cause tracing on Spider dev and BIRD dev, STATUS). One commit each, measured on Spider dev
+  400 and BIRD dev before the next.
+  - P12: the unused-join rule exempts bridge tables and rows used as a set (IN, EXISTS,
+    INTERSECT, EXCEPT, UNION), and its advice keeps a filter as EXISTS instead of "remove".
+  - P13: the gate compares each reading's own columns (not kernel-appended measures), with
+    numbers stored as text equal to the number.
+  - P14: CURRENT_DATE and the clock are allowed; who/where functions stay forbidden.
+  - P15: relationships shown as usable both ways and chainable; a join of two tables on the
+    same parent key allowed (the fan-out check still applies).
+  - Done 2026-11-16: P12-P15 committed (STATUS). Fan-out sort (BIRD trace, 25 readings,
+    13 questions): true alarms kept (an atoms x bonds count; totals through a table with
+    several rows per account). False alarms in 6 questions, three causes, proposed as
+    **P16, done 2026-11-16**: (1) a grouped subquery that joins tables counts as unknown
+    grain, though it is unique on its group keys and the error advises exactly that shape;
+    (2) columns only in a CASE condition count as summed; (3) a cross join of two
+    single-row subqueries is refused.
+- **P17. Counting entities over a one-to-many join.** "What share of patients ..." written as
+  SUM(CASE WHEN ... THEN 1) or COUNT(*) over Patient JOIN Laboratory counts lab rows, not
+  patients. The kernel cannot tell intent from SQL; a prompt rule ("count the entity the
+  question names with COUNT(DISTINCT its key)") or a check that a counted ratio names a
+  table on the one side would. Measure on Spider dev and BIRD dev before building.
+  Measured 2026-11-16 as a prompt rule and rejected (STATUS): it adds DISTINCT broadly and
+  raises gate refusals. Left: the kernel-side check, or showing the counted grain in the
+  answer so the person asking can see what was counted.
+- **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
+  tags and column names only. Add value sampling only if the owner's review in 3.2 finds
+  personal data in columns that neither a tag nor the name gave away.

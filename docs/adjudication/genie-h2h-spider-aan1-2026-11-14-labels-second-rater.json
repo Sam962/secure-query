@@ -1,0 +1,154 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Lists one row per paper where the gold lists distinct pairs; the question allows both."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Counts joint affiliations that include Stanford University; the gold counts only the exact name."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Lists one row per paper where the gold lists distinct pairs; the question allows both."
+ },
+ "p004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p005:answered_wrong": {
+  "label": "real_error",
+  "reason": "Filters the affiliation name = 'Stanford'; the stored name is 'Stanford University', so the answer is empty."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "The inner joins drop the 1,174 authors with no paper at all, who have not published in ACL either."
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; 121 names are shared by several rows with different addresses, which the gold keeps apart."
+ },
+ "p008:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Counts joint affiliations that include Stanford University; the gold counts only the exact name."
+ },
+ "p009:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart."
+ },
+ "p010:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart."
+ },
+ "p012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p014:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Includes joint affiliations that contain Harvard University; the gold takes the exact name only."
+ },
+ "p016:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p017:answered_wrong": {
+  "label": "real_error",
+  "reason": "Groups by title; 300 titles belong to more than one paper, so citations of different papers are added together (346 titles against 343)."
+ },
+ "p018:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p019:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p020:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Keeps affiliations with no paper; the gold drops them."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart (and sorts descending where the question says ascending)."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart."
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p025:answered_wrong": {
+  "label": "real_error",
+  "reason": "Groups by title; 300 titles belong to more than one paper, so citations of different papers are added together (346 titles against 343)."
+ },
+ "p026:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p027:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p028:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p029:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p030:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p031:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p032:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p033:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p034:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold returns an arbitrary citing paper's id for each cited paper; the system returns the cited paper, which is what the question asks."
+ },
+ "p035:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart."
+ },
+ "p036:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ },
+ "p037:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Keeps affiliations with no paper and sorts ascending as asked; the gold drops them and sorts descending."
+ },
+ "p038:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The query is right; the comparison is between two row-capped samples of a result larger than the cap (10,000 rows for the reference, 5,000 for one system)."
+ }
+}

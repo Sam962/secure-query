@@ -1,0 +1,106 @@
+{
+ "p001:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system returns the same set of qualifying dates (formatted as ISO) and merely adds totals; the difference is formatting/extra column, not a wrong answer to the question."
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system counted distinct Food values matching '%cake%' (yielding 1) instead of counting the number of cake items/flavors (rows where Food='Cake'), which the question implies and the gold query captures."
+ },
+ "p003:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query checks price > AVG(price) (above average) while the question asks for price > 2*AVG(price); the system query matches the question."
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question clearly asks for Cookie or Cake items priced between 3 and 7, but the system returned no rows even though such items exist per the data, so its answer is misleading."
+ },
+ "p005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query lacks parentheses, so the price filter applies only to Cake (returning all Cookies regardless of price), whereas the question asks for both Cookie and Cake priced between $3 and $7; the system SQL correctly applies the price to both."
+ },
+ "p006:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query sorts the Date as a string rather than chronologically, whereas the question asks for the latest date and the system correctly parses and ranks by actual dates (yielding 31-Oct-2007)."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query misapplies operator precedence (filtering price only for cakes), while the system query correctly applies the 3–7 price range to both Cookies and Cakes."
+ },
+ "p008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL checks price > AVG(price) instead of above twice the average, while the system SQL correctly applies price > 2 * AVG(price)."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query misinterprets the condition (uses Flavor instead of Food, 'Cookies' instead of 'Cookie', and compares to MAX rather than MIN), producing an empty and incorrect result for the question."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question could reasonably ask for the item (good) itself rather than its price; the system returns the cheapest good’s ID while the gold returns the minimum price."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“less than any Tart” can mean less than every tart (use MIN) or less than at least one tart (use MAX/ANY), so the system’s MIN-based answer is defensible under one reading while the gold uses the other."
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify handling duplicates or exact case/equality, so returning distinct receipt numbers with case-insensitive matching is a reasonable interpretation."
+ },
+ "p013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system query correctly finds the same customers but returns a single concatenated full-name column instead of separate first and last name columns, a formatting artifact rather than a semantic error."
+ },
+ "p014:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used MIN (cheaper than all tarts) instead of MAX (cheaper than some tart), changing the semantics and yielding too few rows."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system returned distinct receipt numbers while the gold includes duplicates for multiple croissant items on the same receipt, and the question doesn’t specify whether to de-duplicate."
+ },
+ "p016:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query checks price > AVG(price) instead of more than twice the average, while the system correctly uses price > 2*AVG(price)."
+ },
+ "p017:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filtered on Flavor with plural values instead of Food IN ('Cookie','Cake') and thus returned no rows, which is incorrect for the question asking for Cookie/Cake IDs priced between 3 and 7."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrasing “average prices” for blackberry or blueberry can reasonably mean separate averages per flavor, so grouping by flavor (with case-insensitive matches) is a valid interpretation, while the gold computes a single combined average."
+ },
+ "p019:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query’s inner join excludes chocolate goods with zero purchases, but the question (not bought more than 10 times) should include items with count ≤ 10, including zero, which the system correctly returns."
+ },
+ "p020:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query uses COUNT(DISTINCT Item)=2 over Cake/Cookie items, which can include two cookies and no cake or exclude receipts with more than two such items, so it does not correctly capture receipts with both Cake and Cookie."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system used DISTINCT to return unique receipt numbers while the gold includes duplicates; the question doesn’t specify handling of duplicates, so both interpretations are reasonable."
+ },
+ "p022:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system returns the correct earliest visitor as a single concatenated full name while the gold splits first and last name into two columns, so the difference is only output formatting."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question asks for receipt numbers and doesn’t specify handling duplicates; the system returned distinct receipts while the gold includes a duplicate, so both readings are reasonable."
+ },
+ "p024:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by customer and good and returns customers with any good averaging >5, whereas the question/gold require customers whose overall average item price exceeds 5 (group by customer only)."
+ },
+ "p025:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for goods priced at more than twice the average, so the correct condition is price > 2*AVG(price); the gold query omits the factor of 2."
+ },
+ "p026:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system averages per-good averages (unweighted across distinct goods) rather than the customer’s average spending across purchases, so it doesn’t meet the question’s intent and misses a valid customer."
+ }
+}

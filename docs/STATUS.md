@@ -1,6 +1,6 @@
 # Status
 
-**Updated:** 2026-11-13 · Tasks: [PLAN.md](PLAN.md)
+**Updated:** 2026-11-15 · Tasks: [PLAN.md](PLAN.md)
 
 ## What works (verified in code and tests)
 
@@ -13,6 +13,7 @@
 - A signed Evidence Bundle on every response, shown in the UI as "Why this was allowed".
   The bundle lists the checks of the path that produced the query (SQL, LogicalPlan or metric).
 - Self-consistency gate: the question is planned twice; different answers refuse.
+- A filter on a value that is not stored refuses (`no_stored_value`) and shows close stored values.
 - A ranked or thresholded answer shows the number it was ranked by, whatever the model wrote.
 - Correlated subqueries (`WHERE NOT EXISTS (... = outer.id)`) validate; outer references get
   the same catalog and PII checks as local columns.
@@ -38,8 +39,11 @@
 **Default model: `gpt-6-luna`, reasoning off** (since 2026-11-11). Spider test 400, gate on,
 3 repeats (2026-11-12): **76.8% right; adjudicated real wrong 3.5% (14/400, 95% CI
 2.1–5.8%)**; refused 13.3%. A rerun on 2026-11-13 after the gate compared whole
-answers gave 310 right / 38 wrong / 52 refused by exact match (not re-adjudicated). Both raters were models (gpt-5 and Claude); no human rated
-this round. Files: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-12.json` and
+answers gave 310 right / 38 wrong / 52 refused by exact match; its two new wrong answers
+were rated on 2026-11-14, which makes **15 real errors of 400 (3.75%, 95% CI 2.3–6.1%)** for
+that run. Both raters were models (gpt-5 and Claude); no human rated either round. Answers
+scored right were audited for the first time on 2026-11-14 (changelog): the raters flag
+between 1 and 11 of 60, so the wrong-rate may be understated until a person rates them. Files: `docs/baselines/spider-test400-gpt6luna-gate-r3-2026-11-12.json` and
 `docs/adjudication/`. This is above the 2% goal, as the previous model's number was.
 
 Previous default, `gpt-4.1-mini`:
@@ -61,6 +65,401 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 (5%), 7 abstained, 1 harness error; Northwind dev 7/10 right, 3 wrong.
 
 ## Changelog
+
+- **2026-11-16 — security pass: attack battery, two kernel fixes, an egress test, a key-file guard.**
+  43 hostile SQL shapes against the kernel (file and URL reads, getenv, system tables, writes,
+  extensions, PII by alias/struct/sort/length, stacked statements, resource bombs): 37 blocked
+  as expected. Found: DuckDB time travel `AT (VERSION => n)` passed (could read rows deleted
+  since, on a catalog that keeps history); now forbidden. Comments were kept in compiled SQL
+  (inert, one statement); now dropped so model text never reaches the warehouse query history.
+  New `tests/test_egress.py`: markers planted in a private and an unapproved column, questions run
+  through `ask` with a recording client; fails if any stored value is ever sent to the model.
+  Dev agents: the key file is denied to Read/Edit, and the Bash guard blocks any use of it but
+  sourcing (it also blocks a command that merely names it; acceptable).
+
+- **2026-11-16 — evidence-checked third rating of the head-to-head (Claude, not human).**
+  All 139 flagged answers (Secure Query 65 after P12-P16, Genie 74), shuffled and blind,
+  rated by five Claude agents that ran the reference SQL, the system SQL and probe queries
+  on the DuckDB copies for every packet; then reviewed: 5 labels overruled the same way
+  for both systems (grouping "each affiliation" by name merges distinct affiliations).
+  Real errors of 532: Secure Query 16 (3.0%, 95% 1.9-4.8%), Genie 28 (5.3%, 3.7-7.5%).
+  The earlier two-rater merge gave 20 vs 38: those raters called harmless duplicates
+  (a distance table stored both ways) and defensible readings (average per product vs
+  per order line) real errors more often. Ratio about the same (0.57 vs 0.53); intervals
+  overlap. Still model ratings: a person's rating is owed, and a rating page with the same
+  blind packets is published for it (private claude.ai artifact). Files:
+  `docs/adjudication/genie-h2h-2026-11-16-{blind-packets,blind-packets.key,claude-evidence-labels}.json`.
+- **2026-11-16 — measured, not built: a prompt rule on what to count (P17).** Rule tried:
+  "count or average exactly what the question names; COUNT(DISTINCT key) for a thing a
+  join repeats, every row for events or links". Spider dev 400, 3 repeats: 321/47/32 ->
+  324/45/31 (noise). BIRD dev, regraded on DuckDB: right 869 -> 851, wrong 411 -> 408,
+  refused 254 -> 275. The model added COUNT(DISTINCT) to 74 counting queries that had
+  none, with almost no change in outcome (3 right -> wrong, 1 wrong -> right); the
+  head-to-head errors it was meant for were the opposite (DISTINCT where every row
+  counts). Refusals rose mostly at the two-readings gate. Reverted.
+- **2026-11-16 — head-to-head re-run after P12-P16 (Secure Query side; Genie unchanged).**
+  Same 7 Spider test databases, 532 questions, 3 repeats, same catalogs; Genie's saved
+  answers reused. Grader: right 402 -> 416, flagged wrong 61 -> 65, refused 69 -> 51.
+  Adjudicated: 51 of 65 flagged answers are unchanged from rated ones and keep their
+  labels; 14 new were rated blind by gpt-5 and a separate Claude agent (both model raters;
+  agreement 8 of 14), merged conservatively. Real errors 17 -> 20 of 532 (3.8%, 95%
+  2.4-5.7%) vs Genie 38 (7.1%, 5.2-9.7%): still about half Genie's, but the intervals now
+  overlap slightly. 4 of the 5 new real errors are questions refused before and answered
+  now: two the model used to refuse (it now chains through a table and counts distinct
+  citing papers instead of citations), one the kernel used to reject (an average over
+  distinct products, not ordered items), one with two conditions on the same record. So
+  P12-P16 traded about 18 refusals for 14 right answers and 3-4 real errors on this set:
+  the newly answered questions are much less accurate than the rest.
+  Files: `docs/baselines/genie-h2h-spider-*-v4-sq-2026-11-16.json`,
+  `docs/adjudication/genie-h2h-*v4*`.
+- **2026-11-16 — three fan-out false alarms fixed (P16).** A sort of the BIRD fan-out
+  rejections (25 readings, 13 questions) found true alarms (an atoms x bonds count; totals
+  through a table with several rows per account), still refused, and three general false
+  alarms, now fixed: (1) a grouped or single-row subquery that joins tables has a known
+  grain (unique on its group keys; its own aggregates are checked in its own scope), the
+  very shape the error advises; (2) columns only in a CASE / IF condition select rows and
+  are not summed, so "share of revenue from customers in X" over Invoice JOIN Customer is
+  no longer refused; (3) a cross join with a single-row subquery is allowed. Also closed:
+  a grouped subquery that does not show its keys used to count as single-row; it is now
+  of unknown grain. BIRD dev, regraded on DuckDB: right 852 -> 869, wrong 403 -> 411,
+  refused 279 -> 254 (share right 67.9% both). Spider dev 400, 3 repeats: 318/44/38 ->
+  321/47/32 (noise). Known cost: a "share of patients" question whose SQL counts joined
+  lab rows was refused by accident and is now answered wrong; the kernel already allowed
+  COUNT(*) over that join (PLAN parking lot). Checked live through `/ask`.
+  P12-P16 against the regraded start: BIRD right 827 -> 869, wrong 394 -> 411, refused
+  313 -> 254; Spider dev 308/46/46 -> 321/47/32.
+  Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-p16-2026-11-16.json`.
+- **2026-11-16 — relationships read as usable both ways and chainable; sibling joins (P15).**
+  The catalog text still said "many → one; joins are added automatically" (left from the
+  LogicalPlan planner), and the SQL prompt's "no listed relationship connects the tables"
+  invited a refusal when the path went through a middle table. Now relationships read
+  "join either way, chain through tables", and the prompt says a path counts. The kernel
+  accepts a.x = b.y when both point at the same approved key; the fan-out check now treats
+  such a join as many-to-many both ways (before, any non-forward step counted as to-one in
+  reverse). BIRD dev, regraded on DuckDB: right 827 -> 852, wrong 388 -> 403, refused
+  319 -> 279 (model refusals 136 -> 101); share of answers right 68.1% -> 67.9%. Spider
+  dev 400, 3 repeats: 315/51/34 -> 318/44/38. Checked live through `/ask` (two multi-hop
+  questions, the count checked against the data).
+  P12-P15 together against the regraded baseline: BIRD right 827 -> 852, wrong 394 -> 403,
+  refused 313 -> 279; Spider dev 308/46/46 -> 318/44/38.
+  BIRD grading note: `docs/baselines` BIRD numbers before this entry used the SQLite
+  translation; that undercounts right answers using YEAR() by 11-21 per run.
+  Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-p15-2026-11-16.json`.
+- **2026-11-15 — CURRENT_DATE and the clock are allowed (P14).** They were forbidden with
+  the who/where functions, so every "how old" / "this year" question failed validation
+  (46 kernel rejections in the BIRD trace). They read no data; CURRENT_USER, CURRENT_SCHEMA
+  and the like stay forbidden. BIRD dev: invalid-query refusals 56 -> 34. Of the 9 clock
+  answers that were refused before, 5 match the reference on DuckDB and 4 do not: an exact
+  birthday vs the reference's days/365, two where we follow the hint and the reference does
+  not, and one missing DISTINCT (a duplicate-row slip, not the clock). Measurement fault
+  found: the BIRD experiment grades by translating our DuckDB SQL to SQLite, which has no
+  YEAR(), so right answers were scored wrong; regraded on DuckDB, P13 -> P14 is right
+  835 -> 827, wrong 373 -> 388, refused 326 -> 319 (single runs; P12 -> P13 moved as much).
+  Spider dev 400, 3 repeats: 316/47/37 -> 315/51/34 (noise). Checked live through `/ask`.
+  Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-p14-2026-11-15.json`.
+- **2026-11-15 — the two-readings gate compares what each reading answered (P13).** It
+  fingerprinted the kernel-appended ranking measure too, so two readings naming the same
+  winner by different measures (COUNT vs SUM) disagreed, and '9' stored as text differed
+  from 9. Now each reading is compared on its own SELECT columns, numeric text as numbers;
+  the measure is still shown in the answer. Spider dev 400, 3 repeats: right 315 -> 316,
+  wrong 50 -> 47, refused 35 -> 37 (noise); BIRD dev: right 816 -> 824, wrong 398 -> 384,
+  refused 320 -> 326. Most "both readings right yet refused" cases in the earlier trace
+  were run-to-run variation, not the comparison, so the gain is smaller than the trace
+  suggested. Checked live through `/ask` on DuckDB. Files:
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-p13-2026-11-15.json`.
+- **2026-11-15 — the unused-join rule no longer rejects bridge tables or set filters (P12).**
+  Root-cause tracing found the rule rejected a table whose columns only link the next join
+  (client -> disp -> account), and joins inside IN / EXISTS / INTERSECT / EXCEPT / UNION,
+  where repeated rows cannot change the answer; its advice "remove the join" made repairs
+  drop the filter and return every row. Now a table named in another join's ON is a bridge,
+  rows used as a set are exempt, and the advice keeps a filter as WHERE EXISTS. A dangling
+  last table is still rejected. Spider dev 400, 3 repeats: right 308 -> 315, wrong 46 -> 50,
+  refused 46 -> 35 (same-setup range 303-310 / 43-51 / 44-52); BIRD dev: right 812 -> 816,
+  wrong 409 -> 398, refused 313 -> 320 (within noise). Files:
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-p12-2026-11-15.json`.
+- **2026-11-15 — head-to-head on four more Spider test databases (532 questions in all).**
+  `e_commerce`, `customers_and_orders`, `cre_Students_Information_Systems`, `address_1`
+  loaded to Databricks with a Genie space each (tables, descriptions, joins, value matching;
+  no instructions), 3 repeats, both systems. Blind packets rated by gpt-5 and by a separate
+  Claude agent that saw only packets, rubric and data (both model raters, no human yet;
+  agreement 49 of 68), merged conservatively. Real errors, Secure Query vs Genie: 4 vs 4,
+  2 vs 0, 0 vs 4, 5 vs 12; with the earlier 238 questions (6 vs 18): 17 vs 38 of 532,
+  3.2% (95% 2.0-5.1%) vs 7.1% (5.2-9.7%). Answer rate on the four: 214 vs 260 of 294 (73%
+  vs 88%), so Genie answers more and is wrong more. Genie returned customer passwords
+  (the benchmark catalogs carry no PII flags); Secure Query refused. Files:
+  `docs/baselines/genie-h2h-spider-*-v3-2026-11-15.json`, `docs/adjudication/*-v3-*`.
+- **2026-11-15 — measured, not built: send a refusal's named column back to the model.**
+  Idea: when the model refuses and its reason names a column the catalog lists, send that
+  column back once. On BIRD dev 57 of 133 model refusals name a catalog column, but most
+  say the model saw it and found it does not answer ("ClosedDate alone cannot identify ...").
+  Replay of those 57, both readings nudged, against a plain re-run as control: right 5 -> 10,
+  wrong 2 -> 6, refused 50 -> 41; the 10 refusals it turned into answers were right 6 times
+  (60%, below the 67% of answers overall). Net +5 right, +4 wrong on 1,534 questions, inside
+  run-to-run noise. Not built; rerun if a model change moves the refusal reasons.
+- **2026-11-15 — the catalog draft proposes the joins the data shows (PLAN P11).** Most
+  refusals the model wrote on BIRD and Spider dev were "no approved relationship connects
+  X to Y": the schema leaves the join out (114 BIRD dev questions, 24 distinct joins), and
+  Unity Catalog rarely declares foreign keys at all. `with_discovered_joins` proposes A.x ->
+  B.y when B.y is a key, every A.x value is stored in B.y and the names agree; it reads
+  counts only, never a PII column, and the owner approves each join. Spider test with every
+  declared join hidden (never used to design it): 123 of 145 recovered, 13 extra, most of
+  them real links the schema forgot. BIRD dev (1,534): right 776 -> 812, wrong 378 -> 409,
+  refused 380 -> 313; on the 114 questions needing a missing join right 12 -> 37, wrong
+  20 -> 35, refused 82 -> 42 (new answers about as precise as the rest); the other 1,420
+  move within noise (149 answer/refuse flips between two runs of the same code). BIRD's own
+  column descriptions, tried the same way, changed nothing beyond noise and were not built.
+  Spider dev 400, 3 repeats, `--values --joins`: right 308, wrong 46, refused 46 (same-setup
+  range 303-310 / 43-51 / 44-52); `flight_2`, the one dev schema missing a join, 7 right 7
+  refused -> 15 right. Not fixed: `bakery_1`'s `items.item -> goods.id`, whose names do not
+  agree. Files: `docs/baselines/bird-dev-catalog-variants-2026-11-15.json`,
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-joins-2026-11-15.json`.
+- **2026-11-15 — the two-readings gate no longer calls a broken query a disagreement;
+  repairing database errors was tried and reverted.** Diagnosis on the 35 Spider dev
+  questions the gate refused, with both readings logged: 12 never ran (the database
+  rejected a query the validator allowed, mostly a text column holding `'null'` cast to a
+  number), and 1 had both readings write the identical query over a result larger than the
+  1,000-row comparison, which came back as a different sample each run. The rest were real
+  disagreements (inner vs outer join, DISTINCT, a different condition).
+  - Tried (`5ae7385`): give the database error to the model for one repair. Spider dev 400:
+    right 303 → 305, wrong 45 → 51 (5 of them `car_1` gold faults: SQLite ranks the text
+    `'null'` above any number), refused 52 → 44. On BIRD dev the other agent re-ran the
+    151 questions the gate had refused: 89 now answered, 26 right and 63 wrong by the
+    official result. Run on the official SQLite files, 54 of the 63 return different rows
+    and only 4 differ by an extra column; a sample shows wrong formulas and joins. Both
+    readings see the same error and repair it the same way, so they agree on a wrong
+    answer: the repair defeats the gate. Reverted.
+  - Kept (`planner/sql_plan.py`): a query the database rejects refuses as
+    `validation_failed` ("could not produce a valid query"), not `unstable_answer`; the
+    same query from both readings counts as agreement; each reading runs once and its
+    result serves both checks. Not re-measured on its own: the answers it can release are
+    the identical-query case only.
+  - File: `docs/baselines/spider-dev400-gpt6luna-gate-r3-execfix-2026-11-15.json` (the
+    reverted version).
+- **2026-11-15 — head-to-head re-run after the two changes below (`no_stored_value`,
+  value lists): 6 real errors against Genie's 18 on 238 questions.** Both systems re-run,
+  3 repeats, same three Spider test databases; `bakery_1` with the approved join; the
+  catalogs carry drafted value lists (1 column on `bakery_1`, 8 on `advertising_agencies`,
+  none on `aan_1`) and Genie's value matching is on for the same columns. Raters: gpt-5 and
+  the assistant, no person; the assistant wrote the changes and can tell the systems apart,
+  so its rating is neither blind nor independent.
+
+  | 238 questions | Secure Query | Genie |
+  |---|---|---|
+  | Right by exact match | 188 | 198 |
+  | Wrong by exact match | 27 | 40 |
+  | Refused | 23 | 0 |
+  | Answer differs between repeats | 14 | 29 |
+  | Real errors, either rater | 6 (2.5%, CI 1.2–5.4%) | 18 (7.6%, CI 4.8–11.6%) |
+  | Real errors, gpt-5 alone | 6 | 15 |
+  | Real errors, assistant alone | 1 | 9 |
+
+  - The intervals still touch (5.4 against 4.8) and the 2% bar is missed: the upper bound
+    is 5.4%. Raters agree on error-or-not for 50 of 67 packets.
+  - Per database, real errors by either rater: `aan_1` 3 against 6, `bakery_1` 0 against 8
+    (it was 4 against 4 in the run before the changes), `advertising_agencies` 3 against 4.
+  - `no_stored_value` was the outcome on 2 questions (both `aan_1`). On `bakery_1` the
+    value list ended the wrong-column filters: right answers 70 → 74, refusals 13 → 11.
+  - Five of Secure Query's 6 are gpt-5 calling DISTINCT, or grouping by a name instead of
+    an id, an error; the sixth is a dropped requested column.
+  - Files: `docs/baselines/genie-h2h-spider-*-v2-2026-11-15.json`,
+    `docs/adjudication/genie-h2h-spider-*-v2-2026-11-15-*`.
+- **2026-11-15 — a catalog column can list its stored values for the model (`values`).**
+  The model cannot see data, so it guesses how a code is stored (`'Cookies'` for
+  `'Cookie'`). A column's `values` list is shown to the model with the column; a list on a
+  PII column is rejected. `catalog_draft --values` drafts lists for category columns only
+  (string, not PII, at most 25 distinct values of at most 40 characters, each stored twice
+  on average); the owner reviews them with the rest of the catalog. Off unless the catalog
+  has lists. Spider dev 400, 3 repeats, `evals.run --values`: right 303, wrong 45, refused
+  52, against 310 / 43 / 47 without; three runs of the same setup range from 300 to 310
+  right, so dev shows no effect either way (its questions spell values as stored). File:
+  `docs/baselines/spider-dev400-gpt6luna-gate-r3-values-2026-11-15.json`.
+- **2026-11-15 — a filter on a value that is not stored is refused, not answered
+  (`no_stored_value`).** Cause of the repeated real errors in the head-to-head
+  (`'Stanford'` for `'Stanford University'`, a food type filtered in the flavor column):
+  the model cannot see values, an unmatched literal got one blind repair, and if kept the
+  empty answer went out. Now (`planner/sql_plan.py`, `planner/sql_values.py`): the repair
+  names another column of the table that stores the value; a literal still unmatched
+  refuses and shows the person up to three close stored values; a column compared through
+  LOWER, UPPER or TRIM is checked too (found live through the service: the model wrote
+  `LOWER(City) = 'atlantis'`); a literal under NOT is left alone. A question about a value
+  that truly does not exist is now refused with that reason instead of answered with 0.
+  - Spider dev 400, 3 repeats, exact match, before and after: right 300 → 310, wrong
+    42 → 43, refused 58 → 47; `no_stored_value` was the outcome on none, so dev shows no
+    cost and no effect.
+  - One confirming run, Secure Query only, on the three head-to-head databases (237
+    questions; not adjudicated, Genie not re-run): right 187 → 185, wrong 27 → 22, refused
+    23 → 30. `no_stored_value` was the outcome on 4 questions; the harness ran the
+    blocked query on 3 and all 3 were wrong, the fourth had been a wrong answer before.
+    The other changes are the two-readings gate and model refusals varying between runs.
+  - Files: `docs/baselines/spider-dev400-gpt6luna-gate-r3-nostoredvalue-2026-11-15.json`,
+    `docs/baselines/h2h-spider-3db-sq-only-nostoredvalue-2026-11-15.json`.
+- **2026-11-15 — head-to-head on three Spider test databases on Databricks, 237 questions:
+  Secure Query gives fewer wrong answers and far fewer answers.** Databases `aan_1`,
+  `bakery_1`, `advertising_agencies`; 3 repeats; `gpt-6-luna` with the gate. The raters are
+  two models (gpt-5 and the assistant), no person; the assistant could tell the systems
+  apart by SQL style, so its rating is not blind.
+
+  | 237 questions | Secure Query | Genie |
+  |---|---|---|
+  | Right by exact match | 165 | 197 |
+  | Wrong by exact match | 24 | 40 |
+  | Refused | 48 | 0 |
+  | Answer differs between repeats | 12 | 30 |
+  | Real errors, either rater | 9 (3.8%, CI 2.0–7.1%) | 18 (7.6%, CI 4.9–11.7%) |
+  | Real errors, gpt-5 alone | 9 | 16 |
+  | Real errors, assistant alone | 5 | 11 |
+
+  - The intervals overlap; this is not a win. Of answers given, 9 of 189 (4.8%) against
+    18 of 237 (7.6%). The 2% bar is missed.
+  - Per database (right / wrong / refused; real errors either rater): `aan_1` 56 questions,
+    47/6/3 and 4 against 46/10/0 and 5; `bakery_1` 94, 48/8/38 and 3 against 78/16/0 and
+    8; `advertising_agencies` 87, 70/10/7 and 2 against 73/14/0 and 5.
+  - 31 of the 38 `bakery_1` refusals are one catalog gap: the Spider schema has no foreign
+    key from `items.Receipt` to `receipts.ReceiptNumber`, so the catalog has no such join
+    and Secure Query refuses it. Genie got the same two joins and joined anyway, mostly
+    correctly. A catalog owner would approve that join; the run was not repeated with it.
+  - Suites now leave out what exact match cannot grade (P10, `scripts/spider_warehouse_suite.py`):
+    an answer over 5,000 rows, a gold query that selects a column its GROUP BY does not
+    determine, a gold LIMIT that cuts through a tie. `aan_1` went from 68 to 56 questions;
+    its numbers above are the 2026-11-14 answers re-scored on the 56, not a new run.
+  - The `bakery_1` and `advertising_agencies` tables and Genie spaces were made by
+    `scripts/spider_warehouse_load.py`: tables, column descriptions and joins from the
+    Secure Query catalog, no instructions, no example questions. The `aan_1` space was made
+    by hand and has a one-line instruction.
+  - Real errors seen. Secure Query: a filter on the wrong column or a misspelt value that
+    returns nothing (3 on `bakery_1`); a dropped requested column. Genie: date parsing that
+    drops single-digit days; `COUNT(DISTINCT type)` for "how many cakes"; a join that
+    multiplies rows before `HAVING COUNT = 1`.
+  - **Re-run of `bakery_1` with that join approved for both systems** (added to the catalog
+    copy and to the Genie space, same day): Secure Query 70 right / 11 wrong / 13 refused,
+    Genie 79 / 15 / 0; real errors by either rater 4 against 4. With this run in place of
+    the first, the 237 questions give: right 187 against 198, wrong 27 against 39, refused
+    23 against 0, answers differing between repeats 10 against 29, real errors by either
+    rater 10 (4.2%, CI 2.3–7.6%) against 14 (5.9%, CI 3.6–9.7%); gpt-5 alone 10 against 14,
+    the assistant alone 5 against 7. Genie's real errors on `bakery_1` fell from 8 to 4
+    between the two runs, so run-to-run variation is as large as the gap between systems.
+    Files: `*-bakery1-join-2026-11-15*`.
+  - Files: `docs/baselines/genie-h2h-spider-{bakery1,advertising}-2026-11-15.json`,
+    `docs/adjudication/genie-h2h-spider-{bakery1,advertising}-2026-11-15-*`.
+- **2026-11-14 — first head-to-head on a set we did not develop on: Spider test `aan_1` on
+  Databricks. No clear winner.** 242,907 rows in `workspace.aan_1`; a Genie space with the
+  5 tables, 5 joins and a one-line description, no example questions. 68 questions (of
+  Spider's 90: 20 have an empty or zero gold answer and are skipped by the loader, 2 have a
+  gold query with no single answer), 3 repeats, `gpt-6-luna`, everything read from the
+  warehouse. Accuracy only: Spider has no should-refuse cases.
+
+  | | Secure Query | Genie |
+  |---|---|---|
+  | Right by exact match | 49 | 46 |
+  | Wrong by exact match | 16 | 22 |
+  | Refused | 3 | 0 |
+  | Answer differed between repeats | 8 | 13 |
+  | Real errors, either rater says so | 8 (11.8%, CI 6.1–21.5%) | 11 (16.2%, CI 9.3–26.7%) |
+  | Real errors, gpt-5 alone | 8 | 11 |
+  | Real errors, Claude alone | 2 | 2 |
+
+  - **The intervals overlap; this does not show Secure Query is wrong less often.** 68
+    questions is a third of the plan's minimum, and no person rated anything.
+  - **The raters disagree widely** (same label on 16 of 38, error-or-not on 23 of 38).
+    Both saw shuffled packets with no system name. Most of the gap is two things gpt-5
+    could not see from a packet: author names are unique in this data, so grouping by name
+    is not an error; and a count that differs only because the result was cut at a row cap.
+  - **The row caps make 14 of the 38 packets ungradable.** The reference and Secure Query
+    stop at 10,000 rows, the Genie API returns at most 5,000, and several questions here
+    have larger answers. Exact match then compares two samples (PLAN P10).
+  - **8 of the 38 are the benchmark's fault:** for "the most cited paper" the gold returns
+    the id of an arbitrary citing paper. Both systems answer with the cited paper.
+  - Real errors both raters accept. Secure Query: `name = 'Stanford'` for the stored
+    'Stanford University' (an empty answer); needless inner joins that drop the 1,174
+    authors with no paper. Genie: grouping by title, which adds up the citations of
+    different papers that share one (twice).
+  - Secure Query answered from the SELECT below 10,000 rows with a silent cut; so did
+    Genie at 5,000. Neither tells the user the answer is incomplete in this harness.
+  - Fixed, both in the grader: when the gate refused an answer on the warehouse the
+    blocked SQL was parsed as DuckDB and the attempt was recorded as a harness error (6
+    questions in the first run; Secure Query was re-run after the fix, Genie was not).
+    Tests no longer inherit the developer's `.env`: an entrypoint under test loaded it and
+    switched later tests to the warehouse.
+  - New: `scripts/spider_warehouse_suite.py DB DIR` converts a Spider database's gold SQL
+    to Databricks and keeps a question only when it returns the gold's rows on the
+    warehouse.
+  - Files: `docs/baselines/genie-h2h-spider-aan1-2026-11-14.json`,
+    `docs/adjudication/genie-h2h-spider-aan1-2026-11-14-*`.
+
+- **2026-11-14 — first live run against Databricks and Genie (a trial, not a result).**
+  Sam's workspace: the 11 Chinook tables in `workspace.default` on a serverless warehouse,
+  and a Genie space over them with instructions, 3 measures, 10 joins and 2 example
+  queries. Chinook is the set we developed on, so nothing here may be quoted as a
+  comparison. `chinook/cases.json` (25 answerable, 9 should-refuse), 3 repeats,
+  `gpt-6-luna`, everything read from the warehouse.
+  - Before the run: all 25 reference queries return the same rows on the warehouse as on
+    the local database; Genie's 2 example questions are not in the suite.
+  - Exact-match scorecard: Secure Query 1 wrong of 34, Genie 10 of 34. Read case by case
+    by Claude (a model, not blind, not a person), almost none of that is accuracy:
+    - **Answerable (25): both systems answered all 25 correctly.** Genie's 3 "wrong" were a
+      timestamp with a UTC marker that the grader did not equate (fixed, below), the
+      right value with the invoice id next to it, and the right 5 customers with other
+      columns.
+    - **Personal data (5 should-refuse): Secure Query refused all 5; Genie returned
+      e-mails, a phone number and addresses in all 5,** and an e-mail column in the
+      Brazil customer list. The Genie space was given no rule about these columns, so
+      this measures configuration as much as the product.
+    - **Two stale expectations.** `avg_revenue_per_customer` and `revenue_growth_rate` are
+      marked should-refuse because the old plan format could not express a ratio. SQL can.
+      Secure Query answered the first (scored wrong, but its SQL is the formula the case
+      asks for) and refused the second; Genie answered both. The second is an
+      over-refusal by Secure Query. The suite labels need Sam's decision.
+    - Genie gave a differently shaped answer between repeats on 3 of 34 questions;
+      Secure Query on none.
+  - Fixed: a Genie timestamp arrives marked UTC and never equalled the same instant from
+    the SQL driver, so every date-bucket answer from Genie was scored wrong.
+  - Ran live for the first time: `--backend databricks`, the Genie client, execution on
+    a warehouse with connection reuse. Still not run live: the catalog draft from Unity
+    Catalog, the drift check, `scripts/databricks_smoke.py`, OIDC, the Docker image.
+  - Not changed in the workspace or `.env`. Three tables are snake_case there
+    (`invoice_line`, `media_type`, `playlist_track`); the run used a temporary copy of the
+    catalog and suite with those names. `.env` lacks `DATABRICKS_HTTP_PATH` and
+    `SECURE_QUERY_DATABRICKS_SCHEMA`; they were passed at run time.
+  - File: `docs/baselines/genie-h2h-chinook-trial-2026-11-14.json`.
+
+- **2026-11-14 — audit of answers scored right; a different model as second reader.**
+  Prompted by two papers (SpotIt, arXiv 2510.26840; a selective-prediction study, arXiv
+  2607.06799). VeriPIE (arXiv 2610.17493) was read and nothing was taken from it.
+  - **The two unlabelled wrong answers of the 2026-11-13 run are rated.** gpt-5 and Claude
+    agree, each without seeing the other: `test_1041_aan_1` is a real error,
+    `test_0453_cre_Students_Information_Systems` is ambiguous. That run has 15 real errors
+    of 400 (3.75%, CI 2.3–6.1%). No human rated them.
+  - **Audit of right answers.** A result that matches the reference on one database can
+    come from a query that is wrong on other data; SpotIt measured 10 to 13 points of this
+    on BIRD. `scripts/adjudicate.py packets REPORT --right N` samples matching answers and
+    `rate` judges the query itself. On 60 of the 310 right answers of the 2026-11-13 run:
+    gpt-5 flags 11; Claude, reviewing gpt-5's first-pass flags (not blind), accepts 1
+    (`test_1168_pilot_1`: `ORDER BY age LIMIT 1` where the reference keeps every row at the
+    minimum). The other 10 need data the schema's keys rule out or share the weakness with
+    the reference. The raters disagree too much for a number: between 1 of 60 (1.7%, CI
+    0.3–8.9%) and 11 of 60 (18%, CI 10–30%). A person has to rate these 60. gpt-5's first
+    pass flagged 40, of which 25 only for the 10,000-row cap; the rubric now excludes the
+    cap, single-row ties and zero-count groups. Files: `docs/adjudication/*-right60-*`.
+  - **Lead for the warehouse, not fixed:** about half of the 11 flags are about NULL. One matters on
+    Databricks: it sorts NULL first ascending, DuckDB sorts it last, so "the lowest X"
+    written as `ORDER BY x LIMIT 1` returns a NULL row there when the column has one. No
+    eval here can see it (PLAN P9).
+  - **Second reader as a different model (`SECURE_QUERY_CHECK_MODEL`, off by default).**
+    Spider **dev** 400, 3 repeats, exact match, not adjudicated, same day:
+
+    | Second reader | Right | Wrong | Refused | Answer-rate |
+    |---|---|---|---|---|
+    | `gpt-6-luna` (default) | 300 | 42 | 58 | 75.0% |
+    | `gpt-6.1-terra` | 281 | 29 | 90 | 70.3% |
+
+    14 of the 42 wrong answers became refusals, and so did 27 of the 300 right ones; 8
+    refusals became right and 1 became wrong. Wrong answers fall by 31% and right answers
+    by 6%; "unstable answer" refusals go from 28 to 62. The setting is one variable, read by
+    the product and both eval runners, on the same endpoint, so nothing new is sent
+    anywhere. Not confirmed on Spider test and not adjudicated; the default is unchanged
+    (PLAN P8). Files: `docs/baselines/spider-dev400-gpt6luna-*-2026-11-14.json`.
+  - The eval runners now take the second reader from the client (`check_twin`), as the
+    product does. Mock runs are unchanged; 654 tests pass.
 
 - **2026-11-14 — head-to-head harness ready (PLAN 2.1, 2.2).** `evals.scorecard --backend
   databricks` runs reference SQL, Secure Query and its lookups on the warehouse (needs

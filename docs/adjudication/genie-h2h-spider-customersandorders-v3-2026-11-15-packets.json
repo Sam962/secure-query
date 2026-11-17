@@ -1,0 +1,250 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many products named Monitor have been ordered?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code values: 'Completed', 'Part'\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code values: 'Credit Card', 'Direct Debit'\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity values: '1', '2', '4', '5', '7', '8', '9'\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code values: 'Clothes', 'Hardware'\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT SUM(order_quantity) FROM Order_items AS T1 JOIN Products AS T2 ON T1.product_id = T2.product_id WHERE T2.product_name = 'Monitor'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     16.0
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(DISTINCT `products`.`product_id`) AS `count` FROM `Products` AS `products` JOIN `Order_Items` AS `order_items` ON `products`.`product_id` = `order_items`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all customer names, ids and the number of orders by each customer.",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code values: 'Completed', 'Part'\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code values: 'Credit Card', 'Direct Debit'\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity values: '1', '2', '4', '5', '7', '8', '9'\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code values: 'Clothes', 'Hardware'\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT ANY_VALUE(T2.customer_name), T1.customer_id, COUNT(*) FROM Customer_orders AS T1 JOIN Customers AS T2 ON T1.customer_id = T2.customer_id GROUP BY T1.customer_id",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Jeremie",
+     9,
+     1
+    ],
+    [
+     "Mittie",
+     14,
+     2
+    ],
+    [
+     "Twila",
+     3,
+     2
+    ],
+    [
+     "Madelynn",
+     4,
+     1
+    ],
+    [
+     "Kennith",
+     13,
+     2
+    ],
+    [
+     "Abe",
+     12,
+     2
+    ],
+    [
+     "Alexandrine",
+     15,
+     2
+    ],
+    [
+     "Nya",
+     5,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "Jeromy",
+     1,
+     1
+    ],
+    [
+     "Madelynn",
+     4,
+     1
+    ],
+    [
+     "Nya",
+     5,
+     1
+    ],
+    [
+     "Abe",
+     12,
+     2
+    ],
+    [
+     "Mittie",
+     14,
+     2
+    ],
+    [
+     "Kennith",
+     13,
+     2
+    ],
+    [
+     "Kenna",
+     6,
+     0
+    ],
+    [
+     "Jaylan",
+     8,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names, ids, and number of orders made for each customer?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code values: 'Completed', 'Part'\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code values: 'Credit Card', 'Direct Debit'\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity values: '1', '2', '4', '5', '7', '8', '9'\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code values: 'Clothes', 'Hardware'\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT ANY_VALUE(T2.customer_name), T1.customer_id, COUNT(*) FROM Customer_orders AS T1 JOIN Customers AS T2 ON T1.customer_id = T2.customer_id GROUP BY T1.customer_id",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "Jeremie",
+     9,
+     1
+    ],
+    [
+     "Mittie",
+     14,
+     2
+    ],
+    [
+     "Twila",
+     3,
+     2
+    ],
+    [
+     "Madelynn",
+     4,
+     1
+    ],
+    [
+     "Kennith",
+     13,
+     2
+    ],
+    [
+     "Abe",
+     12,
+     2
+    ],
+    [
+     "Alexandrine",
+     15,
+     2
+    ],
+    [
+     "Nya",
+     5,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `customers`.`customer_name` AS `customer_name`, `customers`.`customer_id` AS `customer_id`, COUNT(`customer_orders`.`order_id`) AS `number_of_orders` FROM `Customers` AS `customers` LEFT JOIN `Customer_Orders` AS `customer_orders` ON `customers`.`customer_id` = `customer_orders`.`customer_id` GROUP BY `customers`.`customer_name`, `customers`.`customer_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     "Jeromy",
+     1,
+     1
+    ],
+    [
+     "Madelynn",
+     4,
+     1
+    ],
+    [
+     "Nya",
+     5,
+     1
+    ],
+    [
+     "Abe",
+     12,
+     2
+    ],
+    [
+     "Mittie",
+     14,
+     2
+    ],
+    [
+     "Kennith",
+     13,
+     2
+    ],
+    [
+     "Kenna",
+     6,
+     0
+    ],
+    [
+     "Jaylan",
+     8,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the total number of Monitor products that have been ordered?",
+  "schema": "tenant=spider_customers_and_orders\ntables:\n  - Addresses\n      address_id: int — address id\n      address_details: str — address details\n  - Customer_Orders\n      order_id: int — order id\n      customer_id: int — customer id\n      order_date: str — order date\n      order_status_code: str — order status code values: 'Completed', 'Part'\n  - Customers\n      customer_id: int — customer id\n      address_id: int — address id\n      payment_method_code: str — payment method code values: 'Credit Card', 'Direct Debit'\n      customer_number: str — customer number\n      customer_name: str — customer name\n      customer_address: str — customer address\n      customer_phone: str — customer phone\n      customer_email: str — customer email\n  - Order_Items\n      order_item_id: int — order item id\n      order_id: int — order id\n      product_id: int — product id\n      order_quantity: str — order quantity values: '1', '2', '4', '5', '7', '8', '9'\n  - Products\n      product_id: int — product id\n      product_type_code: str — product type code values: 'Clothes', 'Hardware'\n      product_name: str — product name\n      product_price: float — product price\nrelationships (many → one; joins are added automatically):\n  - Customer_Orders.customer_id → Customers.customer_id\n  - Order_Items.product_id → Products.product_id\n  - Order_Items.order_id → Customer_Orders.order_id",
+  "gold_sql": "SELECT SUM(order_quantity) FROM Order_items AS T1 JOIN Products AS T2 ON T1.product_id = T2.product_id WHERE T2.product_name = 'Monitor'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     16.0
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(*) AS `total_number` FROM `Order_Items` AS `order_items` JOIN `Products` AS `products` ON `order_items`.`product_id` = `products`.`product_id` WHERE `products`.`product_name` = 'Monitor' LIMIT 10000",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     2
+    ]
+   ]
+  }
+ }
+]

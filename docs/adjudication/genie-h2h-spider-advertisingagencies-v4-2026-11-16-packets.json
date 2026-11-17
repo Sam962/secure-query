@@ -1,0 +1,958 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the client ideas and details for clients with the sic code Bad?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT client_id, client_details FROM Clients WHERE sic_code = 'Bad'",
+  "gold_result": {
+   "count": 7,
+   "first": [
+    [
+     2,
+     "Mac"
+    ],
+    [
+     3,
+     "Johnpaul"
+    ],
+    [
+     4,
+     "Taurean"
+    ],
+    [
+     5,
+     "Lucie"
+    ],
+    [
+     11,
+     "Vaughn"
+    ],
+    [
+     14,
+     "Philip"
+    ],
+    [
+     15,
+     "Maximo"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `clients`.`client_details` AS `client_details` FROM `Clients` AS `clients` WHERE `clients`.`sic_code` = 'Bad' LIMIT 10000",
+  "system_result": {
+   "count": 7,
+   "first": [
+    [
+     "Mac"
+    ],
+    [
+     "Johnpaul"
+    ],
+    [
+     "Taurean"
+    ],
+    [
+     "Lucie"
+    ],
+    [
+     "Vaughn"
+    ],
+    [
+     "Philip"
+    ],
+    [
+     "Maximo"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show the meeting ids and the number of staff in each meeting.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT meeting_id, COUNT(*) FROM Staff_in_meetings GROUP BY meeting_id",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     6,
+     2
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     3,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `meetings`.`meeting_id` AS `meeting_id`, COUNT(`staff_in_meetings`.`staff_id`) AS `staff_count` FROM `Meetings` AS `meetings` LEFT JOIN `Staff_in_Meetings` AS `staff_in_meetings` ON `meetings`.`meeting_id` = `staff_in_meetings`.`meeting_id` GROUP BY `meetings`.`meeting_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     9,
+     1
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     2,
+     2
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show the meeting type codes and the number of meeting for each client.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT meeting_type, COUNT(*) FROM Meetings GROUP BY meeting_type",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     "Team",
+     6
+    ],
+    [
+     "Group",
+     4
+    ],
+    [
+     "Company",
+     5
+    ]
+   ]
+  },
+  "system_sql": "SELECT `meetings`.`client_id` AS `client_id`, `meetings`.`meeting_type` AS `meeting_type`, COUNT(*) AS `meeting_count` FROM `Meetings` AS `meetings` GROUP BY `meetings`.`client_id`, `meetings`.`meeting_type` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     15,
+     "Team",
+     1
+    ],
+    [
+     3,
+     "Group",
+     1
+    ],
+    [
+     4,
+     "Team",
+     1
+    ],
+    [
+     5,
+     "Company",
+     1
+    ],
+    [
+     14,
+     "Company",
+     1
+    ],
+    [
+     8,
+     "Team",
+     1
+    ],
+    [
+     13,
+     "Group",
+     1
+    ],
+    [
+     8,
+     "Company",
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are all meeting types and other details?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT meeting_type, other_details FROM meetings",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "Team",
+     "0"
+    ],
+    [
+     "Group",
+     "0"
+    ],
+    [
+     "Team",
+     "0"
+    ],
+    [
+     "Company",
+     "0"
+    ],
+    [
+     "Company",
+     "0"
+    ],
+    [
+     "Team",
+     "absent staff"
+    ],
+    [
+     "Group",
+     "0"
+    ],
+    [
+     "Company",
+     "0"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `meetings`.`meeting_type` AS `meeting_type`, `meetings`.`other_details` AS `other_details` FROM `Meetings` AS `meetings` LIMIT 10000",
+  "system_result": {
+   "count": 6,
+   "first": [
+    [
+     "Team",
+     "0"
+    ],
+    [
+     "Group",
+     "0"
+    ],
+    [
+     "Company",
+     "0"
+    ],
+    [
+     "Team",
+     "absent staff"
+    ],
+    [
+     "Company",
+     "absent staff"
+    ],
+    [
+     "Company",
+     ""
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the ids and details of the staff who have attended at least 1 meetings and have the detail with letter 's'?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT staff_id, ANY_VALUE(staff_details) FROM staff WHERE staff_details ILIKE '%s%' GROUP BY staff_id HAVING COUNT(*) >= 1",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     2,
+     "Sheridan"
+    ],
+    [
+     11,
+     "Clarissa"
+    ],
+    [
+     14,
+     "Marques"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `s`.`staff_id` AS `staff_id`, `s`.`staff_details` AS `staff_details` FROM `Staff` AS `s` JOIN `Staff_in_Meetings` AS `sim` ON `s`.`staff_id` = `sim`.`staff_id` WHERE `s`.`staff_details` ILIKE '%s%' LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     11,
+     "Clarissa"
+    ],
+    [
+     2,
+     "Sheridan"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all agency ids and details for agencies with a client.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT T1.agency_id, T1.agency_details FROM Agencies AS T1 JOIN Clients AS T2 ON T1.agency_id = T2.agency_id",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     1,
+     "Heller-Muller"
+    ],
+    [
+     3,
+     "Douglas-Langworth"
+    ],
+    [
+     5,
+     "White, Corwin and Rath"
+    ],
+    [
+     7,
+     "West, Grady and Durgan"
+    ],
+    [
+     8,
+     "Hickle-Durgan"
+    ],
+    [
+     9,
+     "Grant, Jaskolski and Brekke"
+    ],
+    [
+     11,
+     "Bins-Strosin"
+    ],
+    [
+     14,
+     "Renner LLC"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `a`.`agency_id` AS `agency_id`, `a`.`agency_details` AS `agency_details` FROM `Agencies` AS `a` JOIN `Clients` AS `c` ON `a`.`agency_id` = `c`.`agency_id` LIMIT 10000",
+  "system_result": {
+   "count": 8,
+   "first": [
+    [
+     5,
+     "White, Corwin and Rath"
+    ],
+    [
+     1,
+     "Heller-Muller"
+    ],
+    [
+     14,
+     "Renner LLC"
+    ],
+    [
+     8,
+     "Hickle-Durgan"
+    ],
+    [
+     7,
+     "West, Grady and Durgan"
+    ],
+    [
+     3,
+     "Douglas-Langworth"
+    ],
+    [
+     11,
+     "Bins-Strosin"
+    ],
+    [
+     9,
+     "Grant, Jaskolski and Brekke"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p007",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the agency ids and agency details for all agencies who have a client?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT T1.agency_id, T1.agency_details FROM Agencies AS T1 JOIN Clients AS T2 ON T1.agency_id = T2.agency_id",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     1,
+     "Heller-Muller"
+    ],
+    [
+     3,
+     "Douglas-Langworth"
+    ],
+    [
+     5,
+     "White, Corwin and Rath"
+    ],
+    [
+     7,
+     "West, Grady and Durgan"
+    ],
+    [
+     8,
+     "Hickle-Durgan"
+    ],
+    [
+     9,
+     "Grant, Jaskolski and Brekke"
+    ],
+    [
+     11,
+     "Bins-Strosin"
+    ],
+    [
+     14,
+     "Renner LLC"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `agencies`.`agency_id` AS `agency_id`, `agencies`.`agency_details` AS `agency_details` FROM `Agencies` AS `agencies` JOIN `Clients` AS `clients` ON `agencies`.`agency_id` = `clients`.`agency_id` LIMIT 10000",
+  "system_result": {
+   "count": 8,
+   "first": [
+    [
+     5,
+     "White, Corwin and Rath"
+    ],
+    [
+     1,
+     "Heller-Muller"
+    ],
+    [
+     14,
+     "Renner LLC"
+    ],
+    [
+     8,
+     "Hickle-Durgan"
+    ],
+    [
+     7,
+     "West, Grady and Durgan"
+    ],
+    [
+     3,
+     "Douglas-Langworth"
+    ],
+    [
+     11,
+     "Bins-Strosin"
+    ],
+    [
+     9,
+     "Grant, Jaskolski and Brekke"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p008",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are all meeting outcomes and purposes?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT meeting_outcome, purpose_of_meeting FROM meetings",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "Report",
+     "get proposal done"
+    ],
+    [
+     "Summary",
+     "vote for solutions"
+    ],
+    [
+     "Summary",
+     "get proposal done"
+    ],
+    [
+     "Vote results",
+     "weekly report"
+    ],
+    [
+     "Summary",
+     "weekly report"
+    ],
+    [
+     "Vote results",
+     "weekly report"
+    ],
+    [
+     "Vote results",
+     "vote for solutions"
+    ],
+    [
+     "Report",
+     "weekly report"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `meetings`.`meeting_outcome` AS `meeting_outcome`, `meetings`.`purpose_of_meeting` AS `purpose_of_meeting` FROM `Meetings` AS `meetings` LIMIT 10000",
+  "system_result": {
+   "count": 8,
+   "first": [
+    [
+     "Report",
+     "get proposal done"
+    ],
+    [
+     "Summary",
+     "vote for solutions"
+    ],
+    [
+     "Summary",
+     "get proposal done"
+    ],
+    [
+     "Vote results",
+     "weekly report"
+    ],
+    [
+     "Summary",
+     "weekly report"
+    ],
+    [
+     "Vote results",
+     "vote for solutions"
+    ],
+    [
+     "Report",
+     "weekly report"
+    ],
+    [
+     "Summary",
+     "monthly report"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p009",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all invoice ids and the number of payments for each invoice.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT invoice_id, COUNT(*) FROM Payments GROUP BY invoice_id",
+  "gold_result": {
+   "count": 9,
+   "first": [
+    [
+     3,
+     2
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     12,
+     2
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     2,
+     2
+    ]
+   ]
+  },
+  "system_sql": "SELECT `invoices`.`invoice_id` AS `invoice_id`, COUNT(`payments`.`payment_id`) AS `payment_count` FROM `Invoices` AS `invoices` LEFT JOIN `Payments` AS `payments` ON `invoices`.`invoice_id` = `payments`.`invoice_id` GROUP BY `invoices`.`invoice_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     9,
+     1
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     2,
+     2
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p010",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all client ids and the number of invoices for each client.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT client_id, COUNT(*) FROM Invoices GROUP BY client_id",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     5,
+     1
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     15,
+     1
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `clients`.`client_id` AS `client_id`, COUNT(`invoices`.`invoice_id`) AS `invoice_count` FROM `Clients` AS `clients` LEFT JOIN `Invoices` AS `invoices` ON `clients`.`client_id` = `invoices`.`client_id` GROUP BY `clients`.`client_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     9,
+     2
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     2,
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p011",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many clients does each agency have?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT agency_id, COUNT(*) FROM Clients GROUP BY agency_id",
+  "gold_result": {
+   "count": 8,
+   "first": [
+    [
+     8,
+     2
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     11,
+     1
+    ]
+   ]
+  },
+  "system_sql": "SELECT `agencies`.`agency_id` AS `agency_id`, COUNT(`clients`.`client_id`) AS `client_count` FROM `Agencies` AS `agencies` LEFT JOIN `Clients` AS `clients` ON `agencies`.`agency_id` = `clients`.`agency_id` GROUP BY `agencies`.`agency_id` LIMIT 10000",
+  "system_result": {
+   "count": 15,
+   "first": [
+    [
+     9,
+     4
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     13,
+     0
+    ],
+    [
+     2,
+     0
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p012",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Return the ids and details of staff who have attended at least 1 meeting and have an s in their staff details?",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT staff_id, ANY_VALUE(staff_details) FROM staff WHERE staff_details ILIKE '%s%' GROUP BY staff_id HAVING COUNT(*) >= 1",
+  "gold_result": {
+   "count": 3,
+   "first": [
+    [
+     2,
+     "Sheridan"
+    ],
+    [
+     11,
+     "Clarissa"
+    ],
+    [
+     14,
+     "Marques"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `s`.`staff_id` AS `staff_id`, `s`.`staff_details` AS `staff_details` FROM `Staff` AS `s` JOIN `Staff_in_Meetings` AS `sim` ON `s`.`staff_id` = `sim`.`staff_id` WHERE `s`.`staff_details` ILIKE '%s%' LIMIT 10000",
+  "system_result": {
+   "count": 2,
+   "first": [
+    [
+     11,
+     "Clarissa"
+    ],
+    [
+     2,
+     "Sheridan"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p013",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Show all meeting outcomes and purposes.",
+  "schema": "tenant=spider_advertising_agencies\ntables:\n  - Agencies\n      agency_id: int — agency id\n      agency_details: str — agency details\n  - Clients\n      client_id: int — client id\n      agency_id: int — agency id\n      sic_code: str — sic code values: 'Bad', 'Mutual'\n      client_details: str — client details\n  - Invoices\n      invoice_id: int — invoice id\n      client_id: int — client id\n      invoice_status: str — invoice status values: 'Finish', 'Starting', 'Working'\n      invoice_details: str — invoice details values: 'excellent', 'good', 'ok'\n  - Meetings\n      meeting_id: int — meeting id\n      client_id: int — client id\n      meeting_outcome: str — meeting outcome values: 'Report', 'Summary', 'Vote results'\n      meeting_type: str — meeting type values: 'Company', 'Group', 'Team'\n      billable_yn: str — billable yn values: '0', '1'\n      start_date_time: str — start date time\n      end_date_time: str — end date time\n      purpose_of_meeting: str — purpose of meeting values: 'get proposal done', 'monthly report', 'vote for solutions', 'weekly report'\n      other_details: str — other details\n  - Payments\n      payment_id: int — payment id\n      invoice_id: int — invoice id\n      payment_details: str — payment details values: 'American Express', 'Discover Card', 'MasterCard', 'Visa'\n  - Staff\n      staff_id: int — staff id\n      agency_id: int — agency id\n      staff_details: str — staff details\n  - Staff_in_Meetings\n      meeting_id: int — meeting id\n      staff_id: int — staff id\nrelationships (many rows on the left per row on the right; join either way, chain through tables):\n  - Clients.agency_id → Agencies.agency_id\n  - Invoices.client_id → Clients.client_id\n  - Meetings.client_id → Clients.client_id\n  - Payments.invoice_id → Invoices.invoice_id\n  - Staff_in_Meetings.staff_id → Staff.staff_id\n  - Staff_in_Meetings.meeting_id → Meetings.meeting_id",
+  "gold_sql": "SELECT meeting_outcome, purpose_of_meeting FROM meetings",
+  "gold_result": {
+   "count": 15,
+   "first": [
+    [
+     "Report",
+     "get proposal done"
+    ],
+    [
+     "Summary",
+     "vote for solutions"
+    ],
+    [
+     "Summary",
+     "get proposal done"
+    ],
+    [
+     "Vote results",
+     "weekly report"
+    ],
+    [
+     "Summary",
+     "weekly report"
+    ],
+    [
+     "Vote results",
+     "weekly report"
+    ],
+    [
+     "Vote results",
+     "vote for solutions"
+    ],
+    [
+     "Report",
+     "weekly report"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `meetings`.`meeting_outcome` AS `meeting_outcome`, `meetings`.`purpose_of_meeting` AS `purpose_of_meeting` FROM `Meetings` AS `meetings` LIMIT 10000",
+  "system_result": {
+   "count": 8,
+   "first": [
+    [
+     "Report",
+     "get proposal done"
+    ],
+    [
+     "Summary",
+     "vote for solutions"
+    ],
+    [
+     "Summary",
+     "get proposal done"
+    ],
+    [
+     "Vote results",
+     "weekly report"
+    ],
+    [
+     "Summary",
+     "weekly report"
+    ],
+    [
+     "Vote results",
+     "vote for solutions"
+    ],
+    [
+     "Report",
+     "weekly report"
+    ],
+    [
+     "Summary",
+     "monthly report"
+    ]
+   ]
+  }
+ }
+]

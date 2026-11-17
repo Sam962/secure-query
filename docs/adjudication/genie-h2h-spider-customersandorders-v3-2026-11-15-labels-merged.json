@@ -1,0 +1,46 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query should sum ordered quantities of the product 'Monitor', but the system counted distinct product IDs instead, giving 1 instead of the total units (16)."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Counting distinct products named Monitor (1) is not how many Monitors were ordered; the ordered quantity (16) is what the question asks."
+  }
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The request to show all customers and their number of orders can reasonably include customers with zero orders; the system\u2019s LEFT JOIN includes them while the gold\u2019s INNER JOIN excludes them, both fitting plausible interpretations."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Listing all customers with zero-order customers shown as 0 is a valid reading of 'all customer names'; rows for customers with orders match gold."
+  }
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "\u201cFor each customer\u201d can reasonably include customers with zero orders (LEFT JOIN), while the gold query only includes customers who have orders (INNER JOIN)."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Including customers with zero orders as 0 is a valid reading of 'for each customer'; counts for ordering customers match gold."
+  }
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The question asks for total quantity of Monitor units ordered (SUM(order_quantity)), but the system counted line items (COUNT(*)), yielding 2 instead of the correct 16."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "Counting order lines (2) instead of summing order_quantity (16) misstates the total number of Monitor products ordered."
+  }
+ }
+}

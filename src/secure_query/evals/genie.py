@@ -18,7 +18,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
 
@@ -159,7 +159,10 @@ def _typed(value: Any, type_name: str) -> Any:
         if type_name == "DATE":
             return date.fromisoformat(value)
         if type_name.startswith("TIMESTAMP"):
-            return datetime.fromisoformat(value)
+            # The API marks a timestamp as UTC ("...Z"); the SQL driver that runs the
+            # reference returns the same instant without a zone, and the two never compare equal.
+            stamp = datetime.fromisoformat(value)
+            return stamp.astimezone(timezone.utc).replace(tzinfo=None) if stamp.tzinfo else stamp
     except ValueError:
         return value
     return value

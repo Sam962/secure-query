@@ -1,0 +1,98 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "By parsing the date string and filtering out non-parsable values, the system omitted valid single-digit-day dates (e.g., 4/7/9-Oct-2007) that meet the >$100 condition, yielding an incomplete set of days."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to include duplicates, and listing each receipt number once is a reasonable reading; the system used DISTINCT while the gold output includes a duplicate."
+ },
+ "p003:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question requires both Cookie and Cake to meet the 3–7 price filter, but the gold SQL (due to OR/AND precedence) applies the price only to Cake, while the system SQL correctly applies it to both."
+ },
+ "p004:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query asks for Cookie or Cake ids priced between 3 and 7, but the system returned an empty set, which is incorrect given the schema and intended filter (regardless of the gold SQL’s missing parentheses)."
+ },
+ "p005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL omits parentheses, so the price filter applies only to Cake (food='Cookie' OR (food='Cake' AND price BETWEEN 3 AND 7)), whereas the question requires both Cookie and Cake to be between 3 and 7; the system SQL correctly enforces the price for both."
+ },
+ "p006:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for prices more than twice the average, but the gold SQL compares only to AVG(price); the system correctly uses > 2*AVG(price)."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for goods priced more than twice the average, but the gold SQL uses price > AVG(price); the system correctly uses price > 2*AVG(price)."
+ },
+ "p008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for prices above twice the average, but the gold SQL uses only > AVG(price); the system correctly uses > 2 * AVG(price)."
+ },
+ "p009:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query checks price > AVG(price) instead of > 2*AVG(price), while the system query correctly implements 'above twice the average price'."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question asks for “the receipt number” (singular), so returning any one receipt with the latest date is a reasonable reading, whereas the gold returns all receipts tied on that date."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“Less than any Tart” can reasonably mean less than every tart price (MIN) or, in SQL ANY semantics, less than some tart (MAX); the system chose the former while the gold chose the latter."
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system applies the same filtering logic and returns the same set size; presenting full names as a single concatenated column (and differing order/case) is a permissible interpretation of “full names,” so the mismatch is just formatting."
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system filters on goods.Flavor = 'apple' (lowercase), likely missing 'Apple' entries and thus omitting many qualifying receipts, yielding an incomplete result set."
+ },
+ "p014:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the item (good) with the lowest price, but the gold query returns the price value; the system correctly returns the id of the cheapest cheese-flavored good."
+ },
+ "p015:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query determines the earliest date by lexicographically ordering a non–zero-padded dd-MMM-yyyy string, while the system correctly parses dates; thus the system matches the intent of “earliest date” and the gold is wrong."
+ },
+ "p016:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question requires the price filter to apply to both Cookies and Cakes, but the gold SQL uses OR without parentheses (including all Cookies regardless of price), while the system correctly applies BETWEEN to both; an empty result is valid."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrasing “average prices … with blackberry or blueberry flavor” reasonably allows per-flavor averages (plural), which the system returns, while the gold computes a single combined average."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question can reasonably include chocolate goods with zero purchases (not bought more than 10 times), which the system includes and the gold excludes by joining only to purchased items."
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question asks for receipt numbers without specifying handling of duplicates, so returning DISTINCT receipt numbers (system) vs repeated ones (gold) is an acceptable ambiguity."
+ },
+ "p020:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to return duplicates per croissant line item, so returning distinct receipt numbers (system) is a valid interpretation while the gold returns duplicates."
+ },
+ "p021:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly returns the full name for the earliest visit; the difference from the gold is just output formatting (single concatenated name vs two columns)."
+ },
+ "p022:answered_wrong": {
+  "label": "real_error",
+  "reason": "Using LastName = 'Logan' likely missed the actual 'LOGAN' values (case-sensitive match), yielding no rows instead of the correct receipt numbers for that customer."
+ },
+ "p023:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by customer and good and returns customers if any good’s average price > 5, while the question/gold require customers whose overall average item price exceeds 5 across all purchases."
+ },
+ "p024:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrase “average spending for each good” can mean the overall average per customer (gold) or that every per-good average for a customer must exceed 5 (system); the system implements the latter reasonable reading."
+ }
+}

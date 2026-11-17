@@ -37,7 +37,7 @@
 | Server-side identity | `resolve_principal()` | `test_auth.py`, `test_api.py` |
 | Header identity only via a trusted proxy | `SECURE_QUERY_TRUSTED_PROXIES`; startup refuses `header` mode without it | `test_auth.py` |
 | No DB error text to clients | `api/http.py` handlers: generic 503 + audit id, 502 for planner failures; `/ready` names no tenant or path | `test_api.py` |
-| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM, only whether a literal the model wrote exists | `test_sql_values.py` |
+| Value lookups (SQL planner) stay inside policy | `planner/sql_values.py`: lookups pass through `validate_sql` with the principal's row filters, run on the read-only executor and are audited; stored values are never sent to the LLM, only whether a literal the model wrote exists and which other column of that table stores it; a `no_stored_value` refusal shows the person asking up to three close stored values, read under their own permissions | `test_sql_values.py` |
 | No CROSS JOIN | validate + compile | `test_validate.py`, `test_auth.py` |
 
 ## Identity
@@ -61,9 +61,9 @@ The principals file is re-read when it changes, so access can be changed without
 
 | Sent | Not sent |
 |------|----------|
-| The question, as typed | Rows, query results, or any stored value |
-| Names, types and descriptions of the tables and columns this person may see; approved join keys; synonyms; metric ids; house rules | Who is asking (no principal, tenant or token) |
-| On a repair: the validator's error messages, and a value from the model's own SQL that matched nothing stored | Tables and columns outside this person's catalog slice |
+| The question, as typed | Rows, query results, or any stored value the catalog does not list |
+| Names, types and descriptions of the tables and columns this person may see; a column's `values` list where the catalog owner approved one (category codes, never a PII column); approved join keys; synonyms; metric ids; house rules | Who is asking (no principal, tenant or token) |
+| On a repair: the validator's error messages; a value from the model's own SQL that matched nothing stored, and the name of another column of that table that stores it | Tables and columns outside this person's catalog slice |
 
 Table and column names can themselves be sensitive. To keep them inside your network, point
 `SECURE_QUERY_BASE_URL` at a private OpenAI-compatible endpoint (Azure OpenAI, Databricks
@@ -90,6 +90,7 @@ model serving, a self-hosted model) and qualify that model first ([EVAL.md](EVAL
 - `execute_databricks` runs compiled SQL on a SQL warehouse as the **end-user** identity by default (`SECURE_QUERY_DATABRICKS_AUTH=user`): the caller’s token comes from `X-Databricks-Access-Token` / principal `databricks_token` / OAuth on-behalf-of. `shared` mode (service PAT) is demo-only. UC RLS/masks apply to the person asking. On timeout the running statement is cancelled.
 - The warehouse principal must be SELECT-only (USE CATALOG / USE SCHEMA / SELECT). `/ready` checks this when `SECURE_QUERY_DATABRICKS_SCHEMA` is set: `SHOW GRANTS ON SCHEMA` for the current user, 503 on any write-capable privilege. Only direct grants are visible, not grants through groups, so it is a necessary check, not a proof.
 - `draft_catalog` / `fetch_unity_catalog_draft` build an **unapproved** catalog from `information_schema`. Foreign keys come from `referential_constraints` + key/constraint column usage — query failure fails the draft (no silent empty join allowlist). Untagged columns whose names look sensitive (`email`, `phone`, `address`, …) default to `pii=high`; explicit `public` / `pii_none` clears that. A data owner must still review before the object is the planner allowlist.
+- The draft also proposes joins the schema does not declare (`with_discovered_joins`; `--no-joins` turns it off): a column whose every value is stored in another table's key, with names that agree. It runs counts and a NOT EXISTS check with the drafting credentials, reads no `pii=high` column, and sends nothing to the model provider. Proposed joins are printed for the owner and become join keys only through the owner's approval, like any other catalog entry. A wrong join the owner approves would let the model join tables that do not relate, so the review must cover them.
 - Postgres and SharePoint lists join UC via Lakehouse Federation / Lakeflow Connect → Delta ([FEDERATION.md](FEDERATION.md)); they do not become a second production dialect.
 - Local DuckDB remains the CI/demo path. Warehouse catalogs set `sql_dialect="databricks"`.
 - Every ask writes a TraceRecord and a signed Evidence Bundle (see Signing and audit).

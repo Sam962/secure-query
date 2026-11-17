@@ -73,8 +73,11 @@ def duckdb_copy(db_id: str) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)
-    sqlite_path = BIRD_DATA / _DB_ROOT / db_id / f"{db_id}.sqlite"
-    source = sqlite3.connect(f"file:{sqlite_path}?mode=ro", uri=True)
+    sqlite_path = (BIRD_DATA / _DB_ROOT / db_id / f"{db_id}.sqlite").resolve()
+    # card_games is WAL and ships with no -wal file. A plain read-only open
+    # tries to create that sidecar beside the file the official grader executes.
+    # immutable=1 reads the shipped file and creates nothing next to it.
+    source = sqlite3.connect(f"file:{sqlite_path}?mode=ro&immutable=1", uri=True)
     source.text_factory = lambda b: b.decode("utf-8", "replace")
     duck = duckdb.connect(str(tmp))
     try:

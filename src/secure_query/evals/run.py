@@ -44,6 +44,12 @@ def _client(provider: str | None, temperature: float = 0.0):
     return OpenAIClient(**settings, temperature=temperature)
 
 
+def _second_reader(client, provider: str | None):
+    """The gate's second reader: the product's own (`check_twin`), or a second scripted client."""
+    twin = getattr(client, "check_twin", None)
+    return twin() if callable(twin) else _client(provider, CHECK_TEMPERATURE)
+
+
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     parser = argparse.ArgumentParser(description="Execution-accuracy eval runner")
@@ -130,6 +136,14 @@ def main(argv: list[str] | None = None) -> int:
         metavar="SECS",
         help="Pause between accuracy cases (default: 1.5 for groq, else 0)",
     )
+    parser.add_argument(
+        "--values", action="store_true",
+        help="Draft value lists for category columns into each catalog first (engine.catalog_draft)",
+    )
+    parser.add_argument(
+        "--joins", action="store_true",
+        help="Add the joins the data shows but the schema does not declare (engine.catalog_draft)",
+    )
     args = parser.parse_args(argv)
     if args.model:
         os.environ["SECURE_QUERY_MODEL"] = args.model
@@ -183,7 +197,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     try:
         client = _client(args.provider)
         sample_client = _client(args.provider, args.sample_temperature) if args.samples else None
-        check_client = _client(args.provider, CHECK_TEMPERATURE) if args.planner == "sql" else None
+        check_client = _second_reader(client, args.provider) if args.planner == "sql" else None
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return -1
@@ -217,6 +231,26 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         items = [it for i, it in enumerate(items) if i in keep]
     if args.limit:
         items = items[: args.limit]
+    if args.values or args.joins:
+        import duckdb
+
+        from secure_query.engine.catalog_draft import with_discovered_joins, with_value_lists
+
+        drafted: dict[tuple[int, str], Catalog] = {}
+        for i, (case, catalog, db_path) in enumerate(items):
+            key = (id(catalog), str(db_path))
+            if key not in drafted:
+                con = duckdb.connect(str(db_path), read_only=True)
+                try:
+                    def run(sql: str, con=con):  # noqa: ANN001
+                        return con.execute(sql).fetchall()
+
+                    if args.joins:
+                        catalog = with_discovered_joins(catalog, run)
+                    drafted[key] = with_value_lists(catalog, run) if args.values else catalog
+                finally:
+                    con.close()
+            items[i] = (case, drafted[key], db_path)
     case_delay = args.case_delay
     if case_delay is None:
         case_delay = 1.5 if provider == "groq" else 0.0

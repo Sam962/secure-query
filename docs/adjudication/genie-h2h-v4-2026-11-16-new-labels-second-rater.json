@@ -1,0 +1,16 @@
+{
+ "aan_1|p001": {"label": "real_error", "reason": "Counting distinct citing papers instead of citations collapses multiple citations and names a different author (Manning 2183 vs Och 3650)."},
+ "aan_1|p006": {"label": "real_error", "reason": "Counting distinct citing papers instead of citations collapses multiple citations and names a different top author."},
+ "advertising_agencies|p002": {"label": "ambiguous", "reason": "'Each meeting' reasonably includes meetings with zero staff; counts for the shared meetings match gold."},
+ "advertising_agencies|p010": {"label": "benchmark_fault", "reason": "The question asks for all client ids, so clients with zero invoices belong in the answer and gold omits them."},
+ "e_commerce|p005": {"label": "ambiguous", "reason": "Average price of products being ordered can mean over distinct ordered products (system) or weighted per order line (gold)."},
+ "e_commerce|p010": {"label": "benchmark_fault", "reason": "The question asks for all invoices; gold's inner join drops invoices without shipments, which the system keeps with null shipment dates."},
+ "e_commerce|p012": {"label": "ambiguous", "reason": "Counting distinct payment method codes is a defensible reading of 'at least 2 payment methods' versus gold's raw row count."},
+ "e_commerce|p015": {"label": "ambiguous", "reason": "Counting distinct payment method codes is a defensible reading of 'at least 2 payment methods' versus gold's raw row count."},
+ "cre_Students_Information_Systems|p001": {"label": "ambiguous", "reason": "'Obtained by 3 students' read as 3 distinct students (system) versus 3 monitoring rows (gold) is a genuine wording ambiguity, and the empty result follows from that reading."},
+ "cre_Students_Information_Systems|p002": {"label": "benchmark_fault", "reason": "Same student/address-type pairs, differing only in duplicate rows that gold's DISTINCT removes, which is a format difference for a per-student listing."},
+ "cre_Students_Information_Systems|p004": {"label": "benchmark_fault", "reason": "Students with zero detentions do have fewer than 2 detentions; gold's inner join wrongly excludes them."},
+ "address_1|p003": {"label": "ambiguous", "reason": "Including cities with zero students is a defensible reading of 'each city', and the nonzero counts match gold."},
+ "address_1|p005": {"label": "ambiguous", "reason": "The question asks for city codes, so the distinct set of codes is a defensible reading next to gold's code pairs."},
+ "address_1|p009": {"label": "benchmark_fault", "reason": "Same four students; first and last name in one column instead of two is only a format difference."}
+}

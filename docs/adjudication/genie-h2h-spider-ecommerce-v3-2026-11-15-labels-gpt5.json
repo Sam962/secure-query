@@ -1,0 +1,98 @@
+{
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to list each shipped order item or only unique product/color pairs, so returning DISTINCT results is a reasonable interpretation."
+ },
+ "p002:answered_wrong": {
+  "label": "real_error",
+  "reason": "By counting DISTINCT orders only after an inner join to order_items, the system excludes orders without items, tightening the ‘>2 orders’ condition beyond the question (and gold) which counts all orders and separately requires ≥3 items."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The prompt does not specify whether to include duplicate (first-name, product) pairs, and the system used DISTINCT while the gold did not, so both readings are reasonable."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question could mean total shipped items (shipment_items rows) or the number of distinct products shipped; the gold counts items while the system counts distinct products, both reasonable interpretations."
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The request for 'sizes of all products' is unclear about whether to list one row per product or only distinct sizes, so returning a deduplicated size is a reasonable interpretation."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "It counts DISTINCT orders only after joining to Order_Items, excluding orders without items and imposing a stricter condition than the question/gold, which count all orders and items separately."
+ },
+ "p007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts payment method rows (COUNT(*)) instead of distinct methods, while the question asks for customers with at least 2 payment methods; the system correctly uses COUNT(DISTINCT payment_method_code)."
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for the average price of products being ordered, requiring a join to Order_Items, but the system averaged over all products including those not ordered."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "By joining Orders to Order_Items before counting orders, the system only counts orders with items toward the >2 orders condition, whereas the question (and gold) count all orders placed; this stricter logic wrongly excludes valid customers."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query incorrectly filters shipments with a NOT IN on the same shipments table (always false), returning no rows, whereas the question requires invoice statuses for invoices/orders not linked to any shipment as in the gold query."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question could reasonably ask for the unique set of shipped products, and the system’s DISTINCT result matches that reading, whereas the gold returns duplicates per shipment."
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question could mean total shipped line items or number of distinct products shipped; the gold counts shipment items, while the system counts distinct product_ids, which is a reasonable interpretation."
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query lists order_ids with NULL invoice_status due to joining through missing shipments, instead of returning the actual invoice_status values for invoices not linked to any shipment as the question requests."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to count each shipment-item row or unique order items shipped; the gold counts all rows while the system counts DISTINCT order_item_id, both plausible interpretations."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system returned unique product sizes (DISTINCT) while the question did not specify whether duplicates should be included, making both interpretations reasonable."
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether duplicate customer–product pairs across multiple orders should be included, so using DISTINCT (fewer rows) is a reasonable interpretation."
+ },
+ "p017:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question implies at least two distinct payment methods, but the gold query uses COUNT(*) instead of COUNT(DISTINCT payment_method_code), whereas the system correctly counts distinct methods."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether “at least 2 payment methods” means distinct methods; the system required COUNT(DISTINCT payment_method_code) >= 2 while the gold uses COUNT(*) >= 2, and both interpretations are reasonable."
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to return duplicates, so returning distinct product name/color pairs for items present in Shipment_Items (without explicitly joining Shipments) is a reasonable interpretation."
+ },
+ "p020:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query joins Orders to Shipments (selecting only shipped orders) and then filters for orders not in Shipments, yielding an empty set and failing to return invoice statuses for unshipped orders."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question’s “at least 2 payment methods” can reasonably mean distinct methods; the system used COUNT(DISTINCT) while the gold counts rows (including duplicates), so both readings are valid."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify output shape; returning the earliest date alongside each multi-item order date (two columns with the earliest repeated) still provides the requested information, though the gold uses a single-column union."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to count total purchased items or distinct product types; the system counts DISTINCT product_id while the gold counts all order items, both valid interpretations."
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for every order (including those with zero products), but the gold query’s inner join omits orders without items; the system’s LEFT JOIN with COUNT(product_id) correctly includes zero-count orders."
+ }
+}

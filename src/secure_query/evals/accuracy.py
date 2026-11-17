@@ -333,7 +333,7 @@ def _run_once(
 
 
 def _execute(
-    compiled: Any, db_path: Path, run_sql: RowRunner | None, dialect: str = "duckdb"
+    compiled: Any, db_path: Path, run_sql: RowRunner | None, dialect: str | None = None
 ) -> tuple[list[str], list[tuple[Any, ...]]]:
     """(column names, rows) of a compiled query, from `run_sql` when given, else the DuckDB file."""
     if run_sql is None:
@@ -342,6 +342,7 @@ def _execute(
     import sqlglot
 
     rows = [tuple(row) for row in run_sql(compiled.sql)]
+    dialect = dialect or getattr(run_sql, "dialect", None) or "duckdb"
     return list(sqlglot.parse_one(compiled.sql, read=dialect).named_selects), rows
 
 

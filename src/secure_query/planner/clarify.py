@@ -14,6 +14,7 @@ ClarifyCode = Literal[
     "dropped_filter",
     "useless_join",
     "unstable_answer",
+    "no_stored_value",
     "low_link_confidence",
     "validation_failed",
     "planner_refusal",

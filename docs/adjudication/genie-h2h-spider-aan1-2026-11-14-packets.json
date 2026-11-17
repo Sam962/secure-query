@@ -1,0 +1,2607 @@
+[
+ {
+  "id": "p001",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List all venues and years for papers ordered by year.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT DISTINCT venue, YEAR FROM paper ORDER BY YEAR",
+  "gold_result": {
+   "count": 667,
+   "first": [
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1967
+    ],
+    [
+     "COLING",
+     1969
+    ],
+    [
+     "COLING",
+     1973
+    ],
+    [
+     "TINLP",
+     1975
+    ],
+    [
+     "TINLP",
+     1978
+    ],
+    [
+     "CL",
+     1979
+    ],
+    [
+     "ACL",
+     1979
+    ]
+   ]
+  },
+  "system_sql": "SELECT `venue`, `year` FROM `workspace`.`aan_1`.`paper` WHERE `year` IS NOT NULL AND `venue` IS NOT NULL ORDER BY `year` ASC;",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p002",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Count the number of papers Stanford University had between 2000 and 2009.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T1.paper_id) FROM Paper AS T1 JOIN Author_list AS T2 ON T1.paper_id = T2.paper_id JOIN Affiliation AS T3 ON T2.affiliation_id = T3.affiliation_id WHERE T1.year >= 2000 AND T1.year <= 2009 AND T3.name ILIKE 'Stanford University'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     164
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(DISTINCT al.paper_id) AS paper_count\nFROM `workspace`.`aan_1`.`author_list` al\nJOIN `workspace`.`aan_1`.`affiliation` aff ON al.affiliation_id = aff.affiliation_id\nJOIN `workspace`.`aan_1`.`paper` p ON al.paper_id = p.paper_id\nWHERE (\n  aff.name ILIKE '% Stanford University %' OR\n  aff.name ILIKE 'Stanford University %' OR\n  aff.name ILIKE '% Stanford University' OR\n  aff.name ILIKE '%Stanford University%' OR\n  aff.name ILIKE '%Stanford University, %' OR\n  aff.name ILIKE '%Stanford University;%' OR\n  aff.name ILIKE '%Stanford University; %'\n)\nAND p.year IS NOT NULL\nAND p.paper_id IS NOT NULL\nAND p.year BETWEEN 2000 AND 2009",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     171
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p003",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List all venues and years for papers ordered by year.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT DISTINCT venue, YEAR FROM paper ORDER BY YEAR",
+  "gold_result": {
+   "count": 667,
+   "first": [
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1967
+    ],
+    [
+     "COLING",
+     1969
+    ],
+    [
+     "COLING",
+     1973
+    ],
+    [
+     "TINLP",
+     1975
+    ],
+    [
+     "TINLP",
+     1978
+    ],
+    [
+     "CL",
+     1979
+    ],
+    [
+     "ACL",
+     1979
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`venue` AS `venue`, `paper`.`year` AS `year` FROM `Paper` AS `paper` ORDER BY `year` LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ],
+    [
+     "COLING",
+     1965
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p004",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List names of all authors who have only 1 paper.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id HAVING COUNT(*) = 1",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Marcus, Mitchell"
+    ],
+    [
+     "Zheng, Jin Guang"
+    ],
+    [
+     "Luo, Gang"
+    ],
+    [
+     "Luis, Tiago"
+    ],
+    [
+     "Nakamura, Tomoaki"
+    ],
+    [
+     "Hauff, Claudia"
+    ],
+    [
+     "Liu, Xuan"
+    ],
+    [
+     "Tay, Yi"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) = 1 LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Orasan, Constantin",
+     1
+    ],
+    [
+     "Wallach, Hanna",
+     1
+    ],
+    [
+     "Misra, Dipendra Kumar",
+     1
+    ],
+    [
+     "Zhang, Yuhao",
+     1
+    ],
+    [
+     "Toni, Francesca",
+     1
+    ],
+    [
+     "gur, izzeddin",
+     1
+    ],
+    [
+     "Yasunaga, Michihiro",
+     1
+    ],
+    [
+     "StÃ¼ker, Sebastian",
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p005",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the titles and paper ids for papers which were affiliated with both Stanford and Columbia University?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT T1.title, T1.paper_id FROM Paper AS T1 JOIN Author_list AS T2 ON T1.paper_id = T2.paper_id JOIN Affiliation AS T3 ON T2.affiliation_id = T3.affiliation_id WHERE T3.name ILIKE 'Stanford University' INTERSECT SELECT T1.title, T1.paper_id FROM Paper AS T1 JOIN Author_list AS T2 ON T1.paper_id = T2.paper_id JOIN Affiliation AS T3 ON T2.affiliation_id = T3.affiliation_id WHERE T3.name ILIKE 'Columbia University'",
+  "gold_result": {
+   "count": 2,
+   "first": [
+    [
+     "Unsupervised Induction Of Modern Standard Arabic Verb Classes Using Syntactic Frames And LSA",
+     "P06-2102"
+    ],
+    [
+     "Unsupervised Induction Of Modern Standard Arabic Verb Classes",
+     "N06-2039"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `paper`.`title` AS `title`, `paper`.`paper_id` AS `paper_id` FROM `Paper` AS `paper` JOIN `Author_list` AS `stanford_list` ON `paper`.`paper_id` = `stanford_list`.`paper_id` JOIN `Affiliation` AS `stanford_affiliation` ON `stanford_list`.`affiliation_id` = `stanford_affiliation`.`affiliation_id` JOIN `Author_list` AS `columbia_list` ON `paper`.`paper_id` = `columbia_list`.`paper_id` JOIN `Affiliation` AS `columbia_affiliation` ON `columbia_list`.`affiliation_id` = `columbia_affiliation`.`affiliation_id` WHERE `stanford_affiliation`.`name` = 'Stanford' AND `columbia_affiliation`.`name` = 'Columbia University' LIMIT 10000",
+  "system_result": {
+   "count": 0,
+   "first": []
+  }
+ },
+ {
+  "id": "p006",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of authors who have not published a paper in ACL?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT name FROM Author WHERE NOT author_id IN (SELECT T1.author_id FROM Author_list AS T1 JOIN Paper AS T2 ON T1.paper_id = T2.paper_id WHERE T2.venue = 'ACL')",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "&#269"
+    ],
+    [
+     "&#353"
+    ],
+    [
+     "&#x106"
+    ],
+    [
+     "&#x107"
+    ],
+    [
+     "&#x10D"
+    ],
+    [
+     "&#x110"
+    ],
+    [
+     "&#x130"
+    ],
+    [
+     "&#x131"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `author`.`name` AS `name` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE NOT `author`.`author_id` IN (SELECT `author_list`.`author_id` AS `author_id` FROM `Author_list` AS `author_list` JOIN `Paper` AS `paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`venue` = 'ACL') LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Harihara, Ganesh"
+    ],
+    [
+     "Yang, Eugene"
+    ],
+    [
+     "Teka Hadgu, Asmelash"
+    ],
+    [
+     "Sundararaj, Jayaprakash"
+    ],
+    [
+     "Huang, Ting-Hao"
+    ],
+    [
+     "Lu, Ying"
+    ],
+    [
+     "Wan, Hai"
+    ],
+    [
+     "Schnabel, Tobias"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p007",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many papers has each affiliation published?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     1,
+     "CNRS, France; LPL"
+    ],
+    [
+     1,
+     "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+    ],
+    [
+     23,
+     "Duke University"
+    ],
+    [
+     2,
+     "Free University of Bolzano Bozen"
+    ],
+    [
+     133,
+     "German Research Center for Artificial Intelligence"
+    ],
+    [
+     2,
+     "Hofstra University"
+    ],
+    [
+     10,
+     "Indian Institute of Technology"
+    ],
+    [
+     2,
+     "Kangnam University"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "ATR Spoken Language Translation Research Laboratories",
+     42
+    ],
+    [
+     "CEDIAG-BULL A.I. Corporate Center",
+     4
+    ],
+    [
+     "CNR-Institute of Psychology",
+     6
+    ],
+    [
+     "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+     1
+    ],
+    [
+     "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+     1
+    ],
+    [
+     "Fondazione Bruno Kessler",
+     28
+    ],
+    [
+     "IFCI",
+     2
+    ],
+    [
+     "IRISA",
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p008",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many papers does Stanford University have between 2000 and 2009?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T1.paper_id) FROM Paper AS T1 JOIN Author_list AS T2 ON T1.paper_id = T2.paper_id JOIN Affiliation AS T3 ON T2.affiliation_id = T3.affiliation_id WHERE T1.year >= 2000 AND T1.year <= 2009 AND T3.name ILIKE 'Stanford University'",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     164
+    ]
+   ]
+  },
+  "system_sql": "SELECT COUNT(DISTINCT `author_list`.`paper_id`) AS paper_count\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id`\nJOIN `workspace`.`aan_1`.`paper` ON `author_list`.`paper_id` = `paper`.`paper_id`\nWHERE `affiliation`.`name` ILIKE '%Stanford University%'\nAND `paper`.`year` BETWEEN 2000 AND 2009",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     171
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p009",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many papers has each affiliation published?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     1,
+     "CNRS, France; LPL"
+    ],
+    [
+     1,
+     "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+    ],
+    [
+     23,
+     "Duke University"
+    ],
+    [
+     2,
+     "Free University of Bolzano Bozen"
+    ],
+    [
+     133,
+     "German Research Center for Artificial Intelligence"
+    ],
+    [
+     2,
+     "Hofstra University"
+    ],
+    [
+     10,
+     "Indian Institute of Technology"
+    ],
+    [
+     2,
+     "Kangnam University"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name`, COUNT(DISTINCT `author_list`.`paper_id`) AS papers_published\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id`\nWHERE `author_list`.`affiliation_id` IS NOT NULL\nGROUP BY `affiliation`.`name`\nORDER BY papers_published DESC",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "",
+     8273
+    ],
+    [
+     "University of Edinburgh",
+     498
+    ],
+    [
+     "University of Pennsylvania",
+     453
+    ],
+    [
+     "Carnegie Mellon University",
+     405
+    ],
+    [
+     "University of Southern California",
+     293
+    ],
+    [
+     "Massachusetts Institute of Technology",
+     262
+    ],
+    [
+     "Saarland University",
+     257
+    ],
+    [
+     "SRI International",
+     237
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p010",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of authors who have exactly 1 paper?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id HAVING COUNT(*) = 1",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Marcus, Mitchell"
+    ],
+    [
+     "Zheng, Jin Guang"
+    ],
+    [
+     "Luo, Gang"
+    ],
+    [
+     "Luis, Tiago"
+    ],
+    [
+     "Nakamura, Tomoaki"
+    ],
+    [
+     "Hauff, Claudia"
+    ],
+    [
+     "Liu, Xuan"
+    ],
+    [
+     "Tay, Yi"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name`\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`author` ON `author_list`.`author_id` = `author`.`author_id`\nWHERE `author`.`name` IS NOT NULL\nGROUP BY `author`.`name`\nHAVING COUNT(DISTINCT `author_list`.`paper_id`) = 1",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "Parekh, Zarana"
+    ],
+    [
+     "Meltzer, Talya"
+    ],
+    [
+     "Abhishek, Abhishek"
+    ],
+    [
+     "Fort, Kar&euml"
+    ],
+    [
+     "Manabe, Hitoshi"
+    ],
+    [
+     "Clergerie, Eric De La"
+    ],
+    [
+     "Bradford, James"
+    ],
+    [
+     "Trenkmann, Martin"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p011",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of all affiliations, ordered by number of papers?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     ""
+    ],
+    [
+     "Carnegie Mellon University"
+    ],
+    [
+     "University of Edinburgh"
+    ],
+    [
+     "University of Pennsylvania"
+    ],
+    [
+     "Massachusetts Institute of Technology"
+    ],
+    [
+     "University of Southern California"
+    ],
+    [
+     "BBN Technologies"
+    ],
+    [
+     "IBM T.J. Watson Research Center"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name`, COUNT(DISTINCT `author_list`.`paper_id`) AS paper_count\nFROM `workspace`.`aan_1`.`affiliation`\nJOIN `workspace`.`aan_1`.`author_list` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id`\nWHERE `affiliation`.`name` IS NOT NULL AND `author_list`.`paper_id` IS NOT NULL\nGROUP BY `affiliation`.`name`\nORDER BY paper_count DESC",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "",
+     8273
+    ],
+    [
+     "University of Edinburgh",
+     498
+    ],
+    [
+     "University of Pennsylvania",
+     453
+    ],
+    [
+     "Carnegie Mellon University",
+     405
+    ],
+    [
+     "University of Southern California",
+     293
+    ],
+    [
+     "Massachusetts Institute of Technology",
+     262
+    ],
+    [
+     "Saarland University",
+     257
+    ],
+    [
+     "SRI International",
+     237
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p012",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List top 10 most cited papers and their numbers of citations.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 10",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ],
+    [
+     "A00-1025",
+     1008
+    ],
+    [
+     "A00-1004",
+     783
+    ],
+    [
+     "C04-1030",
+     762
+    ],
+    [
+     "C04-1006",
+     756
+    ],
+    [
+     "C08-1014",
+     746
+    ],
+    [
+     "C04-1030",
+     624
+    ],
+    [
+     "C04-1024",
+     451
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`title`, COUNT(*) AS citation_count\nFROM `workspace`.`aan_1`.`citation`\nJOIN `workspace`.`aan_1`.`paper` ON `citation`.`cited_paper_id` = `paper`.`paper_id`\nWHERE `paper`.`title` IS NOT NULL\nGROUP BY `paper`.`paper_id`, `paper`.`title`\nORDER BY citation_count DESC\nLIMIT 10;",
+  "system_result": {
+   "count": 10,
+   "first": [
+    [
+     "Bleu: A Method For Automatic Evaluation Of Machine Translation",
+     1064
+    ],
+    [
+     "Building A Large Annotated Corpus Of English: The Penn Treebank",
+     1008
+    ],
+    [
+     "The Mathematics Of Statistical Machine Translation: Parameter Estimation",
+     783
+    ],
+    [
+     "Minimum Error Rate Training In Statistical Machine Translation",
+     762
+    ],
+    [
+     "A Systematic Comparison Of Various Statistical Alignment Models",
+     756
+    ],
+    [
+     "Moses: Open Source Toolkit for Statistical Machine Translation",
+     746
+    ],
+    [
+     "Statistical Phrase-Based Translation",
+     624
+    ],
+    [
+     "Accurate Unlexicalized Parsing",
+     451
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p013",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the id and title of the papers that are never cited by others.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT paper_id, title FROM Paper WHERE NOT paper_id IN (SELECT cited_paper_id FROM Citation)",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "A00-1001",
+     "BusTUC - A Natural Language Bus Route Oracle"
+    ],
+    [
+     "A00-1003",
+     "Cross-Language Multimedia Information Retrieval"
+    ],
+    [
+     "A00-1013",
+     "DP: A Detector For Presuppositions In Survey Questions"
+    ],
+    [
+     "A00-1015",
+     "Javox: A Toolkit For Building Speech-Enabled Applications"
+    ],
+    [
+     "A00-1022",
+     "Message Classification In The Call Center"
+    ],
+    [
+     "A00-1027",
+     "Compound Noun Segmentation Based On Lexical Data Extracted From Corpus"
+    ],
+    [
+     "A00-1029",
+     "A Tool For Automated Revision Of Grammars For NLP Systems"
+    ],
+    [
+     "A00-1035",
+     "Spelling And Grammar Correction For Danish In SCARRIE"
+    ]
+   ]
+  },
+  "system_sql": "SELECT p.paper_id, p.title\nFROM `workspace`.`aan_1`.`paper` p\nLEFT JOIN `workspace`.`aan_1`.`citation` c\n  ON p.paper_id = c.cited_paper_id\nWHERE c.cited_paper_id IS NULL\n  AND p.paper_id IS NOT NULL\n  AND p.title IS NOT NULL",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "A00-1001",
+     "BusTUC - A Natural Language Bus Route Oracle"
+    ],
+    [
+     "A00-1003",
+     "Cross-Language Multimedia Information Retrieval"
+    ],
+    [
+     "A00-1013",
+     "DP: A Detector For Presuppositions In Survey Questions"
+    ],
+    [
+     "A00-1015",
+     "Javox: A Toolkit For Building Speech-Enabled Applications"
+    ],
+    [
+     "A00-1022",
+     "Message Classification In The Call Center"
+    ],
+    [
+     "A00-1027",
+     "Compound Noun Segmentation Based On Lexical Data Extracted From Corpus"
+    ],
+    [
+     "A00-1029",
+     "A Tool For Automated Revision Of Grammars For NLP Systems"
+    ],
+    [
+     "A00-1035",
+     "Spelling And Grammar Correction For Danish In SCARRIE"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p014",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the id and the number of citations of the most cited paper?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`paper_id` AS `paper_id`, COUNT(`citation`.`paper_id`) AS `citation_count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "P02-1040",
+     1064
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p015",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the titles and paper ids for papers written in affiliation with Harvard University?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT DISTINCT T1.title, T1.paper_id FROM Paper AS T1 JOIN Author_list AS T2 ON T1.paper_id = T2.paper_id JOIN Affiliation AS T3 ON T2.affiliation_id = T3.affiliation_id WHERE T3.name = 'Harvard University'",
+  "gold_result": {
+   "count": 67,
+   "first": [
+    [
+     "Unifying Synchronous Tree Adjoining Grammars And Tree Transducers Via Bimorphisms",
+     "E06-1048"
+    ],
+    [
+     "The Semantics Of Resource Sharing In Lexical-Functional Grammar",
+     "E95-1005"
+    ],
+    [
+     "Optimization In Multimodal Interpretation",
+     "P04-1001"
+    ],
+    [
+     "Bayesian Grammar Induction For Language Modeling",
+     "P95-1031"
+    ],
+    [
+     "Parsing Algorithms And Metrics",
+     "P96-1024"
+    ],
+    [
+     "The LinGO Redwoods Treebank: Motivation And Preliminary Applications",
+     "C02-2025"
+    ],
+    [
+     "A System For Transformational Analysis",
+     "C65-1017"
+    ],
+    [
+     "Intonational Features Of Local And Global Discourse Structure",
+     "H92-1089"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT paper.paper_id, paper.title\nFROM workspace.aan_1.author_list\nJOIN workspace.aan_1.affiliation ON author_list.affiliation_id = affiliation.affiliation_id\nJOIN workspace.aan_1.paper ON author_list.paper_id = paper.paper_id\nWHERE affiliation.name ILIKE '%Harvard University%'\n  AND paper.paper_id IS NOT NULL\n  AND paper.title IS NOT NULL",
+  "system_result": {
+   "count": 69,
+   "first": [
+    [
+     "T87-1018",
+     "Whither Discourse And Speech Acts?"
+    ],
+    [
+     "C65-1017",
+     "A System For Transformational Analysis"
+    ],
+    [
+     "H89-2078",
+     "White Paper On Natural Language Processing"
+    ],
+    [
+     "J02-1002",
+     "A Critique And Improvement Of An Evaluation Metric For Text Segmentation"
+    ],
+    [
+     "P92-1022",
+     "An Alternative Conception Of Tree-Adjoining Derivation"
+    ],
+    [
+     "P97-1008",
+     "Similarity-Based Methods For Word Sense Disambiguation"
+    ],
+    [
+     "W90-0104",
+     "A New Model For Lexical Choice For Open-Class Words"
+    ],
+    [
+     "W93-0217",
+     "The Need For Intentionally-Based Approaches To Language"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p016",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the name of authors who have never published a paper in ACL.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT name FROM Author WHERE NOT author_id IN (SELECT T1.author_id FROM Author_list AS T1 JOIN Paper AS T2 ON T1.paper_id = T2.paper_id WHERE T2.venue = 'ACL')",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "&#269"
+    ],
+    [
+     "&#353"
+    ],
+    [
+     "&#x106"
+    ],
+    [
+     "&#x107"
+    ],
+    [
+     "&#x10D"
+    ],
+    [
+     "&#x110"
+    ],
+    [
+     "&#x130"
+    ],
+    [
+     "&#x131"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` FROM `workspace`.`aan_1`.`author` WHERE `author`.`name` IS NOT NULL AND `author`.`author_id` NOT IN (SELECT DISTINCT `author_list`.`author_id` FROM `workspace`.`aan_1`.`author_list` INNER JOIN `workspace`.`aan_1`.`paper` ON `author_list`.`paper_id` = `paper`.`paper_id` WHERE `paper`.`venue` = 'ACL')",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "&#269"
+    ],
+    [
+     "&#353"
+    ],
+    [
+     "&#x106"
+    ],
+    [
+     "&#x107"
+    ],
+    [
+     "&#x10D"
+    ],
+    [
+     "&#x110"
+    ],
+    [
+     "&#x130"
+    ],
+    [
+     "&#x131"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p017",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the titles for papers with more than 50 citations?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T2.title) FROM Citation AS T1 JOIN Paper AS T2 ON T1.cited_paper_id = T2.paper_id GROUP BY T1.cited_paper_id HAVING COUNT(*) > 50",
+  "gold_result": {
+   "count": 343,
+   "first": [
+    [
+     "Automatic Acquisition Of Hyponyms From Large Text Corpora"
+    ],
+    [
+     "Three New Probabilistic Models For Dependency Parsing: An Exploration"
+    ],
+    [
+     "Experiments with a Higher-Order Projective Dependency Parser"
+    ],
+    [
+     "Cheap and Fast â€“ But is it Good? Evaluating Non-Expert Annotations for Natural Language Tasks"
+    ],
+    [
+     "A Simple and Effective Hierarchical Phrase Reordering Model"
+    ],
+    [
+     "On Coreference Resolution Performance Metrics"
+    ],
+    [
+     "Automatic Verb Classification Based On Statistical Distributions Of Argument Structure"
+    ],
+    [
+     "Automatic Labeling Of Semantic Roles"
+    ]
+   ]
+  },
+  "system_sql": "SELECT p.title\nFROM `workspace`.`aan_1`.`citation` c\nJOIN `workspace`.`aan_1`.`paper` p ON c.cited_paper_id = p.paper_id\nWHERE p.title IS NOT NULL AND c.cited_paper_id IS NOT NULL\nGROUP BY p.title\nHAVING COUNT(*) > 50",
+  "system_result": {
+   "count": 346,
+   "first": [
+    [
+     "Exploiting A Probabilistic Hierarchical Model For Generation"
+    ],
+    [
+     "Improving A Statistical MT System With Automatically Learned Rewrite Patterns"
+    ],
+    [
+     "Generation that Exploits Corpus-Based Statistical Knowledge"
+    ],
+    [
+     "Combining Distributional And Morphological Information For Part Of Speech Induction"
+    ],
+    [
+     "Distributional Memory: A General Framework for Corpus-Based Semantics"
+    ],
+    [
+     "PCFG Models Of Linguistic Tree Representations"
+    ],
+    [
+     "A Model-Theoretic Coreference Scoring Scheme"
+    ],
+    [
+     "Improved Statistical Machine Translation Using Paraphrases"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p018",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What is the id and the number of citations of the most cited paper?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ]
+   ]
+  },
+  "system_sql": "WITH citation_counts AS (\n  SELECT \n    `cited_paper_id`, \n    COUNT(*) AS citation_count,\n    RANK() OVER (ORDER BY COUNT(*) DESC) AS rank\n  FROM `workspace`.`aan_1`.`citation`\n  WHERE `cited_paper_id` IS NOT NULL\n  GROUP BY `cited_paper_id`\n)\nSELECT `cited_paper_id` AS paper_id, citation_count\nFROM citation_counts\nWHERE rank = 1;",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "P02-1040",
+     1064
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p019",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many papers did each author publish, ordered by number of papers?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name), COUNT(*) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`author_id`, `author`.`name`, COUNT(DISTINCT `author_list`.`paper_id`) AS papers_published\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`author` ON `author_list`.`author_id` = `author`.`author_id`\nWHERE `author_list`.`author_id` IS NOT NULL AND `author_list`.`paper_id` IS NOT NULL\nGROUP BY `author`.`author_id`, `author`.`name`\nORDER BY papers_published DESC",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     18157,
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     11363,
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     7455,
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     16730,
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     12931,
+     "Ney, Hermann",
+     119
+    ],
+    [
+     11653,
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     9111,
+     "Klein, Dan",
+     116
+    ],
+    [
+     6360,
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p020",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of authors who have not published a paper in ACL?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT name FROM Author WHERE NOT author_id IN (SELECT T1.author_id FROM Author_list AS T1 JOIN Paper AS T2 ON T1.paper_id = T2.paper_id WHERE T2.venue = 'ACL')",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "&#269"
+    ],
+    [
+     "&#353"
+    ],
+    [
+     "&#x106"
+    ],
+    [
+     "&#x107"
+    ],
+    [
+     "&#x10D"
+    ],
+    [
+     "&#x110"
+    ],
+    [
+     "&#x130"
+    ],
+    [
+     "&#x131"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT a.name\nFROM `workspace`.`aan_1`.`author` a\nWHERE a.author_id NOT IN (\n  SELECT al.author_id\n  FROM `workspace`.`aan_1`.`author_list` al\n  JOIN `workspace`.`aan_1`.`paper` p ON al.paper_id = p.paper_id\n  WHERE p.venue = 'ACL'\n)\nAND a.name IS NOT NULL",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "&Ccaron"
+    ],
+    [
+     "&Sacute"
+    ],
+    [
+     ", Dan"
+    ],
+    [
+     ", Enrique"
+    ],
+    [
+     ", Gertrud"
+    ],
+    [
+     ", Goran"
+    ],
+    [
+     ", Milica"
+    ],
+    [
+     ", Sel&ccedil"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p021",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of all affiliations, ordered by number of papers?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     ""
+    ],
+    [
+     "Carnegie Mellon University"
+    ],
+    [
+     "University of Edinburgh"
+    ],
+    [
+     "University of Pennsylvania"
+    ],
+    [
+     "Massachusetts Institute of Technology"
+    ],
+    [
+     "University of Southern California"
+    ],
+    [
+     "BBN Technologies"
+    ],
+    [
+     "IBM T.J. Watson Research Center"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `count_paper_id` DESC LIMIT 10000",
+  "system_result": {
+   "count": 2431,
+   "first": [
+    [
+     "",
+     8211
+    ],
+    [
+     "University of Edinburgh",
+     498
+    ],
+    [
+     "University of Pennsylvania",
+     453
+    ],
+    [
+     "Carnegie Mellon University",
+     405
+    ],
+    [
+     "University of Southern California",
+     293
+    ],
+    [
+     "Massachusetts Institute of Technology",
+     262
+    ],
+    [
+     "Saarland University",
+     251
+    ],
+    [
+     "Columbia University",
+     220
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p022",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List all affiliations with ascending ordered number of papers.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     ""
+    ],
+    [
+     "Carnegie Mellon University"
+    ],
+    [
+     "University of Edinburgh"
+    ],
+    [
+     "University of Pennsylvania"
+    ],
+    [
+     "Massachusetts Institute of Technology"
+    ],
+    [
+     "University of Southern California"
+    ],
+    [
+     "BBN Technologies"
+    ],
+    [
+     "IBM T.J. Watson Research Center"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name`, COUNT(DISTINCT `author_list`.`paper_id`) AS num_papers\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id`\nWHERE `affiliation`.`name` IS NOT NULL AND `author_list`.`paper_id` IS NOT NULL\nGROUP BY `affiliation`.`name`\nORDER BY num_papers ASC;",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+     1
+    ],
+    [
+     "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+     1
+    ],
+    [
+     "SITE",
+     1
+    ],
+    [
+     "Sao Paulo State University (UNESP)",
+     1
+    ],
+    [
+     "AT&T Bell Labs, Murray Hill NJ; University of Toronto",
+     1
+    ],
+    [
+     "IBM Dublin Center for Advanced Studies",
+     1
+    ],
+    [
+     "University of Oriente",
+     1
+    ],
+    [
+     "Watson",
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p023",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the total number of papers for each affiliation.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     1,
+     "CNRS, France; LPL"
+    ],
+    [
+     1,
+     "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+    ],
+    [
+     23,
+     "Duke University"
+    ],
+    [
+     2,
+     "Free University of Bolzano Bozen"
+    ],
+    [
+     133,
+     "German Research Center for Artificial Intelligence"
+    ],
+    [
+     2,
+     "Hofstra University"
+    ],
+    [
+     10,
+     "Indian Institute of Technology"
+    ],
+    [
+     2,
+     "Kangnam University"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `total_papers` FROM `Affiliation` AS `affiliation` JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`name` LIMIT 10000",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "ATR Spoken Language Translation Research Laboratories",
+     42
+    ],
+    [
+     "CEDIAG-BULL A.I. Corporate Center",
+     4
+    ],
+    [
+     "CNR-Institute of Psychology",
+     6
+    ],
+    [
+     "Catalan Institution for Research and Advanced Studies (ICREA), Spain; Pompeu Fabra University",
+     1
+    ],
+    [
+     "Czechoslovak Academy of Sciences, Prague Czechoslovakia; Charles University",
+     1
+    ],
+    [
+     "Fondazione Bruno Kessler",
+     28
+    ],
+    [
+     "IFCI",
+     2
+    ],
+    [
+     "IRISA",
+     3
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p024",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List names of all authors who have only 1 paper.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id HAVING COUNT(*) = 1",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Marcus, Mitchell"
+    ],
+    [
+     "Zheng, Jin Guang"
+    ],
+    [
+     "Luo, Gang"
+    ],
+    [
+     "Luis, Tiago"
+    ],
+    [
+     "Nakamura, Tomoaki"
+    ],
+    [
+     "Hauff, Claudia"
+    ],
+    [
+     "Liu, Xuan"
+    ],
+    [
+     "Tay, Yi"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name`\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`author` ON `author_list`.`author_id` = `author`.`author_id`\nWHERE `author`.`name` IS NOT NULL\nGROUP BY `author`.`author_id`, `author`.`name`\nHAVING COUNT(DISTINCT `author_list`.`paper_id`) = 1",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "Orasan, Constantin"
+    ],
+    [
+     "Wallach, Hanna"
+    ],
+    [
+     "Misra, Dipendra Kumar"
+    ],
+    [
+     "Zhang, Yuhao"
+    ],
+    [
+     "Toni, Francesca"
+    ],
+    [
+     "gur, izzeddin"
+    ],
+    [
+     "Yasunaga, Michihiro"
+    ],
+    [
+     "StÃ¼ker, Sebastian"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p025",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the titles of papers that have more than 50 citations.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T2.title) FROM Citation AS T1 JOIN Paper AS T2 ON T1.cited_paper_id = T2.paper_id GROUP BY T1.cited_paper_id HAVING COUNT(*) > 50",
+  "gold_result": {
+   "count": 343,
+   "first": [
+    [
+     "Automatic Acquisition Of Hyponyms From Large Text Corpora"
+    ],
+    [
+     "Three New Probabilistic Models For Dependency Parsing: An Exploration"
+    ],
+    [
+     "Experiments with a Higher-Order Projective Dependency Parser"
+    ],
+    [
+     "Cheap and Fast â€“ But is it Good? Evaluating Non-Expert Annotations for Natural Language Tasks"
+    ],
+    [
+     "A Simple and Effective Hierarchical Phrase Reordering Model"
+    ],
+    [
+     "On Coreference Resolution Performance Metrics"
+    ],
+    [
+     "Automatic Verb Classification Based On Statistical Distributions Of Argument Structure"
+    ],
+    [
+     "Automatic Labeling Of Semantic Roles"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`title`, COUNT(`citation`.`paper_id`) AS citation_count\nFROM `workspace`.`aan_1`.`citation`\nJOIN `workspace`.`aan_1`.`paper` ON `citation`.`cited_paper_id` = `paper`.`paper_id`\nWHERE `paper`.`title` IS NOT NULL\nGROUP BY `paper`.`title`\nHAVING COUNT(`citation`.`paper_id`) > 50",
+  "system_result": {
+   "count": 346,
+   "first": [
+    [
+     "Exploiting A Probabilistic Hierarchical Model For Generation",
+     54
+    ],
+    [
+     "Improving A Statistical MT System With Automatically Learned Rewrite Patterns",
+     78
+    ],
+    [
+     "Generation that Exploits Corpus-Based Statistical Knowledge",
+     93
+    ],
+    [
+     "Combining Distributional And Morphological Information For Part Of Speech Induction",
+     56
+    ],
+    [
+     "Distributional Memory: A General Framework for Corpus-Based Semantics",
+     54
+    ],
+    [
+     "PCFG Models Of Linguistic Tree Representations",
+     101
+    ],
+    [
+     "A Model-Theoretic Coreference Scoring Scheme",
+     113
+    ],
+    [
+     "Improved Statistical Machine Translation Using Paraphrases",
+     68
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p026",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the 10 most cited papers, and how many citations did each have?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 10",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ],
+    [
+     "A00-1025",
+     1008
+    ],
+    [
+     "A00-1004",
+     783
+    ],
+    [
+     "C04-1030",
+     762
+    ],
+    [
+     "C04-1006",
+     756
+    ],
+    [
+     "C08-1014",
+     746
+    ],
+    [
+     "C04-1030",
+     624
+    ],
+    [
+     "C04-1024",
+     451
+    ]
+   ]
+  },
+  "system_sql": "WITH citation_counts AS (\n  SELECT \n    c.cited_paper_id,\n    p.title,\n    COUNT(*) AS citation_count,\n    RANK() OVER (ORDER BY COUNT(*) DESC) AS rank\n  FROM `workspace`.`aan_1`.`citation` c\n  JOIN `workspace`.`aan_1`.`paper` p ON c.cited_paper_id = p.paper_id\n  WHERE c.cited_paper_id IS NOT NULL\n  GROUP BY c.cited_paper_id, p.title\n)\nSELECT cited_paper_id, title, citation_count\nFROM citation_counts\nWHERE rank <= 10\nORDER BY citation_count DESC;",
+  "system_result": {
+   "count": 10,
+   "first": [
+    [
+     "P02-1040",
+     "Bleu: A Method For Automatic Evaluation Of Machine Translation",
+     1064
+    ],
+    [
+     "J93-2004",
+     "Building A Large Annotated Corpus Of English: The Penn Treebank",
+     1008
+    ],
+    [
+     "J93-2003",
+     "The Mathematics Of Statistical Machine Translation: Parameter Estimation",
+     783
+    ],
+    [
+     "P03-1021",
+     "Minimum Error Rate Training In Statistical Machine Translation",
+     762
+    ],
+    [
+     "J03-1002",
+     "A Systematic Comparison Of Various Statistical Alignment Models",
+     756
+    ],
+    [
+     "P07-2045",
+     "Moses: Open Source Toolkit for Statistical Machine Translation",
+     746
+    ],
+    [
+     "N03-1017",
+     "Statistical Phrase-Based Translation",
+     624
+    ],
+    [
+     "P03-1054",
+     "Accurate Unlexicalized Parsing",
+     451
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p027",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the ids and titles for papers that have never been cited?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT paper_id, title FROM Paper WHERE NOT paper_id IN (SELECT cited_paper_id FROM Citation)",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "A00-1001",
+     "BusTUC - A Natural Language Bus Route Oracle"
+    ],
+    [
+     "A00-1003",
+     "Cross-Language Multimedia Information Retrieval"
+    ],
+    [
+     "A00-1013",
+     "DP: A Detector For Presuppositions In Survey Questions"
+    ],
+    [
+     "A00-1015",
+     "Javox: A Toolkit For Building Speech-Enabled Applications"
+    ],
+    [
+     "A00-1022",
+     "Message Classification In The Call Center"
+    ],
+    [
+     "A00-1027",
+     "Compound Noun Segmentation Based On Lexical Data Extracted From Corpus"
+    ],
+    [
+     "A00-1029",
+     "A Tool For Automated Revision Of Grammars For NLP Systems"
+    ],
+    [
+     "A00-1035",
+     "Spelling And Grammar Correction For Danish In SCARRIE"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`paper_id`, `paper`.`title`\nFROM `workspace`.`aan_1`.`paper` AS `paper`\nWHERE `paper`.`paper_id` NOT IN (\n    SELECT `citation`.`cited_paper_id`\n    FROM `workspace`.`aan_1`.`citation`\n    WHERE `citation`.`cited_paper_id` IS NOT NULL\n)\nAND `paper`.`paper_id` IS NOT NULL\nAND `paper`.`title` IS NOT NULL",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "A00-1001",
+     "BusTUC - A Natural Language Bus Route Oracle"
+    ],
+    [
+     "A00-1003",
+     "Cross-Language Multimedia Information Retrieval"
+    ],
+    [
+     "A00-1013",
+     "DP: A Detector For Presuppositions In Survey Questions"
+    ],
+    [
+     "A00-1015",
+     "Javox: A Toolkit For Building Speech-Enabled Applications"
+    ],
+    [
+     "A00-1022",
+     "Message Classification In The Call Center"
+    ],
+    [
+     "A00-1027",
+     "Compound Noun Segmentation Based On Lexical Data Extracted From Corpus"
+    ],
+    [
+     "A00-1029",
+     "A Tool For Automated Revision Of Grammars For NLP Systems"
+    ],
+    [
+     "A00-1035",
+     "Spelling And Grammar Correction For Danish In SCARRIE"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p028",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Give the id and the number of citations of the most cited paper.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ]
+   ]
+  },
+  "system_sql": "WITH citation_counts AS (\n  SELECT `cited_paper_id`, COUNT(*) AS citation_count\n  FROM `workspace`.`aan_1`.`citation`\n  WHERE `cited_paper_id` IS NOT NULL\n  GROUP BY `cited_paper_id`\n)\n, ranked_papers AS (\n  SELECT `cited_paper_id`, citation_count,\n         RANK() OVER (ORDER BY citation_count DESC) AS rank\n  FROM citation_counts\n)\nSELECT `cited_paper_id` AS paper_id, citation_count\nFROM ranked_papers\nWHERE rank = 1;",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "P02-1040",
+     1064
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p029",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the name of authors who have never published a paper in ACL.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT name FROM Author WHERE NOT author_id IN (SELECT T1.author_id FROM Author_list AS T1 JOIN Paper AS T2 ON T1.paper_id = T2.paper_id WHERE T2.venue = 'ACL')",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "&#269"
+    ],
+    [
+     "&#353"
+    ],
+    [
+     "&#x106"
+    ],
+    [
+     "&#x107"
+    ],
+    [
+     "&#x10D"
+    ],
+    [
+     "&#x110"
+    ],
+    [
+     "&#x130"
+    ],
+    [
+     "&#x131"
+    ]
+   ]
+  },
+  "system_sql": "SELECT DISTINCT `a`.`name` AS `name` FROM `Author` AS `a` WHERE NOT EXISTS(SELECT 1 AS `1` FROM `Author_list` AS `al` JOIN `Paper` AS `p` ON `al`.`paper_id` = `p`.`paper_id` WHERE `al`.`author_id` = `a`.`author_id` AND `p`.`venue` = 'ACL') LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "&Ccaron"
+    ],
+    [
+     "&Sacute"
+    ],
+    [
+     ", Dan"
+    ],
+    [
+     ", Enrique"
+    ],
+    [
+     ", Gertrud"
+    ],
+    [
+     ", Goran"
+    ],
+    [
+     ", Milica"
+    ],
+    [
+     ", Sel&ccedil"
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p030",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the 10 most cited papers, and how many citations did each have?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 10",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ],
+    [
+     "A00-1025",
+     1008
+    ],
+    [
+     "A00-1004",
+     783
+    ],
+    [
+     "C04-1030",
+     762
+    ],
+    [
+     "C04-1006",
+     756
+    ],
+    [
+     "C08-1014",
+     746
+    ],
+    [
+     "C04-1030",
+     624
+    ],
+    [
+     "C04-1024",
+     451
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`title` AS `title`, COUNT(`citation`.`paper_id`) AS `citation_count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 10",
+  "system_result": {
+   "count": 10,
+   "first": [
+    [
+     "Bleu: A Method For Automatic Evaluation Of Machine Translation",
+     1064
+    ],
+    [
+     "Building A Large Annotated Corpus Of English: The Penn Treebank",
+     1008
+    ],
+    [
+     "The Mathematics Of Statistical Machine Translation: Parameter Estimation",
+     783
+    ],
+    [
+     "Minimum Error Rate Training In Statistical Machine Translation",
+     762
+    ],
+    [
+     "A Systematic Comparison Of Various Statistical Alignment Models",
+     756
+    ],
+    [
+     "Moses: Open Source Toolkit for Statistical Machine Translation",
+     746
+    ],
+    [
+     "Statistical Phrase-Based Translation",
+     624
+    ],
+    [
+     "Accurate Unlexicalized Parsing",
+     451
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p031",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "What are the names of authors who have exactly 1 paper?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id HAVING COUNT(*) = 1",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Marcus, Mitchell"
+    ],
+    [
+     "Zheng, Jin Guang"
+    ],
+    [
+     "Luo, Gang"
+    ],
+    [
+     "Luis, Tiago"
+    ],
+    [
+     "Nakamura, Tomoaki"
+    ],
+    [
+     "Hauff, Claudia"
+    ],
+    [
+     "Liu, Xuan"
+    ],
+    [
+     "Tay, Yi"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `count_paper_id` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`author_id`, `author`.`name` HAVING COUNT(DISTINCT `author_list`.`paper_id`) = 1 LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Orasan, Constantin",
+     1
+    ],
+    [
+     "Wallach, Hanna",
+     1
+    ],
+    [
+     "Misra, Dipendra Kumar",
+     1
+    ],
+    [
+     "Zhang, Yuhao",
+     1
+    ],
+    [
+     "Toni, Francesca",
+     1
+    ],
+    [
+     "gur, izzeddin",
+     1
+    ],
+    [
+     "Yasunaga, Michihiro",
+     1
+    ],
+    [
+     "StÃ¼ker, Sebastian",
+     1
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p032",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "How many papers did each author publish, ordered by number of papers?",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name), COUNT(*) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`name` ORDER BY `paper_count` DESC LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p033",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Give the id and the number of citations of the most cited paper.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 1",
+  "gold_result": {
+   "count": 1,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`paper_id` AS `paper_id`, COUNT(`citation`.`paper_id`) AS `citation_count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 1",
+  "system_result": {
+   "count": 1,
+   "first": [
+    [
+     "P02-1040",
+     1064
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p034",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List top 10 most cited papers and their numbers of citations.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(paper_id), COUNT(*) FROM Citation GROUP BY cited_paper_id ORDER BY COUNT(*) DESC LIMIT 10",
+  "gold_result": {
+   "count": 10,
+   "first": [
+    [
+     "C04-1015",
+     1064
+    ],
+    [
+     "A00-1025",
+     1008
+    ],
+    [
+     "A00-1004",
+     783
+    ],
+    [
+     "C04-1030",
+     762
+    ],
+    [
+     "C04-1006",
+     756
+    ],
+    [
+     "C08-1014",
+     746
+    ],
+    [
+     "C04-1030",
+     624
+    ],
+    [
+     "C04-1024",
+     451
+    ]
+   ]
+  },
+  "system_sql": "SELECT `paper`.`title` AS `title`, COUNT(`citation`.`paper_id`) AS `citation_count` FROM `Paper` AS `paper` JOIN `Citation` AS `citation` ON `paper`.`paper_id` = `citation`.`cited_paper_id` GROUP BY `paper`.`paper_id`, `paper`.`title` ORDER BY `citation_count` DESC, 1 NULLS LAST, 2 NULLS LAST LIMIT 10",
+  "system_result": {
+   "count": 10,
+   "first": [
+    [
+     "Bleu: A Method For Automatic Evaluation Of Machine Translation",
+     1064
+    ],
+    [
+     "Building A Large Annotated Corpus Of English: The Penn Treebank",
+     1008
+    ],
+    [
+     "The Mathematics Of Statistical Machine Translation: Parameter Estimation",
+     783
+    ],
+    [
+     "Minimum Error Rate Training In Statistical Machine Translation",
+     762
+    ],
+    [
+     "A Systematic Comparison Of Various Statistical Alignment Models",
+     756
+    ],
+    [
+     "Moses: Open Source Toolkit for Statistical Machine Translation",
+     746
+    ],
+    [
+     "Statistical Phrase-Based Translation",
+     624
+    ],
+    [
+     "Accurate Unlexicalized Parsing",
+     451
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p035",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "Find the total number of papers for each affiliation.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT COUNT(DISTINCT T2.paper_id), ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     1,
+     "CNRS, France; LPL"
+    ],
+    [
+     1,
+     "DSO National Laboratories, Singapore; Defence Medical Research Institute"
+    ],
+    [
+     23,
+     "Duke University"
+    ],
+    [
+     2,
+     "Free University of Bolzano Bozen"
+    ],
+    [
+     133,
+     "German Research Center for Artificial Intelligence"
+    ],
+    [
+     2,
+     "Hofstra University"
+    ],
+    [
+     10,
+     "Indian Institute of Technology"
+    ],
+    [
+     2,
+     "Kangnam University"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name`, COUNT(DISTINCT `author_list`.`paper_id`) AS total_papers\nFROM `workspace`.`aan_1`.`author_list`\nJOIN `workspace`.`aan_1`.`affiliation` ON `author_list`.`affiliation_id` = `affiliation`.`affiliation_id`\nWHERE `author_list`.`affiliation_id` IS NOT NULL\nGROUP BY `affiliation`.`name`\nORDER BY total_papers DESC;",
+  "system_result": {
+   "count": 2260,
+   "first": [
+    [
+     "",
+     8273
+    ],
+    [
+     "University of Edinburgh",
+     498
+    ],
+    [
+     "University of Pennsylvania",
+     453
+    ],
+    [
+     "Carnegie Mellon University",
+     405
+    ],
+    [
+     "University of Southern California",
+     293
+    ],
+    [
+     "Massachusetts Institute of Technology",
+     262
+    ],
+    [
+     "Saarland University",
+     257
+    ],
+    [
+     "SRI International",
+     237
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p036",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List the names of all authors and their number of papers in descending order by number of papers.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name), COUNT(*) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  },
+  "system_sql": "SELECT a.name AS author_name, COUNT(al.paper_id) AS paper_count\nFROM `workspace`.`aan_1`.`author_list` al\nJOIN `workspace`.`aan_1`.`author` a ON al.author_id = a.author_id\nWHERE a.name IS NOT NULL\nGROUP BY a.name\nORDER BY paper_count DESC",
+  "system_result": {
+   "count": 5000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p037",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List all affiliations with ascending ordered number of papers.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name) FROM Affiliation AS T1 JOIN Author_list AS T2 ON T1.affiliation_id = T2.affiliation_id GROUP BY T1.affiliation_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 2380,
+   "first": [
+    [
+     ""
+    ],
+    [
+     "Carnegie Mellon University"
+    ],
+    [
+     "University of Edinburgh"
+    ],
+    [
+     "University of Pennsylvania"
+    ],
+    [
+     "Massachusetts Institute of Technology"
+    ],
+    [
+     "University of Southern California"
+    ],
+    [
+     "BBN Technologies"
+    ],
+    [
+     "IBM T.J. Watson Research Center"
+    ]
+   ]
+  },
+  "system_sql": "SELECT `affiliation`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `number_of_papers` FROM `Affiliation` AS `affiliation` LEFT JOIN `Author_list` AS `author_list` ON `affiliation`.`affiliation_id` = `author_list`.`affiliation_id` GROUP BY `affiliation`.`affiliation_id`, `affiliation`.`name` ORDER BY `number_of_papers` ASC LIMIT 10000",
+  "system_result": {
+   "count": 2431,
+   "first": [
+    [
+     "INRIA, Le Chesnay France; New University of Lisbon",
+     0
+    ],
+    [
+     "LingIT",
+     0
+    ],
+    [
+     "Polish Academy of Sciences, Warsaw Poland; Warsaw University",
+     0
+    ],
+    [
+     "University of Texas at Dallas, Richardson TX; Baylor University",
+     0
+    ],
+    [
+     "Vietnam National University, Hanoi Vietnam; LORIA",
+     0
+    ],
+    [
+     "Nuance Communications",
+     0
+    ],
+    [
+     "STIM/AP-HP, Paris France; Institut National de l'Audiovisuel",
+     0
+    ],
+    [
+     "Swedish Institute of Computer Science, Stockholm Sweden; Norwegian University of Science and Technology",
+     0
+    ]
+   ]
+  }
+ },
+ {
+  "id": "p038",
+  "kind": "answered_wrong",
+  "guard": null,
+  "question": "List the names of all authors and their number of papers in descending order by number of papers.",
+  "schema": "tenant=spider_aan_1\ntables:\n  - Affiliation\n      affiliation_id: int — affiliation id\n      name: str\n      address: str\n  - Author\n      author_id: int — author id\n      name: str\n      email: str\n  - Author_list\n      paper_id: str — paper id\n      author_id: int — author id\n      affiliation_id: int — affiliation id\n  - Citation\n      paper_id: str — paper id\n      cited_paper_id: str — cited paper id\n  - Paper\n      paper_id: str — paper id\n      title: str\n      venue: str\n      year: int\nrelationships (many → one; joins are added automatically):\n  - Author_list.affiliation_id → Affiliation.affiliation_id\n  - Author_list.author_id → Author.author_id\n  - Author_list.paper_id → Paper.paper_id\n  - Citation.cited_paper_id → Paper.paper_id\n  - Citation.paper_id → Paper.paper_id",
+  "gold_sql": "SELECT ANY_VALUE(T1.name), COUNT(*) FROM Author AS T1 JOIN Author_list AS T2 ON T1.author_id = T2.author_id GROUP BY T1.author_id ORDER BY COUNT(*) DESC",
+  "gold_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  },
+  "system_sql": "SELECT `author`.`name` AS `name`, COUNT(DISTINCT `author_list`.`paper_id`) AS `paper_count` FROM `Author` AS `author` JOIN `Author_list` AS `author_list` ON `author`.`author_id` = `author_list`.`author_id` GROUP BY `author`.`name` ORDER BY `paper_count` DESC LIMIT 10000",
+  "system_result": {
+   "count": 10000,
+   "first": [
+    [
+     "Tsujii, Jun'ichi",
+     175
+    ],
+    [
+     "Manning, Christopher D.",
+     158
+    ],
+    [
+     "Hovy, Eduard",
+     143
+    ],
+    [
+     "Smith, Noah A.",
+     128
+    ],
+    [
+     "Ney, Hermann",
+     119
+    ],
+    [
+     "Matsumoto, Yuji",
+     118
+    ],
+    [
+     "Klein, Dan",
+     116
+    ],
+    [
+     "Grishman, Ralph",
+     112
+    ]
+   ]
+  }
+ }
+]

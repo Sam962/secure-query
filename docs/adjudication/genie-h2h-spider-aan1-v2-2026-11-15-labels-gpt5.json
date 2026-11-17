@@ -1,0 +1,58 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system omitted DISTINCT and returned duplicate rows for papers with multiple Harvard-affiliated authors, inflating the results beyond the unique set the question implies."
+ },
+ "p002:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query orders by count descending, excludes affiliations with zero papers, and counts author-list rows rather than distinct papers, whereas the system’s left join with COUNT(DISTINCT paper_id) and ascending order matches “all affiliations with ascending ordered number of papers.”"
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query omits DISTINCT and adds a LIMIT 10000, yielding duplicate venue–year rows and truncating results, so it does not list all venues and years as required."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to match the affiliation name exactly or include variants containing “Stanford University,” so using ILIKE '%Stanford University%' is a reasonable interpretation."
+ },
+ "p005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts Author_list rows (not distinct papers) and excludes zero-paper affiliations, whereas the question asks for all affiliations ordered by number of papers (distinct), which the system computes."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system uses wildcard matches and COUNT(DISTINCT name)=2 over names containing either institution, which can include papers with only one institution and yields many extra rows, while the question requires papers affiliated with both Stanford University and Columbia University."
+ },
+ "p007:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used a case-sensitive LIKE for author names, yielding no matches for McKeown and returning 0 rows, whereas the question (and gold using ILIKE) implies case-insensitive matching and has many results."
+ },
+ "p008:answered_wrong": {
+  "label": "real_error",
+  "reason": "It groups by affiliation name instead of affiliation_id, collapsing distinct affiliations with the same name and producing fewer, merged rows, so the per-affiliation counts are wrong."
+ },
+ "p009:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by affiliation name (and excluded NULL names), conflating distinct affiliations and omitting some, whereas the question implies grouping by affiliation entity (affiliation_id) as in the gold query."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "It groups by affiliation name (collapsing distinct affiliations) and returns an extra count column, so the result set does not list all affiliations’ names as requested, regardless of the papers-count interpretation."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to return unique venue–year pairs or one row per paper, so returning all rows (with duplicates) ordered by year is a reasonable interpretation even though the gold uses DISTINCT."
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by affiliation name instead of affiliation_id, merging distinct affiliations with the same name, whereas the question asks per affiliation entity (as in the gold), leading to fewer groups and incorrect counts."
+ },
+ "p013:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t require an exact affiliation name match, so matching affiliations containing “Stanford University” (ILIKE '%Stanford University%') is a reasonable interpretation leading to a higher but valid count."
+ },
+ "p014:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system groups by affiliation name instead of affiliation_id, merging distinct affiliations with the same name and returning fewer groups than “each affiliation” requires."
+ }
+}

@@ -1,0 +1,118 @@
+{
+ "p001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system added DISTINCT and filtered NULLs, whereas the question asks to list all meeting_type and details (no deduplication or filtering), matching the gold query."
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to count distinct staff or all rows (including potential duplicates/NULLs), so counting DISTINCT staff_id is a reasonable interpretation even though the gold counts all rows."
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question seeks client IDs and details for sic code 'Bad', but the system query returns only client_details, omitting the client_id requested."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system used DISTINCT to list unique outcome–purpose pairs, while the question doesn’t specify whether duplicates should be included, so both interpretations are reasonable."
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to include duplicates, so returning distinct outcome–purpose pairs is a reasonable interpretation."
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question (likely meaning client IDs and details) expects both client_id and client_details, but the system query returns only client_details, omitting the IDs."
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrase “invoice ids and details” can reasonably refer to invoice_details (system) or payment_details (gold), so both interpretations are plausible."
+ },
+ "p008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query ignores the “attended at least 1 meetings” requirement and returns all staff with 's' in details, while the system query correctly enforces attendance via Staff_in_Meetings."
+ },
+ "p009:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for all invoice ids with their payment counts (including zeros), but the gold query only returns invoices that have payments, while the system’s LEFT JOIN correctly includes zero-payment invoices."
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query returns duplicate rows per client due to joining invoices without deduplication, while the question asks for clients (existence of any invoice) with exactly one meeting, which should yield each qualifying client once."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to deduplicate agencies; the system used DISTINCT while the gold returns one row per client, and both interpretations fit the wording."
+ },
+ "p012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query never checks meeting attendance (no join to Staff_in_Meetings), while the system correctly restricts to staff with at least one meeting, matching the question."
+ },
+ "p013:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system used DISTINCT, collapsing duplicate rows, while the question asks for all meeting types and other details (i.e., every row), matching the gold’s non-distinct selection."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to de-duplicate agencies, so returning each agency once (DISTINCT) is a reasonable reading, while the gold returns duplicates per client-agency join."
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The query doesn’t specify whether to de-duplicate agencies; returning one row per agency (DISTINCT) is a valid reading, while the gold returns one row per client-agency join, so the difference is due to ambiguity."
+ },
+ "p016:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query should list all rows of meeting_type and other_details, but the system used DISTINCT and filtered NULLs, returning only unique non-null pairs instead of all records."
+ },
+ "p017:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to list unique combinations or all rows (and whether to include NULLs), so returning DISTINCT non-NULL pairs is a plausible interpretation."
+ },
+ "p018:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to deduplicate staff entries, so counting DISTINCT staff_id vs counting rows are both reasonable interpretations."
+ },
+ "p019:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to include duplicate rows, so returning DISTINCT pairs is a reasonable interpretation."
+ },
+ "p020:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for counts by meeting type for each client, but the gold query aggregates only by meeting_type overall; the system’s query grouping by client_id and meeting_type matches the request."
+ },
+ "p021:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system added DISTINCT, removing a duplicate attendee row; since the question doesn’t specify whether duplicates should be preserved, de-duplicating is a reasonable interpretation."
+ },
+ "p022:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The system identifies the correct clients but returns duplicate rows due to multiple invoices; since the question doesn’t specify distinct rows, this duplicate-vs-distinct issue is plausibly acceptable."
+ },
+ "p023:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question could mean to include agencies with zero clients; the system returns all agencies (including zero counts) while the gold only lists agencies with at least one client."
+ },
+ "p024:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for all invoice ids with their payment counts (including zeros), whereas the gold query only returns invoices that have payments; the system’s LEFT JOIN result matches the question better."
+ },
+ "p025:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether to de-duplicate agencies; the system reasonably returns one row per agency (DISTINCT) while the gold includes duplicates from the join."
+ },
+ "p026:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query never joins Staff_in_Meetings and thus fails to enforce 'attended at least 1 meeting', while the system query correctly filters staff with >=1 meeting and an 's' in details as the question requires."
+ },
+ "p027:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold groups only by meeting_type (overall totals), whereas the question asks for results “for each client,” and the system correctly groups by client_id and meeting_type."
+ },
+ "p028:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query never checks meeting attendance (COUNT(*) over Staff only), whereas the system correctly joins Staff_in_Meetings to enforce “at least 1 meeting,” so the gold result wrongly includes staff with no meetings."
+ },
+ "p029:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query should list all meeting–client–staff combinations; the system result changes the set (different row count and a mismatched staff detail like Lolita vs Annabell), so a user would be misled."
+ }
+}

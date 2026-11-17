@@ -56,11 +56,10 @@ _FORBIDDEN_SHAPES = tuple(
         "Struct",  # STRUCT(*) / struct(c.*) packs every column including PII
         "TableSample",
         "Version",  # VERSION AS OF — time-travel / alternate snapshot
+        "HistoricalData",  # DuckDB AT (VERSION => n): reads rows deleted since, e.g. for privacy
+        # Who and where the query runs (CURRENT_DATE and the clock are allowed: they read no
+        # data and "how old" / "this year" need them; the answer then depends on the day).
         "CurrentUser",
-        "CurrentDate",
-        "CurrentTime",
-        "CurrentTimestamp",
-        "CurrentDatetime",
         "CurrentSchema",
         "CurrentCatalog",
         "CurrentDatabase",
@@ -286,7 +285,9 @@ def validate_sql(
     if original_limit is not None:
         _break_ties(tree)
     _enforce_limit(tree, catalog)
-    out = tree.sql(dialect=catalog.sql_dialect)
+    # Comments are inert in one statement, but model-written text then never reaches the
+    # warehouse's query history or the evidence record.
+    out = tree.sql(dialect=catalog.sql_dialect, comments=False)
     digest = hashlib.sha256(out.encode()).hexdigest()
     return ValidatedSql(
         compiled=CompiledQuery(sql=out, plan_hash=f"sql:{digest[:16]}", sql_hash=digest, parameters=[]),
@@ -459,6 +460,8 @@ def _check_joins(scope, base: dict, catalog: Catalog) -> list[ValidationError]:
         if on is None:
             if join.args.get("using"):
                 errors.append(_error("sql.join", "JOIN ... USING is not allowed; use ON a.key = b.key"))
+            elif (grain := derived.get(join.this.alias_or_name)) and grain[0] == "unique" and not grain[1][1]:
+                continue  # one row: pairing with it repeats nothing
             else:
                 errors.append(_error("sql.cross_join", "cross joins are not allowed"))
             continue
@@ -525,21 +528,37 @@ def _resolve_join_side(
     return (base_name, column) if column else None
 
 
-def _check_unused_joins(scope) -> list[ValidationError]:
-    """A joined table used only in its ON clause repeats or drops rows silently.
+def _as_set(select: exp.Select) -> bool:
+    """The rows of `select` are only used as a set: under IN / EXISTS, or a branch of a
+    set operation that removes duplicates. Repeated rows cannot change the answer there."""
+    parent = select.parent
+    while isinstance(parent, (exp.Subquery, exp.Paren)):
+        parent = parent.parent
+    if isinstance(parent, (exp.In, exp.Exists, exp.Intersect, exp.Except)):
+        return True
+    return isinstance(parent, exp.Union) and bool(parent.args.get("distinct"))
 
-    Allowed when the query deduplicates or aggregates (DISTINCT, GROUP BY,
-    aggregates), where the join can only act as an existence filter.
+
+def _check_unused_joins(scope) -> list[ValidationError]:
+    """A joined table none of whose columns are used repeats or drops rows silently.
+
+    Allowed when the query deduplicates or aggregates (DISTINCT, GROUP BY, aggregates)
+    or its rows are used as a set (`_as_set`), where the join can only act as an existence
+    filter. A table whose columns another join's ON uses is a bridge on the join path,
+    not unused (a -> bridge -> c).
     """
     select = scope.expression
     if not isinstance(select, exp.Select) or not select.args.get("joins"):
         return []
-    if select.args.get("distinct") or select.args.get("group") or select.find(exp.AggFunc):
+    if select.args.get("distinct") or select.args.get("group") or select.find(exp.AggFunc) or _as_set(select):
         return []
     on_columns = {
         id(col) for join in select.args["joins"] for col in (join.args.get("on") or exp.null()).find_all(exp.Column)
     }
     used = {col.table for col in scope.columns if id(col) not in on_columns}
+    for join in select.args["joins"]:  # bridges: named in the ON of a join other than their own
+        own = join.this.alias_or_name
+        used.update(c.table for c in (join.args.get("on") or exp.null()).find_all(exp.Column) if c.table != own)
     errors = []
     for join in select.args["joins"]:
         alias = join.this.alias_or_name
@@ -548,8 +567,9 @@ def _check_unused_joins(scope) -> list[ValidationError]:
                 _error(
                     "sql.unused_join",
                     f"{join.this.name} is joined but none of its columns are used, which "
-                    "repeats or drops rows; remove the join, or use EXISTS / DISTINCT if it "
-                    "is meant as a filter",
+                    f"repeats or drops rows. If it is a filter, keep the condition as a WHERE "
+                    f"EXISTS subquery on {join.this.name}; remove the join only "
+                    "if the question does not need it",
                 )
             )
     return errors
@@ -643,14 +663,16 @@ def _check_fan_out(scope, base: dict, catalog: Catalog) -> list[ValidationError]
                     and jk.right_column.lower() == rc.lower()
                     for jk in catalog.join_keys
                 )
+            sibling = not forward and _siblings(catalog, lt, lc, rt, rc)
             to_one.setdefault(left.table, {})[right.table] = forward
-            to_one.setdefault(right.table, {})[left.table] = not forward
+            to_one.setdefault(right.table, {})[left.table] = not forward and not sibling
 
     errors: list[ValidationError] = []
     for agg in aggs:
         if isinstance(agg, _FAN_OUT_SAFE) or agg.find(exp.Distinct):
             continue
-        aliases = {c.table for c in agg.find_all(exp.Column)}
+        conditions = {id(c) for cond in agg.find_all(exp.If) for c in cond.this.find_all(exp.Column)}
+        aliases = {c.table for c in agg.find_all(exp.Column) if id(c) not in conditions}
         ok = (
             all(grain_ok(to_one, a) for a in aliases)
             if aliases
@@ -684,32 +706,50 @@ def _derived_grain(source, tables: dict) -> tuple[str, object] | None:
 
     ("table", (base table, {output column: base column})) for a plain
     single-table SELECT; ("unique", (base table or None, {output: base col}))
-    for a grouped / single-row aggregate subquery; None when joins make grain
-    unknown (those CTEs must not be aggregated or joined as if approved).
+    for a grouped / single-row aggregate subquery, whether or not it joins tables:
+    it is unique on its group keys, and its own aggregates are checked in its own
+    scope. The base table is the one every group-key column comes from (None when
+    they come from several). None when a non-aggregating join makes grain unknown
+    (those CTEs must not be aggregated or joined as if approved).
     """
     select = getattr(source, "expression", None)
-    if not isinstance(select, exp.Select) or select.args.get("joins"):
+    if not isinstance(select, exp.Select):
         return None
+    joined = bool(select.args.get("joins"))
     from_ = select.args.get("from_") or select.args.get("from")
     table = from_.this if from_ is not None else None
+    aliases = {
+        src.alias_or_name: tables[src.name.lower()].name
+        for src in [table, *(j.this for j in select.args.get("joins") or [])]
+        if isinstance(src, exp.Table) and src.name.lower() in tables
+    }
     base_name = (
         tables[table.name.lower()].name
-        if isinstance(table, exp.Table) and table.name.lower() in tables
+        if not joined and isinstance(table, exp.Table) and table.name.lower() in tables
         else None
     )
     if select.args.get("group"):
         keys = {e.sql().lower() for e in select.args["group"].expressions}
         mapping: dict[str, str] = {}
+        key_tables = set()
         for p in select.expressions:
             inner = p.this if isinstance(p, exp.Alias) else p
             if isinstance(inner, exp.Column) and inner.sql().lower() in keys:
                 mapping[p.alias_or_name.lower()] = inner.name
+                key_tables.add(aliases.get(inner.table) if inner.table else (base_name or None))
             elif (p.this if isinstance(p, exp.Alias) else p).sql().lower() in keys:
                 mapping[p.alias_or_name.lower()] = p.alias_or_name
+                key_tables.add(None)
+        if not mapping:
+            return None  # many rows, none of its keys shown: nothing to be unique on
+        if joined:
+            base_name = key_tables.pop() if len(key_tables) == 1 else None
         return "unique", (base_name, mapping)
-    if select.find(exp.AggFunc):
+    if select.find(exp.AggFunc) and not any(
+        a.find_ancestor(exp.Window) for a in select.find_all(exp.AggFunc) if a.find_ancestor(exp.Select) is select
+    ):
         return "unique", (base_name, {})
-    if select.args.get("distinct"):
+    if joined or select.args.get("distinct"):
         return None
     if base_name is None:
         return None
@@ -759,11 +799,25 @@ def _check_aggregate_over_joined_derived(scope, base: dict, catalog: Catalog) ->
 
 def _join_allowed(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:
     key = {(lt.lower(), lc.lower()), (rt.lower(), rc.lower())}
-    return any(
+    return _siblings(catalog, lt, lc, rt, rc) or any(
         {(jk.left_table.lower(), jk.left_column.lower()), (jk.right_table.lower(), jk.right_column.lower())}
         == key
         for jk in catalog.join_keys
     )
+
+
+def _siblings(catalog: Catalog, lt: str, lc: str, rt: str, rc: str) -> bool:
+    """Both columns point at the same approved key (a.parent_id = b.parent_id): a join
+    of two many sides through their shared parent, many-to-many in both directions."""
+
+    def parents(table: str, column: str) -> set[tuple[str, str]]:
+        return {
+            (jk.right_table.lower(), jk.right_column.lower())
+            for jk in catalog.join_keys
+            if jk.left_table.lower() == table.lower() and jk.left_column.lower() == column.lower()
+        }
+
+    return (lt.lower(), lc.lower()) != (rt.lower(), rc.lower()) and bool(parents(lt, lc) & parents(rt, rc))
 
 
 def _limit_value(query: exp.Expression) -> int | None:

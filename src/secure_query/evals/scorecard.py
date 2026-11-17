@@ -291,9 +291,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    from secure_query.evals.run import _client, _load_domain_suite
+    from secure_query.evals.run import _client, _load_domain_suite, _second_reader
     from secure_query.planner import PlannerError
-    from secure_query.planner.llm import CHECK_TEMPERATURE
 
     catalog, db_path, cases = _load_domain_suite(args.suite)  # same loader as evals.run
     if args.limit:
@@ -315,7 +314,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             client = _client(args.provider)
             # The product gate (service.ask) plans every question twice; score that system.
-            check_client = _client(args.provider, CHECK_TEMPERATURE)
+            check_client = _second_reader(client, args.provider)
         except PlannerError as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2

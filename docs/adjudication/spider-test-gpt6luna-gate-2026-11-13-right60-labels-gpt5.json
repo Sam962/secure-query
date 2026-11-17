@@ -1,0 +1,242 @@
+{
+ "test_1418_real_estate_rentals:answered_right": {
+  "label": "hidden_error",
+  "reason": "If any property has NULL vendor_requested_price, ORDER BY will return that row first even though it has no requested price, so the lowest non-NULL price is missed."
+ },
+ "test_1528_bakery_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns each good’s Id and Price where Price is below the overall average; goods.Id is a key so duplicates cannot occur and DISTINCT is redundant."
+ },
+ "test_0120_bbc_channels:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects directors whose Age is greater than the overall average Age from the director table, matching the question without problematic joins or missing DISTINCT."
+ },
+ "test_0938_headphone_store:answered_right": {
+  "label": "sound",
+  "reason": "It groups by class and requires both 'Bowls' and 'Comfort Pads' to be present (COUNT DISTINCT = 2), correctly identifying such classes; the extra count column does not alter the answer."
+ },
+ "test_1859_planet_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects the Position from Employee filtered by Name = 'Amy Wong', which answers the question directly for any reasonable data."
+ },
+ "test_1778_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "Selects all majors’ names and codes from the major table and orders by code as requested, with no joins or filters that could change correctness."
+ },
+ "test_1492_bakery_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the Ids of goods where Flavor = 'Apple', which matches the question on this schema."
+ },
+ "test_1170_pilot_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If a pilot has multiple planes located in Austin, the join will return duplicate rows for the same pilot; a DISTINCT is needed to list each pilot once."
+ },
+ "test_1762_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "Counts rows in university where State is Illinois or Ohio, which correctly returns the total number of such universities."
+ },
+ "test_1331_car_road_race:answered_right": {
+  "label": "sound",
+  "reason": "An inner join on race.Driver_ID to driver.Driver_ID correctly lists each driver with each race they participated in, matching the schema’s relationship."
+ },
+ "test_2054_cre_Doc_Workflow:answered_right": {
+  "label": "hidden_error",
+  "reason": "If a staff member has multiple rows in Staff_in_Processes for the same (document_id, process_id) (e.g., different roles or date ranges), COUNT(*) will overcount distinct document processes; need COUNT(DISTINCT document_id, process_id)."
+ },
+ "test_0756_sing_contest:answered_right": {
+  "label": "sound",
+  "reason": "It correctly averages rhythm_tempo over performance scores grouped by song language, with an appropriate join and no aggregation or join issues that would change the intended result."
+ },
+ "test_1838_movie_2:answered_right": {
+  "label": "sound",
+  "reason": "It groups Movies by Rating and counts rows, correctly yielding the number of movies per rating without joins or multiplicities."
+ },
+ "test_0399_vehicle_rent:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects DISTINCT Type_of_powertrain from Vehicles without joins or filters, matching the question’s requirement on any data."
+ },
+ "test_1078_conference:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns staff names whose Age is greater than the overall average Age in the staff table, with no joins or duplicate issues."
+ },
+ "test_0260_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "It correctly filters Products to type 'Hardware', returns product_name, and orders by product_price ascending without joins or aggregations that could alter results."
+ },
+ "test_0920_headphone_store:answered_right": {
+  "label": "sound",
+  "reason": "It selects the model ordered by price descending with a tie-safe secondary sort and LIMIT 1, which correctly returns a highest-priced model for any data."
+ },
+ "test_1939_video_game:answered_right": {
+  "label": "sound",
+  "reason": "It directly selects platform names and IDs where Download_rank = 1 from the platform table, matching the question with no joins or aggregations that could alter correctness."
+ },
+ "test_2130_advertising_agencies:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns each meeting’s id, outcome, type, and its client’s details by joining Meetings to Clients on client_id, which is the intended one-to-many relation."
+ },
+ "test_0403_vehicle_rent:answered_right": {
+  "label": "sound",
+  "reason": "It correctly identifies powertrain types present in both 2013 and 2014 via GROUP BY and HAVING COUNT(DISTINCT model_year)=2, which is equivalent to the INTERSECT; the extra count column does not affect the answer."
+ },
+ "test_1196_district_spokesman:answered_right": {
+  "label": "sound",
+  "reason": "It correctly filters districts by COUNT(DISTINCT Spokesman_ID) > 1, returning the district names; the extra count column does not change the answer."
+ },
+ "test_0272_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "It directly selects customer_id and customer_name from Customers with no filtering or joins, correctly returning all customers (LIMIT is acceptable)."
+ },
+ "test_0210_online_exams:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns one row per student answer by joining Student_Answers to Students on Student_ID and selecting First_Name and Date_of_Answer, which is robust given the stated foreign key relationship."
+ },
+ "test_1266_art_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly unions the titles from Paintings and Sculptures with years between 1900 and 1950, matching the question’s intent."
+ },
+ "test_1757_warehouse_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If any warehouse has NULL Location, boxes there are excluded by Location <> 'Chicago' even though they are not in Chicago, undercounting the total."
+ },
+ "test_2009_book_press:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the author of the single book with the highest (numerically cast) sale amount, with any tie broken arbitrarily which is acceptable for a one-row answer."
+ },
+ "test_0276_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts customers per payment_method_code from the Customers table without joins or duplication that could alter counts."
+ },
+ "test_1321_car_road_race:answered_right": {
+  "label": "hidden_error",
+  "reason": "If a constructor has multiple drivers with different ages, ORDER BY Age with DISTINCT Constructor either errors or orders by an arbitrary driver age, producing a potentially wrong ordering."
+ },
+ "test_1663_institution_sports:answered_right": {
+  "label": "sound",
+  "reason": "It correctly joins institutions to their championship records, filters for Number_of_Championships >= 1, and deduplicates institution names, which answers the question on any reasonable data."
+ },
+ "test_1210_art_1:answered_right": {
+  "label": "sound",
+  "reason": "Selecting the medium from Paintings where paintingID=80 directly answers the question; no joins or deduplication are needed and the wording is reasonably mapped to the medium column."
+ },
+ "test_0684_cre_Doc_and_collections:answered_right": {
+  "label": "hidden_error",
+  "reason": "If some Document_Objects rows have Parent_Document_Object_ID values that do not match any existing Document_Object_ID, the system query will return and count those non-existent parent ids as parents."
+ },
+ "test_1974_book_press:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns press names ordered by Year_Profits_billion in descending order from the press table; the LIMIT does not affect the requested result."
+ },
+ "test_1689_warehouse_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly computes the AVG and SUM of Value over all rows in Boxes without extraneous joins or filters; standard NULL handling is appropriate."
+ },
+ "test_1904_planet_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts shipments per planet and returns the top planet name; inner join, grouping, and tie-breaking do not change the correctness for the question."
+ },
+ "test_0941_headphone_store:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns models whose price is less than the overall average price from the headphone table; no joins or aggregation issues."
+ },
+ "test_0171_vehicle_driver:answered_right": {
+  "label": "sound",
+  "reason": "It correctly joins drivers to vehicles via the link table, filters Power > 5000, and returns DISTINCT driver names, so duplicates or multiplicities cannot change the answer."
+ },
+ "test_1965_video_game:answered_right": {
+  "label": "hidden_error",
+  "reason": "If game_player.Player_ID contains any NULL, NOT IN will evaluate to unknown and return no players, misclassifying those with no games."
+ },
+ "test_0028_soccer_3:answered_right": {
+  "label": "sound",
+  "reason": "Counts distinct clubs per Manufacturer and filters >1, which correctly lists manufacturers associated with more than one club; the extra projected count does not affect correctness."
+ },
+ "test_0258_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "It directly selects product_name from Products and orders by product_price descending, matching the question without problematic joins or omissions."
+ },
+ "test_1471_bike_racing:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects product_name and weight from bike and orders by price ascending, matching the question with no joins or aggregations involved."
+ },
+ "test_0000_soccer_3:answered_right": {
+  "label": "sound",
+  "reason": "Counting all rows in the club table correctly returns the number of clubs."
+ },
+ "test_1793_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "It correctly joins universities to overall rankings and orders by reputation points, matching the question’s intent without requiring tie-breaking or de-duplication."
+ },
+ "test_1270_art_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If some pre-1900 paintings have NULL painterID or a painterID with no matching Artists.artistID, the query could return that non-artist/NULL id as top, whereas the question requires an artist id."
+ },
+ "test_0881_boat_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns sailors with rating > 2 who have at least one reservation, using a join and DISTINCT to avoid duplicates."
+ },
+ "test_1236_art_1:answered_right": {
+  "label": "sound",
+  "reason": "It inner-joins Artists to both Paintings and Sculptures on artistID, ensuring each returned artist has at least one of each, with DISTINCT to avoid duplicates."
+ },
+ "test_0186_vehicle_driver:answered_right": {
+  "label": "sound",
+  "reason": "It selects all driver names from the driver table and orders them alphabetically, with no joins or filters that could change the intended result; the LIMIT is inconsequential."
+ },
+ "test_0636_restaurant_bills:answered_right": {
+  "label": "hidden_error",
+  "reason": "If a customer has no orders, the inner join omits them, but “each customer name” implies including customers with zero total quantity."
+ },
+ "test_2020_cre_Doc_Workflow:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects other_details from Authors filtered by the specified author, with no joins or aggregations that could alter the intended result."
+ },
+ "test_0760_sing_contest:answered_right": {
+  "label": "sound",
+  "reason": "It correctly joins performances to songs, filters rhythm_tempo > 5, selects original_artist, and orders by voice_sound_quality, with duplicates acceptable since uniqueness wasn’t requested."
+ },
+ "test_0875_boat_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns distinct sailor names who have any reservation with bid 103 by joining Reserves to Sailors and filtering on bid=103."
+ },
+ "test_0400_vehicle_rent:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the distinct Type_of_powertrain values from Vehicles with no extraneous joins or filters, directly answering the question on any data."
+ },
+ "test_1962_video_game:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups games by Franchise and selects the franchise with the highest count; tie-breaking and returning an extra count column do not change the answer."
+ },
+ "test_1701_warehouse_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts distinct values of Boxes.Contents across all boxes with no extraneous joins or filters; the LIMIT does not affect the count."
+ },
+ "test_0250_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects product names where product_price exceeds the overall average price computed from all Products, with no joins or assumptions that could alter correctness."
+ },
+ "test_0241_customers_and_orders:answered_right": {
+  "label": "sound",
+  "reason": "Directly selects the product_price for product_name = 'Monitor' from Products with no extraneous joins or filters, matching the question’s intent on any reasonable data."
+ },
+ "test_1224_art_1:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects each artist’s age as deathYear − birthYear, filters out NULL ages, and returns the maximum-age artist (ties handled acceptably by ordering with LIMIT 1)."
+ },
+ "test_1850_movie_2:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects the distinct ratings from the Movies table, matching the question’s intent."
+ },
+ "test_1784_university_rank:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rank=1 entries per university (grouped by University_ID) and returns the university with the highest count; ties and extra returned count do not affect correctness."
+ },
+ "test_0311_customers_and_orders:answered_right": {
+  "label": "hidden_error",
+  "reason": "If a customer has a matching row in Customer_Orders where order_id is NULL, the LEFT JOIN matches but WHERE customer_orders.order_id IS NULL wrongly includes that customer as having no order."
+ },
+ "test_1168_pilot_1:answered_right": {
+  "label": "hidden_error",
+  "reason": "If any PilotSkills.age is NULL, ORDER BY age ASC can select a NULL-aged pilot’s plane, whereas the correct minimum age should ignore NULLs."
+ }
+}

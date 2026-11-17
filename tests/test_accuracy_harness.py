@@ -403,3 +403,19 @@ def test_harness_reads_only_the_runner_when_one_is_given(tmp_path) -> None:
         planner=plan_sql_question, run_sql=run_sql,
     )
     assert wrong.attempts[0].verdict == WRONG
+
+
+def test_blocked_answer_is_judged_in_the_runners_dialect() -> None:
+    """A gate refusal on a warehouse is judged from its SQL; backticks must parse, not crash."""
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from secure_query.evals.accuracy import _judge
+
+    def run_sql(sql: str):
+        return [(1,)]
+
+    run_sql.dialect = "databricks"  # type: ignore[attr-defined]
+    case = LiveCase(case_id="c", question="q", expect="answer", reference_sql="SELECT 1")
+    blocked = SimpleNamespace(sql="SELECT `t`.`name` AS `name` FROM `T` AS `t`")
+    assert _judge(case, blocked, Path("/does/not/exist"), run_sql)[0] == "right"

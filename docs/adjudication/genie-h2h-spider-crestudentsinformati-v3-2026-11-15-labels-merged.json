@@ -1,0 +1,178 @@
+{
+ "p001:answered_wrong": {
+  "label": "benchmark_fault",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query\u2019s inner join on Detention excludes students with zero detentions, but \u201cless than two detentions\u201d should include zero; the system correctly includes them via NOT EXISTS."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Students with zero detentions do have fewer than two; the gold inner join drops them, and the system's 12 students are the correct set."
+  }
+ },
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system deduplicated students (DISTINCT) while the gold returns one row per qualifying loan; since the question asks for students and doesn\u2019t specify handling of duplicates, both interpretations are valid."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System lists each qualifying student once with DISTINCT while gold repeats students with several above-average loans; either is a fair reading of 'students'."
+  }
+ },
+ "p003:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system compares distinct behavior types to the count of common rows, excluding students with multiple occurrences of the most common detail, while the question/gold require students whose every behavior entry is a most-common detail."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "The check compares distinct detail count to row count, so Vanessa (two 'A' records, only 'A') is wrongly excluded."
+  }
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system omitted DISTINCT and returned duplicate student/address-type pairs, but the question doesn\u2019t specify deduplication, making duplicates vs. distinct an acceptable ambiguity."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System keeps one row per student address while gold applies DISTINCT; same pairs, differing only in duplicates."
+  }
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The query should include all students (even with zero courses), but the gold uses an inner join that omits zero-course students; the system\u2019s LEFT JOIN with 0 counts aligns with the request."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System includes students with zero classes as 0 under 'for each student'; counts for others match gold."
+  }
+ },
+ "p006:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system returns extra columns (student_id, bio_data), imposes an unjustified NOT NULL filter on bio_data, and omits DISTINCT, so it doesn\u2019t answer just \u201cpersonal details and address type descriptions\u201d for each student as asked."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "Same student/address-type pairs with extra id and bio columns and per-address duplicates instead of DISTINCT; a valid reading."
+  }
+ },
+ "p007:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query returns COUNT(DISTINCT student_id) while determining the most common detail by raw row counts, whereas the question asks for the count of occurrences of the most common detail, which the system correctly provides."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System reports 6 occurrences of 'A' while gold reports 5 distinct students; 'count of this result' allows either."
+  }
+ },
+ "p008:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system used DISTINCT to remove duplicate address\u2013student pairs, and the question does not specify whether duplicates from multiple address records should be included, so both interpretations are reasonable."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System DISTINCT collapses one student listed twice at the same address; differs only in duplicates."
+  }
+ },
+ "p009:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system adds DISTINCT (collapsing duplicate students with multiple above\u2011average loans) while the question doesn\u2019t specify whether to deduplicate, so both interpretations are reasonable."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System lists each qualifying student once with DISTINCT while gold repeats students with several above-average loans; either is fair."
+  }
+ },
+ "p010:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The query should list all achievement rows with their type descriptions, but the system used DISTINCT (and unnecessary NULL filters), returning only unique pairs instead of all 20 records."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System lists distinct detail/type combinations rather than one row per achievement; 'how are achievements described' permits either."
+  }
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The system deduplicates the teacher\u2013student detail pairs (and filters nulls) while the question doesn\u2019t specify handling of duplicates, so returning unique pairs is a reasonable interpretation rather than a wrong join."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System returns distinct teacher-student pairs, collapsing one pair that shares two classes; 'pairs' permits DISTINCT."
+  }
+ },
+ "p012:answered_wrong": {
+  "label": "real_error",
+  "gpt5": {
+   "label": "real_error",
+   "reason": "The system used OR (either condition) instead of requiring students who satisfy both conditions (most common result AND a result obtained by 3 students), yielding many extra rows."
+  },
+  "second_rater": {
+   "label": "real_error",
+   "reason": "The question requires students with both the most common result and a 3-student result, but the system uses OR and returns per-record rows."
+  }
+ },
+ "p013:answered_wrong": {
+  "label": "benchmark_fault",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The gold query excludes students with zero detentions due to an inner join, but \u201cless than two detentions\u201d includes zero, which the system correctly handles with a left join/NULL-as-zero logic."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "Students with zero detentions do have fewer than two; the gold inner join drops them, and the system's 12 students are the correct set."
+  }
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify tie-breaking or uniqueness, so returning all tied most-common categories (and duplicate students) is a reasonable reading, while the gold query arbitrarily picks one category via LIMIT 1."
+  },
+  "second_rater": {
+   "label": "benchmark_fault",
+   "reason": "This question asks for students who got the most common result (no 'only'), which the system answers (with Vanessa repeated), while gold wrongly restricts to students with only that result."
+  }
+ },
+ "p015:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "benchmark_fault",
+   "reason": "The question asks for each student (including those with zero courses), but the gold uses an inner join that excludes students without classes; the system\u2019s left join with zero counts matches the request."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System includes students with zero classes as 0 under 'for each student'; counts for others match gold."
+  }
+ },
+ "p016:answered_wrong": {
+  "label": "ambiguous",
+  "gpt5": {
+   "label": "ambiguous",
+   "reason": "The question doesn\u2019t specify whether to count total rows or distinct students, so returning row counts (system) vs distinct-student counts (gold) are both reasonable interpretations."
+  },
+  "second_rater": {
+   "label": "ambiguous",
+   "reason": "System reports 6 occurrences of 'A' while gold reports 5 distinct students; 'count of this result' allows either."
+  }
+ }
+}

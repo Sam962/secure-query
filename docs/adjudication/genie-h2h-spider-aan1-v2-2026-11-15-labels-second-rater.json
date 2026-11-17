@@ -1,0 +1,58 @@
+{
+ "p002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Keeps affiliations with no paper and sorts ascending as asked; the gold drops them and sorts descending."
+ },
+ "p003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Lists one row per paper where the gold lists distinct pairs; the question allows both."
+ },
+ "p005:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Keeps affiliations with no paper; the gold drops them."
+ },
+ "p008:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart."
+ },
+ "p011:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Lists one row per paper where the gold lists distinct pairs; the question allows both."
+ },
+ "p012:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; the gold keeps same-named rows apart."
+ },
+ "p014:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups affiliations by name; 121 names are shared by several rows with different addresses, which the gold keeps apart."
+ },
+ "p001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Repeats a paper once per author where the gold lists it once."
+ },
+ "p004:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Matches names containing 'Stanford University', seven more papers than the exact name."
+ },
+ "p006:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Matches names containing each university, more than the exact names."
+ },
+ "p007:answered_wrong": {
+  "label": "real_error",
+  "reason": "Case-sensitive LIKE '%Mckeown%' matches no stored name; the answer is empty."
+ },
+ "p009:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups by affiliation name, merging affiliations that share one."
+ },
+ "p010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Groups by affiliation name, merging affiliations that share one."
+ },
+ "p013:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Matches names containing 'Stanford University', seven more papers than the exact name."
+ }
+}

@@ -13,6 +13,9 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any
 
+import sqlglot
+from sqlglot import exp
+
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import Filter
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
@@ -25,6 +28,8 @@ from secure_query.planner.sql_values import (
     case_insensitive_like,
     ground_literals,
     show_ranking_measure,
+    similar_stored,
+    stored_elsewhere,
     unmatched_literals,
 )
 
@@ -37,6 +42,8 @@ or, when the catalog cannot answer the question exactly:
 Rules:
 - Use only the tables and columns listed in the catalog. {quoting}
 - Join only along the listed relationships, with explicit JOIN ... ON a.key = b.key.
+  A path through other tables counts (a -> b -> c). Two tables that point to the same
+  column may be joined on their pointing columns.
 - Never read columns marked [pii=high], not even in WHERE or ORDER BY. If the question
   needs one, refuse.
 - Return exactly the columns the question asks for. Use DISTINCT when it asks for
@@ -44,7 +51,7 @@ Rules:
 - For "which X has the most/least ...", return that one X (ORDER BY ... LIMIT 1).
 - For "each"/"every"/"all" groups, return every group (no small LIMIT).
 - Refuse only when the catalog truly lacks what the question needs: no listed table or
-  column holds it, or no listed relationship connects the tables. Then return
+  column holds it, or no chain of listed relationships connects the tables. Then return
   cannot_answer instead of a nearby query.
 - Do not refuse over wording or types. A column whose name is a synonym or abbreviation
   of the question's word is that column. A number or date stored as text can be CAST.
@@ -88,14 +95,41 @@ _UNSTABLE_MESSAGE = (
 )
 
 
-def _probe_fingerprint(probe: ValueProbe, compiled: Any) -> str | None:
-    """Fingerprint of one probe run; None when there is nothing to run or it fails."""
+_NUMBER = re.compile(r"^\s*-?\d+(\.\d+)?\s*$")
+
+
+def _model_width(sql: str, dialect: str) -> int | None:
+    """How many columns the model's own SELECT has; the kernel only appends after them."""
+    try:
+        tree = sqlglot.parse_one(sql, read=dialect)
+    except sqlglot.errors.ParseError:
+        return None
+    if not isinstance(tree, exp.Select) or any(isinstance(e, exp.Star) for e in tree.expressions):
+        return None
+    return len(tree.expressions)
+
+
+def _probe_fingerprint(probe: ValueProbe, compiled: Any, width: int | None = None) -> str | None:
+    """Fingerprint of one probe run; None when there is nothing to run or it fails.
+
+    The gate compares what each reading answered: its own first `width` columns (a ranking
+    measure the kernel appended is evidence, not the answer), with a number stored as text
+    equal to the number. Two readings that name the same winner by different measures agree.
+    """
     if compiled is None:
         return None
     try:
-        return answer_fingerprint(probe(compiled))
+        rows = probe(compiled)
     except Exception:  # noqa: BLE001 — a query that cannot run is not a confirmed answer
         return None
+    cell = lambda v: float(v) if isinstance(v, str) and _NUMBER.match(v) else v  # noqa: E731
+    return answer_fingerprint([tuple(cell(v) for v in row[:width]) for row in rows])
+
+
+def _no_stored_value(table: str, column: str, value: str, similar: Sequence[str]) -> str:
+    """What the person asking is told; `similar` are stored values they are allowed to read."""
+    close = f" Stored values close to it: {', '.join(repr(s) for s in similar)}." if similar else ""
+    return f"No stored {table}.{column} equals {value!r}, so I won't answer with a guess.{close}"
 
 
 class _NoStoredValue(Exception):
@@ -120,8 +154,10 @@ def plan_sql_question(
     """Ask for SQL, validate it, allow `max_repairs` repairs with the validator's errors.
 
     With `value_probe`, string literals are grounded against stored values first, and a
-    literal no stored value equals costs the repair round (the value is named, stored
-    values are not). If the model keeps it, the empty answer stands.
+    literal no stored value equals costs the repair round: the model is told the value and
+    which other column stores it, never a stored value. If one is still left, the answer
+    would be empty or partial because of a guess, so the question is refused
+    (`no_stored_value`) and the person asking is shown close stored values.
 
     With `check_client` (a sampling client) and `value_probe`, the question is planned a
     second time independently and both queries are run: different answers mean the model
@@ -145,7 +181,7 @@ def plan_sql_question(
         answer_probe=answer_probe or value_probe,
     )
     if check_client is None or value_probe is None:
-        return reading(client)
+        return reading(client, answer_probe=None)
     pool = ThreadPoolExecutor(max_workers=1)
     second = pool.submit(reading, check_client)
     try:
@@ -197,31 +233,68 @@ def _plan_one_reading(
                 )
             sql = str(data["sql"])
             validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
+            width = _model_width(sql, catalog.sql_dialect)
             sql = show_ranking_measure(case_insensitive_like(sql, catalog), catalog)
             if value_probe is not None:
                 sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
             validated = validate_sql(sql, catalog, row_filters=row_filters)
             missing = (
                 unmatched_literals(sql, catalog, value_probe, row_filters=row_filters)
-                if value_probe is not None and not value_checked and attempt <= max_repairs
+                if value_probe is not None
                 else []
             )
+            if missing and (value_checked or attempt > max_repairs):
+                return PlannerResult(
+                    status="clarify",
+                    question=question,
+                    attempts=attempt,
+                    errors=errors,
+                    clarify_message=" ".join(
+                        _no_stored_value(*m, similar_stored(*m, catalog, value_probe, row_filters=row_filters))
+                        for m in missing
+                    ),
+                    raw_responses=raw_responses,
+                    refused=True,
+                    clarify_code="no_stored_value",
+                    blocked=validated.compiled,
+                )
             if missing:
                 value_checked = True
                 raise _NoStoredValue(
                     [
-                        f"value: no stored {table}.{column} equals {value!r}. Check the column, "
-                        "the spelling and how values are coded; keep it only if it is meant to be absent."
-                        for table, column, value in missing
+                        f"value: no stored {m[0]}.{m[1]} equals {m[2]!r}."
+                        + "".join(
+                            f" It is stored in {m[0]}.{other}."
+                            for other in stored_elsewhere(*m, catalog, value_probe, row_filters=row_filters)
+                        )
+                        + " Check the column, the spelling and how values are coded."
+                        for m in missing
                     ]
                 )
-            gate_fps: list[str] = []
-            if second_reading is not None and answer_probe is not None:
-                second = second_reading()
+            own_fp: str | None = None
+            if answer_probe is not None:
                 # Each reading runs once: its fingerprint is both the comparison and the evidence.
-                first_fp = _probe_fingerprint(answer_probe, validated.compiled)
-                second_fp = _probe_fingerprint(answer_probe, second.compiled)
-                if first_fp is None or first_fp != second_fp:
+                # A query the database rejects is refused as invalid, not repaired: on BIRD dev
+                # both readings repaired the same error the same way and agreed on wrong
+                # answers (26 right, 63 wrong of 89 released), so the repair defeats the gate.
+                own_fp = _probe_fingerprint(answer_probe, validated.compiled, width)
+                if own_fp is None:
+                    return PlannerResult(
+                        status="clarify",
+                        question=question,
+                        attempts=attempt,
+                        errors=[*errors, "execution: the database rejected the query"],
+                        clarify_message="Could not produce a valid query. Please rephrase or narrow the question.",
+                        raw_responses=raw_responses,
+                        clarify_code="validation_failed",
+                    )
+            if second_reading is not None and own_fp is not None:
+                second = second_reading()
+                # The same query is the same answer: a capped, unordered result may come back
+                # as a different sample of rows, which is not a disagreement.
+                same_query = second.compiled is not None and second.compiled.sql == validated.compiled.sql
+                second_fp = (second.gate_fingerprints or (_probe_fingerprint(answer_probe, second.compiled),))[0]
+                if not same_query and second_fp != own_fp:
                     return PlannerResult(
                         status="clarify",
                         question=question,
@@ -233,7 +306,6 @@ def _plan_one_reading(
                         clarify_code="unstable_answer",
                         blocked=validated.compiled,
                     )
-                gate_fps.append(first_fp)
             return PlannerResult(
                 status="ok",
                 question=question,
@@ -241,7 +313,7 @@ def _plan_one_reading(
                 source_sql=sql,
                 attempts=attempt,
                 raw_responses=raw_responses,
-                gate_fingerprints=tuple(gate_fps),
+                gate_fingerprints=(own_fp,) if own_fp is not None else (),
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]
