@@ -887,3 +887,11 @@ def test_fan_out_false_alarms_pass_and_real_fan_out_still_fails() -> None:
         "WITH j AS (SELECT i.Total AS t FROM Invoice i JOIN InvoiceLine il ON il.InvoiceId = i.InvoiceId) "
         "SELECT SUM(t) FROM j"
     )
+
+
+def test_time_travel_is_refused_and_comments_are_dropped() -> None:
+    with pytest.raises(SqlValidationFailed) as excinfo:
+        validate_sql("SELECT Name FROM Genre AT (VERSION => 1)", CATALOG)
+    assert excinfo.value.errors[0].code == "sql.forbidden"
+    compiled = validate_sql("SELECT Name /* a */ FROM Genre -- */ ; DELETE FROM Genre", CATALOG).compiled.sql
+    assert "/*" not in compiled and "DELETE" not in compiled

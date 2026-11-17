@@ -56,6 +56,7 @@ _FORBIDDEN_SHAPES = tuple(
         "Struct",  # STRUCT(*) / struct(c.*) packs every column including PII
         "TableSample",
         "Version",  # VERSION AS OF — time-travel / alternate snapshot
+        "HistoricalData",  # DuckDB AT (VERSION => n): reads rows deleted since, e.g. for privacy
         # Who and where the query runs (CURRENT_DATE and the clock are allowed: they read no
         # data and "how old" / "this year" need them; the answer then depends on the day).
         "CurrentUser",
@@ -284,7 +285,9 @@ def validate_sql(
     if original_limit is not None:
         _break_ties(tree)
     _enforce_limit(tree, catalog)
-    out = tree.sql(dialect=catalog.sql_dialect)
+    # Comments are inert in one statement, but model-written text then never reaches the
+    # warehouse's query history or the evidence record.
+    out = tree.sql(dialect=catalog.sql_dialect, comments=False)
     digest = hashlib.sha256(out.encode()).hexdigest()
     return ValidatedSql(
         compiled=CompiledQuery(sql=out, plan_hash=f"sql:{digest[:16]}", sql_hash=digest, parameters=[]),

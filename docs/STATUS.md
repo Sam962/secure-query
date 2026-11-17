@@ -66,6 +66,17 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-16 — security pass: attack battery, two kernel fixes, an egress test, a key-file guard.**
+  43 hostile SQL shapes against the kernel (file and URL reads, getenv, system tables, writes,
+  extensions, PII by alias/struct/sort/length, stacked statements, resource bombs): 37 blocked
+  as expected. Found: DuckDB time travel `AT (VERSION => n)` passed (could read rows deleted
+  since, on a catalog that keeps history); now forbidden. Comments were kept in compiled SQL
+  (inert, one statement); now dropped so model text never reaches the warehouse query history.
+  New `tests/test_egress.py`: markers planted in a private and an unapproved column, questions run
+  through `ask` with a recording client; fails if any stored value is ever sent to the model.
+  Dev agents: the key file is denied to Read/Edit, and the Bash guard blocks any use of it but
+  sourcing (it also blocks a command that merely names it; acceptable).
+
 - **2026-11-16 — evidence-checked third rating of the head-to-head (Claude, not human).**
   All 139 flagged answers (Secure Query 65 after P12-P16, Genie 74), shuffled and blind,
   rated by five Claude agents that ran the reference SQL, the system SQL and probe queries
