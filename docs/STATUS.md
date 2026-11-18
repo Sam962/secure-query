@@ -66,6 +66,17 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-18 — measured: a column glossary matters when the question has no hint.** BIRD dev with
+  the per-question hints removed, with and without BIRD's own column descriptions as the glossary.
+  The no-glossary run hung on one question after 693 (10 hours at full CPU; most likely the eval's
+  SQLite grading, which has no time limit; the product's probes stop at 5-10 s; not verified), so
+  the comparison is on those 693, regraded (right / wrong / refused):
+  hints, no glossary 375 / 187 / 131; no hints, no glossary 220 / 150 / 323;
+  no hints, glossary 311 / 209 / 173. The glossary wins back 91 of the 155 right answers the hints
+  gave, but answers more of everything: wrong share of answered stays 40% (hints: 33%).
+  Earlier (2026-11-15) the same glossary on top of the hints measured as noise: it helps when
+  nothing else defines the terms, as for a partner's own data.
+
 - **2026-11-17 — measured and rejected: turning model reasoning on (`SECURE_QUERY_REASONING_EFFORT`).**
   Spider dev 400 x3 (right/wrong/refused): off 321/47/32; low 318/52/30; medium 319/45/35, all
   within noise. BIRD dev, low, stopped after 595 of 1534 questions (8 hours, several times slower):
