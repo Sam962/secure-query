@@ -66,6 +66,17 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-21 — measured and rejected: a structured reading before the SQL.** Same call, the
+  model first writes what one row is, the measure, the filters and anything assumed, each tied
+  to a catalog column or description; refusal rules unchanged. Right / wrong / refused:
+  Spider dev 321/47/32 -> 300/45/55; BIRD dev 796/452/286 -> 720/391/423; KaggleDBQA fewshot
+  36/15/34 -> 31/14/40, with docs 39/14/32 -> 32/16/37. Writing the reading makes the model
+  notice gaps and refuse (BIRD planner refusals 191, gate disagreements 206), and the second
+  reading diverges more often. Wrong falls on BIRD (-61) but right falls more (-76). Reverted.
+  Three prompt-side ways to make the model "understand" more (reasoning, answering with the
+  closest measure, a structured reading) have now each lost on the dev suites; the measured
+  gain is from content the catalog carries (descriptions: +91 on BIRD without hints).
+
 - **2026-11-21 — measured and rejected: answer a loose question with the closest measure.**
   Sorting the 29 refused KaggleDBQA tuning questions (with docs): 15 over-literal (a rate with
   no denominator, a place the whole dataset covers, "used" where the data records tests,
