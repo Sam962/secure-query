@@ -66,6 +66,19 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-21 — measured and rejected: answer a loose question with the closest measure.**
+  Sorting the 29 refused KaggleDBQA tuning questions (with docs): 15 over-literal (a rate with
+  no denominator, a place the whole dataset covers, "used" where the data records tests,
+  "a specific" item with none named), 5 fair refusals, 3 missing or wrong knowledge, 6 by our
+  checks. A prompt that answers with the closest measure and states its "reading" (right /
+  wrong / refused): Spider dev 400 x3 321/47/32 -> 328/46/26; BIRD dev (scripts/bird_dev.py)
+  796/452/286 -> 815/519/200; KaggleDBQA fewshot 36/15/34 -> 48/24/13, with docs 39/14/32 ->
+  48/24/13. It answers more everywhere, but on BIRD 86 fewer refusals bring 19 right and 67
+  wrong, and on KaggleDBQA about one new wrong per new right. Reverted; refusing stays cheaper
+  than guessing. Kept: the KaggleDBQA docs keep a code list only when at least half the
+  column's distinct values are its codes; the published Pesticide docs give every code
+  column the list of US states (an owner review should run the same check).
+
 - **2026-11-21 — KaggleDBQA added: real databases with their owners' documentation.** Eight Kaggle
   databases (Lee et al., ACL 2021); questions and docs from github.com/Chia-Hsuan-Lee/KaggleDBQA,
   SQLite files from the Google Drive folder its README names, both under `data/kaggledbqa/`.

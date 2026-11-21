@@ -7,7 +7,8 @@ names (unzipped to data/kaggledbqa/databases). Splits: `fewshot` (87 questions, 
 and `test` (185, held out like Spider test).
 
 With `docs`, each catalog carries the owners' documentation the way a data owner would write
-it in catalog review: column descriptions, what category codes mean, and the database overview.
+it in catalog review: column descriptions, what category codes mean (kept only when the codes
+occur in the column, as a review should check), and the database overview.
 Without it, the catalog has names and types only.
 """
 
@@ -36,7 +37,25 @@ def _sqlite(db_id: str) -> Path:
     return ROOT / "databases" / db_id / f"{db_id}.sqlite"
 
 
-def _with_docs(catalog: Catalog, schema: dict) -> Catalog:
+def _codes_occur(duck: Path, table: str, column: str, codes: list[str]) -> bool:
+    """Are at least half the column's distinct values documented codes? Wrong documentation is worse than none:
+    KaggleDBQA's Pesticide docs give every code column the list of US states."""
+    import duckdb
+
+    con = duckdb.connect(str(duck), read_only=True)
+    try:
+        quoted_t, quoted_c = '"' + table.replace('"', '""') + '"', '"' + column.replace('"', '""') + '"'
+        hit, distinct = con.execute(
+            f"SELECT COUNT(DISTINCT {quoted_c}) FILTER (WHERE CAST({quoted_c} AS VARCHAR) IN (SELECT UNNEST(?))), "
+            f"COUNT(DISTINCT {quoted_c}) FROM {quoted_t}",
+            [codes],
+        ).fetchone() or (0, 0)
+        return distinct > 0 and 2 * hit >= distinct
+    finally:
+        con.close()
+
+
+def _with_docs(catalog: Catalog, schema: dict, duck: Path) -> Catalog:
     tables_orig = schema["table_names_original"]
     enums = schema.get("value_enums") or {}
     notes: dict[tuple[str, str], str] = {}
@@ -45,7 +64,7 @@ def _with_docs(catalog: Catalog, schema: dict) -> Catalog:
             continue
         text = " ".join((desc or "").split())
         codes = enums.get(col) if isinstance(enums, dict) else None
-        if isinstance(codes, dict) and codes:
+        if isinstance(codes, dict) and codes and _codes_occur(duck, tables_orig[t], col, list(codes)):
             listed = "; ".join(f"{k} = {v}" for k, v in codes.items())
             text = f"{text} Codes: {listed[:MAX_CODES]}".strip()
         if text:
@@ -76,7 +95,7 @@ def load_kaggledbqa(split: str = "test", *, docs: bool = False) -> list[tuple[Li
         duck = sqlite_to_duckdb(_sqlite(db_id), ROOT / "duckdb" / f"{db_id}.duckdb")
         catalog = catalog_from(duck, schema, tenant_id=f"kaggledbqa_{db_id}")
         if docs:
-            catalog = _with_docs(catalog, schema)
+            catalog = _with_docs(catalog, schema, duck)
         items = json.loads((ROOT / "repo" / "examples" / f"{db_id}_{split}.json").read_text(encoding="utf-8"))
         for n, item in enumerate(items):
             con = sqlite3.connect(f"file:{_sqlite(db_id).resolve()}?mode=ro&immutable=1", uri=True)
