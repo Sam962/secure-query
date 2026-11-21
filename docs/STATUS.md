@@ -66,6 +66,19 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-21 — KaggleDBQA added: real databases with their owners' documentation.** Eight Kaggle
+  databases (Lee et al., ACL 2021); questions and docs from github.com/Chia-Hsuan-Lee/KaggleDBQA,
+  SQLite files from the Google Drive folder its README names, both under `data/kaggledbqa/`.
+  Suites `kaggledbqa-fewshot` (85 questions, for tuning) and `kaggledbqa-test` (182, held out);
+  a `-docs` suffix loads the owners' column descriptions, code meanings and overview into the
+  catalog. Measured once, x3, values and joins on (right / wrong / refused):
+  fewshot 36 / 15 / 34, with docs 42 / 14 / 29; test 69 / 34 / 79, with docs 74 / 43 / 65.
+  The docs help on the tuning split; on test they turn 14 refusals into 5 more right and 9 more
+  wrong (grader-flagged, not adjudicated; KaggleDBQA questions are loose). The larger finding:
+  40% of questions are refused, almost all by the model saying the data cannot answer ("no
+  population to compute a crime rate", "no column says Manchester" in a database that is all
+  Greater Manchester). Not tuned on test.
+
 - **2026-11-21 — P18 G1 and G2 built: detected facts and warehouse comments in the catalog draft.**
   `with_detected_facts` (`catalog_draft --facts`, `evals.run --facts`) notes in descriptions, from
   counts only: the column that names a table's rows but repeats (with the key that keeps them

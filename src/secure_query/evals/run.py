@@ -184,6 +184,11 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         from secure_query.evals.bird import load_bird_mini_dev
 
         items = load_bird_mini_dev()
+    elif args.suite and args.suite.startswith("kaggledbqa-"):
+        from secure_query.evals.kaggledbqa import load_kaggledbqa
+
+        split, _, docs = args.suite.removeprefix("kaggledbqa-").partition("-")
+        items = load_kaggledbqa(split, docs=docs == "docs")
     elif args.suite and args.suite.startswith("bird-mini-dev-"):
         from secure_query.evals.bird import load_bird_mini_dev
 
