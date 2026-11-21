@@ -66,6 +66,20 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-21 — P18 G1 and G2 built: detected facts and warehouse comments in the catalog draft.**
+  `with_detected_facts` (`catalog_draft --facts`, `evals.run --facts`) notes in descriptions, from
+  counts only: the column that names a table's rows but repeats (with the key that keeps them
+  apart), and two columns storing every pair in both directions. Noise check: 6 notes on 20 Spider
+  dev databases, 12 on BIRD dev, all on real repeating names or a real both-ways pair table; both
+  head-to-head error kinds (two Newarks, affiliations by name, doubled distances) are caught.
+  Measured: Spider dev 400 x3 321/47/32, identical to before. BIRD dev, new runner
+  `scripts/bird_dev.py` (the scratchpad runner and its join helper were lost to a cleanup; this
+  one uses the product's join discovery, grades on DuckDB with a SQLite fallback, and puts a
+  60 s limit on every query, so its numbers start a new series): without facts 796 right / 452
+  wrong / 286 refused, with facts 796 / 444 / 294. Neutral within noise on both dev suites, where
+  these data shapes are rare; kept opt-in in the draft for the owner to review. Warehouse
+  comments: Unity Catalog and DuckDB table and column comments become draft descriptions.
+
 - **2026-11-18 — measured: a column glossary matters when the question has no hint.** BIRD dev with
   the per-question hints removed, with and without BIRD's own column descriptions as the glossary.
   The no-glossary run hung on one question after 693 (10 hours at full CPU; most likely the eval's

@@ -114,12 +114,14 @@ def draft_catalog(
     columns: list[dict[str, Any]],
     foreign_keys: list[dict[str, Any]] | None = None,
     display_columns: dict[str, str] | None = None,
+    table_comments: dict[str, str] | None = None,
     max_limit: int = 1000,
     require_limit: bool = True,
 ) -> Catalog:
     """Build a Catalog from information_schema-shaped rows (no live warehouse).
 
-    `columns` items: table_name, column_name, data_type, optional tags (list[str]).
+    `columns` items: table_name, column_name, data_type, optional tags (list[str]) and comment.
+    Warehouse comments become draft descriptions, which the owner reviews like everything else.
     `foreign_keys` items: left_table, left_column, right_table, right_column.
     """
     by_table: dict[str, list[ColumnSpec]] = {}
@@ -131,13 +133,16 @@ def draft_catalog(
             name=col_name,
             dtype=map_uc_dtype(str(row["data_type"])),  # type: ignore[arg-type]
             pii_risk=pii_risk_from_tags(tags, column_name=col_name),  # type: ignore[arg-type]
+            description=str(row.get("comment") or "").strip(),
         )
         by_table.setdefault(table, []).append(spec)
 
     display = display_columns or {}
+    comments = table_comments or {}
     tables = [
         TableSpec(
             name=name,
+            description=str(comments.get(name) or "").strip(),
             columns=cols,
             display_column=display.get(name),
         )
@@ -178,7 +183,7 @@ def fetch_unity_catalog_draft(
     cur = connection.cursor()
     cur.execute(
         """
-        SELECT table_name, column_name, data_type
+        SELECT table_name, column_name, data_type, comment
         FROM system.information_schema.columns
         WHERE table_catalog = :cat AND table_schema = :sch
         ORDER BY table_name, ordinal_position
@@ -186,9 +191,22 @@ def fetch_unity_catalog_draft(
         {"cat": catalog_name, "sch": schema_name},
     )
     col_rows = [
-        {"table_name": r[0], "column_name": r[1], "data_type": r[2]}
+        {"table_name": r[0], "column_name": r[1], "data_type": r[2], "comment": r[3] if len(r) > 3 else None}
         for r in cur.fetchall()
     ]
+    table_comments: dict[str, str] = {}
+    try:
+        cur.execute(
+            """
+            SELECT table_name, comment
+            FROM system.information_schema.tables
+            WHERE table_catalog = :cat AND table_schema = :sch
+            """,
+            {"cat": catalog_name, "sch": schema_name},
+        )
+        table_comments = {str(r[0]): str(r[1]) for r in cur.fetchall() if r[1]}
+    except Exception:  # noqa: BLE001 — comments are optional; draft still useful
+        pass
     try:
         cur.execute(
             """
@@ -214,6 +232,7 @@ def fetch_unity_catalog_draft(
         tenant_id=tenant_id,
         columns=col_rows,
         foreign_keys=fks,
+        table_comments=table_comments,
         max_limit=max_limit,
     )
 

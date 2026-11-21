@@ -1,4 +1,4 @@
-"""Draft an unapproved Catalog from DuckDB information_schema.
+"""Draft an unapproved Catalog from DuckDB information_schema (and its comments).
 
 A data owner must review PII flags and join keys before the draft is the
 planner allowlist. This is a toil reducer, not an auto-approval pipeline.
@@ -30,12 +30,17 @@ def draft_from_duckdb(db_path: str | Path, *, tenant_id: str) -> dict:
     try:
         col_rows = con.execute(
             """
-            SELECT table_name, column_name, data_type
-            FROM information_schema.columns
-            WHERE table_schema = 'main'
-            ORDER BY table_name, ordinal_position
+            SELECT table_name, column_name, data_type, comment
+            FROM duckdb_columns()
+            WHERE schema_name = 'main' AND NOT internal
+            ORDER BY table_name, column_index
             """
         ).fetchall()
+        table_comments = dict(
+            con.execute(
+                "SELECT table_name, comment FROM duckdb_tables() WHERE schema_name = 'main' AND comment IS NOT NULL"
+            ).fetchall()
+        )
     finally:
         con.close()
 
@@ -45,6 +50,7 @@ def draft_from_duckdb(db_path: str | Path, *, tenant_id: str) -> dict:
             "column_name": r[1],
             "data_type": r[2],
             "mapped": map_uc_dtype(str(r[2])),
+            "comment": r[3],
         }
         for r in col_rows
     ]
@@ -52,6 +58,7 @@ def draft_from_duckdb(db_path: str | Path, *, tenant_id: str) -> dict:
         tenant_id=tenant_id,
         columns=columns,
         foreign_keys=[],
+        table_comments=table_comments,
     )
     catalog = catalog.model_copy(update={"sql_dialect": "duckdb"})
     return json.loads(catalog.model_dump_json())
@@ -170,6 +177,115 @@ def with_discovered_joins(catalog: Catalog, run: Callable[[str], Sequence[Sequen
     return catalog.model_copy(update={"join_keys": found})
 
 
+NEAR_UNIQUE = 0.8  # distinct share above which a repeating text column names things, not categories
+MIN_ROWS = 10  # below this a repeat says little
+MAX_NAME_LENGTH = 60  # average characters above which a text column is prose, not a name
+
+
+def _note(text: str, fact: str) -> str:
+    return f"{text} Detected: {fact}".strip() if text else f"Detected: {fact}"
+
+
+def with_detected_facts(catalog: Catalog, run: Callable[[str], Sequence[Sequence[Any]]]) -> Catalog:
+    """`catalog` with facts the data shows but the schema does not, noted in descriptions for review.
+
+    Two facts that turn right-looking SQL into wrong answers:
+    - a text column that names almost one row each but repeats (two cities called Newark):
+      grouping by it merges different things, so the note names the key that keeps them apart;
+    - a table with two columns pointing at the same key that stores every pair in both
+      directions (a->b and b->a): summing or counting all rows counts each pair twice.
+    Reads only counts; no stored value leaves the warehouse. PII columns are skipped.
+    """
+
+    def name(n: str) -> exp.Identifier:
+        return exp.to_identifier(n, quoted=True)
+
+    targets = {(j.right_table, j.right_column) for j in catalog.join_keys}
+    tables = []
+    for table in catalog.tables:
+        cols = [c for c in table.columns if c.pii_risk == "none" and c.dtype != "float"]
+        notes: dict[str, str] = {}
+        if cols:
+            parts: list[exp.Expression] = [exp.Count(this=exp.Star())]
+            for c in cols:
+                parts += [exp.Count(this=exp.column(name(c.name))),
+                          exp.Count(this=exp.Distinct(expressions=[exp.column(name(c.name))]))]
+            row = run(exp.select(*parts).from_(exp.Table(this=name(table.name))).sql(dialect=catalog.sql_dialect))[0]
+            stats = {c.name: (int(row[0]), int(row[1 + 2 * i]), int(row[2 + 2 * i])) for i, c in enumerate(cols)}
+            keys = sorted(
+                (c.name for c in cols if 0 < stats[c.name][0] == stats[c.name][2]),
+                key=lambda k: (table.name, k) not in targets,
+            )
+            # Only the column that names the rows: the table's most distinct repeating text column,
+            # and only when no unique text column other than a join key names them already.
+            texts = [c for c in cols if c.dtype == "str" and not c.values and stats[c.name][1]]
+            if texts:
+                # Text that reads as numbers, dates or times, or runs long, is not a name.
+                shape: list[exp.Expression] = []
+                for c in texts:
+                    col = exp.column(name(c.name))
+                    shape += [exp.Count(this=exp.TryCast(this=col.copy(), to=exp.DataType.build(t)))
+                              for t in ("DOUBLE", "TIMESTAMP", "TIME")]
+                    shape.append(exp.Avg(this=exp.Length(this=col.copy())))
+                srow = run(exp.select(*shape).from_(exp.Table(this=name(table.name))).sql(dialect=catalog.sql_dialect))[0]
+                texts = [
+                    c for i, c in enumerate(texts)
+                    if max(int(v or 0) for v in srow[4 * i: 4 * i + 3]) * 2 < stats[c.name][1]
+                    and float(srow[4 * i + 3] or 0) <= MAX_NAME_LENGTH
+                ]
+            named = any(c.name in keys and (table.name, c.name) not in targets for c in texts)
+            repeating = [c for c in texts if c.name not in keys]
+            best = max(repeating, key=lambda c: stats[c.name][2] / stats[c.name][1], default=None)
+            if best is not None and keys and not named:
+                total, filled, distinct = stats[best.name]
+                if filled >= MIN_ROWS and distinct < filled and distinct >= NEAR_UNIQUE * filled:
+                    c = best
+                    notes[c.name] = (
+                        f"not unique: {filled} rows hold {distinct} different values; "
+                        f"to keep them apart, group or identify by {keys[0]}"
+                    )
+        table_note = ""
+        # Two columns that point at the same key, or are named alike but for a digit (city1, city2).
+        by_target: dict[Any, list[str]] = {}
+        for j in catalog.join_keys:
+            if j.left_table == table.name:
+                by_target.setdefault((j.right_table, j.right_column), []).append(j.left_column)
+        for c in table.columns:
+            stem = re.sub(r"\d", "", c.name.lower())
+            if stem != c.name.lower() and c.pii_risk == "none" and c.dtype != "float":
+                by_target.setdefault(stem, []).append(c.name)
+        pairs = {tuple(sorted(p)) for p in by_target.values() if len(p) == 2}
+        for pair in pairs:
+            a, b = pair
+            x, y = exp.column(name(a), table="x"), exp.column(name(b), table="x")
+            mirror = exp.Exists(this=exp.select("1").from_(
+                exp.Table(this=name(table.name), alias=exp.TableAlias(this=exp.to_identifier("y")))
+            ).where(exp.and_(
+                exp.EQ(this=exp.column(name(a), table="y"), expression=y.copy()),
+                exp.EQ(this=exp.column(name(b), table="y"), expression=x.copy()),
+            )))
+            query = exp.select(
+                exp.Count(this=exp.Star()),
+                exp.Sum(this=exp.Case(ifs=[exp.If(this=exp.Not(this=mirror), true=exp.Literal.number(1))],
+                                      default=exp.Literal.number(0))),
+                exp.Sum(this=exp.Case(ifs=[exp.If(this=exp.NEQ(this=x.copy(), expression=y.copy()),
+                                                  true=exp.Literal.number(1))], default=exp.Literal.number(0))),
+            ).from_(exp.Table(this=name(table.name), alias=exp.TableAlias(this=exp.to_identifier("x"))))
+            total, unmirrored, different = run(query.sql(dialect=catalog.sql_dialect))[0]
+            if total and not unmirrored and different:
+                table_note = (
+                    f"every {a}/{b} pair is stored twice, once in each direction; to count or sum "
+                    f"pairs use one direction (e.g. {a} < {b}), and for one side match {a} only"
+                )
+        columns = [c.model_copy(update={"description": _note(c.description, notes[c.name])}) if c.name in notes else c
+                   for c in table.columns]
+        update: dict[str, Any] = {"columns": columns}
+        if table_note:
+            update["description"] = _note(table.description, table_note)
+        tables.append(table.model_copy(update=update))
+    return catalog.model_copy(update={"tables": tables})
+
+
 def catalog_drift(approved: Catalog, actual: Catalog) -> tuple[list[str], list[str]]:
     """Compare the approved catalog with what the warehouse holds now.
 
@@ -209,6 +325,8 @@ def _enrich(catalog: Catalog, run: Callable[[str], Sequence[Sequence[Any]]], arg
         for j in catalog.join_keys[before:]:
             print(f"proposed join (review): {j.left_table}.{j.left_column} -> {j.right_table}.{j.right_column}",
                   file=sys.stderr)
+    if args.facts and not args.check:
+        catalog = with_detected_facts(catalog, run)
     return with_value_lists(catalog, run) if args.values else catalog
 
 
@@ -258,6 +376,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--no-joins", dest="joins", action="store_false",
         help="Do not propose joins the data shows but the schema does not declare",
+    )
+    parser.add_argument(
+        "--facts", action="store_true",
+        help="Note in descriptions what the data shows: names that repeat, pairs stored both ways",
     )
     parser.add_argument("-o", "--output", default="-", help="Write path or - for stdout")
     parser.add_argument(

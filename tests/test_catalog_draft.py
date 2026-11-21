@@ -99,3 +99,47 @@ def test_joins_the_data_shows_are_proposed_and_nothing_else(tmp_path: Path) -> N
     ]
     assert not any("email" in sql for sql in seen)  # PII columns are never read, not even counted
     assert with_discovered_joins(drafted, run).join_keys == drafted.join_keys  # declared joins are kept once
+
+
+def test_facts_note_repeating_names_and_pairs_stored_both_ways(tmp_path: Path) -> None:
+    from secure_query.engine.catalog_draft import with_detected_facts
+    from secure_query.kernel.catalog import Catalog, JoinKey
+
+    path = tmp_path / "facts.duckdb"
+    con = duckdb.connect(str(path))
+    cities = [(f"C{i:02d}", f"Town {i}", f"2020-01-{i + 1:02d}") for i in range(12)] + [("C12", "Town 0", "2020-02-01")]
+    con.execute("CREATE TABLE city (code VARCHAR, city_name VARCHAR, founded VARCHAR)")
+    con.executemany("INSERT INTO city VALUES (?, ?, ?)", cities)
+    con.execute("CREATE TABLE distance (city1 VARCHAR, city2 VARCHAR, km INT)")
+    pairs = [("C00", "C01", 5), ("C01", "C02", 7), ("C00", "C02", 9)]
+    con.executemany("INSERT INTO distance VALUES (?, ?, ?)", pairs + [(b, a, k) for a, b, k in pairs])
+    con.execute("CREATE TABLE trip (city1 VARCHAR, city2 VARCHAR)")  # one way only
+    con.executemany("INSERT INTO trip VALUES (?, ?)", [("C00", "C01"), ("C01", "C02")])
+    con.close()
+
+    con = duckdb.connect(str(path), read_only=True)
+    catalog = Catalog.model_validate(draft_from_duckdb(path, tenant_id="t"))
+    catalog = catalog.model_copy(update={"join_keys": [  # codes other tables point at, as drafted
+        JoinKey(left_table=t, left_column=c, right_table="city", right_column="code")
+        for t in ("distance", "trip") for c in ("city1", "city2")
+    ]})
+    facts = with_detected_facts(catalog, lambda sql: con.execute(sql).fetchall())
+    tables = {t.name: t for t in facts.tables}
+    columns = {c.name: c.description for c in tables["city"].columns}
+    assert "not unique" in columns["city_name"] and "by code" in columns["city_name"]
+    assert columns["founded"] == "" and columns["code"] == ""  # a date stored as text, and the key
+    assert "stored twice" in tables["distance"].description
+    assert tables["trip"].description == ""
+
+
+def test_warehouse_comments_become_draft_descriptions(tmp_path: Path) -> None:
+    path = tmp_path / "comments.duckdb"
+    con = duckdb.connect(str(path))
+    con.execute("CREATE TABLE orders (id INT, status VARCHAR, total DOUBLE)")
+    con.execute("COMMENT ON TABLE orders IS 'One row per customer order'")
+    con.execute("COMMENT ON COLUMN orders.status IS 'A = active, C = cancelled'")
+    con.close()
+    tables = {t["name"]: t for t in draft_from_duckdb(path, tenant_id="t")["tables"]}
+    columns = {c["name"]: c["description"] for c in tables["orders"]["columns"]}
+    assert tables["orders"]["description"] == "One row per customer order"
+    assert columns == {"id": "", "status": "A = active, C = cancelled", "total": ""}
