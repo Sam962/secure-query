@@ -251,10 +251,12 @@ class Catalog(BaseModel):
                 target = syn.table_id if syn.column_id is None else f"{syn.table_id}.{syn.column_id}"
                 note = f" — {syn.description}" if syn.description else ""
                 lines.append(f"  - {syn.term!r} → {target}{note}")
-        if self.metric_ids:
-            lines.append("approved_metrics (prefer metric_id when the question matches):")
-            for mid in self.metric_ids:
-                lines.append(f"  - {mid}")
+        if self.metrics:
+            from secure_query.kernel.metrics import metric_definition
+
+            lines.append("approved_metrics (owner definitions; a question that asks for one is computed this way):")
+            for metric in self.metrics:
+                lines.append(f"  - {metric.id}: {metric.description} = {metric_definition(metric)}")
         if self.instructions:
             lines.append("instructions (follow these; they are not SQL):")
             for rule in self.instructions:

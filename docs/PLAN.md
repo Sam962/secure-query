@@ -264,7 +264,9 @@ runs exit 0 (`echo $?` prints `0`).
 - [ ] **3.2 Draft and approve the catalog.** Blocked by 3.1. Run
   `fetch_unity_catalog_draft` for the domain schema, save the draft as
   `config/<domain>-catalog.json`, then **a named owner** reviews PII flags and
-  `join_keys`. Fill [OWNERSHIP.md](OWNERSHIP.md). An agent may draft; only the owner approves.
+  `join_keys`, and writes descriptions, synonyms and metrics following
+  [CATALOG_REVIEW.md](CATALOG_REVIEW.md). Fill [OWNERSHIP.md](OWNERSHIP.md). An agent may
+  draft; only the owner approves.
 - [ ] **3.3 Live smoke.** Blocked by 3.2. `python scripts/databricks_smoke.py` exits 0.
 - [ ] **3.4 Freeze the holdout.** Blocked by 3.1. Sam and the domain owner write at least
   200 real questions with reference SQL (and expected refusals), following
@@ -401,6 +403,8 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   - **G2. Warehouse comments into the draft.** Unity Catalog and DuckDB column and table
     comments become draft descriptions for the owner to review.
   - Done 2026-11-21: G1 and G2 built (STATUS); G1 neutral on both dev suites, kept opt-in.
+  - Done 2026-11-21: G3. Owner metric definitions now reach the SQL planner as formulas
+    (they reached it as bare ids before); the owner guide is docs/CATALOG_REVIEW.md.
   - **G3. Owner-written definitions** (what a business word counts) through the existing
     synonyms, metrics and descriptions; documented in catalog review, no new code expected.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog

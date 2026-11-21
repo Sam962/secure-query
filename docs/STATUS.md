@@ -66,6 +66,15 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-21 — P18 G3: owner definitions reach the SQL planner; owner guide written.** The SQL
+  path showed approved metrics to the model as bare ids with "prefer metric_id", which it cannot
+  output; the definitions never reached it. Each metric now shows as its formula (e.g.
+  `SUM(Invoice.Total) / COUNT(DISTINCT Invoice.CustomerId) over Invoice`). No effect on Spider,
+  BIRD or KaggleDBQA (no metrics there); not measured live: the OpenAI account ran out of
+  credits mid-check (HTTP 429). `docs/CATALOG_REVIEW.md`: what the data owner writes in 3.2
+  (descriptions that say what the name does not, code checks, detected notes, synonyms,
+  metrics, house rules, what never to write).
+
 - **2026-11-21 — measured and rejected: a structured reading before the SQL.** Same call, the
   model first writes what one row is, the measure, the filters and anything assumed, each tied
   to a catalog column or description; refusal rules unchanged. Right / wrong / refused:

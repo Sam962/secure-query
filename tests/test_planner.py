@@ -552,3 +552,12 @@ def test_mock_sql_path_unknown_question_is_a_refusal() -> None:
     result = plan_sql_question("payroll totals", sample_catalog(), MockLLMClient())
     assert result.status == "clarify" and result.refused
 
+
+
+def test_sql_prompt_carries_owner_metric_definitions() -> None:
+    from secure_query.planner.sql_plan import build_sql_prompt
+
+    prompt = build_sql_prompt("average revenue per customer?", sample_catalog())
+    assert "avg_revenue_per_customer: Total revenue divided by distinct customers" in prompt
+    assert "SUM(Invoice.Total) / COUNT(DISTINCT Invoice.CustomerId) over Invoice" in prompt
+    assert "per Customer.Country; joining Invoice.CustomerId=Customer.CustomerId" in prompt
