@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from secure_query.demo.chinook import sample_catalog
-from secure_query.kernel.validate import validate_and_compile
-from secure_query.planner import MockLLMClient, plan_question
+from secure_query.planner import MockLLMClient, plan_sql_question
 from secure_query.planner.retrieve import catalog_for_prompt, retrieve_tables
 
 
@@ -28,17 +29,15 @@ def test_prompt_slice_omits_unrelated_tables() -> None:
 def test_validation_still_uses_full_catalog_when_prompt_is_sliced() -> None:
     catalog = sample_catalog()
     prompt = catalog_for_prompt(catalog, ["Invoice"])
-    result = plan_question(
-        "revenue by country",
-        catalog,
-        MockLLMClient(),
-        prompt_catalog=prompt,
+    sql = (
+        'SELECT c."Country", SUM(i."Total") AS revenue FROM "Invoice" i '
+        'JOIN "Customer" c ON i."CustomerId" = c."CustomerId" GROUP BY c."Country"'
+    )
+    result = plan_sql_question(
+        "revenue by country", catalog, MockLLMClient([json.dumps({"sql": sql})]), prompt_catalog=prompt
     )
     assert result.status == "ok"
-    assert result.plan is not None
-    assert result.plan.source == "Invoice"
-    compiled = validate_and_compile(result.plan, catalog)
-    assert "Customer" in compiled.sql
+    assert "Customer" in result.compiled.sql
 
 
 def test_two_questions_share_the_prompt_prefix_through_the_catalog(
@@ -61,7 +60,7 @@ def test_two_questions_share_the_prompt_prefix_through_the_catalog(
             config=runtime_config(),
             catalog=sample_catalog(),
             client=client,
-            confirm_only=True,
+            review_only=True,
         )
         prompts.append(client.calls[0][1]["content"])
     catalog_block = (

@@ -42,16 +42,16 @@ def test_api_limits_each_person_and_reports_it(monkeypatch: pytest.MonkeyPatch) 
     limiter.reset()
     metrics.reset()
     with TestClient(app) as client:
-        codes = [client.post("/ask/confirm", json={"question": "revenue by country"}).status_code for _ in range(3)]
+        codes = [client.post("/ask/review", json={"question": "revenue by country"}).status_code for _ in range(3)]
         assert codes[:2] == [200, 200] and codes[2] == 429
-        limited = client.post("/ask/confirm", json={"question": "revenue by country"}, headers={"X-Request-ID": "abc-123"})
+        limited = client.post("/ask/review", json={"question": "revenue by country"}, headers={"X-Request-ID": "abc-123"})
         assert limited.status_code == 429 and int(limited.headers["Retry-After"]) >= 1
         assert limited.headers["X-Request-ID"] == "abc-123"
         assert client.get("/health").headers["X-Request-ID"]
 
         assert client.get("/metrics").status_code == 401
         text = client.get("/metrics", headers={"Authorization": "Bearer scrape-me"}).text
-    assert 'secure_query_requests_total{route="/ask/confirm",status="429"} 2' in text
+    assert 'secure_query_requests_total{route="/ask/review",status="429"} 2' in text
     assert "secure_query_rate_limited_total 2" in text
     limiter.reset()
 

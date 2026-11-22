@@ -20,19 +20,15 @@ from secure_query.api.respond import (
 )
 from secure_query.auth import (
     Principal,
-    assert_builtin_metric_allowed,
     audit_principal_fields,
     catalog_for_principal,
-    inject_row_filters,
 )
 from secure_query.engine.execute import ExecuteOptions
 from secure_query.engine.runtime import RuntimeConfig, execute_compiled_query
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
-from secure_query.kernel.evidence import METRIC_CHECKS, PLAN_PATH_CHECKS, SQL_PATH_CHECKS, build_evidence
-from secure_query.kernel.explain import explain_plan
+from secure_query.kernel.evidence import SQL_PATH_CHECKS, build_evidence
 from secure_query.kernel.logical_plan import LogicalPlan
-from secure_query.kernel.metrics import get_metric
 from secure_query.kernel.signing import mac, mac_matches
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.kernel.trace import (
@@ -42,12 +38,7 @@ from secure_query.kernel.trace import (
     result_fingerprint,
     write_trace,
 )
-from secure_query.kernel.validate import (
-    PlanValidationFailed,
-    validate_and_compile,
-    validate_and_compile_metric,
-)
-from secure_query.planner import LLMClient, get_client, plan_question, try_compile_metric
+from secure_query.planner import LLMClient, get_client
 from secure_query.planner.clarify import (
     ClarifyCode,
     ambiguous_metrics,
@@ -211,7 +202,7 @@ def ask(
     config: RuntimeConfig,
     catalog: Catalog,
     client: LLMClient | None = None,
-    confirm_only: bool = False,
+    review_only: bool = False,
     execute: bool = True,
     options: ExecuteOptions | None = None,
 ) -> AskOutcome:
@@ -274,8 +265,7 @@ def ask(
     retrieved = retrieve_tables(question, scoped, k=k)
     prompt_catalog, relevant = prompt_catalog_and_hint(scoped, retrieved)
 
-    sql_mode = planner_mode() == "sql"
-    if sql_mode and k > 0:
+    if k > 0:
         link = link_tables(question, scoped, k=k)
         if link.confidence < confidence_threshold() and len(scoped.tables) > 8:
             return _clarify(
@@ -293,35 +283,25 @@ def ask(
     if active_client is None:
         active_client = get_client()
         model_id = _client_model_id(active_client)
-    if sql_mode:
-        planned = plan_sql_question(
-            question,
-            scoped,
-            active_client,
-            max_repairs=1,
-            row_filters=principal.row_filters,
-            prompt_catalog=prompt_catalog,
-            relevant_tables=relevant,
-            value_probe=lambda probe: execute_compiled_query(
-                probe, config, principal=principal, options=_PROBE_OPTIONS
-            ).rows,
-            # The gate compares the answers themselves, so it reads as many rows as an answer may hold.
-            answer_probe=lambda reading: execute_compiled_query(
-                reading, config, principal=principal, options=options
-            ).rows,
-            check_client=_second_reader(active_client),
-        )
-    else:
-        planned = plan_question(
-            question,
-            scoped,
-            active_client,
-            max_repairs=1,
-            prompt_catalog=prompt_catalog,
-            relevant_tables=relevant,
-        )
+    planned = plan_sql_question(
+        question,
+        scoped,
+        active_client,
+        max_repairs=1,
+        row_filters=principal.row_filters,
+        prompt_catalog=prompt_catalog,
+        relevant_tables=relevant,
+        value_probe=lambda probe: execute_compiled_query(
+            probe, config, principal=principal, options=_PROBE_OPTIONS
+        ).rows,
+        # The gate compares the answers themselves, so it reads as many rows as an answer may hold.
+        answer_probe=lambda reading: execute_compiled_query(
+            reading, config, principal=principal, options=options
+        ).rows,
+        check_client=_second_reader(active_client),
+    )
 
-    if planned.status != "ok" or (planned.compiled is None and planned.plan is None):
+    if planned.status != "ok" or planned.compiled is None:
         code = planned.clarify_code or ("planner_refusal" if planned.refused else "validation_failed")
         return _clarify(
             question,
@@ -336,94 +316,27 @@ def ask(
             timer=timer,
         )
 
-    plan = planned.plan
-    compiled = planned.compiled
-    metric = planned.metric
-    ratio = metric if metric is not None and metric.kind == "ratio" else None
-    reviewed_plan = plan  # before row filters: execute re-injects them server-side
-
-    if sql_mode:
-        pass  # validate_sql already applied the principal's row filters
-    elif plan is not None:
-        plan = inject_row_filters(plan, principal)
-        try:
-            if ratio is not None:
-                compiled = validate_and_compile_metric(ratio, plan, scoped)
-            else:
-                compiled = validate_and_compile(plan, scoped)
-        except PlanValidationFailed as exc:
-            return _clarify(
-                question,
-                str(exc),
-                principal=principal,
-                code="validation_failed",
-                refused=False,
-                retrieved_tables=retrieved,
-                catalog=scoped,
-                config=config,
-                model_id=model_id,
-                timer=timer,
-            )
-    elif compiled is None:
-        return _clarify(
-            question,
-            "No plan or compiled SQL produced",
-            principal=principal,
-            code="validation_failed",
-            retrieved_tables=retrieved,
-            catalog=scoped,
-            config=config,
-            model_id=model_id,
-            timer=timer,
-        )
-    else:
-        try:
-            assert_builtin_metric_allowed(principal)
-        except PermissionError as exc:
-            return _clarify(
-                question,
-                str(exc),
-                principal=principal,
-                code="auth",
-                retrieved_tables=retrieved,
-                config=config,
-                model_id=model_id,
-                timer=timer,
-            )
-
-    assert compiled is not None
-
-    if sql_mode and planned.certified_id:
+    compiled = planned.compiled  # validate_sql already applied the principal's row filters
+    if planned.certified_id:
         approved = next((c for c in scoped.certified if c.id == planned.certified_id), None)
         explanation = f"Certified answer {planned.certified_id}: {approved.question if approved else ''}".rstrip(": ")
-        policy_checks = SQL_PATH_CHECKS
-    elif sql_mode:
-        explanation, policy_checks = _SQL_EXPLANATION, SQL_PATH_CHECKS
-    elif metric is not None and metric.kind != "plan":
-        explanation, policy_checks = f"Approved metric {metric.id}: {metric.description}", METRIC_CHECKS
-    elif plan is not None:
-        explanation, policy_checks = explain_plan(plan), PLAN_PATH_CHECKS
     else:
-        explanation, policy_checks = "Approved metric", METRIC_CHECKS
-    review = {
-        "plan_hash": compiled.plan_hash,
-        "plan": reviewed_plan.model_dump(mode="json") if reviewed_plan is not None and not sql_mode else None,
-        "sql": planned.source_sql if sql_mode else None,
-        "metric_id": metric.id if metric is not None and metric.kind != "plan" else None,
-    }
+        explanation = _SQL_EXPLANATION
+    policy_checks = SQL_PATH_CHECKS
+    # plan and metric_id stay in the signed review (always null) so a client returns it unchanged.
+    review = {"plan_hash": compiled.plan_hash, "plan": None, "sql": planned.source_sql, "metric_id": None}
     review["signature"] = sign_review(review, principal)
     return _finish(
         question,
         principal=principal,
         config=config,
         scoped=scoped,
-        plan=plan,
+        plan=None,
         compiled=compiled,
         explanation=explanation,
-        # A ratio's plan selects numerator/denominator, not the columns the answer shows.
-        answer_plan=None if ratio is not None else plan,
+        answer_plan=None,
         retrieved=retrieved,
-        confirm=confirm_only or not execute,
+        confirm=review_only or not execute,
         options=options,
         review=review,
         policy_checks=policy_checks,
@@ -446,10 +359,10 @@ def execute_reviewed(
     signature: str = "",
     options: ExecuteOptions | None = None,
 ) -> AskOutcome:
-    """Run the artifact a user reviewed via confirm: no LLM call.
+    """Run the query a user reviewed via /ask/review: no LLM call.
 
-    The plan (or SQL, or metric) is re-validated against the principal's catalog
-    and row filters, re-compiled, and must hash to `plan_hash`. Raises
+    The reviewed SQL is re-validated against the principal's catalog and row filters,
+    re-compiled, and must hash to `plan_hash`. Raises
     ReviewMismatch otherwise, so a re-plan can never run in place of the review.
     Raises ReviewForbidden unless `signature` is the one this server issued.
     """
@@ -464,11 +377,11 @@ def execute_reviewed(
             question, str(exc), principal=principal, code="auth",
             config=config, timer=timer,
         )
+    if sql is None or plan is not None or metric_id is not None:
+        raise ReviewMismatch("execute takes the reviewed SQL only")
     try:
-        compiled, run_plan, explanation, answer_plan = _recompile(
-            scoped, principal, plan=plan, sql=sql, metric_id=metric_id
-        )
-    except (PlanValidationFailed, SqlValidationFailed, PermissionError, ValueError) as exc:
+        compiled = validate_sql(sql, scoped, row_filters=principal.row_filters).compiled
+    except SqlValidationFailed as exc:
         raise ReviewMismatch(f"reviewed plan no longer validates: {exc}") from exc
     if compiled.plan_hash != plan_hash:
         raise ReviewMismatch("reviewed plan no longer matches plan_hash")
@@ -477,52 +390,17 @@ def execute_reviewed(
         principal=principal,
         config=config,
         scoped=scoped,
-        plan=run_plan,
+        plan=None,
         compiled=compiled,
-        explanation=explanation,
-        answer_plan=answer_plan,
+        explanation=_SQL_EXPLANATION,
+        answer_plan=None,
         retrieved=[],
         confirm=False,
         options=options,
         review=review,
-        # Same branch order as _recompile: SQL, then metric, then LogicalPlan.
-        policy_checks=(
-            SQL_PATH_CHECKS if sql is not None else METRIC_CHECKS if metric_id is not None else PLAN_PATH_CHECKS
-        ),
+        policy_checks=SQL_PATH_CHECKS,
         timer=timer,
     )
-
-
-def _recompile(
-    scoped: Catalog,
-    principal: Principal,
-    *,
-    plan: dict[str, Any] | None,
-    sql: str | None,
-    metric_id: str | None,
-) -> tuple[CompiledQuery, LogicalPlan | None, str, LogicalPlan | None]:
-    """(compiled, executed plan, explanation, plan for answer formatting)."""
-    if sql is not None:
-        validated = validate_sql(sql, scoped, row_filters=principal.row_filters)
-        return validated.compiled, None, _SQL_EXPLANATION, None
-    if metric_id is not None:
-        metric = get_metric(metric_id, scoped)
-        if metric is None or metric.kind == "plan":
-            raise ValueError(f"unknown metric {metric_id!r}")
-        explanation = f"Approved metric {metric.id}: {metric.description}"
-        if metric.kind == "builtin":
-            assert_builtin_metric_allowed(principal)
-            _, compiled, _ = try_compile_metric(json.dumps({"metric_id": metric_id}), scoped)
-            assert compiled is not None
-            return compiled, None, explanation, None
-        if plan is None:
-            raise ValueError("ratio metric review needs its plan")
-        run_plan = inject_row_filters(LogicalPlan.model_validate(plan), principal)
-        return validate_and_compile_metric(metric, run_plan, scoped), run_plan, explanation, None
-    if plan is None:
-        raise ValueError("execute needs plan, sql or metric_id")
-    run_plan = inject_row_filters(LogicalPlan.model_validate(plan), principal)
-    return validate_and_compile(run_plan, scoped), run_plan, explain_plan(run_plan), run_plan
 
 
 def _finish(
@@ -674,12 +552,6 @@ def _second_reader(client: LLMClient) -> LLMClient | None:
     """
     twin = getattr(client, "check_twin", None)
     return twin() if callable(twin) else None
-
-
-def planner_mode() -> str:
-    """SECURE_QUERY_PLANNER: "sql" (validated SQL, production) or "lqp" (LogicalPlan / metrics)."""
-    mode = (os.environ.get("SECURE_QUERY_PLANNER") or "sql").strip().lower()
-    return mode if mode in ("lqp", "sql") else "sql"
 
 
 def production_auth_blocked() -> str | None:

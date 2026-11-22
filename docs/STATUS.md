@@ -66,6 +66,24 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-22 — Over-engineering review: fixed and cut (Sam asked).** Each claim was checked
+  in the code first; all held. Fixed: (1) the backend was inferred from whichever
+  credentials were set, so a Databricks token sent Chinook-planned questions to
+  `workspace.aan_1` (this repo's own local settings did); now `SECURE_QUERY_BACKEND` names
+  it (default duckdb), the Chinook sample is refused on any warehouse, and `/ready` fails
+  when the approved tables are not in the configured schema. (2) The grant check passed with
+  no direct grant seen and ignored ownership; live, the workspace token owns `aan_1` and was
+  reported select-only. Now select-only needs a direct read grant, no write grant and no
+  ownership; otherwise "unchecked" or "write_privileges". It runs only in shared auth, the
+  mode where that token executes; user mode reports "per_user". (3) `/ask/confirm` ran both
+  readings on the warehouse: renamed `/ask/review` (flag `review_only`), documented as not a
+  dry run; the gate needs those reads. The response status stays "confirm" because signed
+  evidence and traces store it. (4) The package exports `validate_sql` and
+  `plan_sql_question`. Cut: the LogicalPlan question planner and its 843-line English guard
+  (PLAN P1), the `lqp` eval option and CI step, and plan/metric reviews in `/ask/execute`
+  (nothing issued them); net 2,279 lines fewer. Kept: the metric IR, and eval tooling that
+  calls Databricks REST, now fenced off from the product by `tests/test_boundaries.py`.
+
 - **2026-11-22 — Audit of answers scored right, stand-in head-to-head (PLAN 3.5).** 60 per
   system, seeded, blind, rated by gpt-5 with the right-answer rubric (judges the SQL against
   the question and schema): hidden errors Secure Query 10 of 60, Genie 15 of 60. Loose upper

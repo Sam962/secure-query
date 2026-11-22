@@ -29,10 +29,6 @@ def postgres_dsn() -> str | None:
     return raw or None
 
 
-def postgres_configured() -> bool:
-    return bool(postgres_dsn())
-
-
 def execute_postgres(
     compiled: CompiledQuery,
     dsn: str | None = None,

@@ -69,15 +69,6 @@ SQL_PATH_CHECKS = (
     "read_only",
     "limit_capped",
 )
-PLAN_PATH_CHECKS = (
-    "catalog_columns",
-    "no_pii_high",
-    "approved_joins",
-    "row_filters",
-    "read_only",
-    "limit_capped",
-)
-METRIC_CHECKS = ("approved_metric", "read_only")
 
 
 def build_evidence(

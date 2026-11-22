@@ -20,6 +20,7 @@ execute and leaked PII. Fan-out aggregates laundered through a CTE, and
    ordered expression must resolve to an approved catalog column (or a pure
    function of those). Forbidden AST shapes are rejected by name.
 2. **Validated SQL is the default** NL planner (`SECURE_QUERY_PLANNER=sql`).
+   Update 2026-11-22: it is the only NL planner; the LogicalPlan question planner was removed.
 3. **LQP** stays as the IR for analyst-owned metrics and deterministic explain-back,
    not as a peer NL path.
 4. Every ask writes a **TraceRecord** (including refusals), separate from execute audit.

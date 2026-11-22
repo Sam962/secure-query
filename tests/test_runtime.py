@@ -9,7 +9,6 @@ import pytest
 from secure_query.auth import Principal
 from secure_query.engine.execute import ExecuteOptions
 from secure_query.engine.runtime import (
-    databricks_configured,
     execute_compiled_query,
     load_active_catalog,
     runtime_config,
@@ -17,25 +16,27 @@ from secure_query.engine.runtime import (
 from secure_query.kernel.compile import CompiledQuery
 
 
-def test_databricks_configured_false_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
-    for key in (
-        "DATABRICKS_HOST",
-        "DATABRICKS_SERVER_HOSTNAME",
-        "DATABRICKS_HTTP_PATH",
-        "DATABRICKS_TOKEN",
-        "DATABRICKS_ACCESS_TOKEN",
-    ):
-        monkeypatch.delenv(key, raising=False)
-    assert databricks_configured() is False
-    assert runtime_config().backend == "duckdb"
-
-
-def test_databricks_configured_when_env_set(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_backend_is_duckdb_unless_named(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A Databricks token in the environment does not move the sample's questions to a warehouse."""
+    monkeypatch.delenv("SECURE_QUERY_BACKEND", raising=False)
     monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example.com")
     monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
     monkeypatch.setenv("DATABRICKS_TOKEN", "pat")
-    assert databricks_configured() is True
-    assert runtime_config().backend == "databricks"
+    assert runtime_config().backend == "duckdb"
+
+
+def test_sample_catalog_refused_on_a_warehouse(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SECURE_QUERY_BACKEND", "databricks")
+    monkeypatch.delenv("SECURE_QUERY_CATALOG_FILE", raising=False)
+    monkeypatch.delenv("SECURE_QUERY_DOMAINS", raising=False)
+    with pytest.raises(RuntimeError, match="Chinook sample"):
+        runtime_config()
+
+
+def test_unknown_backend_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SECURE_QUERY_BACKEND", "snowflake")
+    with pytest.raises(RuntimeError, match="expected duckdb"):
+        runtime_config()
 
 
 def test_load_active_catalog_defaults_to_sample(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -45,13 +46,23 @@ def test_load_active_catalog_defaults_to_sample(monkeypatch: pytest.MonkeyPatch)
     assert any(t.name == "Invoice" for t in catalog.tables)
 
 
+def _file_catalog(tmp_path: Path) -> Path:
+    from secure_query.demo.chinook import sample_catalog
+
+    path = tmp_path / "catalog.json"
+    path.write_text(sample_catalog().model_copy(update={"tenant_id": "file"}).model_dump_json())
+    return path
+
+
 def test_execute_compiled_query_uses_databricks_when_configured(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example.com")
     monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
     monkeypatch.setenv("DATABRICKS_TOKEN", "pat")
     monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    monkeypatch.setenv("SECURE_QUERY_BACKEND", "databricks")
+    monkeypatch.setenv("SECURE_QUERY_CATALOG_FILE", str(_file_catalog(tmp_path)))
 
     called: dict[str, object] = {}
 
@@ -110,6 +121,7 @@ def test_named_domain_gets_backend_dialect_and_file_domain_is_default(
     monkeypatch.setenv("SECURE_QUERY_BACKEND", "postgres")
     monkeypatch.delenv("SECURE_QUERY_DOMAIN", raising=False)
 
-    assert load_active_catalog().tenant_id == "file"
-    chinook = load_active_catalog("chinook")
-    assert chinook.tenant_id == "chinook" and chinook.sql_dialect == "postgres"
+    catalog = load_active_catalog()
+    assert catalog.tenant_id == "file" and catalog.sql_dialect == "postgres"
+    with pytest.raises(RuntimeError, match="Chinook sample"):
+        load_active_catalog("chinook")

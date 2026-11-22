@@ -35,7 +35,7 @@ from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.logical_plan import LogicalPlan
 from secure_query.kernel.trace import answer_fingerprint
 from secure_query.kernel.validate import PlanValidationFailed, validate_and_compile
-from secure_query.planner import PlannerError, plan_question
+from secure_query.planner import PlannerError
 from secure_query.planner.sql_plan import plan_sql_question
 
 CORRECT = "correct"
@@ -189,13 +189,13 @@ def run_live_case(
     check_client: Any = None,
     run_sql: RowRunner | None = None,
 ) -> LiveCaseResult:
-    """`planner` is plan_question (LogicalPlan path, default) or plan_sql_question.
+    """`planner` defaults to plan_sql_question (tests may pass a stand-in).
 
     With `run_sql`, every statement (the system's queries, its lookups and the reference
     SQL) goes through it and `db_path` is never opened: both sides of a head-to-head then
     read the same warehouse.
     """
-    planner = planner or plan_question
+    planner = planner or plan_sql_question
     if planner is plan_sql_question:
         if case.sql_reference:
             case = replace(case, expect="answer", reference_sql=case.sql_reference)

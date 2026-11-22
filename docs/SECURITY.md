@@ -101,7 +101,7 @@ model serving, a self-hosted model) and qualify that model first ([EVAL.md](EVAL
 1. `join_keys` is a strict allowlist: an empty list allows no joins. `allow_any_join=true` is dev-only. Principal slices keep only join keys between their allowed tables.
 2. Retrieval is never a security control — `validate()` always uses the full authorized catalog; a retrieval miss is a refusal, not a leak.
 3. Metrics are analyst-owned definitions in the catalog (`Catalog.metrics`), validated against the catalog at load. They are offered only if every table they read is in the principal's catalog. The model can pick a `metric_id`; it never supplies a definition.
-4. Never accept `principal_id`, `tenant_id`, or `allowed_tables` from a request body (`extra=forbid`). `/ask/execute` takes back the reviewed `plan` or `sql` from `/ask/confirm`; it is re-validated exactly like model output (catalog, PII, joins, row filters from the server-side principal) and regenerated, never executed as sent.
+4. Never accept `principal_id`, `tenant_id`, or `allowed_tables` from a request body (`extra=forbid`). `/ask/execute` takes back the reviewed `plan` or `sql` from `/ask/review`; it is re-validated exactly like model output (catalog, PII, joins, row filters from the server-side principal) and regenerated, never executed as sent.
 5. `SECURE_QUERY_ENV=production` refuses `AUTH_MODE=dev`, refuses a catalog without an `approval` record, and refuses to start without a `SECURE_QUERY_REVIEW_SECRET` of at least 32 characters (Evidence Bundles must verify across restarts and workers).
 
 ## Postgres

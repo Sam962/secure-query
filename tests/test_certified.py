@@ -85,6 +85,6 @@ def test_the_answer_says_it_is_certified() -> None:
 
     outcome = ask("Count customers in each country", principal=Principal(principal_id="p", tenant_id=CATALOG.tenant_id),
                   config=runtime_config(), catalog=CATALOG, client=Replies({"certified": "customers_by_country"}),
-                  confirm_only=True)
+                  review_only=True)
     assert outcome.status == "confirm"
     assert outcome.explanation == "Certified answer customers_by_country: How many customers per country?"

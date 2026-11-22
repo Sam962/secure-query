@@ -33,7 +33,11 @@ from secure_query.api.service import (
     production_auth_blocked,
 )
 from secure_query.auth import AuthError, check_auth_config, resolve_principal
-from secure_query.engine.databricks import databricks_grant_check
+from secure_query.engine.databricks import (
+    databricks_auth_mode,
+    databricks_grant_check,
+    missing_catalog_tables,
+)
 from secure_query.engine.env import load_dotenv
 from secure_query.engine.execute import ExecuteOptions, ExecutionError
 from secure_query.engine.runtime import get_runtime, load_active_catalog
@@ -76,7 +80,7 @@ app = FastAPI(
 )
 
 
-_MEASURED_ROUTES = ("/ask", "/ask/confirm", "/ask/execute")
+_MEASURED_ROUTES = ("/ask", "/ask/review", "/ask/execute")
 
 
 @app.middleware("http")
@@ -108,9 +112,12 @@ class AskRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     question: str
-    confirm_only: bool = Field(
+    review_only: bool = Field(
         default=False,
-        description="If true, return explain-back without executing SQL",
+        description=(
+            "If true, return the reviewed query and explain-back without the answer. Read-only "
+            "checks still run on the warehouse (value lookups and the two readings the gate compares)."
+        ),
     )
     execute: bool = Field(default=True, description="Run SQL after plan validates")
     domain: str | None = Field(
@@ -147,7 +154,7 @@ class AskResponse(BaseModel):
 
 
 class ExecuteRequest(BaseModel):
-    """The `review` payload from /ask/confirm. Re-validated server-side; no LLM call."""
+    """The `review` payload from /ask/review. Re-validated server-side; no LLM call."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -227,11 +234,19 @@ def ready() -> dict[str, str | bool]:
         raise HTTPException(status_code=503, detail="database not available")
     body: dict[str, str | bool] = {"status": "ready", "backend": config.backend}
     if config.backend == "databricks":
+        # Checks run as the service token. Its grants matter only when it is the identity
+        # that executes (shared); in user mode each person's own token and Unity Catalog decide.
+        shared = databricks_auth_mode() == "shared"
+        service_token = bool(os.environ.get("DATABRICKS_TOKEN") or os.environ.get("DATABRICKS_ACCESS_TOKEN"))
         try:
-            grants = databricks_grant_check()
+            missing = missing_catalog_tables([t.name for t in config.catalog.tables]) if service_token else []
+            grants = databricks_grant_check() if shared else {"status": "per_user", "detail": ""}
         except Exception as exc:  # noqa: BLE001 — readiness must answer, not crash
-            log.error("databricks grant check failed: %s", exc)
-            raise HTTPException(status_code=503, detail="warehouse grant check failed") from exc
+            log.error("databricks readiness check failed: %s", exc)
+            raise HTTPException(status_code=503, detail="warehouse check failed") from exc
+        if missing:
+            log.error("approved tables missing from the warehouse schema: %s", ", ".join(missing))
+            raise HTTPException(status_code=503, detail="the approved catalog does not match the warehouse schema")
         body["databricks_grants"] = grants["status"]
         if grants["status"] == "write_privileges":
             log.error("databricks grant check: %s", grants["detail"])
@@ -302,7 +317,7 @@ def _run_ask(
         config=config,
         catalog=catalog,
         client=get_client(),
-        confirm_only=req.confirm_only,
+        review_only=req.review_only,
         execute=req.execute,
         options=ExecuteOptions(audit_path=config.audit_path),
     )
@@ -337,8 +352,8 @@ def ask_endpoint(
     )
 
 
-@app.post("/ask/confirm", response_model=AskResponse)
-def ask_confirm(
+@app.post("/ask/review", response_model=AskResponse)
+def ask_review(
     request: Request,
     req: AskRequest,
     authorization: str | None = Header(default=None),
@@ -346,7 +361,12 @@ def ask_confirm(
     x_databricks_user: str | None = Header(default=None),
     x_databricks_access_token: str | None = Header(default=None),
 ) -> AskResponse:
-    req = req.model_copy(update={"confirm_only": True, "execute": False})
+    """Plan and check a question for review; the answer comes from /ask/execute.
+
+    Not a dry run: the gate compares the results of two readings, so read-only queries run
+    on the warehouse as the caller. Only the answer rows are withheld.
+    """
+    req = req.model_copy(update={"review_only": True, "execute": False})
     return _run_ask(
         request,
         req,
@@ -366,7 +386,7 @@ def ask_execute(
     x_databricks_user: str | None = Header(default=None),
     x_databricks_access_token: str | None = Header(default=None),
 ) -> AskResponse:
-    """Run the query reviewed via /ask/confirm. 409 if it no longer compiles to plan_hash."""
+    """Run the query reviewed via /ask/review. 409 if it no longer compiles to plan_hash."""
     principal, config, catalog = _principal_and_catalog(
         request,
         req.domain,

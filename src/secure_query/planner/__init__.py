@@ -1,4 +1,4 @@
-"""Planner: LLM clients, the validated-SQL planner (default) and the LogicalPlan planner (metrics)."""
+"""Planner: LLM clients and the validated-SQL planner."""
 
 from secure_query.planner.llm import (
     LLMClient,
@@ -10,14 +10,8 @@ from secure_query.planner.llm import (
     ollama_model_digest,
     resolve_llm_settings,
 )
-from secure_query.planner.plan import (
-    PlannerRefusal,
-    PlannerResult,
-    parse_plan_json,
-    plan_question,
-    try_compile_metric,
-)
-from secure_query.planner.prompt import SYSTEM_PROMPT, build_repair_prompt, build_user_prompt
+from secure_query.planner.result import PlannerResult
+from secure_query.planner.sql_plan import plan_sql_question
 from secure_query.planner.suggest import SuggestedQuestion, suggest_questions
 
 __all__ = [
@@ -25,18 +19,12 @@ __all__ = [
     "MockLLMClient",
     "OpenAIClient",
     "PlannerError",
-    "PlannerRefusal",
     "PlannerResult",
-    "SYSTEM_PROMPT",
     "SuggestedQuestion",
-    "build_repair_prompt",
-    "build_user_prompt",
     "default_client",
     "get_client",
     "ollama_model_digest",
-    "parse_plan_json",
-    "plan_question",
+    "plan_sql_question",
     "resolve_llm_settings",
     "suggest_questions",
-    "try_compile_metric",
 ]

@@ -7,8 +7,6 @@ from secure_query.auth import Principal
 from secure_query.demo.chinook import sample_catalog
 from secure_query.engine.runtime import runtime_config
 from secure_query.kernel.evidence import (
-    METRIC_CHECKS,
-    PLAN_PATH_CHECKS,
     SQL_PATH_CHECKS,
     EvidenceBundle,
     build_evidence,
@@ -52,24 +50,7 @@ def test_ask_refuse_includes_evidence(monkeypatch, tmp_path) -> None:
     assert outcome.evidence["signature"]
 
 
-def test_ask_confirm_includes_evidence(monkeypatch, tmp_path) -> None:
-    monkeypatch.setenv("SECURE_QUERY_TRACE_PATH", str(tmp_path / "trace.jsonl"))
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
-    outcome = ask(
-        "revenue by country",
-        principal=Principal(principal_id="demo-user", tenant_id="chinook"),
-        config=runtime_config(),
-        catalog=sample_catalog(),
-        client=MockLLMClient(),
-        confirm_only=True,
-    )
-    assert outcome.status == "confirm"
-    assert outcome.evidence is not None
-    assert outcome.evidence["kind"] == "confirm"
-    assert tuple(outcome.evidence["policy_checks"]) == PLAN_PATH_CHECKS
-
-
-def test_evidence_lists_the_checks_of_the_path_that_ran(monkeypatch, tmp_path) -> None:
+def test_review_evidence_lists_the_checks_that_ran(monkeypatch, tmp_path) -> None:
     import json
 
     import pytest
@@ -77,29 +58,16 @@ def test_evidence_lists_the_checks_of_the_path_that_ran(monkeypatch, tmp_path) -
     monkeypatch.setenv("SECURE_QUERY_TRACE_PATH", str(tmp_path / "trace.jsonl"))
     who = Principal(principal_id="demo-user", tenant_id="chinook")
 
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
     sql_path = ask(
         "How many invoices are there?",
         principal=who,
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) FROM Invoice"})]),
-        confirm_only=True,
+        review_only=True,
     )
-    assert sql_path.status == "confirm"
+    assert sql_path.status == "confirm" and sql_path.evidence["kind"] == "confirm"
     assert tuple(sql_path.evidence["policy_checks"]) == SQL_PATH_CHECKS
-
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
-    metric = ask(
-        "line item revenue",
-        principal=who,
-        config=runtime_config(),
-        catalog=sample_catalog(),
-        client=MockLLMClient(responses=[json.dumps({"metric_id": "line_item_revenue"})]),
-        confirm_only=True,
-    )
-    assert metric.status == "confirm"
-    assert tuple(metric.evidence["policy_checks"]) == METRIC_CHECKS
 
     with pytest.raises(ValueError, match="policy_checks"):
         build_evidence(kind="ok", trace_id="t", question="q")

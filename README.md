@@ -19,8 +19,7 @@ New here? Read [docs/DEMO.md](docs/DEMO.md) (why this exists) then come back her
 
 ## How to use the model
 
-The default planner (`SECURE_QUERY_PLANNER=sql`) needs an LLM that emits `{"sql": "..."}` JSON.
-Set `SECURE_QUERY_PLANNER=lqp` for the LogicalPlan path (metrics / explain helpers).
+The planner needs an LLM that emits `{"sql": "..."}` JSON; the kernel validates and rewrites it.
 The default is OpenAI **`gpt-6-luna`** with reasoning off (`SECURE_QUERY_PROVIDER=openai`); the numbers in [docs/STATUS.md](docs/STATUS.md) are for it. It replaced `gpt-4.1-mini`, which OpenAI removes on 2027-01-14. Any model on an OpenAI-compatible endpoint works; measure it first ([docs/EVAL.md](docs/EVAL.md), "Qualifying a new model").
 **qwen2.5:7b** via [Ollama](https://ollama.com) is a local option for demos without an API key; it is not what the numbers measure.
 
@@ -46,7 +45,7 @@ With no `SECURE_QUERY_PROVIDER` and no API key set, a running Ollama server is p
 python -m secure_query.demo.ask --provider ollama "revenue by country"
 ```
 
-`--confirm-only` shows explain-back and compiled SQL without hitting the database.
+`--review-only` shows explain-back and compiled SQL without hitting the database.
 
 Pasted SQL and high-PII questions are refused **before** the model is called:
 

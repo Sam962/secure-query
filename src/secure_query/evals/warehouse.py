@@ -1,5 +1,9 @@
 """Databricks helpers for head-to-head suites: statements, gold SQL conversion, verification.
 
+Eval tooling only: it runs any statement with the token in the environment and no
+allowlist, to load benchmark tables and check gold SQL. The product never imports it
+(tests/test_boundaries.py); questions reach the warehouse through engine.databricks.
+
 A question is kept only when its gold SQL, converted from SQLite to Databricks, returns the
 same rows on the warehouse as on SQLite. Three kinds are left out because exact match cannot
 grade them: an answer larger than the smallest row cap of the systems compared, a gold query

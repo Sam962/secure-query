@@ -58,6 +58,12 @@ def load_domain_catalog(
     if did not in registry:
         raise KeyError(f"unknown domain {did!r}; known: {sorted(registry)}")
     domain = registry[did]
+    if not domain.catalog_file and dialect not in (None, "duckdb"):
+        raise RuntimeError(
+            f"domain {did!r} is the Chinook sample, which lives in DuckDB; the {dialect} backend "
+            "needs the approved catalog of the tables in that warehouse (SECURE_QUERY_CATALOG_FILE "
+            "or SECURE_QUERY_DOMAINS)"
+        )
     if domain.catalog_file:
         catalog = Catalog.from_json_file(domain.catalog_file)
     else:

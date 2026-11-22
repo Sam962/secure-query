@@ -22,8 +22,8 @@ it never runs as written.** Everything else is earned by measurement.
 
 - **Wedge:** Databricks + Unity Catalog first. Postgres via Lakehouse Federation.
   SharePoint **lists** via Lakeflow Connect → Delta. No document Q&A.
-- **Planner:** validated SQL is the production path (`SECURE_QUERY_PLANNER=sql`, ADR 005).
-  The LogicalPlan path stays for catalog-owned metrics and explain helpers.
+- **Planner:** validated SQL is the only question path (ADR 005). The LogicalPlan question
+  planner and its English guard were removed on 2026-11-22; LogicalPlan stays as the metric IR.
 - **Security:** the allowlist validator (`kernel/sql_validate.py`) is the safety story.
   Keyword guards are never the safety story.
 - **Jev / TypeSafe:** no dependency. Revisit only with a measured lift (parking lot P2).
@@ -58,8 +58,7 @@ export PYTHONPATH=src
 ruff check .
 pytest -q
 python -c "import secure_query, sys; assert 'fastapi' not in sys.modules"
-python -m secure_query.evals.run --split holdout --provider mock --planner lqp
-python -m secure_query.evals.run --split holdout --provider mock --planner sql
+python -m secure_query.evals.run --split holdout --provider mock
 ```
 
 Pass means: ruff prints `All checks passed!`, pytest shows `0 failed`, and both holdout
@@ -338,7 +337,12 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
 
 ## Parking lot (needs Sam's decision; do not start)
 
-- **P1. Retire the LogicalPlan question planner — after P4.** Looked at on 2026-11-13 and
+- **P1. Retire the LogicalPlan question planner — done 2026-11-22** (Sam asked, after an
+  over-engineering review). Owner metrics reach the SQL planner as formulas (P18 G3) and
+  common questions as certified answers (P4), so the second path was no longer the route to
+  metrics. Removed: `planner/plan.py`, `planner/guard.py`, `planner/prompt.py`,
+  `planner/response_schema.py`, the `lqp` option, and plan/metric reviews in `/ask/execute`.
+  Earlier note: looked at on 2026-11-13 and
   not done: it is today the only route from a question to a catalog metric (the SQL path
   never picks a `metric_id`), and the mock planner behind most API and service tests runs
   through it. Removing it first would drop metrics from the product. Build P4, move the
