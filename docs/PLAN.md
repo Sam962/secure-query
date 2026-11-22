@@ -346,6 +346,9 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
 - **P4. Certified answers.** Route common questions to analyst-approved queries and metrics
   before free SQL. The likeliest way to the 2% wrong-rate goal; needs a matching rule and a
   measured before/after on a real domain.
+  **Built 2026-11-22** (STATUS): routing by the planner itself, measured on Spider dev
+  paraphrase pairs (wrong 16 -> 4 on covered questions, no wrong routing). Left: the
+  before/after on the real domain in phase 3, with the owner's own certified questions.
 - **P5. Sensitivity levels and masking.** PII is high or not, per column. Roles, masking and
   checks on returned rows need the customer's data classification.
 - **P6. Conversation.** Follow-up questions and a feedback loop from users into the dev suite.

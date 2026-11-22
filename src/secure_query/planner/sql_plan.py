@@ -77,7 +77,8 @@ def build_sql_prompt(question: str, catalog: Catalog, relevant_tables: Sequence[
         f"{catalog.planner_summary()}\n\n"
         f"{relevant_tables_line(relevant_tables)}"
         f"Question:\n{question}\n\n"
-        'Return only the JSON object: {"sql": ...} or {"cannot_answer": true, ...}.'
+        'Return only the JSON object: {"sql": ...} or {"cannot_answer": true, ...}'
+        + (' or {"certified": "<id>"}.' if catalog.certified else ".")
     )
 
 
@@ -231,16 +232,25 @@ def _plan_one_reading(
                     refused_by_model=True,
                     clarify_code="planner_refusal",
                 )
-            sql = str(data["sql"])
-            validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
-            width = _model_width(sql, catalog.sql_dialect)
-            sql = show_ranking_measure(case_insensitive_like(sql, catalog), catalog)
-            if value_probe is not None:
-                sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
+            certified_id = data.get("certified")
+            if certified_id:
+                # An approved query runs as approved: no rewriting of its SQL.
+                approved = {c.id: c.sql for c in catalog.certified}
+                if certified_id not in approved:
+                    raise ValueError(f"no certified answer has id {certified_id!r}")
+                sql = approved[certified_id]
+                width = None
+            else:
+                sql = str(data["sql"])
+                validate_sql(sql, catalog, row_filters=row_filters)  # policy errors before any lookup
+                width = _model_width(sql, catalog.sql_dialect)
+                sql = show_ranking_measure(case_insensitive_like(sql, catalog), catalog)
+                if value_probe is not None:
+                    sql = ground_literals(sql, catalog, value_probe, row_filters=row_filters)
             validated = validate_sql(sql, catalog, row_filters=row_filters)
             missing = (
                 unmatched_literals(sql, catalog, value_probe, row_filters=row_filters)
-                if value_probe is not None
+                if value_probe is not None and not certified_id
                 else []
             )
             if missing and (value_checked or attempt > max_repairs):
@@ -314,6 +324,7 @@ def _plan_one_reading(
                 attempts=attempt,
                 raw_responses=raw_responses,
                 gate_fingerprints=(own_fp,) if own_fp is not None else (),
+                certified_id=str(certified_id) if certified_id else None,
             )
         except SqlValidationFailed as exc:
             batch = [f"{e.code}: {e.message}" for e in exc.errors]

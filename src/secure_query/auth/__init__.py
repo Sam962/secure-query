@@ -50,6 +50,19 @@ class Principal:
     """End-user Databricks SQL / OAuth token for on-behalf-of warehouse execute."""
 
 
+def _sql_tables(sql: str, dialect: str) -> set[str]:
+    """Tables a query reads (CTE names excluded); a query that does not parse reads everything."""
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(sql, read=dialect)
+    except sqlglot.errors.ParseError:
+        return {"\0unparseable"}
+    ctes = {c.alias_or_name for c in tree.find_all(exp.CTE)}
+    return {t.name for t in tree.find_all(exp.Table) if t.name not in ctes}
+
+
 def catalog_for_principal(base: Catalog, principal: Principal) -> Catalog:
     """Return a catalog slice visible to this principal, including metrics."""
     if principal.tenant_id != base.tenant_id:
@@ -73,6 +86,7 @@ def catalog_for_principal(base: Catalog, principal: Principal) -> Catalog:
         allow_any_join=base.allow_any_join,
         synonyms=[s for s in base.synonyms if s.table_id in allowed],
         metrics=[m for m in base.metrics if metric_tables(m) <= visible],
+        certified=[c for c in base.certified if _sql_tables(c.sql, base.sql_dialect) <= visible],
         instructions=list(base.instructions),
         max_limit=base.max_limit,
         require_limit=base.require_limit,

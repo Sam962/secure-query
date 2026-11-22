@@ -101,7 +101,22 @@ avg_revenue_per_customer: Total revenue divided by distinct customers
 Start with the ten numbers your team reports most. Write the description in the words people
 use when they ask.
 
-## 7. House rules: instructions
+## 7. Certified answers
+
+For the questions people ask most, approve the exact query (`certified`). A question that asks
+the same thing in other words runs your SQL as written, and the answer says it is certified.
+On Spider dev, questions whose other wording was certified went from 16 wrong to 4 of 154.
+
+```json
+{"id": "customers_by_country", "question": "How many customers per country?",
+ "sql": "SELECT Country, COUNT(*) AS customers FROM Customer GROUP BY Country"}
+```
+
+Your SQL still passes the same checks as any query (tables, private columns, row filters,
+row limit). Write the question the way people ask it; one wording is enough. Someone who may
+not read a table never sees a certified answer that reads it.
+
+## 8. House rules: instructions
 
 Short rules that hold for every question, in plain words, never SQL (`instructions`):
 
@@ -110,14 +125,14 @@ Short rules that hold for every question, in plain words, never SQL (`instructio
  "Exclude test accounts: Customer.Company = 'Internal'."]
 ```
 
-## 8. Do not write
+## 9. Do not write
 
 - Stored values beyond the approved category codes: names, emails, amounts. The catalog is sent
   to the model provider with every question.
 - Long prose or copied manuals. Every line is read on every question; say the one thing that matters.
 - Anything that contradicts the data. A description the data disagrees with turns right answers wrong.
 
-## 9. Approve and keep it current
+## 10. Approve and keep it current
 
 Add the approval record (`version`, `approved_by`, `approved_at`); production refuses to start
 without one. Re-check after schema changes:

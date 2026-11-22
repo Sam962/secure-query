@@ -66,6 +66,20 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-22 — P4 certified answers built and measured.** Catalog `certified`: analyst-approved
+  question/SQL pairs. The planner lists them; the model may reply {"certified": id} instead of
+  SQL; the approved SQL runs unrewritten through the kernel and the two-readings gate. The
+  answer's explanation says "Certified answer <id>: <question>". A person with limited tables
+  sees only certified answers over tables they may read. Measured with `evals.run
+  --certify-half on|off` on Spider dev (one wording of a seeded half of the queries asked twice
+  becomes certified when the kernel accepts it and it runs: 154 certified, 803 test questions),
+  x3, values and joins (right / wrong / refused): off 629 / 105 / 69 and 633 / 99 / 71 (two runs,
+  for noise), on 652 / 90 / 61. On the 154 questions whose other wording is certified: off
+  129 / 17 / 8 and 127 / 15 / 12, on 147 / 4 / 3; 147 routed to their own certified answer, none
+  to another. On the 649 other questions: off 500 / 88 / 61 and 506 / 84 / 59, on 505 / 86 / 58,
+  unchanged; 5 were routed to a certified answer, all right. The 4 certified-side wrong
+  answers: 2 wrote their own SQL, 2 are the row cap and a tie at LIMIT 1, not routing.
+
 - **2026-11-21 — P18 G3: owner definitions reach the SQL planner; owner guide written.** The SQL
   path showed approved metrics to the model as bare ids with "prefer metric_id", which it cannot
   output; the definitions never reached it. Each metric now shows as its formula (e.g.

@@ -393,7 +393,11 @@ def ask(
 
     assert compiled is not None
 
-    if sql_mode:
+    if sql_mode and planned.certified_id:
+        approved = next((c for c in scoped.certified if c.id == planned.certified_id), None)
+        explanation = f"Certified answer {planned.certified_id}: {approved.question if approved else ''}".rstrip(": ")
+        policy_checks = SQL_PATH_CHECKS
+    elif sql_mode:
         explanation, policy_checks = _SQL_EXPLANATION, SQL_PATH_CHECKS
     elif metric is not None and metric.kind != "plan":
         explanation, policy_checks = f"Approved metric {metric.id}: {metric.description}", METRIC_CHECKS
