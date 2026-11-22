@@ -1,0 +1,482 @@
+{
+ "p004:answered_right": {
+  "label": "sound",
+  "reason": "Selecting site from sampledata15 by unique sample_pk returns the 4-digit collection code for that sample."
+ },
+ "p006:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the country for sample_pk=6480 only if origin indicates imported (origin='2'), matching the question’s condition."
+ },
+ "p005:answered_right": {
+  "label": "sound",
+  "reason": "Counting all rows with Status = 'Under Construction' correctly returns the number of stations under construction in this schema; using COUNT(*) vs COUNT(Name) does not change the intended answer."
+ },
+ "p003:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups by Type and orders by count descending to return the most frequent crime type; tie-breaking is acceptable per instructions."
+ },
+ "p008:answered_right": {
+  "label": "hidden_error",
+  "reason": "It uses COUNT(Name) instead of COUNT(*), so if any 'Under Construction' plant has a NULL Name, that country’s count is undercounted and the top country could change."
+ },
+ "p007:answered_right": {
+  "label": "sound",
+  "reason": "It groups by STAT_CAUSE_CODE and orders by count descending to return the most frequent cause code; tie-breaking is benign and does not affect correctness."
+ },
+ "p012:answered_right": {
+  "label": "sound",
+  "reason": "Counting rows where FTHG = 0 and FTAG = 0 correctly gives the number of games that ended 0-0 across this table."
+ },
+ "p002:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts shutdown plants per Country and returns the top country, with only tie-breaking added, which doesn’t change correctness for the question."
+ },
+ "p009:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums downloads by releaseType; filtering NULLs doesn’t change the sums and excluding NULL release types is a defensible interpretation of the question."
+ },
+ "p011:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts distinct players in player_award with more than 10 award records, matching the question’s intent."
+ },
+ "p013:answered_right": {
+  "label": "hidden_error",
+  "reason": "Filters by school_district containing “Wisconsin” instead of by state; if the top-funded Wisconsin district’s name lacks “Wisconsin” (e.g., Milwaukee School District), it is excluded and the answer is wrong."
+ },
+ "p010:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums downloads by releaseType and returns the highest (handling ties reasonably), matching the question’s intent."
+ },
+ "p014:answered_right": {
+  "label": "hidden_error",
+  "reason": "If sample 7498 has multiple results rows (e.g., one per pesticide) sharing the same testclass, this query will return duplicate codes instead of the distinct test code(s) for the sample."
+ },
+ "p001:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums federal revenue per state to find the minimum and reports that state’s average math score without join-induced duplication or misaggregation; any tie simply returns all tied states, which is acceptable for the question’s ambiguity."
+ },
+ "p016:answered_right": {
+  "label": "sound",
+  "reason": "It counts occurrences of each Source and returns the most frequent one, which correctly answers the “main source” question (excluding NULLs is appropriate)."
+ },
+ "p019:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts plants per ReactorModel and returns the highest-count model; excluding NULL/empty values only removes missing-data entries and does not change the intended answer."
+ },
+ "p021:answered_right": {
+  "label": "sound",
+  "reason": "STAT_CAUSE_DESCR uses standardized discrete values including 'Arson', so filtering STAT_CAUSE_DESCR='Arson' with FIRE_YEAR=2010 correctly counts arson-related fires."
+ },
+ "p015:answered_right": {
+  "label": "hidden_error",
+  "reason": "If Season strings include 2018 not at the start (e.g., '2017/2018'), matches in 2018 are excluded by ILIKE '2018%', so away teams against Omiya in 2018 would be missed."
+ },
+ "p023:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums FIRE_SIZE for Texas with FIRE_YEAR 2000–2010; the IS NOT NULL filter doesn’t change SUM since NULLs are ignored."
+ },
+ "p024:answered_right": {
+  "label": "sound",
+  "reason": "Selecting Country from nuclear_power_plants where Name = 'Kursk-1' directly answers which country that plant is in, with no conditions that could change the intended answer."
+ },
+ "p022:answered_right": {
+  "label": "sound",
+  "reason": "It groups by Location and orders by crime count to return the top 3 areas; added tie-breaking and selecting count do not affect correctness."
+ },
+ "p020:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts plants with Status = 'Under Construction' per country and returns the top country; added tie-break ordering doesn’t change the answer."
+ },
+ "p025:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the Outcome for the uniquely identified CrimeID, which matches the question’s “result in case” intent."
+ },
+ "p018:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts cases with ‘Investigation complete’ outcomes by crime type and returns the top type(s), with no joins or aggregation flaws and only a defensible broader match on the outcome text."
+ },
+ "p029:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts distinct values of STAT_CAUSE_DESCR in Fires, and the LIMIT does not affect the single scalar result."
+ },
+ "p028:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts distinct players in player_award with more than 10 award rows, which matches “awarded more than ten times” across this schema."
+ },
+ "p030:answered_right": {
+  "label": "sound",
+  "reason": "It groups by STAT_CAUSE_DESCR and returns the cause(s) with the highest count (handling ties), which correctly answers the most common reason on any data."
+ },
+ "p027:answered_right": {
+  "label": "sound",
+  "reason": "It correctly identifies the cause(s) with the highest fire count (handling potential ties), which answers the question on any reasonable data in this schema."
+ },
+ "p017:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups by artist and orders by the average of totalSnatched to return the artist with the highest average downloads."
+ },
+ "p032:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the land manager (OWNER_DESCR) for the largest (by FIRE_SIZE) Oregon fire discovered in 2015, which matches the question’s intent."
+ },
+ "p031:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the 5 releases after 2000 with highest totalSnatched; excluding NULL totals only omits unknown popularity rows and does not change the intended top ordering."
+ },
+ "p033:answered_right": {
+  "label": "hidden_error",
+  "reason": "Filters by groupName ILIKE '%houston%' instead of the tags table; if the most-downloaded release tagged 'houston' does not contain 'houston' in its title, the system will pick the wrong result."
+ },
+ "p026:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups 2000 Hall of Fame rows by votedby and selects the method(s) with the highest count; using RANK to return all top ties remains a valid answer to the question."
+ },
+ "p037:answered_right": {
+  "label": "sound",
+  "reason": "Counting all rows in the crime records table correctly returns the total number of crimes."
+ },
+ "p034:answered_right": {
+  "label": "sound",
+  "reason": "It groups by Type and returns the type(s) with the highest count (ignoring NULLs), which correctly answers the most common crime type, including ties."
+ },
+ "p036:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts tests per lab and returns the lab with the highest count; any tie-breaking choice is acceptable for a singular “which lab” question."
+ },
+ "p041:answered_right": {
+  "label": "sound",
+  "reason": "Selects the 4-digit site code from sampledata15 by the unique sample_pk as asked."
+ },
+ "p040:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts all crime records in the table (one row per crime), and the LIMIT does not affect the single-row aggregate result."
+ },
+ "p035:answered_right": {
+  "label": "sound",
+  "reason": "It selects the release title with the highest totalSnatched, and the added tie-breaker does not affect which CD is most downloaded."
+ },
+ "p039:answered_right": {
+  "label": "hidden_error",
+  "reason": "If the most-downloaded release has a NULL groupName, the WHERE groupName IS NOT NULL filter would exclude it and return a different release."
+ },
+ "p038:answered_right": {
+  "label": "hidden_error",
+  "reason": "If some Outcome values vary in case or include extra text (e.g., 'Under Investigation' or 'Under investigation (ongoing)'), the equality match will miss them while the question intends to count all such cases."
+ },
+ "p046:answered_right": {
+  "label": "sound",
+  "reason": "Counting rows where OWNER_DESCR = 'MISSING/NOT SPECIFIED' correctly captures fires on land with no recorded owner in this schema."
+ },
+ "p047:answered_right": {
+  "label": "sound",
+  "reason": "Correctly counts fires with COUNTY = 'Gloucester' and FIRE_SIZE > 10; no joins or grouping issues and LIMIT does not affect the single aggregated row."
+ },
+ "p042:answered_right": {
+  "label": "hidden_error",
+  "reason": "If many records have STATE NULL, the query could return NULL as the “state” (it doesn’t filter out NULLs), yielding a non-state answer when NULL is the most frequent value."
+ },
+ "p043:answered_right": {
+  "label": "sound",
+  "reason": "It correctly finds the birth_city with the highest player count (excluding NULLs), which answers the question; returning ties and an extra count column does not change the requested answer."
+ },
+ "p044:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups by Location and ranks areas by crime count to return the top three (including ties), which answers the question for this schema."
+ },
+ "p048:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the lab(s) with the maximum number of tests (ties included), and excluding NULL labs is appropriate for identifying a lab."
+ },
+ "p049:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the country for sample_pk 6480 only when origin indicates imported (code '2') and otherwise returns no row, matching the question’s conditional."
+ },
+ "p051:answered_right": {
+  "label": "hidden_error",
+  "reason": "If some imported samples are indicated by origin='2' but have country NULL or blank, counting only non-empty country undercounts samples from other countries."
+ },
+ "p055:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the year, month, and day from the unique sampledata15 row for sample_pk 3763, which defines the collection date."
+ },
+ "p050:answered_right": {
+  "label": "sound",
+  "reason": "It correctly filters albums and orders by totalSnatched (popularity); the added tie-break on name only affects order among ties, not which top 10 are returned."
+ },
+ "p053:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the state(s) with the highest fire count (handling ties) and excludes NULLs, which aligns with the question’s intent."
+ },
+ "p045:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the player(s) with the maximum salary for years ≥ 2010; returning all top ties and extra columns does not change the identity of the highest paid player."
+ },
+ "p057:answered_right": {
+  "label": "hidden_error",
+  "reason": "If sample_pk=7498 exists but its testclass is NULL, the system query returns no rows while the correct answer would include a NULL value."
+ },
+ "p052:answered_right": {
+  "label": "hidden_error",
+  "reason": "It filters to releaseType='album'; if an artist has the most total releases when counting all types (singles, EPs, mixtapes) but not the most albums, the query would return the wrong artist for “most CDs.”"
+ },
+ "p058:answered_right": {
+  "label": "sound",
+  "reason": "It counts distinct sample_pk per lab, correctly measuring samples analyzed per lab regardless of multiple result rows per sample."
+ },
+ "p061:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts the distinct STAT_CAUSE_DESCR values (NULLs are excluded anyway by COUNT DISTINCT), answering the question as intended."
+ },
+ "p054:answered_right": {
+  "label": "hidden_error",
+  "reason": "If many apple samples have NULL/blank growst (e.g., imported or missing grow state), the NULL group could have the highest count and the query would return NULL instead of a state."
+ },
+ "p060:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rows where OWNER_DESCR is 'MISSING/NOT SPECIFIED', which is the schema’s designated value for missing/not specified owner names."
+ },
+ "p062:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rows where Bet365 home odds (B365H) exceed Pinnacle home odds (PSH), which matches the question on this schema."
+ },
+ "p059:answered_right": {
+  "label": "sound",
+  "reason": "Using GROUP BY on releaseType (excluding NULLs) correctly lists the distinct release types present, which answers the question."
+ },
+ "p064:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rows in football_data where FTHG + FTAG > 5, matching “games with total goals exceed 5” without joins or tie/duplication issues."
+ },
+ "p056:answered_right": {
+  "label": "sound",
+  "reason": "It correctly groups by artist and ranks by average totalSnatched to return the top artist(s), with only benign NULL filtering that doesn’t change the intended answer."
+ },
+ "p066:answered_right": {
+  "label": "sound",
+  "reason": "Groups by cause description and orders by count to return the most frequent cause; tie-breaking is acceptable per instructions."
+ },
+ "p063:answered_right": {
+  "label": "sound",
+  "reason": "It groups by birth_city and returns the city with the highest player count (excluding NULLs), and arbitrary tie-breaking is acceptable for a “most” question."
+ },
+ "p067:answered_right": {
+  "label": "sound",
+  "reason": "It counts incidents by Location where Type='Violence and sexual offences' and returns the top location; tie-breaking and selecting the count do not change the answer."
+ },
+ "p069:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the most frequent Outcome among records whose Location contains “street”; the extra tie-break ordering does not affect the top count result."
+ },
+ "p070:answered_right": {
+  "label": "sound",
+  "reason": "Selecting DISTINCT commod from sampledata15 correctly lists the set of foods (commodities) present in the collected samples for any reasonable data in this schema."
+ },
+ "p065:answered_right": {
+  "label": "hidden_error",
+  "reason": "If in 2006 any player receives multiple awards in the same league, counting award rows (COUNT(player_id)) instead of distinct players (COUNT(DISTINCT player_id)) can overcount that league and change which league has the most players awarded."
+ },
+ "p068:answered_right": {
+  "label": "sound",
+  "reason": "It correctly retrieves the 8th-grade NAEP math scores for North and South Carolina from the appropriate table, with only a harmless null filter and no joins or aggregations that could distort results."
+ },
+ "p074:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts the number of distinct release titles that appear more than once in torrents, matching a reasonable reading of the question."
+ },
+ "p073:answered_right": {
+  "label": "sound",
+  "reason": "It directly retrieves the conunit (unit of measure) for sample_pk 3879 from resultsdata15, which answers the question for any data in this schema."
+ },
+ "p076:answered_right": {
+  "label": "sound",
+  "reason": "Directly selects Country where Name = 'Kursk-1'; no joins or aggregations introduce errors and duplicates wouldn’t change the country answer."
+ },
+ "p072:answered_right": {
+  "label": "sound",
+  "reason": "It correctly finds the year with the highest number of releases by grouping on groupYear and ordering by the count; counting rows vs non-null names does not change the intended answer."
+ },
+ "p077:answered_right": {
+  "label": "hidden_error",
+  "reason": "If an imported sample (origin='2') has a NULL or blank country, it still counts as from other countries but the query excludes it, undercounting."
+ },
+ "p075:answered_right": {
+  "label": "sound",
+  "reason": "Selecting the state from the row with the maximum average_scale_score is a defensible reading of “highest average score,” and ties need not be handled specially for a single answer."
+ },
+ "p078:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts tests per lab from resultsdata15 and orders by count to return the top 5 labs; tie-breaking and selecting the count do not affect correctness."
+ },
+ "p080:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects Bet365 draw odds (B365D) for the specific home fixture Swindon vs Millwall in the 2016/2017 season from football_data."
+ },
+ "p071:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts inducted players by birth_country and returns the top 10 (including ties), which answers the question for this schema."
+ },
+ "p079:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums downloads per artist and returns the top artist(s), which answers whose CDs sell best (ties appropriately return all top sellers)."
+ },
+ "p086:answered_right": {
+  "label": "sound",
+  "reason": "Selects the distinct releaseType values from torrents, which directly answers the question."
+ },
+ "p081:answered_right": {
+  "label": "hidden_error",
+  "reason": "If California has multiple rows (e.g., different years), this query averages those records, producing an average-of-averages instead of the state’s average scale score value(s) per record/year."
+ },
+ "p083:answered_right": {
+  "label": "hidden_error",
+  "reason": "If any plants have NULL Name values, COUNT(Name) will undercount per country compared to counting all rows, potentially changing which country appears to have the most stations."
+ },
+ "p085:answered_right": {
+  "label": "sound",
+  "reason": "It correctly selects the state from the row with the maximum average_scale_score; tie-breaking by state name does not affect correctness."
+ },
+ "p088:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the most frequent ReactorModel by counting rows per model; tie-handling and the extra ORDER BY clause do not affect the correctness for this question."
+ },
+ "p089:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the state with the maximum average_scale_score across the dataset; handling of multiple years is a defensible interpretation of the ambiguous question."
+ },
+ "p091:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rows where Bet365 home odds (B365H) exceed Pinnacle’s (PSH), and the NULL checks do not change the result compared to B365H > PSH."
+ },
+ "p092:answered_right": {
+  "label": "sound",
+  "reason": "STAT_CAUSE_DESCR is a controlled categorical field including 'Campfire', so filtering FIRE_YEAR=2014 and STAT_CAUSE_DESCR='Campfire' correctly counts mismanaged campfire fires."
+ },
+ "p090:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the state with the highest count of fire records by grouping on STATE and ordering by COUNT(*) descending."
+ },
+ "p082:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts releases per artist and returns the top artist(s), with no joins or aggregations that could miscount; ties and the extra count column do not change the answer."
+ },
+ "p087:answered_right": {
+  "label": "hidden_error",
+  "reason": "If Outcome includes phrases like “out-of-court disposal” (or similar), the ILIKE '%court%' filter will wrongly count non-prosecution cases, potentially changing which crime type appears most prosecuted."
+ },
+ "p084:answered_right": {
+  "label": "hidden_error",
+  "reason": "If many rows have NULL groupYear (unknown year), the query counts them and can return NULL as the top year, whereas a careful analyst would exclude unknown years."
+ },
+ "p093:answered_right": {
+  "label": "sound",
+  "reason": "Selecting DISTINCT commod from sampledata15 correctly lists the foods (commodity codes) present in the dataset and is robust to reasonable data variations."
+ },
+ "p096:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns all matches with the maximum DRAW_OPENING (handling ties), and excluding NULLs does not affect identifying the highest value."
+ },
+ "p097:answered_right": {
+  "label": "sound",
+  "reason": "It selects the names of plants with Status='Operational' in Country='Japan', which directly answers the question without extraneous joins or omissions."
+ },
+ "p095:answered_right": {
+  "label": "sound",
+  "reason": "It correctly returns the five releases after 2000 with highest download counts; the added tie-breaker by name does not affect correctness."
+ },
+ "p094:answered_right": {
+  "label": "sound",
+  "reason": "It filters Oregon fires in 2015 and returns the OWNER_DESCR of the largest FIRE_SIZE; tie-breaking by owner in case of equal sizes does not affect correctness."
+ },
+ "p098:answered_right": {
+  "label": "hidden_error",
+  "reason": "If some fires encode missing owner names as NULL (or empty) rather than the literal 'MISSING/NOT SPECIFIED', they won’t be counted by this query."
+ },
+ "p099:answered_right": {
+  "label": "hidden_error",
+  "reason": "If there are no rows for 'ep' (or for 'album'), the GROUP BY query will omit that category instead of returning a 0/NULL total, even though the question asks for both types."
+ },
+ "p101:answered_right": {
+  "label": "hidden_error",
+  "reason": "If sample 9628 exists but its quantity is NULL, the added `quantity IS NOT NULL` filter drops the row and returns no result instead of the (NULL) value."
+ },
+ "p100:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums FIRE_SIZE for Texas fires with FIRE_YEAR 2000–2010 inclusive, matching the question’s total acres burned with no join or duplication pitfalls."
+ },
+ "p103:answered_right": {
+  "label": "hidden_error",
+  "reason": "If multiple matches share the maximum DRAW_OPENING, LIMIT 1 returns only one and omits the others that also have the highest draw opening."
+ },
+ "p105:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rows where Type equals the enumerated category 'Drugs', matching the question’s exact classification."
+ },
+ "p109:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts rows for plants in France with Status = 'Operational', matching the question’s intent to count operating stations."
+ },
+ "p106:answered_right": {
+  "label": "sound",
+  "reason": "Lists unique tags from the tags table; excluding NULL is a defensible interpretation of 'exist' and does not affect correctness."
+ },
+ "p102:answered_right": {
+  "label": "sound",
+  "reason": "It counts apple (AP) samples by growst and returns the state(s) with the maximal count (handling ties), which correctly answers the question on this schema."
+ },
+ "p112:answered_right": {
+  "label": "sound",
+  "reason": "It directly returns the Country from nuclear_power_plants where Name = 'Chinon-A3', which correctly answers the question on this schema."
+ },
+ "p104:answered_right": {
+  "label": "hidden_error",
+  "reason": "It computes likelihood only among players who appear in hall_of_fame (excluding players with no HoF row), so if some birth months have many players who were never on the ballot the month with the highest likelihood among ballot entrants can differ from the highest true likelihood among all players."
+ },
+ "p110:answered_right": {
+  "label": "hidden_error",
+  "reason": "It matches only exactly 'Under investigation'; if some Outcome values vary in case (e.g., 'Under Investigation') or include extra text (e.g., 'Under investigation - pending'), those crimes would be missed."
+ },
+ "p108:answered_right": {
+  "label": "sound",
+  "reason": "It correctly sums numeric capacities per country (ignoring NULLs via SUM/TRY_CAST) and returns the country/countries with the maximum total, which answers the question on this schema."
+ },
+ "p111:answered_right": {
+  "label": "hidden_error",
+  "reason": "It filters on Location ILIKE '%Salford%' instead of LSOA; if Salford crimes have Location text without 'Salford' (e.g., 'On or near High Street') they’re excluded, altering which type is most common."
+ },
+ "p115:answered_right": {
+  "label": "sound",
+  "reason": "Counting DISTINCT FIRE_YEAR (ignoring NULLs) correctly returns the number of years represented in the data for this schema and question."
+ },
+ "p107:answered_right": {
+  "label": "sound",
+  "reason": "It orders releases by totalSnatched descending and returns the top groupName; the extra tie-break on name cannot change which has the highest downloads."
+ },
+ "p116:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts all rows with Status = 'Under Construction', which matches the question, and using COUNT(*) is robust even if Name is NULL."
+ },
+ "p117:answered_right": {
+  "label": "sound",
+  "reason": "It correctly counts matches where full-time home plus away goals (FTHG + FTAG) exceed 5 using the appropriate fields without joins or extraneous filters."
+ },
+ "p113:answered_right": {
+  "label": "sound",
+  "reason": "It selects average_scale_score for Grade 8 from the two specified states (only 'All students' exist), so it answers the question regardless of year distribution."
+ },
+ "p119:answered_right": {
+  "label": "sound",
+  "reason": "It retrieves the collection date (year, month, day) from sampledata15 for the uniquely identified sample_pk 3763, which answers the question."
+ },
+ "p118:answered_right": {
+  "label": "sound",
+  "reason": "STAT_CAUSE_DESCR is a standardized categorical field (includes exact value 'Campfire'), so counting 2014 rows with that value correctly answers the question."
+ },
+ "p114:answered_right": {
+  "label": "sound",
+  "reason": "Counts rows where Country='France' and Status='Operational', which matches the schema’s plant-level definition of operating nuclear stations."
+ },
+ "p120:answered_right": {
+  "label": "sound",
+  "reason": "It correctly filters Wisconsin districts via the state code and selects the district with the highest total federal revenue (t_fed_rev), which answers the question."
+ }
+}

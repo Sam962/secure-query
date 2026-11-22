@@ -66,6 +66,14 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-22 — Audit of answers scored right, stand-in head-to-head (PLAN 3.5).** 60 per
+  system, seeded, blind, rated by gpt-5 with the right-answer rubric (judges the SQL against
+  the question and schema): hidden errors Secure Query 10 of 60, Genie 15 of 60. Loose upper
+  bound: many flags are hypothetical data ("if some names were NULL"), and some are cases
+  the rubric says are not errors (one row for a question that asks for one, at a tie).
+  Model rating, not human. Files:
+  `docs/adjudication/genie-h2h-kaggledbqa-2026-11-22-right-{packets,packets.key,gpt5-labels}.json`.
+
 - **2026-11-22 — Head-to-head with Genie on the stand-in domain (KaggleDBQA on Databricks).**
   No partner exists, so phase 3 runs on KaggleDBQA test: 8 real Kaggle databases with
   their owners' documentation, never tuned on, each loaded to `workspace.kaggledbqa_<db>`
