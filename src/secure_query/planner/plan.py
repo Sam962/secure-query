@@ -104,6 +104,8 @@ class PlannerResult:
     """A valid plan a post-plan guard refused. Never executed by the product; the
     eval harness runs it to score whether the guard blocked a right or wrong answer."""
     gate_fingerprints: tuple[str, ...] = ()
+    certified_id: str | None = None
+    """SQL path: the analyst-approved answer the question was routed to, if any."""
     """Execution fingerprints from the self-consistency gate."""
 
 

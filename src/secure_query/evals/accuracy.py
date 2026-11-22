@@ -245,6 +245,8 @@ def _sample(
 
 
 def _shape(planned: Any) -> str:
+    if getattr(planned, "certified_id", None):
+        return f"certified:{planned.certified_id}"
     return plan_shape(planned.plan) if planned.plan is not None else planned.compiled.plan_hash
 
 

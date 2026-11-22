@@ -114,6 +114,21 @@ class Synonym(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class CertifiedQuery(BaseModel):
+    """An analyst-approved answer: one question and the SQL that answers it.
+
+    The planner may route a question that asks exactly the same thing to it instead of
+    writing SQL. The SQL still goes through the kernel (allowlist, PII, row filters, limit)
+    and the two-readings gate, like any model-written query.
+    """
+
+    id: str = Field(pattern=r"^[a-z0-9_]+$")
+    question: str = Field(min_length=1)
+    sql: str = Field(min_length=1)
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
 class CatalogApproval(BaseModel):
     """Who signed off this catalog, and which version it is. Written by a person, not a tool."""
 
@@ -141,6 +156,10 @@ class Catalog(BaseModel):
     metrics: list[MetricSpec] = Field(
         default_factory=list,
         description="Analyst-owned metric definitions; ids are listed in planner_summary",
+    )
+    certified: list[CertifiedQuery] = Field(
+        default_factory=list,
+        description="Analyst-approved question/SQL pairs the planner may route a question to",
     )
     instructions: list[str] = Field(
         default_factory=list,
@@ -171,6 +190,13 @@ class Catalog(BaseModel):
                     "under `metrics` in the catalog"
                 )
         return data
+
+    @model_validator(mode="after")
+    def validate_certified(self) -> Catalog:
+        ids = [c.id for c in self.certified]
+        if len(ids) != len(set(ids)):
+            raise ValueError("certified answer ids must be unique")
+        return self
 
     @model_validator(mode="after")
     def validate_metrics(self) -> Catalog:
@@ -257,6 +283,13 @@ class Catalog(BaseModel):
             lines.append("approved_metrics (owner definitions; a question that asks for one is computed this way):")
             for metric in self.metrics:
                 lines.append(f"  - {metric.id}: {metric.description} = {metric_definition(metric)}")
+        if self.certified:
+            lines.append(
+                'certified_answers (analyst-approved; when the question asks exactly what one asks, '
+                'reply {"certified": "<id>"} instead of SQL):'
+            )
+            for cq in self.certified:
+                lines.append(f"  - {cq.id}: {cq.question}")
         if self.instructions:
             lines.append("instructions (follow these; they are not SQL):")
             for rule in self.instructions:

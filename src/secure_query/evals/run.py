@@ -145,6 +145,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Add the joins the data shows but the schema does not declare (engine.catalog_draft)",
     )
     parser.add_argument(
+        "--certify-half", choices=("on", "off"), default=None,
+        help="Certify one wording of half the questions that share a reference SQL and leave those "
+        "wordings out; 'off' runs the same questions without certifying (the comparison)",
+    )
+    parser.add_argument(
         "--facts", action="store_true",
         help="Note repeating names and pairs stored both ways in each catalog first (engine.catalog_draft)",
     )
@@ -266,6 +271,8 @@ def _run_accuracy(args: argparse.Namespace) -> int:
                 finally:
                     con.close()
             items[i] = (case, drafted[key], db_path)
+    if args.certify_half:
+        items = _certify_half(items, on=args.certify_half == "on", seed=args.seed)
     case_delay = args.case_delay
     if case_delay is None:
         case_delay = 1.5 if provider == "groq" else 0.0
@@ -374,6 +381,54 @@ def _load_domain_suite(name_or_path: str) -> tuple[Catalog, Path, list]:
     return catalog, db_path, load_live_suite(suite_path)
 
 
+def _certify_half(items: list, *, on: bool, seed: int) -> list:
+    """Certify one wording of half the reference queries asked twice; drop those wordings.
+
+    Spider dev asks most queries in two wordings. For a seeded half of them, the first wording
+    and its reference SQL become a certified answer (when the kernel accepts the SQL and it runs,
+    as an analyst's approved query must); the other wording stays as the test of matching.
+    Every other question tests that near misses are not routed to a certified answer.
+    """
+    import random
+    import re
+
+    from secure_query.engine.execute import ExecuteOptions, ExecutionError, execute_duckdb
+    from secure_query.kernel.catalog import CertifiedQuery
+    from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
+
+    groups: dict[tuple[str, str], list[int]] = {}
+    for i, (case, catalog, _db) in enumerate(items):
+        key = (catalog.tenant_id, re.sub(r"\s+", " ", (case.reference_sql or "").strip().lower()))
+        groups.setdefault(key, []).append(i)
+    pairs = sorted(k for k, idx in groups.items() if len(idx) >= 2)
+    chosen = set(random.Random(seed).sample(pairs, len(pairs) // 2))
+    certified: dict[str, list[CertifiedQuery]] = {}
+    drop: set[int] = set()
+    for key in sorted(chosen):
+        first = groups[key][0]
+        case, catalog, db = items[first]
+        try:
+            compiled = validate_sql(case.reference_sql, catalog).compiled
+            execute_duckdb(compiled, db, options=ExecuteOptions(max_rows=1, timeout_seconds=10.0))
+        except (SqlValidationFailed, ExecutionError):
+            continue  # an analyst's approved query passes the kernel and runs
+        cid = f"c{len(certified.get(catalog.tenant_id, [])) + 1:03d}"
+        certified.setdefault(catalog.tenant_id, []).append(
+            CertifiedQuery(id=cid, question=case.question, sql=case.reference_sql)
+        )
+        drop.add(first)
+    print(f"certify-half: {sum(map(len, certified.values()))} certified answers, "
+          f"{len(items) - len(drop)} test questions ({'certified' if on else 'not certified'})")
+    out = []
+    for i, (case, catalog, db) in enumerate(items):
+        if i in drop:
+            continue
+        if on and catalog.tenant_id in certified:
+            catalog = catalog.model_copy(update={"certified": certified[catalog.tenant_id]})
+        out.append((case, catalog, db))
+    return out
+
+
 def _case_report(r) -> dict:
     # The repeat that decided the verdict (the worst one) is the evidence to adjudicate.
     decisive = next((a for a in r.attempts if a.verdict == r.verdict), None)
@@ -390,6 +445,10 @@ def _case_report(r) -> dict:
         "outcomes": r.outcomes,
         "samples": r.samples,
         "sql": decisive.sql if decisive else None,
+        "certified": next(
+            (a.shape.removeprefix("certified:") for a in r.attempts if a.shape and a.shape.startswith("certified:")),
+            None,
+        ),
     }
 
 
