@@ -563,7 +563,7 @@
       runBtn.disabled = true;
       showLoading("Planning — validating against the catalog, then compiling SQL…");
       try {
-        const data = await call("/ask/confirm", { question });
+        const data = await call("/ask/review", { question });
         pendingReview = data.review || null;
         render(data);
       } catch (err) {

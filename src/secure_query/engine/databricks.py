@@ -520,11 +520,12 @@ _WRITE_PRIVILEGES = frozenset(
 
 
 def databricks_grant_check(connection: Any | None = None) -> dict[str, str]:
-    """Is the warehouse principal SELECT-only on SECURE_QUERY_DATABRICKS_SCHEMA?
+    """Is the shared warehouse principal SELECT-only on SECURE_QUERY_DATABRICKS_SCHEMA?
 
     Returns {"status": "select_only" | "write_privileges" | "unchecked", "detail"}.
-    Only direct grants to the current user are visible to SHOW GRANTS; grants
-    through groups are not, so "select_only" is a necessary check, not a proof.
+    "select_only" needs a direct SELECT grant, no direct write grant, and the principal not
+    owning the schema (an owner can write without any grant). Grants through groups are not
+    visible to SHOW GRANTS, so a principal with no direct grants is "unchecked", not passed.
     """
     schema = (os.environ.get("SECURE_QUERY_DATABRICKS_SCHEMA") or "").strip()
     if not schema:
@@ -540,6 +541,8 @@ def databricks_grant_check(connection: Any | None = None) -> dict[str, str]:
         cursor.execute(f"SHOW GRANTS ON SCHEMA {quoted}")
         cols = [d[0].lower() for d in (cursor.description or [])]
         grants = [dict(zip(cols, row, strict=False)) for row in cursor.fetchall()]
+        cursor.execute(f"DESCRIBE SCHEMA EXTENDED {quoted}")
+        owner = next((str(r[1]) for r in cursor.fetchall() if str(r[0]).strip().lower() == "owner"), "")
     finally:
         _safe_close(cursor)
         if owns:
@@ -550,6 +553,30 @@ def databricks_grant_check(connection: Any | None = None) -> dict[str, str]:
         if str(g.get("principal") or "") == user
     }
     write = sorted(mine & _WRITE_PRIVILEGES)
+    if owner == user:
+        write = sorted({*write, "OWNERSHIP"})
     if write:
         return {"status": "write_privileges", "detail": f"{user} has {', '.join(write)} on {schema}"}
-    return {"status": "select_only", "detail": f"{user}: {', '.join(sorted(mine)) or 'no direct grants'}"}
+    if "SELECT" not in mine:
+        return {"status": "unchecked", "detail": f"{user}: no direct read grant seen; group grants are not visible"}
+    return {"status": "select_only", "detail": f"{user}: {', '.join(sorted(mine))}"}
+
+
+def missing_catalog_tables(catalog_tables: list[str], connection: Any | None = None) -> list[str]:
+    """Approved tables that SECURE_QUERY_DATABRICKS_SCHEMA does not hold (names compare case-insensitively)."""
+    settings = databricks_settings_from_env()
+    owns = connection is None
+    if connection is None:
+        connection = _connect(**settings)
+    cursor = connection.cursor()
+    try:
+        quoted = ".".join(f"`{p.replace('`', '``')}`" for p in (settings["catalog"], settings["schema"]))
+        cursor.execute(f"SHOW TABLES IN {quoted}")
+        cols = [d[0].lower() for d in (cursor.description or [])]
+        at = cols.index("tablename") if "tablename" in cols else 1
+        present = {str(r[at]).lower() for r in cursor.fetchall()}
+    finally:
+        _safe_close(cursor)
+        if owns:
+            _safe_close(connection)
+    return sorted(t for t in catalog_tables if t.lower() not in present)

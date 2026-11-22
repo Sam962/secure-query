@@ -69,29 +69,3 @@ def ambiguous_metrics(question: str, catalog: Catalog) -> str | None:
             + "). Name one metric, or be more specific."
         )
     return None
-
-
-def code_from_guard_message(message: str | None, *, refused: bool) -> ClarifyCode | None:
-    if not message:
-        return None
-    lower = message.lower()
-    if "restricted" in lower or "pii" in lower:
-        return "restricted_pii"
-    if (
-        "out of scope" in lower
-        or "not in the catalog" in lower
-        or "not in the approved catalog" in lower
-        or "approved catalog or synonyms" in lower
-    ):
-        return "out_of_scope"
-    if "no filter in this plan" in lower:
-        return "dropped_filter"
-    if "useless" in lower and "join" in lower:
-        return "useless_join"
-    if "dropped" in lower or "never used" in lower or "never returns" in lower or "named" in lower:
-        return "dropped_concept"
-    if any(marker in lower for marker in _HANDOFF_MARKERS):
-        return "analyst_handoff"
-    if refused:
-        return "planner_refusal"
-    return "validation_failed"

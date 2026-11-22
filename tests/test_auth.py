@@ -20,7 +20,6 @@ from secure_query.demo.chinook import sample_catalog
 from secure_query.kernel.logical_plan import ColumnRef, Eq, Join, LiteralValue, LogicalPlan
 from secure_query.kernel.metrics import metric_tables
 from secure_query.kernel.validate import validate, validate_and_compile
-from secure_query.planner import try_compile_metric
 
 
 def test_catalog_for_principal_filters_tables() -> None:
@@ -86,13 +85,6 @@ def test_restricted_principal_does_not_see_invoice_metrics() -> None:
     )
     sliced = catalog_for_principal(base, p)
     assert sliced.metric_ids == []
-    plan, compiled, metric = try_compile_metric(
-        json.dumps({"metric_id": "avg_revenue_per_customer"}),
-        sliced,
-    )
-    assert plan is None
-    assert compiled is None
-    assert metric is None
 
 
 def test_invoice_principal_keeps_invoice_metrics_only() -> None:

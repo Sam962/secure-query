@@ -66,6 +66,54 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-22 — Over-engineering review: fixed and cut (Sam asked).** Each claim was checked
+  in the code first; all held. Fixed: (1) the backend was inferred from whichever
+  credentials were set, so a Databricks token sent Chinook-planned questions to
+  `workspace.aan_1` (this repo's own local settings did); now `SECURE_QUERY_BACKEND` names
+  it (default duckdb), the Chinook sample is refused on any warehouse, and `/ready` fails
+  when the approved tables are not in the configured schema. (2) The grant check passed with
+  no direct grant seen and ignored ownership; live, the workspace token owns `aan_1` and was
+  reported select-only. Now select-only needs a direct read grant, no write grant and no
+  ownership; otherwise "unchecked" or "write_privileges". It runs only in shared auth, the
+  mode where that token executes; user mode reports "per_user". (3) `/ask/confirm` ran both
+  readings on the warehouse: renamed `/ask/review` (flag `review_only`), documented as not a
+  dry run; the gate needs those reads. The response status stays "confirm" because signed
+  evidence and traces store it. (4) The package exports `validate_sql` and
+  `plan_sql_question`. Cut: the LogicalPlan question planner and its 843-line English guard
+  (PLAN P1), the `lqp` eval option and CI step, and plan/metric reviews in `/ask/execute`
+  (nothing issued them); net 2,279 lines fewer. Kept: the metric IR, and eval tooling that
+  calls Databricks REST, now fenced off from the product by `tests/test_boundaries.py`.
+
+- **2026-11-22 — Audit of answers scored right, stand-in head-to-head (PLAN 3.5).** 60 per
+  system, seeded, blind, rated by gpt-5 with the right-answer rubric (judges the SQL against
+  the question and schema): hidden errors Secure Query 10 of 60, Genie 15 of 60. Loose upper
+  bound: many flags are hypothetical data ("if some names were NULL"), and some are cases
+  the rubric says are not errors (one row for a question that asks for one, at a tie).
+  Model rating, not human. Files:
+  `docs/adjudication/genie-h2h-kaggledbqa-2026-11-22-right-{packets,packets.key,gpt5-labels}.json`.
+
+- **2026-11-22 — Head-to-head with Genie on the stand-in domain (KaggleDBQA on Databricks).**
+  No partner exists, so phase 3 runs on KaggleDBQA test: 8 real Kaggle databases with
+  their owners' documentation, never tuned on, each loaded to `workspace.kaggledbqa_<db>`
+  with its own Genie space (`scripts/kaggledbqa_warehouse.py`). Both systems get the same
+  documentation, joins, value matching, and the 70 fewshot questions that verify as known
+  questions (our certified answers, Genie's example SQL). 146 of 182 test questions are
+  gradable (gold converted to Databricks and checked against SQLite rows; the rest are
+  broken gold, text/number mixes, or over Genie's 5,000-row cap). x3, gpt-6-luna.
+  Graded (right / wrong / refused): Secure Query 66 / 27 / 53, Genie 96 / 48 / 2.
+  Wrong answers rated blind by one model rater (gpt-5, same rubric; not human, not
+  evidence-checked): real errors Secure Query 9 (6.2%, 95% 3.3-11.3%), Genie 16 (11.0%,
+  6.9-17.1%); intervals overlap. Per answer given, about the same: 9 of 93 vs 16 of 144.
+  The lead here comes from refusing, not from answering better, and Genie gives about
+  128 acceptable answers to our 84. Our refusals: model declined 17, readings disagreed
+  18, kernel 11, value not stored 7; of the refused plans that could be graded, 8 would
+  have been right and 14 wrong. Certified answers applied to 11 questions (9 right).
+  Our 9 real errors: wrong column of two similar ones (3: odds side, origin vs collection
+  state, planned vs under construction), a list where a total was asked (2), half of a
+  two-part question (1), a hard-coded code instead of the key table (1), NULLs counted as
+  unknown (1), a filter not asked for (1). Files:
+  `docs/adjudication/genie-h2h-kaggledbqa-2026-11-22-{blind-packets,blind-packets.key,gpt5-labels}.json`.
+
 - **2026-11-22 — P4 certified answers built and measured.** Catalog `certified`: analyst-approved
   question/SQL pairs. The planner lists them; the model may reply {"certified": id} instead of
   SQL; the approved SQL runs unrewritten through the kernel and the two-readings gate. The

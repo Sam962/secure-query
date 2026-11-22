@@ -81,11 +81,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--limit", type=int, default=None, help="Run only the first N cases")
     parser.add_argument(
-        "--planner", choices=("lqp", "sql"), default="sql",
-        help="sql (default, production path): model writes SQL, kernel validates it; "
-        "lqp: model writes a LogicalPlan",
-    )
-    parser.add_argument(
         "--samples",
         type=int,
         default=0,
@@ -211,7 +206,7 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     try:
         client = _client(args.provider)
         sample_client = _client(args.provider, args.sample_temperature) if args.samples else None
-        check_client = _second_reader(client, args.provider) if args.planner == "sql" else None
+        check_client = _second_reader(client, args.provider)
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return -1
@@ -277,11 +272,9 @@ def _run_accuracy(args: argparse.Namespace) -> int:
     if case_delay is None:
         case_delay = 1.5 if provider == "groq" else 0.0
 
-    from secure_query.planner import plan_question
     from secure_query.planner.sql_plan import plan_sql_question
 
-    planner = plan_sql_question if args.planner == "sql" else plan_question
-    print(f"planner={args.planner}")
+    planner = plan_sql_question
 
     def run_one(item):
         case, catalog, db_path = item

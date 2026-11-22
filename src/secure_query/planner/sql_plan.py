@@ -21,8 +21,7 @@ from secure_query.kernel.logical_plan import Filter
 from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.kernel.trace import answer_fingerprint
 from secure_query.planner.llm import LLMClient
-from secure_query.planner.plan import PlannerResult
-from secure_query.planner.prompt import relevant_tables_line
+from secure_query.planner.result import PlannerResult
 from secure_query.planner.sql_values import (
     ValueProbe,
     case_insensitive_like,
@@ -64,6 +63,12 @@ _DIALECT_NAMES = {"duckdb": "DuckDB", "postgres": "PostgreSQL", "databricks": "D
 # In Databricks/Spark SQL "x" is a string literal, so identifiers take backticks.
 _QUOTING = {"databricks": 'Quote identifiers with backticks (`Name`); "..." is a string.'}
 
+
+
+def relevant_tables_line(relevant_tables: Sequence[str]) -> str:
+    if not relevant_tables:
+        return ""
+    return f"Likely relevant tables: {', '.join(relevant_tables)}\n\n"
 
 def sql_system_prompt(dialect: str) -> str:
     return SQL_SYSTEM_PROMPT.replace("{dialect}", _DIALECT_NAMES.get(dialect, dialect)).replace(

@@ -42,7 +42,7 @@ def test_ready_and_ui(client: TestClient) -> None:
 
 
 def test_ask_confirm_endpoint(client: TestClient) -> None:
-    response = client.post("/ask/confirm", json={"question": "revenue by country"})
+    response = client.post("/ask/review", json={"question": "revenue by country"})
     assert response.status_code == 200
     body = response.json()
     assert body["status"] in {"confirm", "clarify"}
@@ -57,7 +57,7 @@ def test_ask_rejects_forged_principal_fields(client: TestClient) -> None:
             "principal_id": "admin",
             "tenant_id": "other-tenant",
             "allowed_tables": ["Employee"],
-            "confirm_only": True,
+            "review_only": True,
         },
     )
     assert response.status_code == 422
@@ -66,7 +66,7 @@ def test_ask_rejects_forged_principal_fields(client: TestClient) -> None:
 def test_ask_confirm_uses_server_identity(client: TestClient) -> None:
     response = client.post(
         "/ask",
-        json={"question": "revenue by country", "confirm_only": True},
+        json={"question": "revenue by country", "review_only": True},
     )
     assert response.status_code == 200
     body = response.json()
@@ -85,11 +85,17 @@ def test_token_mode_rejects_missing_bearer(monkeypatch: pytest.MonkeyPatch) -> N
     )
     monkeypatch.delenv("SECURE_QUERY_PRINCIPALS_FILE", raising=False)
     monkeypatch.setattr("secure_query.api.http.get_client", lambda: MockLLMClient())
-    response = TestClient(app).post("/ask", json={"question": "hi", "confirm_only": True})
+    response = TestClient(app).post("/ask", json={"question": "hi", "review_only": True})
     assert response.status_code == 401
 
 
-def test_health_reports_databricks_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_health_reports_databricks_backend(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    from secure_query.demo.chinook import sample_catalog
+
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text(sample_catalog().model_copy(update={"tenant_id": "file"}).model_dump_json())
+    monkeypatch.setenv("SECURE_QUERY_CATALOG_FILE", str(catalog))
+    monkeypatch.setenv("SECURE_QUERY_BACKEND", "databricks")
     monkeypatch.setenv("DATABRICKS_HOST", "https://dbc.example.com")
     monkeypatch.setenv("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/abc")
     monkeypatch.setenv("DATABRICKS_TOKEN", "pat")
@@ -116,7 +122,7 @@ def test_token_mode_ok(monkeypatch: pytest.MonkeyPatch) -> None:
     response = TestClient(app).post(
         "/ask",
         headers={"Authorization": "Bearer secret"},
-        json={"question": "revenue by country", "confirm_only": True},
+        json={"question": "revenue by country", "review_only": True},
     )
     assert response.status_code == 200
     body = response.json()
@@ -124,17 +130,10 @@ def test_token_mode_ok(monkeypatch: pytest.MonkeyPatch) -> None:
     assert body["status"] in {"confirm", "ok", "clarify"}
 
 
-def _plan_json(group_column: str) -> str:
+def _sql_json(group_column: str) -> str:
     return json.dumps(
-        {
-            "source": "Invoice",
-            "filters": [],
-            "group_by": {"columns": [{"table_id": "Invoice", "column_id": group_column}], "time_buckets": []},
-            "aggregations": [{"fn": "count", "column": None, "alias": "invoice_count"}],
-            "having": [],
-            "order_by": [{"alias": "invoice_count", "direction": "desc"}],
-            "limit": 100,
-        }
+        {"sql": f'SELECT "{group_column}", COUNT(*) AS invoice_count FROM "Invoice" '
+                f'GROUP BY "{group_column}" ORDER BY invoice_count DESC LIMIT 100'}
     )
 
 
@@ -154,13 +153,12 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
 
     if not DUCKDB_PATH.exists():
         pytest.skip("sample DB not built")
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     question = "How many invoices per billing country?"
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
-        lambda: MockLLMClient([_plan_json("BillingCountry")]),
+        lambda: MockLLMClient([_sql_json("BillingCountry")]),
     )
-    reviewed = client.post("/ask/confirm", json={"question": question}).json()
+    reviewed = client.post("/ask/review", json={"question": question}).json()
     assert reviewed["status"] == "confirm", reviewed
     review = reviewed["review"]
     assert review["plan_hash"] == reviewed["audit"]["plan_hash"]
@@ -169,9 +167,8 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
     # and any planner call at all fails the test.
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
-        lambda: MockLLMClient([_plan_json("BillingCity")]),
+        lambda: MockLLMClient([_sql_json("BillingCity")]),
     )
-    monkeypatch.setattr("secure_query.api.service.plan_question", _NoPlanner().complete)
     monkeypatch.setattr("secure_query.api.service.plan_sql_question", _NoPlanner().complete)
     ran = client.post("/ask/execute", json={**review, "question": question})
     assert ran.status_code == 200, ran.text
@@ -185,18 +182,16 @@ def test_run_executes_the_reviewed_plan_not_a_replan(
 def test_execute_rejects_a_plan_that_differs_from_the_review(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
-        lambda: MockLLMClient([_plan_json("BillingCountry")]),
+        lambda: MockLLMClient([_sql_json("BillingCountry")]),
     )
     review = client.post(
-        "/ask/confirm", json={"question": "How many invoices per billing country?"}
+        "/ask/review", json={"question": "How many invoices per billing country?"}
     ).json()["review"]
-    tampered = json.loads(_plan_json("BillingCity"))
-    tampered.update(plan_id=review["plan"]["plan_id"], schema_version="lqp/1")
-    response = client.post("/ask/execute", json={**review, "plan": tampered})
-    assert response.status_code == 403  # the signature covers the reviewed plan
+    tampered = json.loads(_sql_json("BillingCity"))["sql"]
+    response = client.post("/ask/execute", json={**review, "sql": tampered})
+    assert response.status_code == 403  # the signature covers the reviewed SQL
 
 
 def test_execute_refuses_sql_the_server_did_not_review(client: TestClient) -> None:
@@ -234,12 +229,11 @@ def test_sql_path_run_reuses_the_reviewed_sql(
 
     if not DUCKDB_PATH.exists():
         pytest.skip("sample DB not built")
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
     monkeypatch.setattr(
         "secure_query.api.http.get_client",
         lambda: MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) AS n FROM Invoice"})]),
     )
-    reviewed = client.post("/ask/confirm", json={"question": "How many invoices are there?"}).json()
+    reviewed = client.post("/ask/review", json={"question": "How many invoices are there?"}).json()
     review = reviewed["review"]
     assert review["sql"] and review["plan"] is None
     monkeypatch.setattr("secure_query.api.http.get_client", lambda: _NoPlanner())
@@ -268,7 +262,7 @@ def test_two_asks_share_one_llm_client_and_one_catalog(monkeypatch: pytest.Monke
     monkeypatch.setattr(runtime_module, "runtime_config", count_runtime)
     client = TestClient(app)
     for _ in range(2):
-        assert client.post("/ask/confirm", json={"question": "revenue by country"}).status_code == 200
+        assert client.post("/ask/review", json={"question": "revenue by country"}).status_code == 200
     assert built == {"client": 1, "runtime": 1}
     assert runtime_module.get_runtime() is runtime_module.get_runtime()
 
@@ -302,7 +296,7 @@ def test_planner_failure_is_a_502_not_a_traceback(
         raise PlannerError("LLM request failed (openai gpt): Error code: 401 - invalid_api_key")
 
     monkeypatch.setattr("secure_query.api.http.ask", down)
-    response = client.post("/ask/confirm", json={"question": "anything"})
+    response = client.post("/ask/review", json={"question": "anything"})
     assert response.status_code == 502
     assert "invalid_api_key" not in response.json()["detail"]
 
@@ -322,6 +316,9 @@ def test_ready_reports_the_databricks_grant_check(
     monkeypatch.setattr(
         "secure_query.api.http.get_runtime", lambda: config.__class__(**{**config.__dict__, "backend": "databricks"})
     )
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "shared")
+    monkeypatch.setenv("DATABRICKS_TOKEN", "pat")
+    monkeypatch.setattr("secure_query.api.http.missing_catalog_tables", lambda tables: [])
     monkeypatch.setattr(
         "secure_query.api.http.databricks_grant_check",
         lambda: {"status": "select_only", "detail": "svc: SELECT"},
@@ -333,6 +330,24 @@ def test_ready_reports_the_databricks_grant_check(
     )
     response = client.get("/ready")
     assert response.status_code == 503 and "MODIFY" not in response.text
+
+
+def test_ready_checks_the_catalog_against_the_warehouse(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """In user mode the service token's grants say nothing; the tables must still be there."""
+    from secure_query.engine import runtime as runtime_module
+
+    config = runtime_module.runtime_config()
+    monkeypatch.setattr(
+        "secure_query.api.http.get_runtime", lambda: config.__class__(**{**config.__dict__, "backend": "databricks"})
+    )
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_AUTH", "user")
+    monkeypatch.setenv("DATABRICKS_TOKEN", "pat")
+    monkeypatch.setattr("secure_query.api.http.databricks_grant_check", lambda: 1 / 0)  # never called in user mode
+    monkeypatch.setattr("secure_query.api.http.missing_catalog_tables", lambda tables: [])
+    assert client.get("/ready").json()["databricks_grants"] == "per_user"
+    monkeypatch.setattr("secure_query.api.http.missing_catalog_tables", lambda tables: ["Invoice"])
+    response = client.get("/ready")
+    assert response.status_code == 503 and "Invoice" not in response.text
 
 
 def test_signed_review_expires_and_survives_key_rotation(monkeypatch) -> None:

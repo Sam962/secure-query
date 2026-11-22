@@ -19,7 +19,7 @@ def test_sql_paste_has_no_suggestions() -> None:
         config=runtime_config(),
         catalog=catalog,
         client=MockLLMClient(),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.clarify_code == "sql_in_question"
     assert outcome.suggestions == []
@@ -74,7 +74,7 @@ def test_empty_question_offers_metric_starters() -> None:
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient(),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.clarify_code == "invalid_request"
     assert len(outcome.suggestions) == 3
@@ -89,21 +89,9 @@ def test_suggestions_are_askable_and_omit_grouped() -> None:
         catalog,
         code="planner_refusal",
     )
-    from secure_query.planner.guard import out_of_scope_request
-
     assert suggestions
     for item in suggestions:
         assert "grouped" not in item.question.lower()
-        assert out_of_scope_request(item.question, catalog) is None
-
-
-def test_out_of_scope_guard_returns_out_of_scope_code() -> None:
-    from secure_query.planner.guard import out_of_scope_request
-
-    catalog = sample_catalog()
-    hit = out_of_scope_request("What is our total payroll spend this quarter?", catalog)
-    assert hit is not None
-    assert hit[0] == "out_of_scope"
 
 
 def test_ambiguous_metrics_suggest_each_named_metric() -> None:

@@ -16,12 +16,11 @@ Holdout ids are frozen in `src/secure_query/evals/dev_expansion.py` (`HOLDOUT_CA
 export PYTHONPATH=src
 pytest tests/test_suite_split.py -q
 python -m secure_query.evals.run --split dev --provider mock            # wiring only
-python -m secure_query.evals.run --split holdout --provider openai      # SQL path (default)
-python -m secure_query.evals.run --split holdout --provider openai --planner lqp
+python -m secure_query.evals.run --split holdout --provider openai
 ```
 
-`--planner sql` is the default and matches the product. With a real model it also runs
-the self-consistency gate (two readings), exactly as `/ask` does.
+The evals run the product's planner. With a real model they also run the self-consistency
+gate (two readings), exactly as `/ask` does.
 
 **Pin the model build, not just the name.** Record the model id in every baseline. For
 local Ollama models the runner prints `digest=`; pass `--expect-digest <prefix>` (or set

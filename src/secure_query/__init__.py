@@ -1,8 +1,8 @@
 """Governed talk-to-data. Model SQL is allowlist-validated and regenerated; it never runs as written.
 
 Entry point: ask(question, principal=..., config=..., catalog=...) -> AskOutcome.
-Default NL path: planner.sql_plan -> kernel.sql_validate -> engine execute (ADR 005).
-LogicalPlan (validate / compile) serves catalog-owned metrics and explain helpers.
+The question path: plan_sql_question -> validate_sql (the kernel) -> engine execute (ADR 005).
+LogicalPlan (validate / compile) is the metric IR: catalog-owned metrics only.
 """
 
 from secure_query.api.service import AskOutcome, ask
@@ -19,6 +19,7 @@ from secure_query.kernel.catalog import Catalog, ColumnSpec, JoinKey, TableSpec
 from secure_query.kernel.compile import CompilationError, CompiledQuery, compile
 from secure_query.kernel.errors import ValidationError
 from secure_query.kernel.logical_plan import LogicalPlan
+from secure_query.kernel.sql_validate import SqlValidationFailed, validate_sql
 from secure_query.kernel.validate import validate, validate_and_compile
 from secure_query.planner import (
     LLMClient,
@@ -26,7 +27,7 @@ from secure_query.planner import (
     OpenAIClient,
     PlannerResult,
     default_client,
-    plan_question,
+    plan_sql_question,
     resolve_llm_settings,
 )
 
@@ -46,6 +47,7 @@ __all__ = [
     "MockLLMClient",
     "OpenAIClient",
     "PlannerResult",
+    "SqlValidationFailed",
     "TableSpec",
     "ValidationError",
     "ask",
@@ -55,8 +57,9 @@ __all__ = [
     "execute_databricks",
     "execute_duckdb",
     "execute_postgres",
-    "plan_question",
+    "plan_sql_question",
     "resolve_llm_settings",
     "validate",
     "validate_and_compile",
+    "validate_sql",
 ]

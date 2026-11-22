@@ -12,14 +12,14 @@ from secure_query.planner import MockLLMClient
 from tests.conftest import requires_chinook
 
 
-def test_confirm_only_does_not_need_the_database() -> None:
+def test_review_only_does_not_need_the_database() -> None:
     outcome = ask(
         "revenue by country",
         principal=Principal(principal_id="demo-user", tenant_id="chinook"),
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient(),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.status == "confirm"
     assert outcome.sql
@@ -34,7 +34,7 @@ def test_empty_question_is_invalid() -> None:
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient(),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.status == "clarify"
     assert outcome.clarify_code == "invalid_request"
@@ -49,61 +49,12 @@ def test_production_blocks_dev_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     assert production_auth_blocked() is None
 
 
-def test_ratio_metric_runs_under_principal_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ratio metrics used to be refused for row-filtered principals; now the filter applies."""
-    import json
-
-    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
-
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
-    usa_only = Eq(
-        column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
-        value=LiteralValue(type="string", value="USA"),
-    )
-    outcome = ask(
-        "average revenue per customer",
-        principal=Principal(principal_id="us-team", tenant_id="chinook", row_filters=(usa_only,)),
-        config=runtime_config(),
-        catalog=sample_catalog(),
-        client=MockLLMClient(responses=[json.dumps({"metric_id": "avg_revenue_per_customer"})]),
-        confirm_only=True,
-    )
-    assert outcome.status == "confirm", outcome.clarify_message
-    assert outcome.sql is not None
-    assert "NULLIF" in outcome.sql
-    assert "'USA'" in outcome.sql
-    assert outcome.explanation.startswith("Approved metric avg_revenue_per_customer")
-
-
-def test_builtin_metric_refused_under_principal_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
-    import json
-
-    from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
-
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
-    usa_only = Eq(
-        column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
-        value=LiteralValue(type="string", value="USA"),
-    )
-    outcome = ask(
-        "line item revenue",
-        principal=Principal(principal_id="us-team", tenant_id="chinook", row_filters=(usa_only,)),
-        config=runtime_config(),
-        catalog=sample_catalog(),
-        client=MockLLMClient(responses=[json.dumps({"metric_id": "line_item_revenue"})]),
-        confirm_only=True,
-    )
-    assert outcome.status == "clarify"
-    assert outcome.clarify_code == "auth"
-
-
 def test_sql_planner_mode_applies_row_filters(monkeypatch: pytest.MonkeyPatch) -> None:
     import json
 
     from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
     from secure_query.planner import MockLLMClient
 
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
     usa_only = Eq(
         op="eq",
         column=ColumnRef(table_id="Customer", column_id="Country"),
@@ -115,57 +66,44 @@ def test_sql_planner_mode_applies_row_filters(monkeypatch: pytest.MonkeyPatch) -
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) FROM Invoice"})]),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.status == "confirm"
     assert "EXISTS" in outcome.sql and "'USA'" in outcome.sql
 
 
-def test_reviewed_plan_gets_row_filters_from_the_server(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The review payload carries the plan before row filters; execute re-injects them,
+@requires_chinook
+def test_reviewed_sql_gets_row_filters_from_the_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The review carries the model's SQL before row filters; execute re-applies them,
     so a client cannot drop the principal's filter and keep the hash."""
     import json
 
+    from secure_query.api.service import execute_reviewed
     from secure_query.kernel.logical_plan import ColumnRef, Eq, LiteralValue
 
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     usa_only = Eq(
         column=ColumnRef(table_id="Invoice", column_id="BillingCountry"),
         value=LiteralValue(type="string", value="USA"),
     )
     principal = Principal(principal_id="us-team", tenant_id="chinook", row_filters=(usa_only,))
-    plan = {
-        "source": "Invoice",
-        "filters": [],
-        "group_by": None,
-        "aggregations": [{"fn": "count", "column": None, "alias": "invoice_count"}],
-        "having": [],
-        "order_by": [],
-        "limit": 1,
-    }
     reviewed = ask(
         "How many invoices are there?",
         principal=principal,
         config=runtime_config(),
         catalog=sample_catalog(),
-        client=MockLLMClient([json.dumps(plan)]),
-        confirm_only=True,
+        client=MockLLMClient([json.dumps({"sql": "SELECT COUNT(*) AS n FROM Invoice"})]),
+        review_only=True,
     )
     assert reviewed.status == "confirm", reviewed.clarify_message
-    assert reviewed.review["plan"]["filters"] == []  # model plan, before injection
+    assert "USA" not in reviewed.review["sql"]  # the model's SQL, before the filter
     assert "'USA'" in reviewed.sql
-
-    from secure_query.api.service import _recompile, catalog_for_principal
-
-    compiled, _, _, _ = _recompile(
-        catalog_for_principal(sample_catalog(), principal),
-        principal,
-        plan=reviewed.review["plan"],
-        sql=None,
-        metric_id=None,
+    ran = execute_reviewed(
+        "How many invoices are there?", principal=principal, config=runtime_config(),
+        catalog=sample_catalog(), **{k: v for k, v in reviewed.review.items() if k != "signature"},
+        signature=reviewed.review["signature"],
     )
-    assert compiled.plan_hash == reviewed.review["plan_hash"]
-    assert "'USA'" in compiled.sql
+    assert ran.status == "ok" and ran.audit["plan_hash"] == reviewed.review["plan_hash"]
+    assert "'USA'" in ran.sql
 
 
 @requires_chinook
@@ -173,7 +111,6 @@ def test_ask_runs_the_consistency_gate_with_the_clients_own_second_reader(monkey
     """Regression: API and CLI pass their client in, and that used to switch the gate off."""
     import json
 
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
     monkeypatch.setenv("SECURE_QUERY_BACKEND", "duckdb")
     config = runtime_config()
     alice = Principal(principal_id="alice", tenant_id="chinook")
@@ -184,10 +121,10 @@ def test_ask_runs_the_consistency_gate_with_the_clients_own_second_reader(monkey
         return first
 
     agree = ask("How many customers?", principal=alice, config=config, catalog=config.catalog,
-                client=client("SELECT COUNT(CustomerId) FROM Customer"), confirm_only=True)
+                client=client("SELECT COUNT(CustomerId) FROM Customer"), review_only=True)
     assert agree.status == "confirm" and len(agree.evidence["gate_fingerprints"]) == 1
     differ = ask("How many customers?", principal=alice, config=config, catalog=config.catalog,
-                 client=client("SELECT COUNT(*) FROM Employee"), confirm_only=True)
+                 client=client("SELECT COUNT(*) FROM Employee"), review_only=True)
     assert differ.status == "clarify" and differ.clarify_code == "unstable_answer"
 
 

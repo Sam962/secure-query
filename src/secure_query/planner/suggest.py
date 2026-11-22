@@ -155,29 +155,16 @@ def _overlapping_metrics(question: str, catalog: Catalog) -> list[SuggestedQuest
 
 
 def _question_for_metric(metric: MetricSpec) -> str:
-    """Askable phrasing from the metric id — never the description.
-
-    Descriptions contain analyst words like "grouped" that the out-of-scope
-    guard treats as unknown catalog terms, so suggesting them loops.
-    """
+    """Askable phrasing from the metric id."""
     return f"What is {metric.id.replace('_', ' ')}?"
 
 
 def _askable(question: str, catalog: Catalog) -> bool:
     """True when clicking this suggestion would not immediately refuse again."""
     from secure_query.planner.clarify import looks_like_sql_statement
-    from secure_query.planner.guard import out_of_scope_request, restricted_request
 
     text = (question or "").strip()
-    if len(text) < 8:
-        return False
-    if looks_like_sql_statement(text):
-        return False
-    if restricted_request(text, catalog) is not None:
-        return False
-    if out_of_scope_request(text, catalog) is not None:
-        return False
-    return True
+    return len(text) >= 8 and not looks_like_sql_statement(text)
 
 
 def _humanize_table(name: str, *, plural: bool) -> str:

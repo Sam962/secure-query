@@ -1,7 +1,7 @@
 """Request-level trace: every ask / confirm / refuse / execute writes one record.
 
 Unlike execute AuditRecord (which only fires when SQL runs), TraceRecord covers
-refusals and confirm-only reviews so a security review can reconstruct who asked
+refusals and reviews (/ask/review) so a security review can reconstruct who asked
 what was refused and why.
 """
 

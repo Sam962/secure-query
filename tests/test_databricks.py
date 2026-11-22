@@ -247,6 +247,8 @@ class _GrantCursor:
         self._grants = grants
         self.description = None
 
+    owner = "data-owners"
+
     def execute(self, sql):
         if sql.startswith("SHOW GRANTS"):
             self.description = [("Principal",), ("ActionType",), ("ObjectType",), ("ObjectKey",)]
@@ -256,6 +258,8 @@ class _GrantCursor:
         return ("svc-reader@corp",)
 
     def fetchall(self):
+        if self.sql.startswith("DESCRIBE SCHEMA"):
+            return [("Catalog Name", "main"), ("Owner", self.owner)]
         return [(p, a, "SCHEMA", "main.sales") for p, a in self._grants]
 
     def close(self):
@@ -280,6 +284,39 @@ def test_grant_check_reports_select_only_write_and_unchecked(monkeypatch) -> Non
     assert ok["status"] == "select_only"  # another principal's MODIFY is not ours
     bad = databricks_grant_check(_grant_connection([("svc-reader@corp", "MODIFY")]))
     assert bad["status"] == "write_privileges" and "MODIFY" in bad["detail"]
+    # No direct grant seen is not a pass: the principal may still read and write through a group.
+    assert databricks_grant_check(_grant_connection([("admins", "SELECT")]))["status"] == "unchecked"
+
+
+def test_grant_check_counts_schema_ownership_as_write(monkeypatch) -> None:
+    from secure_query.engine.databricks import databricks_grant_check
+
+    monkeypatch.setenv("SECURE_QUERY_DATABRICKS_SCHEMA", "main.sales")
+    con = _grant_connection([("svc-reader@corp", "SELECT")])
+    cursor = _GrantCursor([("svc-reader@corp", "SELECT")])
+    cursor.owner = "svc-reader@corp"
+    con.cursor = lambda: cursor  # type: ignore[method-assign]
+    out = databricks_grant_check(con)
+    assert out["status"] == "write_privileges" and "OWNERSHIP" in out["detail"]
+
+
+def test_missing_catalog_tables(monkeypatch) -> None:
+    from secure_query.engine.databricks import missing_catalog_tables
+
+    for key, value in {"DATABRICKS_HOST": "https://dbc.example.com", "DATABRICKS_HTTP_PATH": "/sql/1.0/warehouses/abc",
+                       "DATABRICKS_TOKEN": "pat", "SECURE_QUERY_DATABRICKS_SCHEMA": "main.sales"}.items():
+        monkeypatch.setenv(key, value)
+
+    class Tables(_GrantCursor):
+        def execute(self, sql):
+            self.sql, self.description = sql, [("database",), ("tableName",), ("isTemporary",)]
+
+        def fetchall(self):
+            return [("sales", "invoice", False), ("sales", "customer", False)]
+
+    con = _grant_connection([])
+    con.cursor = lambda: Tables([])  # type: ignore[method-assign]
+    assert missing_catalog_tables(["Invoice", "Customer", "Track"], con) == ["Track"]
 
 
 def test_connection_pins_the_catalog_and_schema(monkeypatch) -> None:

@@ -1,6 +1,5 @@
 """Tests for approved metrics as catalog data."""
 
-import json
 
 import duckdb
 import pytest
@@ -213,16 +212,6 @@ def test_line_item_revenue_builtin_compiles_product_via_ast() -> None:
     assert "UnitPrice" in sql
     assert "Quantity" in sql
     assert "*" in sql
-
-
-def test_try_compile_metric_returns_ratio_plan() -> None:
-    from secure_query.planner import try_compile_metric
-
-    plan, compiled, metric = try_compile_metric(
-        json.dumps({"metric_id": "avg_revenue_per_customer"}), sample_catalog()
-    )
-    assert metric is not None and metric.kind == "ratio"
-    assert plan is not None and compiled is not None
 
 
 def test_employee_count_metric_expands_and_compiles() -> None:

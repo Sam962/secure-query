@@ -22,7 +22,7 @@ def test_refuse_writes_trace(tmp_path: Path, monkeypatch) -> None:
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient(),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.status == "clarify"
     assert outcome.clarify_code == "sql_in_question"
@@ -40,7 +40,6 @@ def test_refuse_writes_trace(tmp_path: Path, monkeypatch) -> None:
 def test_confirm_and_execute_write_traces(tmp_path: Path, monkeypatch) -> None:
     trace_path = tmp_path / "trace.jsonl"
     monkeypatch.setenv("SECURE_QUERY_TRACE_PATH", str(trace_path))
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "lqp")
     principal = Principal(principal_id="demo-user", tenant_id="chinook")
     config = runtime_config()
     catalog = sample_catalog()
@@ -51,7 +50,7 @@ def test_confirm_and_execute_write_traces(tmp_path: Path, monkeypatch) -> None:
         config=config,
         catalog=catalog,
         client=client,
-        confirm_only=True,
+        review_only=True,
     )
     assert confirm.status == "confirm"
     assert confirm.trace_id

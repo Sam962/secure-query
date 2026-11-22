@@ -85,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Execute timeout seconds (default 30)",
     )
     parser.add_argument(
-        "--confirm-only",
+        "--review-only",
         action="store_true",
         help="Show explain-back + SQL only; do not execute",
     )
@@ -140,8 +140,8 @@ def main(argv: list[str] | None = None) -> int:
             config=config,
             catalog=config.catalog,
             client=client,
-            confirm_only=args.confirm_only,
-            execute=not args.confirm_only,
+            review_only=args.review_only,
+            execute=not args.review_only,
             options=ExecuteOptions(
                 timeout_seconds=args.timeout,
                 max_rows=args.max_rows,
@@ -178,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
         print()
 
     if outcome.status == "confirm":
-        print("(confirm-only: not executed)")
+        print("(review only: answer not returned)")
         return 0
 
     print("--- results ---")

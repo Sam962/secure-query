@@ -13,6 +13,8 @@ adjudicated wrong-rate (PLAN.md, Goal).
 
 ## Where things stand (2026-11-15)
 
+- Latest (2026-11-22, stand-in domain KaggleDBQA on Databricks, 146 questions): real errors
+  9 vs Genie 16 (one model rater), but refused 53 vs 2; per answer given about equal (STATUS).
 - Latest (2026-11-16, after P12-P16): evidence-checked Claude rating 16 vs Genie 28 real
   errors of 532 (two-rater merge 20 vs 38). A blind rating page for a person exists (STATUS).
 - Earlier: head-to-head with Genie, 7 Spider test databases, 532 questions, model-rated (gpt-5 plus

@@ -1,4 +1,4 @@
-"""Phase 2 planner tests — mock LLM only (no network)."""
+"""Planner tests: LLM clients and the SQL planner, mock LLM only (no network)."""
 
 from __future__ import annotations
 
@@ -7,146 +7,7 @@ import json
 import pytest
 
 from secure_query.demo.chinook import sample_catalog
-from secure_query.planner import (
-    SYSTEM_PROMPT,
-    MockLLMClient,
-    build_repair_prompt,
-    build_user_prompt,
-    parse_plan_json,
-    plan_question,
-    resolve_llm_settings,
-)
-
-
-def test_system_prompt_forbids_sql() -> None:
-    assert "Never output SQL" in SYSTEM_PROMPT
-    assert "LogicalPlan" in SYSTEM_PROMPT
-
-
-def test_user_prompt_includes_catalog_not_rows() -> None:
-    catalog = sample_catalog()
-    prompt = build_user_prompt("revenue by country", catalog)
-    assert "Invoice" in prompt
-    assert "approved_joins" in prompt or "CustomerId" in prompt
-    assert "no row data" in prompt.lower() or "Approved catalog" in prompt
-
-
-def test_repair_prompt_forbids_sql() -> None:
-    text = build_repair_prompt(["catalog.unknown_table: Unknown source table: 'foo'"])
-    assert "Do not output SQL" in text
-    assert "catalog.unknown_table" in text
-
-
-def test_parse_plan_assigns_fresh_plan_id() -> None:
-    raw = json.dumps(
-        {
-            "plan_id": "00000000-0000-0000-0000-000000000001",
-            "schema_version": "lqp/1",
-            "source": "Invoice",
-            "limit": 5,
-        }
-    )
-    plan = parse_plan_json(raw)
-    assert str(plan.plan_id) != "00000000-0000-0000-0000-000000000001"
-    assert plan.source == "Invoice"
-
-
-def test_parse_plan_rejects_sql_field() -> None:
-    raw = json.dumps(
-        {
-            "plan_id": "00000000-0000-0000-0000-000000000001",
-            "schema_version": "lqp/1",
-            "source": "Invoice",
-            "sql": "SELECT * FROM Invoice",
-            "limit": 5,
-        }
-    )
-    with pytest.raises(ValueError, match="SQL"):
-        parse_plan_json(raw)
-
-
-def test_plan_question_ok_with_mock() -> None:
-    catalog = sample_catalog()
-    result = plan_question(
-        "revenue by country",
-        catalog,
-        MockLLMClient(),
-        max_repairs=1,
-    )
-    assert result.status == "ok"
-    assert result.compiled is not None
-    assert "SUM" in result.compiled.sql.upper()
-    assert "Customer" in result.compiled.sql
-    assert result.attempts == 1
-
-
-def test_plan_question_one_repair_then_ok() -> None:
-    bad = json.dumps(
-        {
-            "plan_id": "00000000-0000-0000-0000-000000000001",
-            "schema_version": "lqp/1",
-            "source": "not_a_table",
-            "limit": 10,
-        }
-    )
-    good = json.dumps(
-        {
-            "plan_id": "00000000-0000-0000-0000-000000000001",
-            "schema_version": "lqp/1",
-            "source": "Invoice",
-            "joins": [
-                {
-                    "right_table": "Customer",
-                    "kind": "inner",
-                    "conditions": [
-                        {
-                            "left": {"table_id": "Invoice", "column_id": "CustomerId"},
-                            "right": {"table_id": "Customer", "column_id": "CustomerId"},
-                        }
-                    ],
-                }
-            ],
-            "filters": [],
-            "group_by": {
-                "columns": [{"table_id": "Customer", "column_id": "Country"}],
-                "time_buckets": [],
-            },
-            "aggregations": [
-                {
-                    "fn": "sum",
-                    "column": {"table_id": "Invoice", "column_id": "Total"},
-                    "alias": "revenue",
-                }
-            ],
-            "having": [],
-            "order_by": [{"alias": "revenue", "direction": "desc"}],
-            "limit": 10,
-        }
-    )
-    client = MockLLMClient([bad, good])
-    result = plan_question("revenue by country", sample_catalog(), client, max_repairs=1)
-    assert result.status == "ok"
-    assert result.attempts == 2
-    assert len(client.calls) == 2
-    assert "Do not output SQL" in client.calls[1][-1]["content"]
-
-
-def test_plan_question_clarify_after_failed_repair() -> None:
-    bad = json.dumps(
-        {
-            "plan_id": "00000000-0000-0000-0000-000000000001",
-            "schema_version": "lqp/1",
-            "source": "not_a_table",
-            "limit": 10,
-        }
-    )
-    client = MockLLMClient([bad, bad])
-    result = plan_question("anything", sample_catalog(), client, max_repairs=1)
-    assert result.status == "clarify"
-    assert result.compiled is None
-    assert result.clarify_message
-    assert result.attempts == 2
-    assert any("unknown_table" in e for e in result.errors)
+from secure_query.planner import MockLLMClient, plan_sql_question, resolve_llm_settings
 
 
 def test_resolve_llm_settings_ollama(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -256,7 +117,7 @@ class TestRefusal:
         client = MockLLMClient(
             [json.dumps({"cannot_answer": True, "reason": "No Employee table in the catalog"})]
         )
-        result = plan_question("How many employees?", sample_catalog(), client)
+        result = plan_sql_question("How many employees?", sample_catalog(), client)
         assert result.status == "clarify"
         assert result.refused is True
         assert result.clarify_message == "No Employee table in the catalog"
@@ -266,39 +127,13 @@ class TestRefusal:
         client = MockLLMClient(
             [json.dumps({"cannot_answer": True, "reason": "no such table"})]
         )
-        result = plan_question("how many employees", sample_catalog(), client, max_repairs=3)
+        result = plan_sql_question("how many employees", sample_catalog(), client, max_repairs=3)
         assert result.attempts == 1
         assert len(client.calls) == 1
 
-    def test_employee_headcount_via_metric(self) -> None:
-        result = plan_question(
-            "How many employees work for us?",
-            sample_catalog(),
-            MockLLMClient(),
-            max_repairs=1,
-        )
-        assert result.status == "ok"
-        assert result.compiled is not None
-        assert "Employee" in result.compiled.sql
-        assert "COUNT" in result.compiled.sql.upper()
-
-    def test_restricted_questions_never_reach_the_model(self) -> None:
-        """PII refusal is deterministic, so the question is not sent anywhere."""
-        client = MockLLMClient()
-        result = plan_question("list all customer emails", sample_catalog(), client)
-        assert result.refused is True
-        assert result.attempts == 0
-        assert client.calls == []
-        assert "Customer.Email" in (result.clarify_message or "")
-
-    def test_guard_can_be_disabled_for_ablation(self) -> None:
-        client = MockLLMClient()
-        plan_question("list all customer emails", sample_catalog(), client, guard=False)
-        assert client.calls, "guard=False should let the question through to the model"
-
     def test_invalid_json_is_not_treated_as_a_refusal(self) -> None:
         client = MockLLMClient(["not json at all", "still not json"])
-        result = plan_question("anything", sample_catalog(), client, max_repairs=1)
+        result = plan_sql_question("anything", sample_catalog(), client, max_repairs=1)
         assert result.status == "clarify"
         assert result.refused is False
 
@@ -434,105 +269,6 @@ def test_openai_client_adapts_to_parameters_a_model_rejects() -> None:
     assert "temperature" not in calls[-1] and "max_tokens" not in calls[-1]
     client.complete([{"role": "user", "content": "hi"}])
     assert len(calls) == 4  # remembered: the second request is right first time
-
-
-def test_plan_response_schema_is_strict_compatible() -> None:
-    """OpenAI strict mode: every object closed with all properties required; no
-    unsupported keywords; server-assigned fields absent; literal values are strings."""
-    from secure_query.planner.response_schema import plan_response_format
-
-    fmt = plan_response_format()
-    assert fmt["type"] == "json_schema" and fmt["json_schema"]["strict"] is True
-    schema = fmt["json_schema"]["schema"]
-
-    def walk(node):
-        if isinstance(node, dict):
-            assert not {"oneOf", "const", "default", "discriminator", "format"} & set(node)
-            if node.get("type") == "object" and "properties" in node:
-                assert node["additionalProperties"] is False
-                assert set(node["required"]) == set(node["properties"])
-            for v in node.values():
-                walk(v)
-        elif isinstance(node, list):
-            for v in node:
-                walk(v)
-
-    walk(schema)
-    plan = schema["$defs"]["LogicalPlan"]["properties"]
-    assert not {"plan_id", "schema_version", "joins"} & set(plan)
-    assert schema["$defs"]["LiteralValue"]["properties"]["value"] == {"type": "string"}
-
-
-def test_structured_wrapper_parses_to_plans_metrics_and_refusals() -> None:
-    from secure_query.planner import PlannerRefusal, parse_plan_json
-
-    wrapped = {
-        "kind": "plan",
-        "plan": {
-            "source": "Invoice",
-            "filters": [
-                {
-                    "op": "gt",
-                    "column": {"table_id": "Invoice", "column_id": "Total"},
-                    "value": {"type": "integer", "value": "5"},
-                }
-            ],
-            "group_by": None,
-            "aggregations": [{"fn": "count", "column": None, "alias": "n"}],
-            "having": [],
-            "order_by": [],
-            "limit": 1,
-        },
-        "metric_id": None,
-        "limit": None,
-        "reason": None,
-    }
-    plan = parse_plan_json(json.dumps(wrapped), sample_catalog())
-    assert plan.filters[0].value.value == 5
-    metric = parse_plan_json(
-        json.dumps({"kind": "metric", "plan": None, "metric_id": "total_revenue", "limit": 1, "reason": None}),
-        sample_catalog(),
-    )
-    assert metric.aggregations[0].alias == "total_revenue"
-    with pytest.raises(PlannerRefusal):
-        parse_plan_json(
-            json.dumps({"kind": "refusal", "plan": None, "metric_id": None, "limit": None, "reason": "no"})
-        )
-
-
-def test_planner_sends_the_schema_only_to_structured_clients() -> None:
-    from secure_query.planner.response_schema import plan_response_format
-
-    seen: list[object] = []
-
-    class Structured:
-        structured_outputs = True
-
-        def complete(self, messages, response_format=None):
-            seen.append(response_format)
-            return json.dumps({"kind": "refusal", "plan": None, "metric_id": None, "limit": None, "reason": "x"})
-
-    plan_question("anything", sample_catalog(), Structured())
-    assert seen == [plan_response_format()]
-    mock = MockLLMClient()  # no structured_outputs: called with messages only
-    plan_question("anything", sample_catalog(), mock)
-    assert len(mock.calls) == 1
-
-
-def test_prompt_teaches_the_wrapper_and_carries_no_shape_prose() -> None:
-    """M6: the response shape has one source (the Pydantic-derived schema)."""
-    from secure_query.planner.prompt import build_repair_prompt, system_prompt
-    from secure_query.planner.response_schema import plan_response_format
-
-    structured = system_prompt(True)
-    for kind in ('"kind": "plan"', '"kind": "metric"', '"kind": "refusal"'):
-        assert kind in structured
-    for shape in ("Booking", "Hotel", '"op": "eq"', '"table_id"', '"time_buckets"', '{"cannot_answer"'):
-        assert shape not in structured
-    plain = system_prompt(False)
-    schema = json.dumps(plan_response_format()["json_schema"]["schema"], separators=(",", ":"))
-    assert plain.startswith(structured) and schema in plain
-    assert "JSON response object" in build_repair_prompt(["x"])
 
 
 def test_mock_extracts_the_sql_path_question() -> None:

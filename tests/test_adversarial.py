@@ -10,26 +10,12 @@ from secure_query.api.service import ask
 from secure_query.auth import Principal
 from secure_query.demo.chinook import sample_catalog
 from secure_query.engine.runtime import runtime_config
-from secure_query.planner import MockLLMClient, parse_plan_json, plan_question
+from secure_query.planner import MockLLMClient, plan_sql_question
 
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from secure_query.api import app
-
-
-def test_parse_rejects_select_in_string_field() -> None:
-    raw = json.dumps(
-        {
-            "plan_id": "00000000-0000-0000-0000-000000000001",
-            "schema_version": "lqp/1",
-            "source": "Invoice",
-            "limit": 5,
-            "note": "SELECT * FROM Employee",
-        }
-    )
-    with pytest.raises(ValueError, match="SQL"):
-        parse_plan_json(raw)
 
 
 def test_injected_sql_in_question_is_refused_before_llm() -> None:
@@ -39,18 +25,17 @@ def test_injected_sql_in_question_is_refused_before_llm() -> None:
         config=runtime_config(),
         catalog=sample_catalog(),
         client=MockLLMClient(),
-        confirm_only=True,
+        review_only=True,
     )
     assert outcome.status == "clarify"
     assert outcome.clarify_code == "sql_in_question"
     assert outcome.suggestions == []
 
 
-def test_model_sql_payload_does_not_execute() -> None:
+def test_model_sql_reading_pii_does_not_execute() -> None:
     client = MockLLMClient(responses=['{"sql": "SELECT * FROM Customer"}'])
-    result = plan_question("list customers", sample_catalog(), client, max_repairs=0)
+    result = plan_sql_question("list customers", sample_catalog(), client, max_repairs=0)
     assert result.status == "clarify"
-    assert result.plan is None
     assert result.compiled is None
 
 
@@ -60,7 +45,7 @@ def test_api_rejects_unknown_body_fields(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr("secure_query.api.http.get_client", lambda: MockLLMClient())
     response = TestClient(app).post(
         "/ask",
-        json={"question": "hi", "sql": "SELECT 1", "confirm_only": True},
+        json={"question": "hi", "sql": "SELECT 1", "review_only": True},
     )
     assert response.status_code == 422
 
@@ -69,7 +54,6 @@ def test_sql_planner_refuses_columns_pii_bypass(monkeypatch: pytest.MonkeyPatch)
     """End-to-end: model SQL that uses COLUMNS('Email') must not execute."""
     from secure_query.planner.sql_plan import plan_sql_question
 
-    monkeypatch.setenv("SECURE_QUERY_PLANNER", "sql")
     client = MockLLMClient(responses=['{"sql": "SELECT COLUMNS(\'Email\') FROM Customer LIMIT 3"}'])
     result = plan_sql_question(
         "customer emails",

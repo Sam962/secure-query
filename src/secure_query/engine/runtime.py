@@ -1,8 +1,9 @@
 """Runtime wiring: catalog source, execute backend, audit path.
 
-DuckDB is the local default. Databricks SQL warehouse when DATABRICKS_* are
-set. Postgres when SECURE_QUERY_POSTGRES_DSN / DATABASE_URL is set.
-SECURE_QUERY_BACKEND can force one of: duckdb | databricks | postgres.
+SECURE_QUERY_BACKEND names the backend: duckdb (default) | databricks | postgres. It is
+never inferred from which credentials happen to be set: a domain's catalog is approved for
+one warehouse, and a Databricks token in the environment must not send its questions to
+another (engine.domains refuses the Chinook sample on any backend but DuckDB).
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from secure_query.auth import Principal
 from secure_query.engine.databricks import databricks_settings_from_env, execute_databricks
 from secure_query.engine.domains import load_domain_catalog
 from secure_query.engine.execute import ExecuteOptions, ExecutionError, ExecutionResult, execute_duckdb
-from secure_query.engine.postgres import execute_postgres, postgres_configured, postgres_dsn
+from secure_query.engine.postgres import execute_postgres, postgres_dsn
 from secure_query.kernel.catalog import Catalog
 from secure_query.kernel.compile import CompiledQuery
 from secure_query.kernel.logical_plan import LogicalPlan
@@ -39,22 +40,11 @@ def default_audit_path() -> Path:
     return Path(raw)
 
 
-def databricks_configured() -> bool:
-    host = os.environ.get("DATABRICKS_HOST") or os.environ.get("DATABRICKS_SERVER_HOSTNAME")
-    http_path = os.environ.get("DATABRICKS_HTTP_PATH")
-    token = os.environ.get("DATABRICKS_TOKEN") or os.environ.get("DATABRICKS_ACCESS_TOKEN")
-    return bool(host and http_path and token)
-
-
 def resolve_backend() -> ExecuteBackend:
-    explicit = (os.environ.get("SECURE_QUERY_BACKEND") or "").strip().lower()
-    if explicit in ("duckdb", "databricks", "postgres"):
-        return explicit  # type: ignore[return-value]
-    if databricks_configured():
-        return "databricks"
-    if postgres_configured():
-        return "postgres"
-    return "duckdb"
+    explicit = (os.environ.get("SECURE_QUERY_BACKEND") or "duckdb").strip().lower()
+    if explicit not in ("duckdb", "databricks", "postgres"):
+        raise RuntimeError(f"SECURE_QUERY_BACKEND={explicit!r}: expected duckdb, databricks or postgres")
+    return explicit  # type: ignore[return-value]
 
 
 def backend_dialect(backend: ExecuteBackend | None = None) -> str | None:
