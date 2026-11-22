@@ -63,17 +63,21 @@ def download_bird() -> Path:
 
 def duckdb_copy(db_id: str) -> Path:
     """DuckDB copy of one BIRD SQLite database, built once."""
+    return sqlite_to_duckdb(BIRD_DATA / _DB_ROOT / db_id / f"{db_id}.sqlite", BIRD_DIR / "duckdb" / f"{db_id}.duckdb")
+
+
+def sqlite_to_duckdb(sqlite_file: Path, out: Path) -> Path:
+    """DuckDB copy of a SQLite file with column types read from the data, built once."""
     import sqlite3
 
     import duckdb
 
-    out = BIRD_DIR / "duckdb" / f"{db_id}.duckdb"
     if out.exists():
         return out
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)
-    sqlite_path = (BIRD_DATA / _DB_ROOT / db_id / f"{db_id}.sqlite").resolve()
+    sqlite_path = sqlite_file.resolve()
     # card_games is WAL and ships with no -wal file. A plain read-only open
     # tries to create that sidecar beside the file the official grader executes.
     # immutable=1 reads the shipped file and creates nothing next to it.
@@ -120,9 +124,14 @@ def _schemas() -> dict[str, dict]:
 
 def build_catalog(db_id: str) -> Catalog:
     """Catalog from DuckDB real types plus dev_tables.json foreign keys."""
+    return catalog_from(duckdb_copy(db_id), _schemas().get(db_id, {}), tenant_id=f"bird_{db_id}")
+
+
+def catalog_from(duckdb_file: Path, schema: dict, *, tenant_id: str) -> Catalog:
+    """Catalog from a DuckDB copy's real types plus a Spider-style schema's foreign keys."""
     import duckdb
 
-    con = duckdb.connect(str(duckdb_copy(db_id)), read_only=True)
+    con = duckdb.connect(str(duckdb_file), read_only=True)
     try:
         rows = con.execute(
             "SELECT table_name, column_name, data_type FROM information_schema.columns "
@@ -143,7 +152,6 @@ def build_catalog(db_id: str) -> Catalog:
             )
         )
 
-    schema = _schemas().get(db_id, {})
     tables_orig = schema.get("table_names_original", [])
     col_refs = schema.get("column_names_original", [])
     join_keys: list[JoinKey] = []
@@ -161,7 +169,7 @@ def build_catalog(db_id: str) -> Catalog:
             join_keys.append(key)
 
     return Catalog(
-        tenant_id=f"bird_{db_id}",
+        tenant_id=tenant_id,
         tables=[TableSpec(name=t, columns=cols) for t, cols in by_table.items()],
         join_keys=join_keys,
         max_limit=10_000,

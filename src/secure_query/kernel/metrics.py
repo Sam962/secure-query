@@ -233,3 +233,27 @@ def assert_metric_authorized(metric: MetricSpec, catalog: Catalog) -> None:
         raise PermissionError(
             f"metric {metric.id!r} requires tables not in this catalog: {missing}"
         )
+
+
+def metric_definition(metric: MetricSpec) -> str:
+    """The owner's definition as the SQL planner reads it: what is computed, from where, per what."""
+    if metric.kind == "builtin":
+        return f"defined in code over {', '.join(metric.tables)}"
+
+    def measure(spec: str) -> str:
+        fn, _, col = spec.partition(":")
+        col = col.split(":")[0]
+        if fn == "count_distinct":
+            return f"COUNT(DISTINCT {col})"
+        return f"{fn.upper()}({col})"
+
+    if metric.kind == "ratio":
+        what = f"{measure(metric.numerator or '')} / {measure(metric.denominator or '')}"
+    else:
+        what = ", ".join(measure(a) for a in metric.aggregations)
+    parts = [f"{what} over {metric.source}"]
+    if metric.group_by:
+        parts.append(f"per {', '.join(metric.group_by)}")
+    if metric.joins:
+        parts.append("joining " + ", ".join(j.split(":", 2)[2] for j in metric.joins))
+    return "; ".join(parts)

@@ -144,6 +144,10 @@ def main(argv: list[str] | None = None) -> int:
         "--joins", action="store_true",
         help="Add the joins the data shows but the schema does not declare (engine.catalog_draft)",
     )
+    parser.add_argument(
+        "--facts", action="store_true",
+        help="Note repeating names and pairs stored both ways in each catalog first (engine.catalog_draft)",
+    )
     args = parser.parse_args(argv)
     if args.model:
         os.environ["SECURE_QUERY_MODEL"] = args.model
@@ -180,6 +184,11 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         from secure_query.evals.bird import load_bird_mini_dev
 
         items = load_bird_mini_dev()
+    elif args.suite and args.suite.startswith("kaggledbqa-"):
+        from secure_query.evals.kaggledbqa import load_kaggledbqa
+
+        split, _, docs = args.suite.removeprefix("kaggledbqa-").partition("-")
+        items = load_kaggledbqa(split, docs=docs == "docs")
     elif args.suite and args.suite.startswith("bird-mini-dev-"):
         from secure_query.evals.bird import load_bird_mini_dev
 
@@ -231,10 +240,14 @@ def _run_accuracy(args: argparse.Namespace) -> int:
         items = [it for i, it in enumerate(items) if i in keep]
     if args.limit:
         items = items[: args.limit]
-    if args.values or args.joins:
+    if args.values or args.joins or args.facts:
         import duckdb
 
-        from secure_query.engine.catalog_draft import with_discovered_joins, with_value_lists
+        from secure_query.engine.catalog_draft import (
+            with_detected_facts,
+            with_discovered_joins,
+            with_value_lists,
+        )
 
         drafted: dict[tuple[int, str], Catalog] = {}
         for i, (case, catalog, db_path) in enumerate(items):
@@ -247,6 +260,8 @@ def _run_accuracy(args: argparse.Namespace) -> int:
 
                     if args.joins:
                         catalog = with_discovered_joins(catalog, run)
+                    if args.facts:
+                        catalog = with_detected_facts(catalog, run)
                     drafted[key] = with_value_lists(catalog, run) if args.values else catalog
                 finally:
                     con.close()

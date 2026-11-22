@@ -66,6 +66,84 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-21 — P18 G3: owner definitions reach the SQL planner; owner guide written.** The SQL
+  path showed approved metrics to the model as bare ids with "prefer metric_id", which it cannot
+  output; the definitions never reached it. Each metric now shows as its formula (e.g.
+  `SUM(Invoice.Total) / COUNT(DISTINCT Invoice.CustomerId) over Invoice`). No effect on Spider,
+  BIRD or KaggleDBQA (no metrics there); not measured live: the OpenAI account ran out of
+  credits mid-check (HTTP 429). `docs/CATALOG_REVIEW.md`: what the data owner writes in 3.2
+  (descriptions that say what the name does not, code checks, detected notes, synonyms,
+  metrics, house rules, what never to write).
+
+- **2026-11-21 — measured and rejected: a structured reading before the SQL.** Same call, the
+  model first writes what one row is, the measure, the filters and anything assumed, each tied
+  to a catalog column or description; refusal rules unchanged. Right / wrong / refused:
+  Spider dev 321/47/32 -> 300/45/55; BIRD dev 796/452/286 -> 720/391/423; KaggleDBQA fewshot
+  36/15/34 -> 31/14/40, with docs 39/14/32 -> 32/16/37. Writing the reading makes the model
+  notice gaps and refuse (BIRD planner refusals 191, gate disagreements 206), and the second
+  reading diverges more often. Wrong falls on BIRD (-61) but right falls more (-76). Reverted.
+  Three prompt-side ways to make the model "understand" more (reasoning, answering with the
+  closest measure, a structured reading) have now each lost on the dev suites; the measured
+  gain is from content the catalog carries (descriptions: +91 on BIRD without hints).
+
+- **2026-11-21 — measured and rejected: answer a loose question with the closest measure.**
+  Sorting the 29 refused KaggleDBQA tuning questions (with docs): 15 over-literal (a rate with
+  no denominator, a place the whole dataset covers, "used" where the data records tests,
+  "a specific" item with none named), 5 fair refusals, 3 missing or wrong knowledge, 6 by our
+  checks. A prompt that answers with the closest measure and states its "reading" (right /
+  wrong / refused): Spider dev 400 x3 321/47/32 -> 328/46/26; BIRD dev (scripts/bird_dev.py)
+  796/452/286 -> 815/519/200; KaggleDBQA fewshot 36/15/34 -> 48/24/13, with docs 39/14/32 ->
+  48/24/13. It answers more everywhere, but on BIRD 86 fewer refusals bring 19 right and 67
+  wrong, and on KaggleDBQA about one new wrong per new right. Reverted; refusing stays cheaper
+  than guessing. Kept: the KaggleDBQA docs keep a code list only when at least half the
+  column's distinct values are its codes; the published Pesticide docs give every code
+  column the list of US states (an owner review should run the same check).
+
+- **2026-11-21 — KaggleDBQA added: real databases with their owners' documentation.** Eight Kaggle
+  databases (Lee et al., ACL 2021); questions and docs from github.com/Chia-Hsuan-Lee/KaggleDBQA,
+  SQLite files from the Google Drive folder its README names, both under `data/kaggledbqa/`.
+  Suites `kaggledbqa-fewshot` (85 questions, for tuning) and `kaggledbqa-test` (182, held out);
+  a `-docs` suffix loads the owners' column descriptions, code meanings and overview into the
+  catalog. Measured once, x3, values and joins on (right / wrong / refused):
+  fewshot 36 / 15 / 34, with docs 42 / 14 / 29; test 69 / 34 / 79, with docs 74 / 43 / 65.
+  The docs help on the tuning split; on test they turn 14 refusals into 5 more right and 9 more
+  wrong (grader-flagged, not adjudicated; KaggleDBQA questions are loose). The larger finding:
+  40% of questions are refused, almost all by the model saying the data cannot answer ("no
+  population to compute a crime rate", "no column says Manchester" in a database that is all
+  Greater Manchester). Not tuned on test.
+
+- **2026-11-21 — P18 G1 and G2 built: detected facts and warehouse comments in the catalog draft.**
+  `with_detected_facts` (`catalog_draft --facts`, `evals.run --facts`) notes in descriptions, from
+  counts only: the column that names a table's rows but repeats (with the key that keeps them
+  apart), and two columns storing every pair in both directions. Noise check: 6 notes on 20 Spider
+  dev databases, 12 on BIRD dev, all on real repeating names or a real both-ways pair table; both
+  head-to-head error kinds (two Newarks, affiliations by name, doubled distances) are caught.
+  Measured: Spider dev 400 x3 321/47/32, identical to before. BIRD dev, new runner
+  `scripts/bird_dev.py` (the scratchpad runner and its join helper were lost to a cleanup; this
+  one uses the product's join discovery, grades on DuckDB with a SQLite fallback, and puts a
+  60 s limit on every query, so its numbers start a new series): without facts 796 right / 452
+  wrong / 286 refused, with facts 796 / 444 / 294. Neutral within noise on both dev suites, where
+  these data shapes are rare; kept opt-in in the draft for the owner to review. Warehouse
+  comments: Unity Catalog and DuckDB table and column comments become draft descriptions.
+
+- **2026-11-18 — measured: a column glossary matters when the question has no hint.** BIRD dev with
+  the per-question hints removed, with and without BIRD's own column descriptions as the glossary.
+  The no-glossary run hung on one question after 693 (10 hours at full CPU; most likely the eval's
+  SQLite grading, which has no time limit; the product's probes stop at 5-10 s; not verified), so
+  the comparison is on those 693, regraded (right / wrong / refused):
+  hints, no glossary 375 / 187 / 131; no hints, no glossary 220 / 150 / 323;
+  no hints, glossary 311 / 209 / 173. The glossary wins back 91 of the 155 right answers the hints
+  gave, but answers more of everything: wrong share of answered stays 40% (hints: 33%).
+  Earlier (2026-11-15) the same glossary on top of the hints measured as noise: it helps when
+  nothing else defines the terms, as for a partner's own data.
+
+- **2026-11-17 — measured and rejected: turning model reasoning on (`SECURE_QUERY_REASONING_EFFORT`).**
+  Spider dev 400 x3 (right/wrong/refused): off 321/47/32; low 318/52/30; medium 319/45/35, all
+  within noise. BIRD dev, low, stopped after 595 of 1534 questions (8 hours, several times slower):
+  on the same 595 questions, regraded, off 318 right / 158 wrong / 119 refused, low 301 / 191 / 103.
+  Likely cause, not verified: with reasoning on, the model refuses temperature 0, so both
+  readings of the gate sample at its default and agree on more wrong answers. Reasoning stays off.
+
 - **2026-11-16 — security pass: attack battery, two kernel fixes, an egress test, a key-file guard.**
   43 hostile SQL shapes against the kernel (file and URL reads, getenv, system tables, writes,
   extensions, PII by alias/struct/sort/length, stacked statements, resource bombs): 37 blocked

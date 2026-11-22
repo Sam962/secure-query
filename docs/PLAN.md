@@ -264,7 +264,9 @@ runs exit 0 (`echo $?` prints `0`).
 - [ ] **3.2 Draft and approve the catalog.** Blocked by 3.1. Run
   `fetch_unity_catalog_draft` for the domain schema, save the draft as
   `config/<domain>-catalog.json`, then **a named owner** reviews PII flags and
-  `join_keys`. Fill [OWNERSHIP.md](OWNERSHIP.md). An agent may draft; only the owner approves.
+  `join_keys`, and writes descriptions, synonyms and metrics following
+  [CATALOG_REVIEW.md](CATALOG_REVIEW.md). Fill [OWNERSHIP.md](OWNERSHIP.md). An agent may
+  draft; only the owner approves.
 - [ ] **3.3 Live smoke.** Blocked by 3.2. `python scripts/databricks_smoke.py` exits 0.
 - [ ] **3.4 Freeze the holdout.** Blocked by 3.1. Sam and the domain owner write at least
   200 real questions with reference SQL (and expected refusals), following
@@ -389,6 +391,22 @@ Not started, because each is a product decision rather than a fix: see P4–P6 b
   Measured 2026-11-16 as a prompt rule and rejected (STATUS): it adds DISTINCT broadly and
   raises gate refusals. Left: the kernel-side check, or showing the counted grain in the
   answer so the person asking can see what was counted.
+- **P18. The glossary in the catalog (approved by Sam 2026-11-21).** Measured 2026-11-18
+  (STATUS): with BIRD's hints removed, column descriptions win back 91 of the 155 right answers
+  the hints gave. The catalog already carries table and column descriptions to the model; the
+  draft leaves them empty. Three parts, each measured on Spider dev and BIRD dev:
+  - **G1. Detected facts in the draft** (counts only, no stored value leaves the warehouse):
+    a text column that almost names one row each but repeats (two cities called Newark) is
+    noted with the key that keeps them apart; a table whose two columns point at the same key
+    and store every pair in both directions is noted so pairs are counted once. 7 of our 16
+    real errors in the evidence-checked head-to-head rating are of these two kinds.
+  - **G2. Warehouse comments into the draft.** Unity Catalog and DuckDB column and table
+    comments become draft descriptions for the owner to review.
+  - Done 2026-11-21: G1 and G2 built (STATUS); G1 neutral on both dev suites, kept opt-in.
+  - Done 2026-11-21: G3. Owner metric definitions now reach the SQL planner as formulas
+    (they reached it as bare ids before); the owner guide is docs/CATALOG_REVIEW.md.
+  - **G3. Owner-written definitions** (what a business word counts) through the existing
+    synonyms, metrics and descriptions; documented in catalog review, no new code expected.
 - **P7. PII detection from column values.** The catalog draft flags PII from Unity Catalog
   tags and column names only. Add value sampling only if the owner's review in 3.2 finds
   personal data in columns that neither a tag nor the name gave away.

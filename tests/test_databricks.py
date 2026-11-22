@@ -364,3 +364,30 @@ def test_connections_are_reused_per_credential_and_dropped_after_a_failure(monke
     assert opened[0].closed  # a session that failed is not reused
     databricks._POOL.close_all()
     assert opened[1].closed
+
+
+def test_unity_catalog_comments_become_draft_descriptions() -> None:
+    from secure_query.engine.databricks import fetch_unity_catalog_draft
+
+    class Cur:
+        def __init__(self) -> None:
+            self.sql = ""
+
+        def execute(self, sql, params=None):
+            self.sql = sql
+
+        def fetchall(self):
+            if "information_schema.columns" in self.sql:
+                return [("orders", "id", "INT", None), ("orders", "status", "STRING", "A = active")]
+            if "information_schema.tables" in self.sql:
+                return [("orders", "One row per order")]
+            return []
+
+    class Con:
+        def cursor(self):
+            return Cur()
+
+    catalog = fetch_unity_catalog_draft(Con(), tenant_id="t", catalog_name="main", schema_name="sales")
+    (orders,) = catalog.tables
+    assert orders.description == "One row per order"
+    assert {c.name: c.description for c in orders.columns} == {"id": "", "status": "A = active"}
