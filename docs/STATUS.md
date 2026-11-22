@@ -66,6 +66,28 @@ two-readings check only. Same runs, not adjudicated: Chinook dev 119/134 right, 
 
 ## Changelog
 
+- **2026-11-22 — Head-to-head with Genie on the stand-in domain (KaggleDBQA on Databricks).**
+  No partner exists, so phase 3 runs on KaggleDBQA test: 8 real Kaggle databases with
+  their owners' documentation, never tuned on, each loaded to `workspace.kaggledbqa_<db>`
+  with its own Genie space (`scripts/kaggledbqa_warehouse.py`). Both systems get the same
+  documentation, joins, value matching, and the 70 fewshot questions that verify as known
+  questions (our certified answers, Genie's example SQL). 146 of 182 test questions are
+  gradable (gold converted to Databricks and checked against SQLite rows; the rest are
+  broken gold, text/number mixes, or over Genie's 5,000-row cap). x3, gpt-6-luna.
+  Graded (right / wrong / refused): Secure Query 66 / 27 / 53, Genie 96 / 48 / 2.
+  Wrong answers rated blind by one model rater (gpt-5, same rubric; not human, not
+  evidence-checked): real errors Secure Query 9 (6.2%, 95% 3.3-11.3%), Genie 16 (11.0%,
+  6.9-17.1%); intervals overlap. Per answer given, about the same: 9 of 93 vs 16 of 144.
+  The lead here comes from refusing, not from answering better, and Genie gives about
+  128 acceptable answers to our 84. Our refusals: model declined 17, readings disagreed
+  18, kernel 11, value not stored 7; of the refused plans that could be graded, 8 would
+  have been right and 14 wrong. Certified answers applied to 11 questions (9 right).
+  Our 9 real errors: wrong column of two similar ones (3: odds side, origin vs collection
+  state, planned vs under construction), a list where a total was asked (2), half of a
+  two-part question (1), a hard-coded code instead of the key table (1), NULLs counted as
+  unknown (1), a filter not asked for (1). Files:
+  `docs/adjudication/genie-h2h-kaggledbqa-2026-11-22-{blind-packets,blind-packets.key,gpt5-labels}.json`.
+
 - **2026-11-22 — P4 certified answers built and measured.** Catalog `certified`: analyst-approved
   question/SQL pairs. The planner lists them; the model may reply {"certified": id} instead of
   SQL; the approved SQL runs unrewritten through the kernel and the two-readings gate. The

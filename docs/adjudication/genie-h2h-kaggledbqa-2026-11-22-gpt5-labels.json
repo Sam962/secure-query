@@ -1,0 +1,302 @@
+{
+ "thehp006:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“Birth place” could reasonably mean city, state, or country; the gold groups by country while the system groups by city, both valid interpretations."
+ },
+ "thehp005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query counts all Hall of Fame inductees regardless of category, while the question asks for Hall of Fame players; the system correctly restricts to category='Player' (and deduplicates players)."
+ },
+ "pestp011:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system counted NULL/empty country values (including domestic samples where country is not applicable), whereas the schema indicates unknown origin should be captured by origin='3'."
+ },
+ "geonp003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrase 'in preparation to be used' can reasonably include both 'Planned' and 'Under Construction', while the gold counts only 'Under Construction'."
+ },
+ "uswip013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for a list of counties (distinct values), but the gold query returns all fire records’ counties with duplicates; the system’s DISTINCT list aligns with the question."
+ },
+ "worlp006:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question is vague (existence vs. total count or breakdown), and listing per-country referee records outside Scotland and England is a reasonable interpretation while the gold aggregates to a single total."
+ },
+ "studp001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system matched a different district name ('Pecatonica' vs the asked 'Pecatonia Area'), producing a different funding value and thus misanswering the question."
+ },
+ "geonp005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query takes MAX over a text field (lexicographic), yielding 998, while the question requires a numeric maximum and the system correctly casts Capacity to numeric, returning 1660."
+ },
+ "whatp005:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system returned individual rows (and truncated with LIMIT) instead of aggregating total downloads by releaseType as the question implies and the gold query performs."
+ },
+ "pestp009:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses MAX(commod) to return the lexicographically largest code rather than the most-tested food, whereas the system reasonably identifies the top commodity by count (number of samples), so the gold is incorrect for the question."
+ },
+ "pestp015:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses MAX(extract), which returns the lexicographically largest code, not the most frequent method; the system correctly returns the mode by counting occurrences."
+ },
+ "uswip004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the average day-of-year of discovery (DOY), but the gold query averages the absolute DISCOVERY_DATE (Julian date), while the system correctly averages DISCOVERY_DOY."
+ },
+ "worlp009:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question seeks whether there exist (or how many) referee records outside Scotland and England with non-empty names, but the system returned a list of distinct league–referee pairs and only excluded NULLs, not answering the yes/no/count intent."
+ },
+ "studp008:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system incorrectly deduplicates by school_district name (collapsing different districts across states), whereas the question/gold count all qualifying district records where c25 > c14."
+ },
+ "studp003:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query’s UNION deduplicates identical scores and collapses the two states into a single row, while the question asks for the averages in both NC and NY and the system correctly returns one result per state."
+ },
+ "pestp012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses MAX(commod) (lexicographic max) instead of counting tests, which doesn’t answer “tested the most,” while the system reasonably counts samples per commodity to find the most tested food."
+ },
+ "worlp001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question seeks the highest Bet365 odds for the home team to lose (away win odds, B365A), but the system instead takes the maximum home-win odds (B365H) only among matches where the home lost, which is a different quantity."
+ },
+ "whatp002:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system returned only a single most-popular release and omitted the least-popular releases, while the question asks for both extremes (and possibly multiple tied), which the gold query provides."
+ },
+ "geonp004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query orders the string Capacity lexicographically instead of numerically, yielding an incorrect station, while the system correctly casts to numeric and returns the true maximum (Taishan-1/2 at 1660 MWe)."
+ },
+ "pestp003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system query finds the most frequently recorded pesticide (concen <> ''), not the one easiest to test—which would require a measure like the lowest limit of detection (lod)—so it does not answer the question."
+ },
+ "thehp010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify whether “highest player’s salary” means average by award or the single maximum salary associated with an award; the system reasonably used MAX while the gold uses AVG."
+ },
+ "uswip008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the average 'date of year' (i.e., day-of-year), so averaging DISCOVERY_DOY is appropriate, whereas the gold averages Julian DISCOVERY_DATE across years, which doesn’t match the phrasing."
+ },
+ "uswip007:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query ignores the 2000-year filter and orders counts ascending, whereas the system correctly finds the max-count county for 2000."
+ },
+ "pestp014:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query uses MAX(extract), which returns the highest code rather than the most frequent method, while the system correctly computes the mode of extract values."
+ },
+ "thehp009:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify whether to list unique salary amounts or all salary records, so returning DISTINCT salaries (system) vs all salaries (gold) is an ambiguity about duplicates."
+ },
+ "worlp007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The phrase “highest home losing odds” can mean either the odds of the home team losing (away win odds, as in the gold) or the home team’s odds in matches they ended up losing (system’s filter on FTR='A' with B365H)."
+ },
+ "geonp006:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“Pressurized water reactor” can reasonably refer to the broader PWR family (including APWR, etc.), whereas the gold restricts to exact 'PWR', so the system’s broader, numerically cast max is a valid interpretation."
+ },
+ "pestp002:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system counted NULL/empty country fields (including domestic samples where country is not recorded), whereas the question targets samples with unknown origin status (origin='3'), so the system’s interpretation miscounts."
+ },
+ "pestp004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the majority (most frequent) test classification, but the gold query uses MAX(testclass) which returns the lexicographically largest code; the system correctly computes the mode via COUNT and ORDER BY DESC."
+ },
+ "studp007:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system hard-coded state_code=51 instead of selecting rows where the state is 'Virginia' via the key table, leading to a different and incorrect average for Virginia."
+ },
+ "greap002:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query ranks by the raw count of 'Investigation complete' outcomes instead of the per-type rate, whereas the system computes rates (allowing ties), matching the question’s intent."
+ },
+ "thehp012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly identified the top-paid 2015 player and returned the name, while the gold returns the player_id; the difference is a formatting choice (name vs ID), not a substantive error."
+ },
+ "thehp001:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the minimum votes needed (the threshold) per year, which should use the 'needed' column, but the gold query wrongly uses MIN(votes) among inducted players; the system query correctly targets 'needed'."
+ },
+ "uswip012:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query filters STATE='NY' (New York) instead of 'NC' (North Carolina), so it answers the wrong state; the system query correctly sums acres for NC in 2006."
+ },
+ "thehp003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question doesn’t specify the birthplace granularity or whether to include duplicates; returning distinct city/state/country is a reasonable interpretation while the gold returns only countries with duplicates."
+ },
+ "uswip009:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query neither filters to 2000 nor orders by descending count, whereas the system query correctly restricts to 2000 and returns the county with the highest count."
+ },
+ "uswip015:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query wrongly restricts to Texas and mis-defines the decades (includes 2010 and double-counts 2000), while the system correctly sums acres for the 1990s and 2000s overall."
+ },
+ "uswip011:answered_wrong": {
+  "label": "real_error",
+  "reason": "“Without any owner” corresponds to missing/unspecified ownership, but the system counted “UNDEFINED FEDERAL,” which still denotes federal ownership, not no owner."
+ },
+ "uswip016:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The wording can mean the year with the greatest total burned acreage, which the system computed, or the year of the single largest fire, which the gold query returns; both interpretations are plausible."
+ },
+ "pestp006:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question targets distribution state (distst), but the system counted the origin state (state) and also returned an extra column, so its query logic does not match the question even if CA coincidentally matches the gold."
+ },
+ "thehp011:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The system correctly returns the two 2010 Rookie of the Year winners (as names) matching the gold player_ids; the difference is just output formatting (names vs IDs), not correctness."
+ },
+ "thehp004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question clearly targets years with 'Special Election' and the schema has a votedby='Special Election' value; the gold instead uses needed_note<>'' (qualifier notes) yielding different, non-special-election years, while the system correctly filters by votedby='Special Election'."
+ },
+ "thehp013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold groups by player_award.notes (not a defined position field) and returns a blank value, while the schema’s only position-like attribute is hall_of_fame.category; thus the gold query misinterprets the question."
+ },
+ "uswip002:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query filters STATE='NY' (and treats year as a string) while the question asks for NC in 2006; the system query correctly uses STATE='NC' and 2006."
+ },
+ "worlp005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks how many league divisions exist (distinct Div values), but the gold counts all rows with Div; the system correctly counts DISTINCT Div."
+ },
+ "pestp013:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the most frequent testclass ('majority'), but the gold query returns the lexicographically maximum value; the system correctly computed the mode."
+ },
+ "worlp003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system summed matches across both betfront and football_data (overcounting and changing the target), while the question/gold clearly measure by year within betfront, yielding a different and misleading year."
+ },
+ "greap001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for the single most likely outcome, but the system returned the top five outcomes with counts instead of just the top one."
+ },
+ "pestp007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question does not specify which state attribute to use (origin state vs distribution state), so grouping by state (system) or by distst (gold) are both reasonable interpretations."
+ },
+ "thehp007:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“Birth places” is vague about granularity and duplicates, so returning distinct city/state/country locations (vs all players’ birth countries) is a reasonable interpretation."
+ },
+ "uswip003:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question’s county name is loosely specified, so using ILIKE '%Gloucester%' to include variants (e.g., “Gloucester County”) is a reasonable interpretation versus the gold’s exact equality filter."
+ },
+ "worlp010:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“In 2010” is ambiguous between calendar year and season; the system reasonably interpreted it as the 2010-starting season (Season like 2010/2011), while the gold counts any season containing 2010 (including 2009/2010 and 2010/2011)."
+ },
+ "worlp002:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the number of league divisions (distinct Div values), while the gold query counts all rows; the system’s COUNT(DISTINCT Div) matches the intent."
+ },
+ "geonp001:answered_wrong": {
+  "label": "real_error",
+  "reason": "“In preparation to be used” aligns with plants under construction, but the system counted Planned plants instead, yielding the wrong count."
+ },
+ "uswip006:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question can mean either the year with the greatest total acres burned (sum by year, as the system did) or the year of the single largest fire (as the gold did), so both interpretations are plausible."
+ },
+ "studp005:answered_wrong": {
+  "label": "real_error",
+  "reason": "It filters districts by the school_district name containing 'Virginia' instead of selecting all Virginia districts via the state mapping, producing an average over the wrong set of rows."
+ },
+ "studp006:answered_wrong": {
+  "label": "real_error",
+  "reason": "It hard-codes state_code=8 instead of filtering by State='Colorado' via the key table (and proper casting), leading to an incorrect undercount for Colorado."
+ },
+ "uswip001:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for the set of counties, so DISTINCT should be used; the gold query returns duplicate rows for each fire, while the system correctly deduplicates counties."
+ },
+ "geonp002:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "Multiple U.S. plants tie for maximum capacity and share the same status, so returning both (with status Operational) is a reasonable interpretation even though the gold arbitrarily picks one."
+ },
+ "whatp003:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system returns an extra NULL group (years >= 2010) instead of only the two requested periods, so the answer includes incorrect/unasked data."
+ },
+ "pestp005:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks about where apples were collected, which aligns with distribution/collection state (distst), but the system grouped by origin state (state), using the wrong field."
+ },
+ "studp004:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system hard-coded state_code=18 instead of identifying Indiana via the key table, so it counted the wrong set of districts and produced an incorrect total."
+ },
+ "whatp001:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question asks for the most popular releaseType, but the system query filters to albums and returns a tag ('2010s') from a join, not a releaseType."
+ },
+ "thehp008:answered_wrong": {
+  "label": "real_error",
+  "reason": "The query should average weights for TSN All-Star entries with notes='3B', but the system’s extra filters (LIKE patterns and numeric regex) excluded the valid rows and returned NULL instead of ~190.25."
+ },
+ "uswip005:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query finds the most frequent exact latitude, not a band, whereas the question asks for a latitudinal band and the system reasonably bins by degree to identify the top band."
+ },
+ "uswip014:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query finds the most common OWNER_DESCR (incl. 'MISSING/NOT SPECIFIED') instead of aggregating land types into public vs private as the question asks."
+ },
+ "whatp004:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query incorrectly includes 2010 in the “2000s” (BETWEEN 2000 AND 2010), whereas the natural reading is 2000–2009 which the system correctly uses, causing the numeric discrepancy."
+ },
+ "pestp008:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold query returns the lexicographic maximum country overall instead of the most frequent import source, while the system correctly identifies the top country among imported samples (origin='2')."
+ },
+ "studp002:answered_wrong": {
+  "label": "real_error",
+  "reason": "The system grouped by state_code (not state name) and failed to join to the score table, returning a code and null score instead of the correct state (California) and its average score."
+ },
+ "pestp010:answered_wrong": {
+  "label": "real_error",
+  "reason": "“Class of products” aligns with the 'variety/class of the product' field, so counting distinct variety is correct, while counting commtype (FR/FZ/OT) answers a different concept."
+ },
+ "pestp001:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "The question is vague about using average versus total residue and about returning one versus multiple varieties; the system’s AVG-per-variety ranking fits a plausible reading, while the gold uses SUM and top-1."
+ },
+ "worlp008:answered_wrong": {
+  "label": "ambiguous",
+  "reason": "“In 2010” can reasonably mean calendar year (system uses Datetime year) or season strings containing 2010 (gold uses Season ILIKE), so both interpretations are plausible."
+ },
+ "thehp002:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The question asks for years with special elections, which maps to votedby='Special Election'; the gold query uses needed_note<>'' (special qualifiers), yielding different years not strictly special elections."
+ },
+ "uswip010:answered_wrong": {
+  "label": "benchmark_fault",
+  "reason": "The gold SQL wrongly restricts to Texas and mis-defines the decades (overlaps 2000 and includes 2010), while the question asks for total acres in the 1990s and 2000s generally, which the system query correctly computes."
+ },
+ "worlp004:answered_wrong": {
+  "label": "real_error",
+  "reason": "The question implies the specific fixture with Swindon at home (“Swindon vs Millwall”), but the system included both home/away permutations and returned two odds instead of the single correct one."
+ }
+}

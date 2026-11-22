@@ -171,12 +171,19 @@ def build_blind_packets(scorecard: dict) -> tuple[list[dict], dict[str, dict]]:
     return packets, key
 
 
-def rate(packets: list[dict], model: str) -> dict[str, dict]:
+def rate(packets: list[dict], model: str, output: Path | None = None, workers: int = 6) -> dict[str, dict]:
+    """Label each packet; with `output`, labels already there are kept and each new one is saved."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
     from openai import OpenAI
 
     client = OpenAI()
-    out: dict[str, dict] = {}
-    for p in packets:
+    out: dict[str, dict] = json.loads(output.read_text()) if output and output.exists() else {}
+    lock = threading.Lock()
+    todo = [p for p in packets if p["id"] + ":" + p["kind"] not in out]
+
+    def one(p: dict) -> None:
         body = {k: p[k] for k in ("question", "schema", "gold_sql", "gold_result", "system_sql", "system_result")}
         audit = p["kind"] == "answered_right"
         resp = client.chat.completions.create(
@@ -191,7 +198,13 @@ def rate(packets: list[dict], model: str) -> dict[str, dict]:
         if label.get("label") not in (RIGHT_LABELS if audit else LABELS):
             fallback = "hidden_error" if audit else "real_error"
             label = {"label": fallback, "reason": f"unparseable rating: {label}"}
-        out[p["id"] + ":" + p["kind"]] = label
+        with lock:
+            out[p["id"] + ":" + p["kind"]] = label
+            if output:
+                output.write_text(json.dumps(out, indent=1, ensure_ascii=False))
+
+    with ThreadPoolExecutor(workers) as pool:
+        list(pool.map(one, todo))
     return out
 
 
@@ -222,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         args.output.write_text(json.dumps(packets, indent=1, ensure_ascii=False, default=str))
         print(f"{len(packets)} packets -> {args.output}")
     else:
-        labels = rate(json.loads(args.packets.read_text()), args.model)
+        labels = rate(json.loads(args.packets.read_text()), args.model, args.output)
         args.output.write_text(json.dumps(labels, indent=1, ensure_ascii=False))
         print(f"{len(labels)} labels -> {args.output}")
     return 0

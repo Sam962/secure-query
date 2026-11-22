@@ -258,6 +258,13 @@ runs exit 0 (`echo $?` prints `0`).
 
 ## Phase 3 — Live head-to-head (blocked on Sam)
 
+**No partner exists (Sam, 2026-11-21).** The stand-in domain is KaggleDBQA: real Kaggle
+data with its owners' documentation, test questions never tuned on. Each database is a
+schema `workspace.kaggledbqa_<db>` with its own Genie space, built by
+`scripts/kaggledbqa_warehouse.py`; both systems get the same documentation, joins and value
+matching, and the fewshot questions as the owner's known questions (Secure Query certified
+answers, Genie example SQL). This replaces 3.1 to 3.4; 3.5 runs on it.
+
 - [ ] **3.1 Sam: domain, date and access.** Pick the domain and the partner date. Provide a
   Databricks workspace, a SQL warehouse, a Genie space over the same tables, and the
   credentials in `.env` (see `.env.example`). Prove Genie answers one question by hand.
